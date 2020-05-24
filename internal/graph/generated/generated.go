@@ -373,7 +373,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	&ast.Source{Name: "graph/directives.graphqls", Input: `directive @hasRole(role: Role!) on FIELD_DEFINITION
+	&ast.Source{Name: "directives.graphqls", Input: `directive @hasRole(role: Role!) on FIELD_DEFINITION
 
 enum Role {
   ADMIN
@@ -390,7 +390,7 @@ directive @goField(
   name: String
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 `, BuiltIn: false},
-	&ast.Source{Name: "graph/models.graphqls", Input: `"""
+	&ast.Source{Name: "models.graphqls", Input: `"""
 Node is an interface allowing simple querying of any node
 """
 interface Node {
@@ -584,34 +584,25 @@ type User implements Node {
   password: String!
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "graph/mutation.graphqls", Input: ``, BuiltIn: false},
-	&ast.Source{Name: "graph/query.graphqls", Input: `type Query {
+	&ast.Source{Name: "mutation.graphqls", Input: `type Mutation {
+  createPlayer: Player! @hasRole(role: PLAYER)
+}
+`, BuiltIn: false},
+	&ast.Source{Name: "query.graphqls", Input: `type Query {
   """
   me returns the current Player. It is the entry point for the Player-side
   client. It contains all the information needed to display for Players.
   """
   me: Player @hasRole(role: PLAYER)
 }
-
-type Mutation {
-  createPlayer: Player! @hasRole(role: PLAYER)
-}
-
-type Subscription {
-  """
-  me returns updates the current Player. It is how the Player-side client can
-  keep all Game information needed up to date.
-  """
-  me: Player @hasRole(role: PLAYER)
-}
 `, BuiltIn: false},
-	&ast.Source{Name: "graph/root.graphqls", Input: `schema {
+	&ast.Source{Name: "root.graphqls", Input: `schema {
   query: Query
   mutation: Mutation
   subscription: Subscription
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "graph/scalars.graphqls", Input: `"""
+	&ast.Source{Name: "scalars.graphqls", Input: `"""
 DateTime is a Date + Time value given in Epoch to ns precision.
 """
 scalar DateTime @goModel(model: "time.Time")
@@ -626,7 +617,14 @@ JSON is a JSON string of any value.
 """
 scalar JSON
 `, BuiltIn: false},
-	&ast.Source{Name: "graph/subscription.graphqls", Input: ``, BuiltIn: false},
+	&ast.Source{Name: "subscription.graphqls", Input: `type Subscription {
+  """
+  me returns updates the current Player. It is how the Player-side client can
+  keep all Game information needed up to date.
+  """
+  me: Player @hasRole(role: PLAYER)
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
