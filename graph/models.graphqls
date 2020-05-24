@@ -1,0 +1,193 @@
+"""
+Node is an interface allowing simple querying of any node
+"""
+interface Node {
+  """
+  id is the unique globally identifier for the record that contains both the
+  type and the internal Database ID in the following format: `Model:ID`.
+
+  For example:
+  - `Batch:bpi6chiuof2j0lmpgc20`
+  - `Player:9m4e2mr0ui3e8a215n4g`
+  """
+  id: ID!
+
+  """
+  createdAt is the time of creation of the record.
+  """
+  createdAt: DateTime!
+
+  """
+  updatedAt is the time of last update of the record.
+  """
+  updatedAt: DateTime!
+}
+
+"""
+Status of Batches and Games
+"""
+enum Status {
+  """
+  INVALID is used to avoid non-explicit setting of the status (0 value)
+  """
+  INVALID
+
+  """
+  UNSET allows to nullify the status
+  """
+  UNSET
+
+  """
+  CREATED means the run has been created but hasn't started yet
+  """
+  CREATED
+
+  """
+  RUNNING means the run is currently in progress
+  """
+  RUNNING
+
+  """
+  PAUSED means the run has been paused by an admin
+  """
+  PAUSED
+
+  """
+  DONE means the run has finished `naturally`
+  """
+  DONE
+
+  """
+  TERMINATED means the run has been manually cancelled
+  """
+  TERMINATED
+
+  """
+  FAILED means the run has failed (due to an unrecoverable error)
+  """
+  FAILED
+}
+
+"""
+Datum is a single piece of custom data set by a player or the Game.
+"""
+type Datum implements Node {
+  """
+  id is the unique globally identifier for the record.
+  """
+  id: ID!
+
+  """
+  createdAt is the time of creation of the record.
+  """
+  createdAt: DateTime!
+
+  """
+  updatedAt is the time of last update of the record.
+  """
+  updatedAt: DateTime!
+
+  """
+  deletedAt is the time when the Datum was deleted. If null, the Datum was not
+  deleted.
+  """
+  deletedAt: DateTime
+
+  """
+  key identifies the unique key of the Datum.
+  """
+  key: String!
+
+  """
+  val is the value of the Datum. It can be any JSON encodable value.
+  Passing null will delete the Datum.
+  """
+  val: JSON
+
+  """
+  next returns the Datum ID of the next value in an array of Datum values.
+  """
+  next: ID
+
+  """
+  root returns the Datum ID of the root value in an array of Datum values.
+  """
+  root: ID
+
+  """
+  versions returns previous versions for the Datum (they all have the same ID).
+  """
+  versions: [Datum!]!
+}
+
+"""
+Player is a participant of a Game
+"""
+type Player implements Node {
+  """
+  id is the unique globally identifier for the record.
+  """
+  id: ID!
+
+  """
+  createdAt is the time of creation of the record.
+  """
+  createdAt: DateTime!
+
+  """
+  updatedAt is the time of last update of the record.
+  """
+  updatedAt: DateTime!
+
+  """
+  playerID is the public unique identifier of the player. Often it will be the
+  MTurk ID.
+  """
+  playerID: String!
+
+  """
+  index is the unique ordered index of the player assigned as the are added to
+  to the system
+  """
+  index: Uint32!
+
+  """
+  data returns all custom data that has been set on the Player.
+  """
+  data(keys: [String]): [Datum]
+}
+
+"""
+User is a user that has priviledged access to the data.
+"""
+type User implements Node {
+  """
+  id is the unique globally identifier for the record.
+  """
+  id: ID!
+
+  """
+  createdAt is the time of creation of the record.
+  """
+  createdAt: DateTime!
+
+  """
+  updatedAt is the time of last update of the record.
+  """
+  updatedAt: DateTime!
+
+  """
+  name is the full name of the user.
+  """
+  name: String
+
+  """
+  email is the email associated with the user.
+  """
+  email: String!
+
+  """
+  password is the hashed password associated with the user.
+  """
+  password: String!
+}

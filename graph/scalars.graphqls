@@ -1,0 +1,14 @@
+"""
+DateTime is a Date + Time value given in Epoch to ns precision.
+"""
+scalar DateTime @goModel(model: "time.Time")
+
+"""
+Uint32 is a 32bit unsigned int.
+"""
+scalar Uint32
+
+"""
+JSON is a JSON string of any value.
+"""
+scalar JSON
