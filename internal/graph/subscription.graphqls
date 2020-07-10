@@ -3,5 +3,5 @@ type Subscription {
   me returns updates the current Player. It is how the Player-side client can
   keep all Game information needed up to date.
   """
-  me: Player @hasRole(role: PLAYER)
+  me: Participant @hasRole(role: PLAYER)
 }

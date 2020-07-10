@@ -9,10 +9,279 @@ import (
 	"time"
 )
 
+type Creator interface {
+	IsCreator()
+}
+
 // Node is an interface allowing simple querying of any node
 type Node interface {
 	IsNode()
 }
+
+// Participant selection criteria types.
+type SelectionCriteria interface {
+	IsSelectionCriteria()
+}
+
+// Argument groups for Steps.
+type StepArgs interface {
+	IsStepArgs()
+}
+
+// Possible Condition values. Only one of the fields in a CompValue should be
+// defined.
+type CompValue struct {
+	Int     *int     `json:"int"`
+	Float   *float64 `json:"float"`
+	String  *string  `json:"string"`
+	Boolean *bool    `json:"boolean"`
+}
+
+// Condition for a filter. A condition must **either**:
+// - have one or more `and` Conditions
+// - have one or more `or` Conditions
+// - have a comparator and one or more values
+// When comparing against values, the first value is used for operands comparing
+// single values (LessThan, LessThanOrEqualTo, GreaterThan, GreaterThanOrEqualTo,
+// EqualTo, NotEqualTo). When testing for existence an empty array is DoesNotExist
+// and an array with one or more values Exists. For In and NotIn all values in the
+// values array are used.
+type Condition struct {
+	And        []*Condition `json:"and"`
+	Or         []*Condition `json:"or"`
+	Comparator *Comparator  `json:"comparator"`
+	Values     []*CompValue `json:"values"`
+}
+
+// FilterStepArgs are arguments passed to a Pariticipant Filter Step.
+// It must contains **either** JS code or the name of pre-defined filtering function.
+// This is only valid for an PARTICIPANT_FILTER Step.
+type FilterStepArgs struct {
+	// Javascript to execute as a participant filter step.
+	// The code must contain a functinon exported using a default ES6 export.
+	// The function should accept a single argument object. This object contains the
+	// following fields:
+	// - `participants`: the participants entering this step
+	// - `step`: this step (contains the definition of this step: duration, etc.)
+	// - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
+	// - `procedure`: parent procedure of step (contains the definition of the Procedure)
+	// - `run`: run this step is part of (contains the instance of the Procedure)
+	// The functions should return an array of participants.
+	// If the functions returns null or undefined, the participants are not filtered.
+	// If the function throws an exception, the run will fail.
+	Js *string `json:"js"`
+	// Filter should be the name of pre-defined filtering function.
+	Filter *string `json:"filter"`
+}
+
+func (FilterStepArgs) IsStepArgs() {}
+
+// HITStepArgs are arguments passed to a HIT Step.
+// This is only valid for an MTURK_HIT Step.
+type HITStepArgs struct {
+	// Title of HIT.
+	// From MTurk: Describe the task to Workers. Be as specific as possible,
+	// e.g. "answer a survey about movies", instead of "short survey", so Workers
+	// know what to expect.
+	// Tasks that contain adult content are required to include the following phrase
+	// in your task title: (WARNING: This HIT may contain adult content. Worker
+	// discretion is advised.)
+	Title string `json:"title"`
+	// Description of HIT.
+	// From MTurk: Give more detail about this task. This gives Workers a bit more
+	// information before they decide to view your task.
+	Description string `json:"description"`
+	// Keywords of HIT. Comma-seratred.
+	// From MTurk: Provide keywords that will help Workers search for your tasks.
+	Keywords string `json:"keywords"`
+	// DISABLED - Micro-batching is still TBD, probably needs more args.
+	Microbatch bool `json:"microbatch"`
+	// MTurk HIT reward for task in USD.
+	Reward float64 `json:"reward"`
+	// Timeout of a single accepted HIT in seconds.
+	Timeout int `json:"timeout"`
+	// Duration in seconds from start of Step before expiration of unconsumed HITs.
+	Duration int `json:"duration"`
+	// Number of HIT workers to accept.
+	Workers int `json:"workers"`
+}
+
+func (HITStepArgs) IsStepArgs() {}
+
+// InternalCriteria is the criteria for internal database participant selection.
+type InternalCriteria struct {
+	// Condition set the participant must meet to be allowed to participate.
+	Condition *Condition `json:"condition"`
+}
+
+func (InternalCriteria) IsSelectionCriteria() {}
+
+// MTurkCriteria is the criteria for MTurk Qualifications participant selection.
+type MTurkCriteria struct {
+	// MTurk Qualifications a Worker must meet before the Worker is allowed to accept
+	// and complete the HIT.
+	Qualifications []*MTurkQualificationCriteria `json:"qualifications"`
+}
+
+func (MTurkCriteria) IsSelectionCriteria() {}
+
+// The Locale data structure represents a geographical region or location in MTurk.
+type MTurkLocale struct {
+	// The country of the locale.
+	// Type: A valid ISO 3166 country code. For example, the code US refers to the
+	// United States of America.
+	Country string `json:"country"`
+	// The state or subdivision of the locale.
+	// Type: Type: A valid ISO 3166-2 subdivision code. For example, the code CA
+	// refers to the state of California.
+	// Subdivisions or states are only available for the United States of America.
+	Subdivision *string `json:"subdivision"`
+}
+
+// MTurkQualificationCriteria is an MTurk Qualification requirement. It is an
+// MTurk Qualification that a Worker must have before the Worker is allowed to
+// accept a HIT.
+// See https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_QualificationRequirementDataStructureArticle.html
+type MTurkQualificationCriteria struct {
+	// The ID of the MTurk Qualification Type.
+	ID string `json:"id"`
+	// The kind of comparison to make against a Qualification's value.
+	// You can compare a Qualification's value:
+	// - To an IntegerValue to see if it is LessThan, LessThanOrEqualTo, GreaterThan,
+	//   GreaterThanOrEqualTo, EqualTo, or NotEqualTo the IntegerValue.
+	// - To a LocaleValue to see if it is EqualTo, or NotEqualTo the LocaleValue.
+	// - To see if the value is In or NotIn a set of IntegerValue or LocaleValue
+	//   values.
+	// A Qualification requirement can also test if a Qualification Exists or
+	// DoesNotExist in the user's profile, regardless of its value.
+	Comparator Comparator `json:"comparator"`
+	// Array of integer values to compare against the Qualification's value.
+	// IntegerValue must not be present if Comparator is Exists or DoesNotExist.
+	// IntegerValue can only be used if the Qualification type has an integer value;
+	// it cannot be used with the Worker_Locale QualificationType ID, see
+	// Qualification Type IDs.
+	// When performing a set comparison by using the In or the NotIn comparator, you
+	// can use up to 15 elements in this list.
+	Values []int `json:"values"`
+	// The locale value to compare against the Qualification's value. The local value
+	// must be a valid ISO 3166 country code or supports ISO 3166-2 subdivisions.
+	// LocaleValue can only be used with a Worker_Locale QualificationType ID, see
+	// Qualification Type IDs.
+	// LocaleValue can only be used with the EqualTo, NotEqualTo, In, and NotIn
+	// comparators.
+	// You must only use a single LocaleValue element when using the EqualTo or
+	// NotEqualTo comparators.
+	// When performing a set comparison by using the In or the NotIn comparator, you
+	// can use up to 30 LocaleValue elements in a QualificationRequirement data
+	// structure.
+	Locales []*MTurkLocale `json:"locales"`
+}
+
+// MessageStepArgs are arguments passed to a Step that has a message.
+// This is only valid for MTURK_HIT and MTURK_MESSAGE Steps.
+type MessageStepArgs struct {
+	// URL that will be transformed into a redirect (proxy URL) through the Empirica
+	// Recruitment website and passed to the Message template. This URL is the final
+	// destination the worker will land on. Empirica Recruitment redirects
+	// through the app so we can add parameters to the proxy URL and hide the final
+	// URL (to limit sharing of URLs).
+	URL *string `json:"url"`
+	// Message the content to display to the user.
+	// Template variables:
+	// - `url`: proxy URL if `url` exist on Step.
+	// - `step`: this step (contains the definition of this step: duration, etc.)
+	// - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
+	// - `procedure`: parent Procedure of step (contains the definition of the Procedure)
+	// - `run`: run this step is part of (contains the instance of the Procedure)
+	// - `participant`: current participant
+	Message string `json:"message"`
+	// MessageType indicates the rendering language of the Message.
+	MessageType ContentType `json:"messageType"`
+	// Lobby enables to showing a lobby, and rich-text message to put in the lobby
+	// Lobby can either expire (see expiration below) to produce the effect of a
+	// precise start time, or must have a submit button.
+	// Only available if URL is present.
+	// Template variables are identical to message.
+	Lobby *string `json:"lobby"`
+	// LobbyType indicates the rendering language of the Lobby.
+	LobbyType *ContentType `json:"lobbyType"`
+	// useLobby enables to showing a lobby, and rich-text message to put in the lobby
+	// Lobby can either expire (see expiration below) to produce the effect of a
+	// precise start time, or must have a submit button.
+	// The string should be HTML content.
+	// Only available if URL is present.
+	LobbyExpiration *string `json:"lobbyExpiration"`
+}
+
+func (MessageStepArgs) IsStepArgs() {}
+
+// Participant is a worker in the system.
+type Participant struct {
+	// id is the unique globally identifier for the record.
+	ID string `json:"id"`
+	// createdAt is the time of creation of the record.
+	CreatedAt time.Time `json:"createdAt"`
+	// updatedAt is the time of last update of the record.
+	UpdatedAt time.Time `json:"updatedAt"`
+	// providerIDs contains the IDs from 3rd providers corresponding the participant.
+	// A single participant could potentially be referenced in different in multiple
+	// providers.
+	ProviderIDs []*ProviderID `json:"providerIDs"`
+	// data returns the custom data that has been set on the Player.
+	Data []*Datum `json:"data"`
+}
+
+func (Participant) IsCreator() {}
+func (Participant) IsNode()    {}
+
+// Procedure is a series of Steps to execute in a Procedure Run. A
+// procedure starts with the selection of Players.
+type Procedure struct {
+	ID        string    `json:"id"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	Creator   *User     `json:"creator"`
+	// Friendly name.
+	Name string `json:"name"`
+	// Ordered list of Steps in a Procedure.
+	Steps []*Step `json:"steps"`
+	// Determines participant selection type.
+	SelectionType *SelectionType `json:"selectionType"`
+	// Selection criteria for participants
+	Criteria SelectionCriteria `json:"criteria"`
+	// Contains adult content.
+	// From MTurk: This project may contain potentially explicit or offensive
+	// content, for example, nudity.
+	Adult bool `json:"adult"`
+}
+
+// ProviderID contains the identifier for a 3rd party provider.
+type ProviderID struct {
+	// createdAt is the time of creation of the record.
+	CreatedAt time.Time `json:"createdAt"`
+	// providerID is the ID of the 3rd party Provider.
+	ProviderID string `json:"providerID"`
+	// ID is the ID of the 3rd party Provider.
+	Provider *Provider `json:"provider"`
+}
+
+// Steps are the ordered parts of a Procedure.
+type Step struct {
+	ID        string    `json:"id"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	Creator   *User     `json:"creator"`
+	// The Type defines what kind of action this step represents.
+	Type StepType `json:"type"`
+	// Duration of Step in seconds. At the end of the duration, the next Step will
+	// execute.
+	// If set to 0, the Step executes and immediately moves onto the next Step. This
+	// mostly works for PARTICIPANT_FILTER Steps and the last Step in a Procedure.
+	Duration int        `json:"duration"`
+	Args     []StepArgs `json:"args"`
+}
+
+func (Step) IsNode() {}
 
 // User is a user that has priviledged access to the data.
 type User struct {
@@ -26,11 +295,172 @@ type User struct {
 	Name *string `json:"name"`
 	// email is the email associated with the user.
 	Email string `json:"email"`
-	// password is the hashed password associated with the user.
+}
+
+func (User) IsCreator() {}
+func (User) IsNode()    {}
+
+type AuthInput struct {
+	User     string `json:"user"`
 	Password string `json:"password"`
 }
 
-func (User) IsNode() {}
+type AuthResp struct {
+	Token string `json:"token"`
+}
+
+// The kind of comparison to make against a value.
+type Comparator string
+
+const (
+	ComparatorLessThan             Comparator = "LessThan"
+	ComparatorLessThanOrEqualTo    Comparator = "LessThanOrEqualTo"
+	ComparatorGreaterThan          Comparator = "GreaterThan"
+	ComparatorGreaterThanOrEqualTo Comparator = "GreaterThanOrEqualTo"
+	ComparatorEqualTo              Comparator = "EqualTo"
+	ComparatorNotEqualTo           Comparator = "NotEqualTo"
+	ComparatorExists               Comparator = "Exists"
+	ComparatorDoesNotExist         Comparator = "DoesNotExist"
+	ComparatorIn                   Comparator = "In"
+	ComparatorNotIn                Comparator = "NotIn"
+)
+
+var AllComparator = []Comparator{
+	ComparatorLessThan,
+	ComparatorLessThanOrEqualTo,
+	ComparatorGreaterThan,
+	ComparatorGreaterThanOrEqualTo,
+	ComparatorEqualTo,
+	ComparatorNotEqualTo,
+	ComparatorExists,
+	ComparatorDoesNotExist,
+	ComparatorIn,
+	ComparatorNotIn,
+}
+
+func (e Comparator) IsValid() bool {
+	switch e {
+	case ComparatorLessThan, ComparatorLessThanOrEqualTo, ComparatorGreaterThan, ComparatorGreaterThanOrEqualTo, ComparatorEqualTo, ComparatorNotEqualTo, ComparatorExists, ComparatorDoesNotExist, ComparatorIn, ComparatorNotIn:
+		return true
+	}
+	return false
+}
+
+func (e Comparator) String() string {
+	return string(e)
+}
+
+func (e *Comparator) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Comparator(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Comparator", str)
+	}
+	return nil
+}
+
+func (e Comparator) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// ContentType is the type rendering used for a field.
+type ContentType string
+
+const (
+	// PLAIN uses a plain text renderer. Templating uses Mustache-style
+	// interpolation (i.e. {{url}}).
+	ContentTypePlain ContentType = "PLAIN"
+	// MARKDOWN uses a Markdown renderer. Templating uses Mustache-style
+	// interpolation (i.e. {{url}}).
+	ContentTypeMarkdown ContentType = "MARKDOWN"
+	// REACT uses a React renderer. Templating passes template arguments as props.
+	// The root component should be the default ES6 export.
+	ContentTypeReact ContentType = "REACT"
+	// SVELTE uses a Svelte renderer. Templating passes template arguments as props.
+	// The root component should be the default ES6 export.
+	ContentTypeSvelte ContentType = "SVELTE"
+)
+
+var AllContentType = []ContentType{
+	ContentTypePlain,
+	ContentTypeMarkdown,
+	ContentTypeReact,
+	ContentTypeSvelte,
+}
+
+func (e ContentType) IsValid() bool {
+	switch e {
+	case ContentTypePlain, ContentTypeMarkdown, ContentTypeReact, ContentTypeSvelte:
+		return true
+	}
+	return false
+}
+
+func (e ContentType) String() string {
+	return string(e)
+}
+
+func (e *ContentType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ContentType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ContentType", str)
+	}
+	return nil
+}
+
+func (e ContentType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Supported 3rd party providers.
+type Provider string
+
+const (
+	// MTURK represents AWS Mechanical Turk
+	ProviderMturk Provider = "MTURK"
+)
+
+var AllProvider = []Provider{
+	ProviderMturk,
+}
+
+func (e Provider) IsValid() bool {
+	switch e {
+	case ProviderMturk:
+		return true
+	}
+	return false
+}
+
+func (e Provider) String() string {
+	return string(e)
+}
+
+func (e *Provider) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Provider(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PROVIDER", str)
+	}
+	return nil
+}
+
+func (e Provider) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
 
 type Role string
 
@@ -73,14 +503,54 @@ func (e Role) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Status of Batches and Games
+// Participant selection type.
+type SelectionType string
+
+const (
+	// INTERNAL_DB uses local participants database.
+	SelectionTypeInternalDb SelectionType = "INTERNAL_DB"
+	// MTURK_QUALIFICATIONS uses MTurk Qualitifications to select participants.
+	SelectionTypeMturkQualifications SelectionType = "MTURK_QUALIFICATIONS"
+)
+
+var AllSelectionType = []SelectionType{
+	SelectionTypeInternalDb,
+	SelectionTypeMturkQualifications,
+}
+
+func (e SelectionType) IsValid() bool {
+	switch e {
+	case SelectionTypeInternalDb, SelectionTypeMturkQualifications:
+		return true
+	}
+	return false
+}
+
+func (e SelectionType) String() string {
+	return string(e)
+}
+
+func (e *SelectionType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SelectionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SelectionType", str)
+	}
+	return nil
+}
+
+func (e SelectionType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Status of Runs.
 type Status string
 
 const (
-	// INVALID is used to avoid non-explicit setting of the status (0 value)
-	StatusInvalid Status = "INVALID"
-	// UNSET allows to nullify the status
-	StatusUnset Status = "UNSET"
 	// CREATED means the run has been created but hasn't started yet
 	StatusCreated Status = "CREATED"
 	// RUNNING means the run is currently in progress
@@ -96,8 +566,6 @@ const (
 )
 
 var AllStatus = []Status{
-	StatusInvalid,
-	StatusUnset,
 	StatusCreated,
 	StatusRunning,
 	StatusPaused,
@@ -108,7 +576,7 @@ var AllStatus = []Status{
 
 func (e Status) IsValid() bool {
 	switch e {
-	case StatusInvalid, StatusUnset, StatusCreated, StatusRunning, StatusPaused, StatusDone, StatusTerminated, StatusFailed:
+	case StatusCreated, StatusRunning, StatusPaused, StatusDone, StatusTerminated, StatusFailed:
 		return true
 	}
 	return false
@@ -132,5 +600,52 @@ func (e *Status) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Status) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Status of Batches and Games.
+type StepType string
+
+const (
+	// MTURK_HIT is a step where AWS Mechanical Turk HIT is published.
+	StepTypeMturkHit StepType = "MTURK_HIT"
+	// MTURK_MESSAGE is a step where a message sent to AWS Mechanical Turk Workers.
+	StepTypeMturkMessage StepType = "MTURK_MESSAGE"
+	// PARTICIPANT_FILTER is a participant filtering step.
+	StepTypeParticipantFilter StepType = "PARTICIPANT_FILTER"
+)
+
+var AllStepType = []StepType{
+	StepTypeMturkHit,
+	StepTypeMturkMessage,
+	StepTypeParticipantFilter,
+}
+
+func (e StepType) IsValid() bool {
+	switch e {
+	case StepTypeMturkHit, StepTypeMturkMessage, StepTypeParticipantFilter:
+		return true
+	}
+	return false
+}
+
+func (e StepType) String() string {
+	return string(e)
+}
+
+func (e *StepType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = StepType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid StepType", str)
+	}
+	return nil
+}
+
+func (e StepType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

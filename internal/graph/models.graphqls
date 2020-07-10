@@ -1,4 +1,417 @@
 """
+Status of Batches and Games.
+"""
+enum StepType {
+  """
+  MTURK_HIT is a step where AWS Mechanical Turk HIT is published.
+  """
+  MTURK_HIT
+
+  """
+  MTURK_MESSAGE is a step where a message sent to AWS Mechanical Turk Workers.
+  """
+  MTURK_MESSAGE
+
+  """
+  PARTICIPANT_FILTER is a participant filtering step.
+  """
+  PARTICIPANT_FILTER
+}
+
+"""
+ContentType is the type rendering used for a field.
+"""
+enum ContentType {
+  """
+  PLAIN uses a plain text renderer. Templating uses Mustache-style
+  interpolation (i.e. {{url}}).
+  """
+  PLAIN
+
+  """
+  MARKDOWN uses a Markdown renderer. Templating uses Mustache-style
+  interpolation (i.e. {{url}}).
+  """
+  MARKDOWN
+
+  """
+  REACT uses a React renderer. Templating passes template arguments as props.
+  The root component should be the default ES6 export.
+  """
+  REACT
+
+  """
+  SVELTE uses a Svelte renderer. Templating passes template arguments as props.
+  The root component should be the default ES6 export.
+  """
+  SVELTE
+}
+
+"""
+Participant selection type.
+"""
+enum SelectionType {
+  """
+  INTERNAL_DB uses local participants database.
+  """
+  INTERNAL_DB
+
+  """
+  MTURK_QUALIFICATIONS uses MTurk Qualitifications to select participants.
+  """
+  MTURK_QUALIFICATIONS
+}
+
+"""
+Procedure is a series of Steps to execute in a Procedure Run. A
+procedure starts with the selection of Players.
+"""
+type Procedure {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  creator: User!
+
+  """
+  Friendly name.
+  """
+  name: String!
+
+  """
+  Ordered list of Steps in a Procedure.
+  """
+  steps: [Step!]!
+
+  """
+  Determines participant selection type.
+  """
+  selectionType: SelectionType
+
+  """
+  Selection criteria for participants
+  """
+  criteria: SelectionCriteria
+
+  """
+  Contains adult content.
+  From MTurk: This project may contain potentially explicit or offensive
+  content, for example, nudity.
+  """
+  adult: Boolean!
+}
+
+"""
+Participant selection criteria types.
+"""
+union SelectionCriteria = InternalCriteria | MTurkCriteria
+
+"""
+InternalCriteria is the criteria for internal database participant selection.
+"""
+type InternalCriteria {
+  """
+  Condition set the participant must meet to be allowed to participate.
+  """
+  condition: Condition!
+}
+
+"""
+Possible Condition values. Only one of the fields in a CompValue should be
+defined.
+"""
+type CompValue {
+  int: Int
+  float: Float
+  string: String
+  boolean: Boolean
+}
+
+"""
+Condition for a filter. A condition must **either**:
+- have one or more `and` Conditions
+- have one or more `or` Conditions
+- have a comparator and one or more values
+When comparing against values, the first value is used for operands comparing
+single values (LessThan, LessThanOrEqualTo, GreaterThan, GreaterThanOrEqualTo,
+EqualTo, NotEqualTo). When testing for existence an empty array is DoesNotExist
+and an array with one or more values Exists. For In and NotIn all values in the
+values array are used.
+"""
+type Condition {
+  and: [Condition!]
+  or: [Condition!]
+  comparator: Comparator
+  values: [CompValue!]
+}
+
+"""
+MTurkCriteria is the criteria for MTurk Qualifications participant selection.
+"""
+type MTurkCriteria {
+  """
+  MTurk Qualifications a Worker must meet before the Worker is allowed to accept
+  and complete the HIT.
+  """
+  qualifications: [MTurkQualificationCriteria!]!
+}
+
+"""
+The kind of comparison to make against a value.
+"""
+enum Comparator {
+  LessThan
+  LessThanOrEqualTo
+  GreaterThan
+  GreaterThanOrEqualTo
+  EqualTo
+  NotEqualTo
+  Exists
+  DoesNotExist
+  In
+  NotIn
+}
+
+"""
+MTurkQualificationCriteria is an MTurk Qualification requirement. It is an
+MTurk Qualification that a Worker must have before the Worker is allowed to
+accept a HIT.
+See https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_QualificationRequirementDataStructureArticle.html
+"""
+type MTurkQualificationCriteria {
+  """
+  The ID of the MTurk Qualification Type.
+  """
+  id: ID!
+
+  """
+  The kind of comparison to make against a Qualification's value.
+  You can compare a Qualification's value:
+  - To an IntegerValue to see if it is LessThan, LessThanOrEqualTo, GreaterThan,
+    GreaterThanOrEqualTo, EqualTo, or NotEqualTo the IntegerValue.
+  - To a LocaleValue to see if it is EqualTo, or NotEqualTo the LocaleValue.
+  - To see if the value is In or NotIn a set of IntegerValue or LocaleValue
+    values.
+  A Qualification requirement can also test if a Qualification Exists or
+  DoesNotExist in the user's profile, regardless of its value.
+  """
+  comparator: Comparator!
+
+  """
+  Array of integer values to compare against the Qualification's value.
+  IntegerValue must not be present if Comparator is Exists or DoesNotExist.
+  IntegerValue can only be used if the Qualification type has an integer value;
+  it cannot be used with the Worker_Locale QualificationType ID, see
+  Qualification Type IDs.
+  When performing a set comparison by using the In or the NotIn comparator, you
+  can use up to 15 elements in this list.
+  """
+  values: [Int!]
+
+  """
+  The locale value to compare against the Qualification's value. The local value
+  must be a valid ISO 3166 country code or supports ISO 3166-2 subdivisions.
+  LocaleValue can only be used with a Worker_Locale QualificationType ID, see
+  Qualification Type IDs.
+  LocaleValue can only be used with the EqualTo, NotEqualTo, In, and NotIn
+  comparators.
+  You must only use a single LocaleValue element when using the EqualTo or
+  NotEqualTo comparators.
+  When performing a set comparison by using the In or the NotIn comparator, you
+  can use up to 30 LocaleValue elements in a QualificationRequirement data
+  structure.
+  """
+  locales: [MTurkLocale!]
+}
+
+"""
+The Locale data structure represents a geographical region or location in MTurk.
+"""
+type MTurkLocale {
+  """
+  The country of the locale.
+  Type: A valid ISO 3166 country code. For example, the code US refers to the
+  United States of America.
+  """
+  country: String!
+
+  """
+  The state or subdivision of the locale.
+  Type: Type: A valid ISO 3166-2 subdivision code. For example, the code CA
+  refers to the state of California.
+  Subdivisions or states are only available for the United States of America.
+  """
+  subdivision: String
+}
+
+"""
+Steps are the ordered parts of a Procedure.
+"""
+type Step implements Node {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  creator: User!
+
+  """
+  The Type defines what kind of action this step represents.
+  """
+  type: StepType!
+
+  """
+  Duration of Step in seconds. At the end of the duration, the next Step will
+  execute.
+  If set to 0, the Step executes and immediately moves onto the next Step. This
+  mostly works for PARTICIPANT_FILTER Steps and the last Step in a Procedure.
+  """
+  duration: Int!
+
+  args: [StepArgs!]!
+}
+
+"""
+Argument groups for Steps.
+"""
+union StepArgs = MessageStepArgs | HITStepArgs | FilterStepArgs
+
+"""
+FilterStepArgs are arguments passed to a Pariticipant Filter Step.
+It must contains **either** JS code or the name of pre-defined filtering function.
+This is only valid for an PARTICIPANT_FILTER Step.
+"""
+type FilterStepArgs {
+  """
+  Javascript to execute as a participant filter step.
+  The code must contain a functinon exported using a default ES6 export.
+  The function should accept a single argument object. This object contains the
+  following fields:
+  - `participants`: the participants entering this step
+  - `step`: this step (contains the definition of this step: duration, etc.)
+  - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
+  - `procedure`: parent procedure of step (contains the definition of the Procedure)
+  - `run`: run this step is part of (contains the instance of the Procedure)
+  The functions should return an array of participants.
+  If the functions returns null or undefined, the participants are not filtered.
+  If the function throws an exception, the run will fail.
+  """
+  js: String
+
+  """
+  Filter should be the name of pre-defined filtering function.
+  """
+  filter: String
+}
+
+"""
+HITStepArgs are arguments passed to a HIT Step.
+This is only valid for an MTURK_HIT Step.
+"""
+type HITStepArgs {
+  """
+  Title of HIT.
+  From MTurk: Describe the task to Workers. Be as specific as possible,
+  e.g. "answer a survey about movies", instead of "short survey", so Workers
+  know what to expect.
+  Tasks that contain adult content are required to include the following phrase
+  in your task title: (WARNING: This HIT may contain adult content. Worker
+  discretion is advised.)
+  """
+  title: String!
+
+  """
+  Description of HIT.
+  From MTurk: Give more detail about this task. This gives Workers a bit more
+  information before they decide to view your task.
+  """
+  description: String!
+
+  """
+  Keywords of HIT. Comma-seratred.
+  From MTurk: Provide keywords that will help Workers search for your tasks.
+  """
+  keywords: String!
+
+  """
+  DISABLED - Micro-batching is still TBD, probably needs more args.
+  """
+  microbatch: Boolean!
+
+  """
+  MTurk HIT reward for task in USD.
+  """
+  reward: Float!
+
+  """
+  Timeout of a single accepted HIT in seconds.
+  """
+  timeout: Int!
+
+  """
+  Duration in seconds from start of Step before expiration of unconsumed HITs.
+  """
+  duration: Int!
+
+  """
+  Number of HIT workers to accept.
+  """
+  workers: Int!
+}
+
+"""
+MessageStepArgs are arguments passed to a Step that has a message.
+This is only valid for MTURK_HIT and MTURK_MESSAGE Steps.
+"""
+type MessageStepArgs {
+  """
+  URL that will be transformed into a redirect (proxy URL) through the Empirica
+  Recruitment website and passed to the Message template. This URL is the final
+  destination the worker will land on. Empirica Recruitment redirects
+  through the app so we can add parameters to the proxy URL and hide the final
+  URL (to limit sharing of URLs).
+  """
+  url: String
+
+  """
+  Message the content to display to the user.
+  Template variables:
+  - `url`: proxy URL if `url` exist on Step.
+  - `step`: this step (contains the definition of this step: duration, etc.)
+  - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
+  - `procedure`: parent Procedure of step (contains the definition of the Procedure)
+  - `run`: run this step is part of (contains the instance of the Procedure)
+  - `participant`: current participant
+  """
+  message: String!
+
+  """
+  MessageType indicates the rendering language of the Message.
+  """
+  messageType: ContentType!
+
+  """
+  Lobby enables to showing a lobby, and rich-text message to put in the lobby
+  Lobby can either expire (see expiration below) to produce the effect of a
+  precise start time, or must have a submit button.
+  Only available if URL is present.
+  Template variables are identical to message.
+  """
+  lobby: String
+
+  """
+  LobbyType indicates the rendering language of the Lobby.
+  """
+  lobbyType: ContentType
+
+  """
+  useLobby enables to showing a lobby, and rich-text message to put in the lobby
+  Lobby can either expire (see expiration below) to produce the effect of a
+  precise start time, or must have a submit button.
+  The string should be HTML content.
+  Only available if URL is present.
+  """
+  lobbyExpiration: String
+}
+
+"""
 Node is an interface allowing simple querying of any node
 """
 interface Node {
@@ -24,19 +437,9 @@ interface Node {
 }
 
 """
-Status of Batches and Games
+Status of Runs.
 """
 enum Status {
-  """
-  INVALID is used to avoid non-explicit setting of the status (0 value)
-  """
-  INVALID
-
-  """
-  UNSET allows to nullify the status
-  """
-  UNSET
-
   """
   CREATED means the run has been created but hasn't started yet
   """
@@ -88,6 +491,11 @@ type Datum implements Node {
   updatedAt: DateTime!
 
   """
+  Creator is the user or participant that created the Datum.
+  """
+  creator: Creator
+
+  """
   deletedAt is the time when the Datum was deleted. If null, the Datum was not
   deleted.
   """
@@ -120,10 +528,12 @@ type Datum implements Node {
   versions: [Datum!]!
 }
 
+union Creator = Participant | User
+
 """
-Player is a participant of a Game
+Participant is a worker in the system.
 """
-type Player implements Node {
+type Participant implements Node {
   """
   id is the unique globally identifier for the record.
   """
@@ -140,21 +550,46 @@ type Player implements Node {
   updatedAt: DateTime!
 
   """
-  playerID is the public unique identifier of the player. Often it will be the
-  MTurk ID.
+  providerIDs contains the IDs from 3rd providers corresponding the participant.
+  A single participant could potentially be referenced in different in multiple
+  providers.
   """
-  playerID: String!
+  providerIDs: [ProviderID!]!
 
   """
-  index is the unique ordered index of the player assigned as the are added to
-  to the system
+  data returns the custom data that has been set on the Player.
   """
-  index: Uint32!
+  data(keys: [String!]): [Datum!]!
+}
+
+"""
+ProviderID contains the identifier for a 3rd party provider.
+"""
+type ProviderID {
+  """
+  createdAt is the time of creation of the record.
+  """
+  createdAt: DateTime!
 
   """
-  data returns all custom data that has been set on the Player.
+  providerID is the ID of the 3rd party Provider.
   """
-  data(keys: [String]): [Datum]
+  providerID: ID!
+
+  """
+  ID is the ID of the 3rd party Provider.
+  """
+  provider: PROVIDER
+}
+
+"""
+Supported 3rd party providers.
+"""
+enum PROVIDER {
+  """
+  MTURK represents AWS Mechanical Turk
+  """
+  MTURK
 }
 
 """
@@ -185,9 +620,4 @@ type User implements Node {
   email is the email associated with the user.
   """
   email: String!
-
-  """
-  password is the hashed password associated with the user.
-  """
-  password: String!
 }

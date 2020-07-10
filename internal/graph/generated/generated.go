@@ -49,8 +49,23 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	CompValue struct {
+		Boolean func(childComplexity int) int
+		Float   func(childComplexity int) int
+		Int     func(childComplexity int) int
+		String  func(childComplexity int) int
+	}
+
+	Condition struct {
+		And        func(childComplexity int) int
+		Comparator func(childComplexity int) int
+		Or         func(childComplexity int) int
+		Values     func(childComplexity int) int
+	}
+
 	Datum struct {
 		CreatedAt func(childComplexity int) int
+		Creator   func(childComplexity int) int
 		DeletedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Key       func(childComplexity int) int
@@ -61,21 +76,94 @@ type ComplexityRoot struct {
 		Versions  func(childComplexity int) int
 	}
 
-	Mutation struct {
-		CreatePlayer func(childComplexity int) int
+	FilterStepArgs struct {
+		Filter func(childComplexity int) int
+		Js     func(childComplexity int) int
 	}
 
-	Player struct {
-		CreatedAt func(childComplexity int) int
-		Data      func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Index     func(childComplexity int) int
-		PlayerID  func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
+	HITStepArgs struct {
+		Description func(childComplexity int) int
+		Duration    func(childComplexity int) int
+		Keywords    func(childComplexity int) int
+		Microbatch  func(childComplexity int) int
+		Reward      func(childComplexity int) int
+		Timeout     func(childComplexity int) int
+		Title       func(childComplexity int) int
+		Workers     func(childComplexity int) int
+	}
+
+	InternalCriteria struct {
+		Condition func(childComplexity int) int
+	}
+
+	MTurkCriteria struct {
+		Qualifications func(childComplexity int) int
+	}
+
+	MTurkLocale struct {
+		Country     func(childComplexity int) int
+		Subdivision func(childComplexity int) int
+	}
+
+	MTurkQualificationCriteria struct {
+		Comparator func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Locales    func(childComplexity int) int
+		Values     func(childComplexity int) int
+	}
+
+	MessageStepArgs struct {
+		Lobby           func(childComplexity int) int
+		LobbyExpiration func(childComplexity int) int
+		LobbyType       func(childComplexity int) int
+		Message         func(childComplexity int) int
+		MessageType     func(childComplexity int) int
+		URL             func(childComplexity int) int
+	}
+
+	Mutation struct {
+		Auth              func(childComplexity int, input *model.AuthInput) int
+		CreateParticipant func(childComplexity int) int
+	}
+
+	Participant struct {
+		CreatedAt   func(childComplexity int) int
+		Data        func(childComplexity int, keys []string) int
+		ID          func(childComplexity int) int
+		ProviderIDs func(childComplexity int) int
+		UpdatedAt   func(childComplexity int) int
+	}
+
+	Procedure struct {
+		Adult         func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		Creator       func(childComplexity int) int
+		Criteria      func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Name          func(childComplexity int) int
+		SelectionType func(childComplexity int) int
+		Steps         func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+	}
+
+	ProviderID struct {
+		CreatedAt  func(childComplexity int) int
+		Provider   func(childComplexity int) int
+		ProviderID func(childComplexity int) int
 	}
 
 	Query struct {
 		Me func(childComplexity int) int
+	}
+
+	Step struct {
+		Args      func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		Creator   func(childComplexity int) int
+		Duration  func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Type      func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -87,12 +175,16 @@ type ComplexityRoot struct {
 		Email     func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Name      func(childComplexity int) int
-		Password  func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
+	}
+
+	AuthResp struct {
+		Token func(childComplexity int) int
 	}
 }
 
 type DatumResolver interface {
+	Creator(ctx context.Context, obj *model.Datum) (model.Creator, error)
 	DeletedAt(ctx context.Context, obj *model.Datum) (*time.Time, error)
 
 	Next(ctx context.Context, obj *model.Datum) (*string, error)
@@ -100,13 +192,14 @@ type DatumResolver interface {
 	Versions(ctx context.Context, obj *model.Datum) ([]*model.Datum, error)
 }
 type MutationResolver interface {
-	CreatePlayer(ctx context.Context) (*model.Player, error)
+	Auth(ctx context.Context, input *model.AuthInput) (*model.AuthResp, error)
+	CreateParticipant(ctx context.Context) (*model.Participant, error)
 }
 type QueryResolver interface {
-	Me(ctx context.Context) (*model.Player, error)
+	Me(ctx context.Context) (*model.Participant, error)
 }
 type SubscriptionResolver interface {
-	Me(ctx context.Context) (<-chan *model.Player, error)
+	Me(ctx context.Context) (<-chan *model.Participant, error)
 }
 
 type executableSchema struct {
@@ -124,12 +217,75 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "CompValue.boolean":
+		if e.complexity.CompValue.Boolean == nil {
+			break
+		}
+
+		return e.complexity.CompValue.Boolean(childComplexity), true
+
+	case "CompValue.float":
+		if e.complexity.CompValue.Float == nil {
+			break
+		}
+
+		return e.complexity.CompValue.Float(childComplexity), true
+
+	case "CompValue.int":
+		if e.complexity.CompValue.Int == nil {
+			break
+		}
+
+		return e.complexity.CompValue.Int(childComplexity), true
+
+	case "CompValue.string":
+		if e.complexity.CompValue.String == nil {
+			break
+		}
+
+		return e.complexity.CompValue.String(childComplexity), true
+
+	case "Condition.and":
+		if e.complexity.Condition.And == nil {
+			break
+		}
+
+		return e.complexity.Condition.And(childComplexity), true
+
+	case "Condition.comparator":
+		if e.complexity.Condition.Comparator == nil {
+			break
+		}
+
+		return e.complexity.Condition.Comparator(childComplexity), true
+
+	case "Condition.or":
+		if e.complexity.Condition.Or == nil {
+			break
+		}
+
+		return e.complexity.Condition.Or(childComplexity), true
+
+	case "Condition.values":
+		if e.complexity.Condition.Values == nil {
+			break
+		}
+
+		return e.complexity.Condition.Values(childComplexity), true
+
 	case "Datum.createdAt":
 		if e.complexity.Datum.CreatedAt == nil {
 			break
 		}
 
 		return e.complexity.Datum.CreatedAt(childComplexity), true
+
+	case "Datum.creator":
+		if e.complexity.Datum.Creator == nil {
+			break
+		}
+
+		return e.complexity.Datum.Creator(childComplexity), true
 
 	case "Datum.deletedAt":
 		if e.complexity.Datum.DeletedAt == nil {
@@ -187,54 +343,316 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Datum.Versions(childComplexity), true
 
-	case "Mutation.createPlayer":
-		if e.complexity.Mutation.CreatePlayer == nil {
+	case "FilterStepArgs.filter":
+		if e.complexity.FilterStepArgs.Filter == nil {
 			break
 		}
 
-		return e.complexity.Mutation.CreatePlayer(childComplexity), true
+		return e.complexity.FilterStepArgs.Filter(childComplexity), true
 
-	case "Player.createdAt":
-		if e.complexity.Player.CreatedAt == nil {
+	case "FilterStepArgs.js":
+		if e.complexity.FilterStepArgs.Js == nil {
 			break
 		}
 
-		return e.complexity.Player.CreatedAt(childComplexity), true
+		return e.complexity.FilterStepArgs.Js(childComplexity), true
 
-	case "Player.data":
-		if e.complexity.Player.Data == nil {
+	case "HITStepArgs.description":
+		if e.complexity.HITStepArgs.Description == nil {
 			break
 		}
 
-		return e.complexity.Player.Data(childComplexity), true
+		return e.complexity.HITStepArgs.Description(childComplexity), true
 
-	case "Player.id":
-		if e.complexity.Player.ID == nil {
+	case "HITStepArgs.duration":
+		if e.complexity.HITStepArgs.Duration == nil {
 			break
 		}
 
-		return e.complexity.Player.ID(childComplexity), true
+		return e.complexity.HITStepArgs.Duration(childComplexity), true
 
-	case "Player.index":
-		if e.complexity.Player.Index == nil {
+	case "HITStepArgs.keywords":
+		if e.complexity.HITStepArgs.Keywords == nil {
 			break
 		}
 
-		return e.complexity.Player.Index(childComplexity), true
+		return e.complexity.HITStepArgs.Keywords(childComplexity), true
 
-	case "Player.playerID":
-		if e.complexity.Player.PlayerID == nil {
+	case "HITStepArgs.microbatch":
+		if e.complexity.HITStepArgs.Microbatch == nil {
 			break
 		}
 
-		return e.complexity.Player.PlayerID(childComplexity), true
+		return e.complexity.HITStepArgs.Microbatch(childComplexity), true
 
-	case "Player.updatedAt":
-		if e.complexity.Player.UpdatedAt == nil {
+	case "HITStepArgs.reward":
+		if e.complexity.HITStepArgs.Reward == nil {
 			break
 		}
 
-		return e.complexity.Player.UpdatedAt(childComplexity), true
+		return e.complexity.HITStepArgs.Reward(childComplexity), true
+
+	case "HITStepArgs.timeout":
+		if e.complexity.HITStepArgs.Timeout == nil {
+			break
+		}
+
+		return e.complexity.HITStepArgs.Timeout(childComplexity), true
+
+	case "HITStepArgs.title":
+		if e.complexity.HITStepArgs.Title == nil {
+			break
+		}
+
+		return e.complexity.HITStepArgs.Title(childComplexity), true
+
+	case "HITStepArgs.workers":
+		if e.complexity.HITStepArgs.Workers == nil {
+			break
+		}
+
+		return e.complexity.HITStepArgs.Workers(childComplexity), true
+
+	case "InternalCriteria.condition":
+		if e.complexity.InternalCriteria.Condition == nil {
+			break
+		}
+
+		return e.complexity.InternalCriteria.Condition(childComplexity), true
+
+	case "MTurkCriteria.qualifications":
+		if e.complexity.MTurkCriteria.Qualifications == nil {
+			break
+		}
+
+		return e.complexity.MTurkCriteria.Qualifications(childComplexity), true
+
+	case "MTurkLocale.country":
+		if e.complexity.MTurkLocale.Country == nil {
+			break
+		}
+
+		return e.complexity.MTurkLocale.Country(childComplexity), true
+
+	case "MTurkLocale.subdivision":
+		if e.complexity.MTurkLocale.Subdivision == nil {
+			break
+		}
+
+		return e.complexity.MTurkLocale.Subdivision(childComplexity), true
+
+	case "MTurkQualificationCriteria.comparator":
+		if e.complexity.MTurkQualificationCriteria.Comparator == nil {
+			break
+		}
+
+		return e.complexity.MTurkQualificationCriteria.Comparator(childComplexity), true
+
+	case "MTurkQualificationCriteria.id":
+		if e.complexity.MTurkQualificationCriteria.ID == nil {
+			break
+		}
+
+		return e.complexity.MTurkQualificationCriteria.ID(childComplexity), true
+
+	case "MTurkQualificationCriteria.locales":
+		if e.complexity.MTurkQualificationCriteria.Locales == nil {
+			break
+		}
+
+		return e.complexity.MTurkQualificationCriteria.Locales(childComplexity), true
+
+	case "MTurkQualificationCriteria.values":
+		if e.complexity.MTurkQualificationCriteria.Values == nil {
+			break
+		}
+
+		return e.complexity.MTurkQualificationCriteria.Values(childComplexity), true
+
+	case "MessageStepArgs.lobby":
+		if e.complexity.MessageStepArgs.Lobby == nil {
+			break
+		}
+
+		return e.complexity.MessageStepArgs.Lobby(childComplexity), true
+
+	case "MessageStepArgs.lobbyExpiration":
+		if e.complexity.MessageStepArgs.LobbyExpiration == nil {
+			break
+		}
+
+		return e.complexity.MessageStepArgs.LobbyExpiration(childComplexity), true
+
+	case "MessageStepArgs.lobbyType":
+		if e.complexity.MessageStepArgs.LobbyType == nil {
+			break
+		}
+
+		return e.complexity.MessageStepArgs.LobbyType(childComplexity), true
+
+	case "MessageStepArgs.message":
+		if e.complexity.MessageStepArgs.Message == nil {
+			break
+		}
+
+		return e.complexity.MessageStepArgs.Message(childComplexity), true
+
+	case "MessageStepArgs.messageType":
+		if e.complexity.MessageStepArgs.MessageType == nil {
+			break
+		}
+
+		return e.complexity.MessageStepArgs.MessageType(childComplexity), true
+
+	case "MessageStepArgs.url":
+		if e.complexity.MessageStepArgs.URL == nil {
+			break
+		}
+
+		return e.complexity.MessageStepArgs.URL(childComplexity), true
+
+	case "Mutation.auth":
+		if e.complexity.Mutation.Auth == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_auth_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Auth(childComplexity, args["input"].(*model.AuthInput)), true
+
+	case "Mutation.createParticipant":
+		if e.complexity.Mutation.CreateParticipant == nil {
+			break
+		}
+
+		return e.complexity.Mutation.CreateParticipant(childComplexity), true
+
+	case "Participant.createdAt":
+		if e.complexity.Participant.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Participant.CreatedAt(childComplexity), true
+
+	case "Participant.data":
+		if e.complexity.Participant.Data == nil {
+			break
+		}
+
+		args, err := ec.field_Participant_data_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Participant.Data(childComplexity, args["keys"].([]string)), true
+
+	case "Participant.id":
+		if e.complexity.Participant.ID == nil {
+			break
+		}
+
+		return e.complexity.Participant.ID(childComplexity), true
+
+	case "Participant.providerIDs":
+		if e.complexity.Participant.ProviderIDs == nil {
+			break
+		}
+
+		return e.complexity.Participant.ProviderIDs(childComplexity), true
+
+	case "Participant.updatedAt":
+		if e.complexity.Participant.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Participant.UpdatedAt(childComplexity), true
+
+	case "Procedure.adult":
+		if e.complexity.Procedure.Adult == nil {
+			break
+		}
+
+		return e.complexity.Procedure.Adult(childComplexity), true
+
+	case "Procedure.createdAt":
+		if e.complexity.Procedure.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Procedure.CreatedAt(childComplexity), true
+
+	case "Procedure.creator":
+		if e.complexity.Procedure.Creator == nil {
+			break
+		}
+
+		return e.complexity.Procedure.Creator(childComplexity), true
+
+	case "Procedure.criteria":
+		if e.complexity.Procedure.Criteria == nil {
+			break
+		}
+
+		return e.complexity.Procedure.Criteria(childComplexity), true
+
+	case "Procedure.id":
+		if e.complexity.Procedure.ID == nil {
+			break
+		}
+
+		return e.complexity.Procedure.ID(childComplexity), true
+
+	case "Procedure.name":
+		if e.complexity.Procedure.Name == nil {
+			break
+		}
+
+		return e.complexity.Procedure.Name(childComplexity), true
+
+	case "Procedure.selectionType":
+		if e.complexity.Procedure.SelectionType == nil {
+			break
+		}
+
+		return e.complexity.Procedure.SelectionType(childComplexity), true
+
+	case "Procedure.steps":
+		if e.complexity.Procedure.Steps == nil {
+			break
+		}
+
+		return e.complexity.Procedure.Steps(childComplexity), true
+
+	case "Procedure.updatedAt":
+		if e.complexity.Procedure.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Procedure.UpdatedAt(childComplexity), true
+
+	case "ProviderID.createdAt":
+		if e.complexity.ProviderID.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.ProviderID.CreatedAt(childComplexity), true
+
+	case "ProviderID.provider":
+		if e.complexity.ProviderID.Provider == nil {
+			break
+		}
+
+		return e.complexity.ProviderID.Provider(childComplexity), true
+
+	case "ProviderID.providerID":
+		if e.complexity.ProviderID.ProviderID == nil {
+			break
+		}
+
+		return e.complexity.ProviderID.ProviderID(childComplexity), true
 
 	case "Query.me":
 		if e.complexity.Query.Me == nil {
@@ -242,6 +660,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Me(childComplexity), true
+
+	case "Step.args":
+		if e.complexity.Step.Args == nil {
+			break
+		}
+
+		return e.complexity.Step.Args(childComplexity), true
+
+	case "Step.createdAt":
+		if e.complexity.Step.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Step.CreatedAt(childComplexity), true
+
+	case "Step.creator":
+		if e.complexity.Step.Creator == nil {
+			break
+		}
+
+		return e.complexity.Step.Creator(childComplexity), true
+
+	case "Step.duration":
+		if e.complexity.Step.Duration == nil {
+			break
+		}
+
+		return e.complexity.Step.Duration(childComplexity), true
+
+	case "Step.id":
+		if e.complexity.Step.ID == nil {
+			break
+		}
+
+		return e.complexity.Step.ID(childComplexity), true
+
+	case "Step.type":
+		if e.complexity.Step.Type == nil {
+			break
+		}
+
+		return e.complexity.Step.Type(childComplexity), true
+
+	case "Step.updatedAt":
+		if e.complexity.Step.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Step.UpdatedAt(childComplexity), true
 
 	case "Subscription.me":
 		if e.complexity.Subscription.Me == nil {
@@ -278,19 +745,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Name(childComplexity), true
 
-	case "User.password":
-		if e.complexity.User.Password == nil {
-			break
-		}
-
-		return e.complexity.User.Password(childComplexity), true
-
 	case "User.updatedAt":
 		if e.complexity.User.UpdatedAt == nil {
 			break
 		}
 
 		return e.complexity.User.UpdatedAt(childComplexity), true
+
+	case "authResp.token":
+		if e.complexity.AuthResp.Token == nil {
+			break
+		}
+
+		return e.complexity.AuthResp.Token(childComplexity), true
 
 	}
 	return 0, false
@@ -391,6 +858,419 @@ directive @goField(
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 `, BuiltIn: false},
 	&ast.Source{Name: "models.graphqls", Input: `"""
+Status of Batches and Games.
+"""
+enum StepType {
+  """
+  MTURK_HIT is a step where AWS Mechanical Turk HIT is published.
+  """
+  MTURK_HIT
+
+  """
+  MTURK_MESSAGE is a step where a message sent to AWS Mechanical Turk Workers.
+  """
+  MTURK_MESSAGE
+
+  """
+  PARTICIPANT_FILTER is a participant filtering step.
+  """
+  PARTICIPANT_FILTER
+}
+
+"""
+ContentType is the type rendering used for a field.
+"""
+enum ContentType {
+  """
+  PLAIN uses a plain text renderer. Templating uses Mustache-style
+  interpolation (i.e. {{url}}).
+  """
+  PLAIN
+
+  """
+  MARKDOWN uses a Markdown renderer. Templating uses Mustache-style
+  interpolation (i.e. {{url}}).
+  """
+  MARKDOWN
+
+  """
+  REACT uses a React renderer. Templating passes template arguments as props.
+  The root component should be the default ES6 export.
+  """
+  REACT
+
+  """
+  SVELTE uses a Svelte renderer. Templating passes template arguments as props.
+  The root component should be the default ES6 export.
+  """
+  SVELTE
+}
+
+"""
+Participant selection type.
+"""
+enum SelectionType {
+  """
+  INTERNAL_DB uses local participants database.
+  """
+  INTERNAL_DB
+
+  """
+  MTURK_QUALIFICATIONS uses MTurk Qualitifications to select participants.
+  """
+  MTURK_QUALIFICATIONS
+}
+
+"""
+Procedure is a series of Steps to execute in a Procedure Run. A
+procedure starts with the selection of Players.
+"""
+type Procedure {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  creator: User!
+
+  """
+  Friendly name.
+  """
+  name: String!
+
+  """
+  Ordered list of Steps in a Procedure.
+  """
+  steps: [Step!]!
+
+  """
+  Determines participant selection type.
+  """
+  selectionType: SelectionType
+
+  """
+  Selection criteria for participants
+  """
+  criteria: SelectionCriteria
+
+  """
+  Contains adult content.
+  From MTurk: This project may contain potentially explicit or offensive
+  content, for example, nudity.
+  """
+  adult: Boolean!
+}
+
+"""
+Participant selection criteria types.
+"""
+union SelectionCriteria = InternalCriteria | MTurkCriteria
+
+"""
+InternalCriteria is the criteria for internal database participant selection.
+"""
+type InternalCriteria {
+  """
+  Condition set the participant must meet to be allowed to participate.
+  """
+  condition: Condition!
+}
+
+"""
+Possible Condition values. Only one of the fields in a CompValue should be
+defined.
+"""
+type CompValue {
+  int: Int
+  float: Float
+  string: String
+  boolean: Boolean
+}
+
+"""
+Condition for a filter. A condition must **either**:
+- have one or more ` + "`" + `and` + "`" + ` Conditions
+- have one or more ` + "`" + `or` + "`" + ` Conditions
+- have a comparator and one or more values
+When comparing against values, the first value is used for operands comparing
+single values (LessThan, LessThanOrEqualTo, GreaterThan, GreaterThanOrEqualTo,
+EqualTo, NotEqualTo). When testing for existence an empty array is DoesNotExist
+and an array with one or more values Exists. For In and NotIn all values in the
+values array are used.
+"""
+type Condition {
+  and: [Condition!]
+  or: [Condition!]
+  comparator: Comparator
+  values: [CompValue!]
+}
+
+"""
+MTurkCriteria is the criteria for MTurk Qualifications participant selection.
+"""
+type MTurkCriteria {
+  """
+  MTurk Qualifications a Worker must meet before the Worker is allowed to accept
+  and complete the HIT.
+  """
+  qualifications: [MTurkQualificationCriteria!]!
+}
+
+"""
+The kind of comparison to make against a value.
+"""
+enum Comparator {
+  LessThan
+  LessThanOrEqualTo
+  GreaterThan
+  GreaterThanOrEqualTo
+  EqualTo
+  NotEqualTo
+  Exists
+  DoesNotExist
+  In
+  NotIn
+}
+
+"""
+MTurkQualificationCriteria is an MTurk Qualification requirement. It is an
+MTurk Qualification that a Worker must have before the Worker is allowed to
+accept a HIT.
+See https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_QualificationRequirementDataStructureArticle.html
+"""
+type MTurkQualificationCriteria {
+  """
+  The ID of the MTurk Qualification Type.
+  """
+  id: ID!
+
+  """
+  The kind of comparison to make against a Qualification's value.
+  You can compare a Qualification's value:
+  - To an IntegerValue to see if it is LessThan, LessThanOrEqualTo, GreaterThan,
+    GreaterThanOrEqualTo, EqualTo, or NotEqualTo the IntegerValue.
+  - To a LocaleValue to see if it is EqualTo, or NotEqualTo the LocaleValue.
+  - To see if the value is In or NotIn a set of IntegerValue or LocaleValue
+    values.
+  A Qualification requirement can also test if a Qualification Exists or
+  DoesNotExist in the user's profile, regardless of its value.
+  """
+  comparator: Comparator!
+
+  """
+  Array of integer values to compare against the Qualification's value.
+  IntegerValue must not be present if Comparator is Exists or DoesNotExist.
+  IntegerValue can only be used if the Qualification type has an integer value;
+  it cannot be used with the Worker_Locale QualificationType ID, see
+  Qualification Type IDs.
+  When performing a set comparison by using the In or the NotIn comparator, you
+  can use up to 15 elements in this list.
+  """
+  values: [Int!]
+
+  """
+  The locale value to compare against the Qualification's value. The local value
+  must be a valid ISO 3166 country code or supports ISO 3166-2 subdivisions.
+  LocaleValue can only be used with a Worker_Locale QualificationType ID, see
+  Qualification Type IDs.
+  LocaleValue can only be used with the EqualTo, NotEqualTo, In, and NotIn
+  comparators.
+  You must only use a single LocaleValue element when using the EqualTo or
+  NotEqualTo comparators.
+  When performing a set comparison by using the In or the NotIn comparator, you
+  can use up to 30 LocaleValue elements in a QualificationRequirement data
+  structure.
+  """
+  locales: [MTurkLocale!]
+}
+
+"""
+The Locale data structure represents a geographical region or location in MTurk.
+"""
+type MTurkLocale {
+  """
+  The country of the locale.
+  Type: A valid ISO 3166 country code. For example, the code US refers to the
+  United States of America.
+  """
+  country: String!
+
+  """
+  The state or subdivision of the locale.
+  Type: Type: A valid ISO 3166-2 subdivision code. For example, the code CA
+  refers to the state of California.
+  Subdivisions or states are only available for the United States of America.
+  """
+  subdivision: String
+}
+
+"""
+Steps are the ordered parts of a Procedure.
+"""
+type Step implements Node {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  creator: User!
+
+  """
+  The Type defines what kind of action this step represents.
+  """
+  type: StepType!
+
+  """
+  Duration of Step in seconds. At the end of the duration, the next Step will
+  execute.
+  If set to 0, the Step executes and immediately moves onto the next Step. This
+  mostly works for PARTICIPANT_FILTER Steps and the last Step in a Procedure.
+  """
+  duration: Int!
+
+  args: [StepArgs!]!
+}
+
+"""
+Argument groups for Steps.
+"""
+union StepArgs = MessageStepArgs | HITStepArgs | FilterStepArgs
+
+"""
+FilterStepArgs are arguments passed to a Pariticipant Filter Step.
+It must contains **either** JS code or the name of pre-defined filtering function.
+This is only valid for an PARTICIPANT_FILTER Step.
+"""
+type FilterStepArgs {
+  """
+  Javascript to execute as a participant filter step.
+  The code must contain a functinon exported using a default ES6 export.
+  The function should accept a single argument object. This object contains the
+  following fields:
+  - ` + "`" + `participants` + "`" + `: the participants entering this step
+  - ` + "`" + `step` + "`" + `: this step (contains the definition of this step: duration, etc.)
+  - ` + "`" + `stepRun` + "`" + `: instance of this step (contains the execution of this step: start time, etc.)
+  - ` + "`" + `procedure` + "`" + `: parent procedure of step (contains the definition of the Procedure)
+  - ` + "`" + `run` + "`" + `: run this step is part of (contains the instance of the Procedure)
+  The functions should return an array of participants.
+  If the functions returns null or undefined, the participants are not filtered.
+  If the function throws an exception, the run will fail.
+  """
+  js: String
+
+  """
+  Filter should be the name of pre-defined filtering function.
+  """
+  filter: String
+}
+
+"""
+HITStepArgs are arguments passed to a HIT Step.
+This is only valid for an MTURK_HIT Step.
+"""
+type HITStepArgs {
+  """
+  Title of HIT.
+  From MTurk: Describe the task to Workers. Be as specific as possible,
+  e.g. "answer a survey about movies", instead of "short survey", so Workers
+  know what to expect.
+  Tasks that contain adult content are required to include the following phrase
+  in your task title: (WARNING: This HIT may contain adult content. Worker
+  discretion is advised.)
+  """
+  title: String!
+
+  """
+  Description of HIT.
+  From MTurk: Give more detail about this task. This gives Workers a bit more
+  information before they decide to view your task.
+  """
+  description: String!
+
+  """
+  Keywords of HIT. Comma-seratred.
+  From MTurk: Provide keywords that will help Workers search for your tasks.
+  """
+  keywords: String!
+
+  """
+  DISABLED - Micro-batching is still TBD, probably needs more args.
+  """
+  microbatch: Boolean!
+
+  """
+  MTurk HIT reward for task in USD.
+  """
+  reward: Float!
+
+  """
+  Timeout of a single accepted HIT in seconds.
+  """
+  timeout: Int!
+
+  """
+  Duration in seconds from start of Step before expiration of unconsumed HITs.
+  """
+  duration: Int!
+
+  """
+  Number of HIT workers to accept.
+  """
+  workers: Int!
+}
+
+"""
+MessageStepArgs are arguments passed to a Step that has a message.
+This is only valid for MTURK_HIT and MTURK_MESSAGE Steps.
+"""
+type MessageStepArgs {
+  """
+  URL that will be transformed into a redirect (proxy URL) through the Empirica
+  Recruitment website and passed to the Message template. This URL is the final
+  destination the worker will land on. Empirica Recruitment redirects
+  through the app so we can add parameters to the proxy URL and hide the final
+  URL (to limit sharing of URLs).
+  """
+  url: String
+
+  """
+  Message the content to display to the user.
+  Template variables:
+  - ` + "`" + `url` + "`" + `: proxy URL if ` + "`" + `url` + "`" + ` exist on Step.
+  - ` + "`" + `step` + "`" + `: this step (contains the definition of this step: duration, etc.)
+  - ` + "`" + `stepRun` + "`" + `: instance of this step (contains the execution of this step: start time, etc.)
+  - ` + "`" + `procedure` + "`" + `: parent Procedure of step (contains the definition of the Procedure)
+  - ` + "`" + `run` + "`" + `: run this step is part of (contains the instance of the Procedure)
+  - ` + "`" + `participant` + "`" + `: current participant
+  """
+  message: String!
+
+  """
+  MessageType indicates the rendering language of the Message.
+  """
+  messageType: ContentType!
+
+  """
+  Lobby enables to showing a lobby, and rich-text message to put in the lobby
+  Lobby can either expire (see expiration below) to produce the effect of a
+  precise start time, or must have a submit button.
+  Only available if URL is present.
+  Template variables are identical to message.
+  """
+  lobby: String
+
+  """
+  LobbyType indicates the rendering language of the Lobby.
+  """
+  lobbyType: ContentType
+
+  """
+  useLobby enables to showing a lobby, and rich-text message to put in the lobby
+  Lobby can either expire (see expiration below) to produce the effect of a
+  precise start time, or must have a submit button.
+  The string should be HTML content.
+  Only available if URL is present.
+  """
+  lobbyExpiration: String
+}
+
+"""
 Node is an interface allowing simple querying of any node
 """
 interface Node {
@@ -416,19 +1296,9 @@ interface Node {
 }
 
 """
-Status of Batches and Games
+Status of Runs.
 """
 enum Status {
-  """
-  INVALID is used to avoid non-explicit setting of the status (0 value)
-  """
-  INVALID
-
-  """
-  UNSET allows to nullify the status
-  """
-  UNSET
-
   """
   CREATED means the run has been created but hasn't started yet
   """
@@ -480,6 +1350,11 @@ type Datum implements Node {
   updatedAt: DateTime!
 
   """
+  Creator is the user or participant that created the Datum.
+  """
+  creator: Creator
+
+  """
   deletedAt is the time when the Datum was deleted. If null, the Datum was not
   deleted.
   """
@@ -512,10 +1387,12 @@ type Datum implements Node {
   versions: [Datum!]!
 }
 
+union Creator = Participant | User
+
 """
-Player is a participant of a Game
+Participant is a worker in the system.
 """
-type Player implements Node {
+type Participant implements Node {
   """
   id is the unique globally identifier for the record.
   """
@@ -532,21 +1409,46 @@ type Player implements Node {
   updatedAt: DateTime!
 
   """
-  playerID is the public unique identifier of the player. Often it will be the
-  MTurk ID.
+  providerIDs contains the IDs from 3rd providers corresponding the participant.
+  A single participant could potentially be referenced in different in multiple
+  providers.
   """
-  playerID: String!
+  providerIDs: [ProviderID!]!
 
   """
-  index is the unique ordered index of the player assigned as the are added to
-  to the system
+  data returns the custom data that has been set on the Player.
   """
-  index: Uint32!
+  data(keys: [String!]): [Datum!]!
+}
+
+"""
+ProviderID contains the identifier for a 3rd party provider.
+"""
+type ProviderID {
+  """
+  createdAt is the time of creation of the record.
+  """
+  createdAt: DateTime!
 
   """
-  data returns all custom data that has been set on the Player.
+  providerID is the ID of the 3rd party Provider.
   """
-  data(keys: [String]): [Datum]
+  providerID: ID!
+
+  """
+  ID is the ID of the 3rd party Provider.
+  """
+  provider: PROVIDER
+}
+
+"""
+Supported 3rd party providers.
+"""
+enum PROVIDER {
+  """
+  MTURK represents AWS Mechanical Turk
+  """
+  MTURK
 }
 
 """
@@ -577,23 +1479,28 @@ type User implements Node {
   email is the email associated with the user.
   """
   email: String!
-
-  """
-  password is the hashed password associated with the user.
-  """
-  password: String!
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "mutation.graphqls", Input: `type Mutation {
-  createPlayer: Player! @hasRole(role: PLAYER)
+	&ast.Source{Name: "mutation.graphqls", Input: `input authInput {
+  user: String!
+  password: String!
+}
+
+type authResp {
+  token: String!
+}
+
+type Mutation {
+  auth(input: authInput): authResp
+  createParticipant: Participant! @hasRole(role: PLAYER)
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "query.graphqls", Input: `type Query {
-  """
-  me returns the current Player. It is the entry point for the Player-side
-  client. It contains all the information needed to display for Players.
-  """
-  me: Player @hasRole(role: PLAYER)
+  # """
+  # me returns the current Player. It is the entry point for the Player-side
+  # client. It contains all the information needed to display for Players.
+  # """
+  me: Participant @hasRole(role: PLAYER)
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "root.graphqls", Input: `schema {
@@ -622,7 +1529,7 @@ scalar JSON
   me returns updates the current Player. It is how the Player-side client can
   keep all Game information needed up to date.
   """
-  me: Player @hasRole(role: PLAYER)
+  me: Participant @hasRole(role: PLAYER)
 }
 `, BuiltIn: false},
 }
@@ -643,6 +1550,34 @@ func (ec *executionContext) dir_hasRole_args(ctx context.Context, rawArgs map[st
 		}
 	}
 	args["role"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_auth_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.AuthInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalOauthInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Participant_data_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []string
+	if tmp, ok := rawArgs["keys"]; ok {
+		arg0, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["keys"] = arg0
 	return args, nil
 }
 
@@ -695,6 +1630,254 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _CompValue_int(ctx context.Context, field graphql.CollectedField, obj *model.CompValue) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "CompValue",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Int, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CompValue_float(ctx context.Context, field graphql.CollectedField, obj *model.CompValue) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "CompValue",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Float, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CompValue_string(ctx context.Context, field graphql.CollectedField, obj *model.CompValue) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "CompValue",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.String, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CompValue_boolean(ctx context.Context, field graphql.CollectedField, obj *model.CompValue) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "CompValue",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Boolean, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Condition_and(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Condition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.And, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Condition)
+	fc.Result = res
+	return ec.marshalOCondition2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Condition_or(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Condition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Or, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Condition)
+	fc.Result = res
+	return ec.marshalOCondition2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Condition_comparator(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Condition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Comparator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Comparator)
+	fc.Result = res
+	return ec.marshalOComparator2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Condition_values(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Condition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Values, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.CompValue)
+	fc.Result = res
+	return ec.marshalOCompValue2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValueᚄ(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _Datum_id(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
 	defer func() {
@@ -796,6 +1979,37 @@ func (ec *executionContext) _Datum_updatedAt(ctx context.Context, field graphql.
 	res := resTmp.(time.Time)
 	fc.Result = res
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Datum_creator(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Datum",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Datum().Creator(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(model.Creator)
+	fc.Result = res
+	return ec.marshalOCreator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreator(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Datum_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
@@ -990,7 +2204,7 @@ func (ec *executionContext) _Datum_versions(ctx context.Context, field graphql.C
 	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createPlayer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _FilterStepArgs_js(ctx context.Context, field graphql.CollectedField, obj *model.FilterStepArgs) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -998,40 +2212,78 @@ func (ec *executionContext) _Mutation_createPlayer(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
+		Object:   "FilterStepArgs",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreatePlayer(rctx)
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "PLAYER")
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.HasRole == nil {
-				return nil, errors.New("directive hasRole is not implemented")
-			}
-			return ec.directives.HasRole(ctx, nil, directive0, role)
-		}
+		ctx = rctx // use context from middleware stack in children
+		return obj.Js, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
 
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
+func (ec *executionContext) _FilterStepArgs_filter(ctx context.Context, field graphql.CollectedField, obj *model.FilterStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
 		}
-		if tmp == nil {
-			return nil, nil
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FilterStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Filter, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HITStepArgs_title(ctx context.Context, field graphql.CollectedField, obj *model.HITStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
 		}
-		if data, ok := tmp.(*model.Player); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/model.Player`, tmp)
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HITStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1043,12 +2295,12 @@ func (ec *executionContext) _Mutation_createPlayer(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Player)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNPlayer2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPlayer(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Player_id(ctx context.Context, field graphql.CollectedField, obj *model.Player) (ret graphql.Marshaler) {
+func (ec *executionContext) _HITStepArgs_description(ctx context.Context, field graphql.CollectedField, obj *model.HITStepArgs) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1056,7 +2308,378 @@ func (ec *executionContext) _Player_id(ctx context.Context, field graphql.Collec
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Player",
+		Object:   "HITStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HITStepArgs_keywords(ctx context.Context, field graphql.CollectedField, obj *model.HITStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HITStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Keywords, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HITStepArgs_microbatch(ctx context.Context, field graphql.CollectedField, obj *model.HITStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HITStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Microbatch, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HITStepArgs_reward(ctx context.Context, field graphql.CollectedField, obj *model.HITStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HITStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reward, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HITStepArgs_timeout(ctx context.Context, field graphql.CollectedField, obj *model.HITStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HITStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timeout, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HITStepArgs_duration(ctx context.Context, field graphql.CollectedField, obj *model.HITStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HITStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Duration, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _HITStepArgs_workers(ctx context.Context, field graphql.CollectedField, obj *model.HITStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "HITStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Workers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _InternalCriteria_condition(ctx context.Context, field graphql.CollectedField, obj *model.InternalCriteria) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "InternalCriteria",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Condition, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Condition)
+	fc.Result = res
+	return ec.marshalNCondition2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCondition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MTurkCriteria_qualifications(ctx context.Context, field graphql.CollectedField, obj *model.MTurkCriteria) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MTurkCriteria",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Qualifications, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MTurkQualificationCriteria)
+	fc.Result = res
+	return ec.marshalNMTurkQualificationCriteria2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteriaᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MTurkLocale_country(ctx context.Context, field graphql.CollectedField, obj *model.MTurkLocale) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MTurkLocale",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Country, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MTurkLocale_subdivision(ctx context.Context, field graphql.CollectedField, obj *model.MTurkLocale) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MTurkLocale",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Subdivision, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MTurkQualificationCriteria_id(ctx context.Context, field graphql.CollectedField, obj *model.MTurkQualificationCriteria) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MTurkQualificationCriteria",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1082,7 +2705,7 @@ func (ec *executionContext) _Player_id(ctx context.Context, field graphql.Collec
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Player_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Player) (ret graphql.Marshaler) {
+func (ec *executionContext) _MTurkQualificationCriteria_comparator(ctx context.Context, field graphql.CollectedField, obj *model.MTurkQualificationCriteria) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1090,7 +2713,425 @@ func (ec *executionContext) _Player_createdAt(ctx context.Context, field graphql
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Player",
+		Object:   "MTurkQualificationCriteria",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Comparator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.Comparator)
+	fc.Result = res
+	return ec.marshalNComparator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MTurkQualificationCriteria_values(ctx context.Context, field graphql.CollectedField, obj *model.MTurkQualificationCriteria) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MTurkQualificationCriteria",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Values, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]int)
+	fc.Result = res
+	return ec.marshalOInt2ᚕintᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MTurkQualificationCriteria_locales(ctx context.Context, field graphql.CollectedField, obj *model.MTurkQualificationCriteria) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MTurkQualificationCriteria",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Locales, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MTurkLocale)
+	fc.Result = res
+	return ec.marshalOMTurkLocale2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocaleᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MessageStepArgs_url(ctx context.Context, field graphql.CollectedField, obj *model.MessageStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MessageStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MessageStepArgs_message(ctx context.Context, field graphql.CollectedField, obj *model.MessageStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MessageStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MessageStepArgs_messageType(ctx context.Context, field graphql.CollectedField, obj *model.MessageStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MessageStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MessageType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ContentType)
+	fc.Result = res
+	return ec.marshalNContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MessageStepArgs_lobby(ctx context.Context, field graphql.CollectedField, obj *model.MessageStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MessageStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Lobby, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MessageStepArgs_lobbyType(ctx context.Context, field graphql.CollectedField, obj *model.MessageStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MessageStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LobbyType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.ContentType)
+	fc.Result = res
+	return ec.marshalOContentType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MessageStepArgs_lobbyExpiration(ctx context.Context, field graphql.CollectedField, obj *model.MessageStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MessageStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LobbyExpiration, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_auth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_auth_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Auth(rctx, args["input"].(*model.AuthInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.AuthResp)
+	fc.Result = res
+	return ec.marshalOauthResp2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthResp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_createParticipant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateParticipant(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "PLAYER")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.Participant); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/model.Participant`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Participant)
+	fc.Result = res
+	return ec.marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Participant_id(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Participant",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Participant_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Participant",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1116,7 +3157,7 @@ func (ec *executionContext) _Player_createdAt(ctx context.Context, field graphql
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Player_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Player) (ret graphql.Marshaler) {
+func (ec *executionContext) _Participant_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1124,7 +3165,7 @@ func (ec *executionContext) _Player_updatedAt(ctx context.Context, field graphql
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Player",
+		Object:   "Participant",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1150,7 +3191,7 @@ func (ec *executionContext) _Player_updatedAt(ctx context.Context, field graphql
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Player_playerID(ctx context.Context, field graphql.CollectedField, obj *model.Player) (ret graphql.Marshaler) {
+func (ec *executionContext) _Participant_providerIDs(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1158,7 +3199,7 @@ func (ec *executionContext) _Player_playerID(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Player",
+		Object:   "Participant",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1167,7 +3208,218 @@ func (ec *executionContext) _Player_playerID(ctx context.Context, field graphql.
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PlayerID, nil
+		return obj.ProviderIDs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ProviderID)
+	fc.Result = res
+	return ec.marshalNProviderID2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProviderIDᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Participant_data(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Participant",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Participant_data_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Datum)
+	fc.Result = res
+	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Procedure_id(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Procedure",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Procedure_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Procedure",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Procedure_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Procedure",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Procedure_creator(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Procedure",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Creator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Procedure_name(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Procedure",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1184,7 +3436,7 @@ func (ec *executionContext) _Player_playerID(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Player_index(ctx context.Context, field graphql.CollectedField, obj *model.Player) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_steps(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1192,7 +3444,7 @@ func (ec *executionContext) _Player_index(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Player",
+		Object:   "Procedure",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1201,7 +3453,7 @@ func (ec *executionContext) _Player_index(ctx context.Context, field graphql.Col
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Index, nil
+		return obj.Steps, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1213,12 +3465,12 @@ func (ec *executionContext) _Player_index(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*uint32)
+	res := resTmp.([]*model.Step)
 	fc.Result = res
-	return ec.marshalNUint322ᚖuint32(ctx, field.Selections, res)
+	return ec.marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Player_data(ctx context.Context, field graphql.CollectedField, obj *model.Player) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_selectionType(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1226,16 +3478,16 @@ func (ec *executionContext) _Player_data(ctx context.Context, field graphql.Coll
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Player",
+		Object:   "Procedure",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Data()
+		return obj.SelectionType, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1244,9 +3496,173 @@ func (ec *executionContext) _Player_data(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Datum)
+	res := resTmp.(*model.SelectionType)
 	fc.Result = res
-	return ec.marshalODatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatum(ctx, field.Selections, res)
+	return ec.marshalOSelectionType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Procedure_criteria(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Procedure",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Criteria, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(model.SelectionCriteria)
+	fc.Result = res
+	return ec.marshalOSelectionCriteria2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionCriteria(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Procedure_adult(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Procedure",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Adult, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProviderID_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.ProviderID) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProviderID",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProviderID_providerID(ctx context.Context, field graphql.CollectedField, obj *model.ProviderID) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProviderID",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProviderID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProviderID_provider(ctx context.Context, field graphql.CollectedField, obj *model.ProviderID) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProviderID",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Provider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Provider)
+	fc.Result = res
+	return ec.marshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1287,10 +3703,10 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*model.Player); ok {
+		if data, ok := tmp.(*model.Participant); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/model.Player`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/model.Participant`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1299,9 +3715,9 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Player)
+	res := resTmp.(*model.Participant)
 	fc.Result = res
-	return ec.marshalOPlayer2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPlayer(ctx, field.Selections, res)
+	return ec.marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1373,6 +3789,244 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Step_id(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Step",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Step_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Step",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Step_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Step",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Step_creator(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Step",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Creator, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Step_type(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Step",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.StepType)
+	fc.Result = res
+	return ec.marshalNStepType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Step_duration(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Step",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Duration, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Step_args(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Step",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Args, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.StepArgs)
+	fc.Result = res
+	return ec.marshalNStepArgs2ᚕgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepArgsᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Subscription_me(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1411,10 +4065,10 @@ func (ec *executionContext) _Subscription_me(ctx context.Context, field graphql.
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(<-chan *model.Player); ok {
+		if data, ok := tmp.(<-chan *model.Participant); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be <-chan *github.com/empiricaly/recruitment/internal/model.Player`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be <-chan *github.com/empiricaly/recruitment/internal/model.Participant`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1424,7 +4078,7 @@ func (ec *executionContext) _Subscription_me(ctx context.Context, field graphql.
 		return nil
 	}
 	return func() graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan *model.Player)
+		res, ok := <-resTmp.(<-chan *model.Participant)
 		if !ok {
 			return nil
 		}
@@ -1432,7 +4086,7 @@ func (ec *executionContext) _Subscription_me(ctx context.Context, field graphql.
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalOPlayer2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPlayer(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -1589,40 +4243,6 @@ func (ec *executionContext) _User_email(ctx context.Context, field graphql.Colle
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Email, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _User_password(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "User",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Password, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2690,32 +5310,83 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 	return ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _authResp_token(ctx context.Context, field graphql.CollectedField, obj *model.AuthResp) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "authResp",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Token, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
+
+func (ec *executionContext) unmarshalInputauthInput(ctx context.Context, obj interface{}) (model.AuthInput, error) {
+	var it model.AuthInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "user":
+			var err error
+			it.User, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "password":
+			var err error
+			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
 
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
 
-func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj model.Node) graphql.Marshaler {
+func (ec *executionContext) _Creator(ctx context.Context, sel ast.SelectionSet, obj model.Creator) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case model.Datum:
-		return ec._Datum(ctx, sel, &obj)
-	case *model.Datum:
+	case model.Participant:
+		return ec._Participant(ctx, sel, &obj)
+	case *model.Participant:
 		if obj == nil {
 			return graphql.Null
 		}
-		return ec._Datum(ctx, sel, obj)
-	case model.Player:
-		return ec._Player(ctx, sel, &obj)
-	case *model.Player:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Player(ctx, sel, obj)
+		return ec._Participant(ctx, sel, obj)
 	case model.User:
 		return ec._User(ctx, sel, &obj)
 	case *model.User:
@@ -2728,9 +5399,159 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 	}
 }
 
+func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj model.Node) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.Step:
+		return ec._Step(ctx, sel, &obj)
+	case *model.Step:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Step(ctx, sel, obj)
+	case model.Datum:
+		return ec._Datum(ctx, sel, &obj)
+	case *model.Datum:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Datum(ctx, sel, obj)
+	case model.Participant:
+		return ec._Participant(ctx, sel, &obj)
+	case *model.Participant:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Participant(ctx, sel, obj)
+	case model.User:
+		return ec._User(ctx, sel, &obj)
+	case *model.User:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._User(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _SelectionCriteria(ctx context.Context, sel ast.SelectionSet, obj model.SelectionCriteria) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.InternalCriteria:
+		return ec._InternalCriteria(ctx, sel, &obj)
+	case *model.InternalCriteria:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._InternalCriteria(ctx, sel, obj)
+	case model.MTurkCriteria:
+		return ec._MTurkCriteria(ctx, sel, &obj)
+	case *model.MTurkCriteria:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._MTurkCriteria(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _StepArgs(ctx context.Context, sel ast.SelectionSet, obj model.StepArgs) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.MessageStepArgs:
+		return ec._MessageStepArgs(ctx, sel, &obj)
+	case *model.MessageStepArgs:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._MessageStepArgs(ctx, sel, obj)
+	case model.HITStepArgs:
+		return ec._HITStepArgs(ctx, sel, &obj)
+	case *model.HITStepArgs:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._HITStepArgs(ctx, sel, obj)
+	case model.FilterStepArgs:
+		return ec._FilterStepArgs(ctx, sel, &obj)
+	case *model.FilterStepArgs:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._FilterStepArgs(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var compValueImplementors = []string{"CompValue"}
+
+func (ec *executionContext) _CompValue(ctx context.Context, sel ast.SelectionSet, obj *model.CompValue) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, compValueImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CompValue")
+		case "int":
+			out.Values[i] = ec._CompValue_int(ctx, field, obj)
+		case "float":
+			out.Values[i] = ec._CompValue_float(ctx, field, obj)
+		case "string":
+			out.Values[i] = ec._CompValue_string(ctx, field, obj)
+		case "boolean":
+			out.Values[i] = ec._CompValue_boolean(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var conditionImplementors = []string{"Condition"}
+
+func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet, obj *model.Condition) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, conditionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Condition")
+		case "and":
+			out.Values[i] = ec._Condition_and(ctx, field, obj)
+		case "or":
+			out.Values[i] = ec._Condition_or(ctx, field, obj)
+		case "comparator":
+			out.Values[i] = ec._Condition_comparator(ctx, field, obj)
+		case "values":
+			out.Values[i] = ec._Condition_values(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
 
 var datumImplementors = []string{"Datum", "Node"}
 
@@ -2758,6 +5579,17 @@ func (ec *executionContext) _Datum(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "creator":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Datum_creator(ctx, field, obj)
+				return res
+			})
 		case "deletedAt":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -2823,6 +5655,253 @@ func (ec *executionContext) _Datum(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var filterStepArgsImplementors = []string{"FilterStepArgs", "StepArgs"}
+
+func (ec *executionContext) _FilterStepArgs(ctx context.Context, sel ast.SelectionSet, obj *model.FilterStepArgs) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, filterStepArgsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FilterStepArgs")
+		case "js":
+			out.Values[i] = ec._FilterStepArgs_js(ctx, field, obj)
+		case "filter":
+			out.Values[i] = ec._FilterStepArgs_filter(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var hITStepArgsImplementors = []string{"HITStepArgs", "StepArgs"}
+
+func (ec *executionContext) _HITStepArgs(ctx context.Context, sel ast.SelectionSet, obj *model.HITStepArgs) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, hITStepArgsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HITStepArgs")
+		case "title":
+			out.Values[i] = ec._HITStepArgs_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._HITStepArgs_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "keywords":
+			out.Values[i] = ec._HITStepArgs_keywords(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "microbatch":
+			out.Values[i] = ec._HITStepArgs_microbatch(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "reward":
+			out.Values[i] = ec._HITStepArgs_reward(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "timeout":
+			out.Values[i] = ec._HITStepArgs_timeout(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "duration":
+			out.Values[i] = ec._HITStepArgs_duration(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "workers":
+			out.Values[i] = ec._HITStepArgs_workers(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var internalCriteriaImplementors = []string{"InternalCriteria", "SelectionCriteria"}
+
+func (ec *executionContext) _InternalCriteria(ctx context.Context, sel ast.SelectionSet, obj *model.InternalCriteria) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, internalCriteriaImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InternalCriteria")
+		case "condition":
+			out.Values[i] = ec._InternalCriteria_condition(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var mTurkCriteriaImplementors = []string{"MTurkCriteria", "SelectionCriteria"}
+
+func (ec *executionContext) _MTurkCriteria(ctx context.Context, sel ast.SelectionSet, obj *model.MTurkCriteria) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTurkCriteriaImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTurkCriteria")
+		case "qualifications":
+			out.Values[i] = ec._MTurkCriteria_qualifications(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var mTurkLocaleImplementors = []string{"MTurkLocale"}
+
+func (ec *executionContext) _MTurkLocale(ctx context.Context, sel ast.SelectionSet, obj *model.MTurkLocale) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTurkLocaleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTurkLocale")
+		case "country":
+			out.Values[i] = ec._MTurkLocale_country(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "subdivision":
+			out.Values[i] = ec._MTurkLocale_subdivision(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var mTurkQualificationCriteriaImplementors = []string{"MTurkQualificationCriteria"}
+
+func (ec *executionContext) _MTurkQualificationCriteria(ctx context.Context, sel ast.SelectionSet, obj *model.MTurkQualificationCriteria) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTurkQualificationCriteriaImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTurkQualificationCriteria")
+		case "id":
+			out.Values[i] = ec._MTurkQualificationCriteria_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "comparator":
+			out.Values[i] = ec._MTurkQualificationCriteria_comparator(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "values":
+			out.Values[i] = ec._MTurkQualificationCriteria_values(ctx, field, obj)
+		case "locales":
+			out.Values[i] = ec._MTurkQualificationCriteria_locales(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var messageStepArgsImplementors = []string{"MessageStepArgs", "StepArgs"}
+
+func (ec *executionContext) _MessageStepArgs(ctx context.Context, sel ast.SelectionSet, obj *model.MessageStepArgs) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, messageStepArgsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MessageStepArgs")
+		case "url":
+			out.Values[i] = ec._MessageStepArgs_url(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._MessageStepArgs_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "messageType":
+			out.Values[i] = ec._MessageStepArgs_messageType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lobby":
+			out.Values[i] = ec._MessageStepArgs_lobby(ctx, field, obj)
+		case "lobbyType":
+			out.Values[i] = ec._MessageStepArgs_lobbyType(ctx, field, obj)
+		case "lobbyExpiration":
+			out.Values[i] = ec._MessageStepArgs_lobbyExpiration(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -2838,8 +5917,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "createPlayer":
-			out.Values[i] = ec._Mutation_createPlayer(ctx, field)
+		case "auth":
+			out.Values[i] = ec._Mutation_auth(ctx, field)
+		case "createParticipant":
+			out.Values[i] = ec._Mutation_createParticipant(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2854,44 +5935,137 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
-var playerImplementors = []string{"Player", "Node"}
+var participantImplementors = []string{"Participant", "Creator", "Node"}
 
-func (ec *executionContext) _Player(ctx context.Context, sel ast.SelectionSet, obj *model.Player) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, playerImplementors)
+func (ec *executionContext) _Participant(ctx context.Context, sel ast.SelectionSet, obj *model.Participant) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, participantImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Player")
+			out.Values[i] = graphql.MarshalString("Participant")
 		case "id":
-			out.Values[i] = ec._Player_id(ctx, field, obj)
+			out.Values[i] = ec._Participant_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "createdAt":
-			out.Values[i] = ec._Player_createdAt(ctx, field, obj)
+			out.Values[i] = ec._Participant_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "updatedAt":
-			out.Values[i] = ec._Player_updatedAt(ctx, field, obj)
+			out.Values[i] = ec._Participant_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "playerID":
-			out.Values[i] = ec._Player_playerID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "index":
-			out.Values[i] = ec._Player_index(ctx, field, obj)
+		case "providerIDs":
+			out.Values[i] = ec._Participant_providerIDs(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "data":
-			out.Values[i] = ec._Player_data(ctx, field, obj)
+			out.Values[i] = ec._Participant_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var procedureImplementors = []string{"Procedure"}
+
+func (ec *executionContext) _Procedure(ctx context.Context, sel ast.SelectionSet, obj *model.Procedure) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, procedureImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Procedure")
+		case "id":
+			out.Values[i] = ec._Procedure_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._Procedure_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Procedure_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "creator":
+			out.Values[i] = ec._Procedure_creator(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Procedure_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "steps":
+			out.Values[i] = ec._Procedure_steps(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "selectionType":
+			out.Values[i] = ec._Procedure_selectionType(ctx, field, obj)
+		case "criteria":
+			out.Values[i] = ec._Procedure_criteria(ctx, field, obj)
+		case "adult":
+			out.Values[i] = ec._Procedure_adult(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var providerIDImplementors = []string{"ProviderID"}
+
+func (ec *executionContext) _ProviderID(ctx context.Context, sel ast.SelectionSet, obj *model.ProviderID) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, providerIDImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProviderID")
+		case "createdAt":
+			out.Values[i] = ec._ProviderID_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "providerID":
+			out.Values[i] = ec._ProviderID_providerID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "provider":
+			out.Values[i] = ec._ProviderID_provider(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2944,6 +6118,63 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
+var stepImplementors = []string{"Step", "Node"}
+
+func (ec *executionContext) _Step(ctx context.Context, sel ast.SelectionSet, obj *model.Step) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, stepImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Step")
+		case "id":
+			out.Values[i] = ec._Step_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._Step_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Step_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "creator":
+			out.Values[i] = ec._Step_creator(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "type":
+			out.Values[i] = ec._Step_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "duration":
+			out.Values[i] = ec._Step_duration(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "args":
+			out.Values[i] = ec._Step_args(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var subscriptionImplementors = []string{"Subscription"}
 
 func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
@@ -2964,7 +6195,7 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	}
 }
 
-var userImplementors = []string{"User", "Node"}
+var userImplementors = []string{"User", "Creator", "Node"}
 
 func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
@@ -2994,11 +6225,6 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_name(ctx, field, obj)
 		case "email":
 			out.Values[i] = ec._User_email(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "password":
-			out.Values[i] = ec._User_password(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3254,6 +6480,33 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var authRespImplementors = []string{"authResp"}
+
+func (ec *executionContext) _authResp(ctx context.Context, sel ast.SelectionSet, obj *model.AuthResp) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, authRespImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("authResp")
+		case "token":
+			out.Values[i] = ec._authResp_token(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
@@ -3270,6 +6523,52 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNCompValue2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValue(ctx context.Context, sel ast.SelectionSet, v model.CompValue) graphql.Marshaler {
+	return ec._CompValue(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCompValue2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValue(ctx context.Context, sel ast.SelectionSet, v *model.CompValue) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._CompValue(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNComparator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx context.Context, v interface{}) (model.Comparator, error) {
+	var res model.Comparator
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNComparator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx context.Context, sel ast.SelectionSet, v model.Comparator) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNCondition2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCondition(ctx context.Context, sel ast.SelectionSet, v model.Condition) graphql.Marshaler {
+	return ec._Condition(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCondition2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCondition(ctx context.Context, sel ast.SelectionSet, v *model.Condition) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Condition(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, v interface{}) (model.ContentType, error) {
+	var res model.ContentType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, sel ast.SelectionSet, v model.ContentType) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNDateTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
@@ -3337,6 +6636,20 @@ func (ec *executionContext) marshalNDatum2ᚖgithubᚗcomᚋempiricalyᚋrecruit
 	return ec._Datum(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	return graphql.UnmarshalFloat(v)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	res := graphql.MarshalFloat(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalID(v)
 }
@@ -3351,18 +6664,148 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) marshalNPlayer2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPlayer(ctx context.Context, sel ast.SelectionSet, v model.Player) graphql.Marshaler {
-	return ec._Player(ctx, sel, &v)
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	return graphql.UnmarshalInt(v)
 }
 
-func (ec *executionContext) marshalNPlayer2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPlayer(ctx context.Context, sel ast.SelectionSet, v *model.Player) graphql.Marshaler {
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalNMTurkLocale2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocale(ctx context.Context, sel ast.SelectionSet, v model.MTurkLocale) graphql.Marshaler {
+	return ec._MTurkLocale(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMTurkLocale2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocale(ctx context.Context, sel ast.SelectionSet, v *model.MTurkLocale) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._Player(ctx, sel, v)
+	return ec._MTurkLocale(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMTurkQualificationCriteria2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteria(ctx context.Context, sel ast.SelectionSet, v model.MTurkQualificationCriteria) graphql.Marshaler {
+	return ec._MTurkQualificationCriteria(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMTurkQualificationCriteria2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteriaᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MTurkQualificationCriteria) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTurkQualificationCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteria(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNMTurkQualificationCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteria(ctx context.Context, sel ast.SelectionSet, v *model.MTurkQualificationCriteria) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MTurkQualificationCriteria(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNParticipant2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx context.Context, sel ast.SelectionSet, v model.Participant) graphql.Marshaler {
+	return ec._Participant(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx context.Context, sel ast.SelectionSet, v *model.Participant) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Participant(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNProviderID2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProviderID(ctx context.Context, sel ast.SelectionSet, v model.ProviderID) graphql.Marshaler {
+	return ec._ProviderID(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNProviderID2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProviderIDᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ProviderID) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNProviderID2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProviderID(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNProviderID2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProviderID(ctx context.Context, sel ast.SelectionSet, v *model.ProviderID) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ProviderID(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx context.Context, v interface{}) (model.Role, error) {
@@ -3371,6 +6814,113 @@ func (ec *executionContext) unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitme
 }
 
 func (ec *executionContext) marshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx context.Context, sel ast.SelectionSet, v model.Role) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNStep2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStep(ctx context.Context, sel ast.SelectionSet, v model.Step) graphql.Marshaler {
+	return ec._Step(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Step) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStep(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStep(ctx context.Context, sel ast.SelectionSet, v *model.Step) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Step(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStepArgs2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepArgs(ctx context.Context, sel ast.SelectionSet, v model.StepArgs) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._StepArgs(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStepArgs2ᚕgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepArgsᚄ(ctx context.Context, sel ast.SelectionSet, v []model.StepArgs) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNStepArgs2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepArgs(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalNStepType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepType(ctx context.Context, v interface{}) (model.StepType, error) {
+	var res model.StepType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNStepType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepType(ctx context.Context, sel ast.SelectionSet, v model.StepType) graphql.Marshaler {
 	return v
 }
 
@@ -3388,36 +6938,18 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNUint322uint32(ctx context.Context, v interface{}) (uint32, error) {
-	return model.UnmarshalUint32(v)
+func (ec *executionContext) marshalNUser2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
+	return ec._User(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNUint322uint32(ctx context.Context, sel ast.SelectionSet, v uint32) graphql.Marshaler {
-	res := model.MarshalUint32(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNUint322ᚖuint32(ctx context.Context, v interface{}) (*uint32, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNUint322uint32(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalNUint322ᚖuint32(ctx context.Context, sel ast.SelectionSet, v *uint32) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec.marshalNUint322uint32(ctx, sel, *v)
+	return ec._User(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -3669,34 +7201,7 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalODateTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
-	return graphql.UnmarshalTime(v)
-}
-
-func (ec *executionContext) marshalODateTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
-	return graphql.MarshalTime(v)
-}
-
-func (ec *executionContext) unmarshalODateTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalODateTime2timeᚐTime(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalODateTime2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalODateTime2timeᚐTime(ctx, sel, *v)
-}
-
-func (ec *executionContext) marshalODatum2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatum(ctx context.Context, sel ast.SelectionSet, v model.Datum) graphql.Marshaler {
-	return ec._Datum(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalODatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatum(ctx context.Context, sel ast.SelectionSet, v []*model.Datum) graphql.Marshaler {
+func (ec *executionContext) marshalOCompValue2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValueᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CompValue) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -3723,7 +7228,7 @@ func (ec *executionContext) marshalODatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalODatum2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatum(ctx, sel, v[i])
+			ret[i] = ec.marshalNCompValue2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValue(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3736,11 +7241,145 @@ func (ec *executionContext) marshalODatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecr
 	return ret
 }
 
-func (ec *executionContext) marshalODatum2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatum(ctx context.Context, sel ast.SelectionSet, v *model.Datum) graphql.Marshaler {
+func (ec *executionContext) unmarshalOComparator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx context.Context, v interface{}) (model.Comparator, error) {
+	var res model.Comparator
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOComparator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx context.Context, sel ast.SelectionSet, v model.Comparator) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOComparator2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx context.Context, v interface{}) (*model.Comparator, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOComparator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOComparator2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx context.Context, sel ast.SelectionSet, v *model.Comparator) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._Datum(ctx, sel, v)
+	return v
+}
+
+func (ec *executionContext) marshalOCondition2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Condition) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCondition2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCondition(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalOContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, v interface{}) (model.ContentType, error) {
+	var res model.ContentType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, sel ast.SelectionSet, v model.ContentType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOContentType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, v interface{}) (*model.ContentType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOContentType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, sel ast.SelectionSet, v *model.ContentType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) marshalOCreator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreator(ctx context.Context, sel ast.SelectionSet, v model.Creator) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Creator(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalODateTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
+	return graphql.UnmarshalTime(v)
+}
+
+func (ec *executionContext) marshalODateTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	return graphql.MarshalTime(v)
+}
+
+func (ec *executionContext) unmarshalODateTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalODateTime2timeᚐTime(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalODateTime2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalODateTime2timeᚐTime(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	return graphql.UnmarshalFloat(v)
+}
+
+func (ec *executionContext) marshalOFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	return graphql.MarshalFloat(v)
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOFloat2float64(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOFloat2float64(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {
@@ -3766,6 +7405,61 @@ func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.Se
 	return ec.marshalOID2string(ctx, sel, *v)
 }
 
+func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
+	return graphql.UnmarshalInt(v)
+}
+
+func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	return graphql.MarshalInt(v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOInt2int(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOInt2int(ctx, sel, *v)
+}
+
 func (ec *executionContext) unmarshalOJSON2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalString(v)
 }
@@ -3789,15 +7483,110 @@ func (ec *executionContext) marshalOJSON2ᚖstring(ctx context.Context, sel ast.
 	return ec.marshalOJSON2string(ctx, sel, *v)
 }
 
-func (ec *executionContext) marshalOPlayer2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPlayer(ctx context.Context, sel ast.SelectionSet, v model.Player) graphql.Marshaler {
-	return ec._Player(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOPlayer2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPlayer(ctx context.Context, sel ast.SelectionSet, v *model.Player) graphql.Marshaler {
+func (ec *executionContext) marshalOMTurkLocale2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocaleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MTurkLocale) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._Player(ctx, sel, v)
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTurkLocale2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocale(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalOPROVIDER2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx context.Context, v interface{}) (model.Provider, error) {
+	var res model.Provider
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOPROVIDER2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx context.Context, sel ast.SelectionSet, v model.Provider) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx context.Context, v interface{}) (*model.Provider, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOPROVIDER2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx context.Context, sel ast.SelectionSet, v *model.Provider) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) marshalOParticipant2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx context.Context, sel ast.SelectionSet, v model.Participant) graphql.Marshaler {
+	return ec._Participant(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx context.Context, sel ast.SelectionSet, v *model.Participant) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Participant(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSelectionCriteria2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionCriteria(ctx context.Context, sel ast.SelectionSet, v model.SelectionCriteria) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SelectionCriteria(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx context.Context, v interface{}) (model.SelectionType, error) {
+	var res model.SelectionType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx context.Context, sel ast.SelectionSet, v model.SelectionType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOSelectionType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx context.Context, v interface{}) (*model.SelectionType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOSelectionType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx context.Context, sel ast.SelectionSet, v *model.SelectionType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
@@ -3835,38 +7624,6 @@ func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel
 	ret := make(graphql.Array, len(v))
 	for i := range v {
 		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
-	}
-
-	return ret
-}
-
-func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*string, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
 	}
 
 	return ret
@@ -4067,6 +7824,29 @@ func (ec *executionContext) marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgen�
 		return graphql.Null
 	}
 	return ec.___Type(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOauthInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthInput(ctx context.Context, v interface{}) (model.AuthInput, error) {
+	return ec.unmarshalInputauthInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOauthInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthInput(ctx context.Context, v interface{}) (*model.AuthInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOauthInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOauthResp2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthResp(ctx context.Context, sel ast.SelectionSet, v model.AuthResp) graphql.Marshaler {
+	return ec._authResp(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOauthResp2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthResp(ctx context.Context, sel ast.SelectionSet, v *model.AuthResp) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._authResp(ctx, sel, v)
 }
 
 // endregion ***************************** type.gotpl *****************************

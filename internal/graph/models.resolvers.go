@@ -12,6 +12,10 @@ import (
 	"github.com/empiricaly/recruitment/internal/model"
 )
 
+func (r *datumResolver) Creator(ctx context.Context, obj *model.Datum) (model.Creator, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *datumResolver) DeletedAt(ctx context.Context, obj *model.Datum) (*time.Time, error) {
 	panic(fmt.Errorf("not implemented"))
 }

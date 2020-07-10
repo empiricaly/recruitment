@@ -1,4 +1,7 @@
 import App from "./App.svelte";
+import { manageFocus } from "./components/form/focus.js";
+
+manageFocus();
 
 const app = new App({
   target: document.body,

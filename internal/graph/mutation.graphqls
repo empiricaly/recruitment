@@ -1,3 +1,13 @@
+input authInput {
+  user: String!
+  password: String!
+}
+
+type authResp {
+  token: String!
+}
+
 type Mutation {
-  createPlayer: Player! @hasRole(role: PLAYER)
+  auth(input: authInput): authResp
+  createParticipant: Participant! @hasRole(role: PLAYER)
 }

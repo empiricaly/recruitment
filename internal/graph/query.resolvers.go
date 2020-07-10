@@ -11,7 +11,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/model"
 )
 
-func (r *queryResolver) Me(ctx context.Context) (*model.Player, error) {
+func (r *queryResolver) Me(ctx context.Context) (*model.Participant, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 

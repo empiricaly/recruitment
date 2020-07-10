@@ -1,7 +1,7 @@
 type Query {
-  """
-  me returns the current Player. It is the entry point for the Player-side
-  client. It contains all the information needed to display for Players.
-  """
-  me: Player @hasRole(role: PLAYER)
+  # """
+  # me returns the current Player. It is the entry point for the Player-side
+  # client. It contains all the information needed to display for Players.
+  # """
+  me: Participant @hasRole(role: PLAYER)
 }
