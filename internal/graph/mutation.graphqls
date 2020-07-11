@@ -9,5 +9,5 @@ type authResp {
 
 type Mutation {
   auth(input: authInput): authResp
-  createParticipant: Participant! @hasRole(role: PLAYER)
+  createParticipant: Participant! @hasRole(role: PARTICIPANT)
 }

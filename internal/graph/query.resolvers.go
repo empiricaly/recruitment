@@ -11,7 +11,11 @@ import (
 	"github.com/empiricaly/recruitment/internal/model"
 )
 
-func (r *queryResolver) Me(ctx context.Context) (*model.Participant, error) {
+func (r *queryResolver) Projects(ctx context.Context) ([]*model.Project, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) Me(ctx context.Context) (model.User, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 

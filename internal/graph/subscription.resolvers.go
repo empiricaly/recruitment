@@ -11,7 +11,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/model"
 )
 
-func (r *subscriptionResolver) Me(ctx context.Context) (<-chan *model.Participant, error) {
+func (r *subscriptionResolver) Me(ctx context.Context) (<-chan model.User, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 

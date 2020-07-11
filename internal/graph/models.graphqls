@@ -1,5 +1,5 @@
 """
-Status of Batches and Games.
+Type of a Step.
 """
 enum StepType {
   """
@@ -63,14 +63,136 @@ enum SelectionType {
 }
 
 """
+A Project is a container to organize Procedures and Runs.
+"""
+type Project {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  creator: Admin!
+
+  """
+  Human friendly name for Project
+  """
+  name: String
+
+  """
+  Procedures contained in Project
+  """
+  procedures: [Procedure!]!
+
+  """
+  Runs contained in Project
+  """
+  runs: [Run!]!
+}
+
+"""
+A Run is an instance of a Procedure. It goes through all Steps in the Procedure,
+managing participants, timing, messages, redirects, filter, and interactions
+with external APIs.
+"""
+type Run {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  creator: Admin!
+
+  """
+  Procudure this Run corresponds to. When a Run is started, an immutable
+  copy of the Procedure is made at that point in time so that further changes to
+  the Procedure will not affect the Run.
+  """
+  procedure: Procedure!
+
+  """
+  Status of the Run, indicating if the Run has started, is ongoing, finished, or
+  failed.
+  """
+  status: Status!
+
+  """
+  StartAt is the time when the Run should start, if it is not manually started.
+  """
+  startAt: DateTime
+
+  """
+  Time at which the Run did start.
+  """
+  startedAt: DateTime
+
+  """
+  Time at which the Run did end.
+  """
+  endedAt: DateTime
+
+  """
+  Steps are instanciated Steps, corresponding to the Procedure Steps and
+  containing the state of process of each Step.
+  """
+  steps: [StepRun!]!
+
+  """
+  The current Step at which the Run is, while the Run is on going. Before the
+  Run has started and after it is finished, it is null.
+  """
+  currentStep: StepRun
+
+  """
+  Error reason, if the Run failed.
+  """
+  error: String
+
+  """
+  Data returns the custom data that has been set on the Participants.
+  """
+  data(keys: [String!]): [Datum!]!
+}
+
+"""
+A StepRun is an instance of a Step. It manages status and operations of a given
+Step within a Run.
+"""
+type StepRun {
+  """
+  Step this StepRun corresponds to. When a Run is started, an immutable
+  copy of the Steps is made at that point in time so that further changes to
+  the Steps will not affect the Run.
+  """
+  step: Step
+
+  """
+  Status of the StepRun, indicating if the Run has started, is ongoing,
+  finished, or failed.
+  """
+  status: Status!
+
+  """
+  Time at which the StepRun started.
+  """
+  startedAt: DateTime
+
+  """
+  Time at which the StepRun ended.
+  """
+  endedAt: DateTime
+
+  """
+  Participants in this Step. Participants can increase while the Step is ongoin.
+  After it is finished, participants becomes immutable.
+  """
+  participants: [Participant!]!
+}
+
+"""
 Procedure is a series of Steps to execute in a Procedure Run. A
-procedure starts with the selection of Players.
+procedure starts with the selection of Participants.
 """
 type Procedure {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
-  creator: User!
+  creator: Admin!
 
   """
   Friendly name.
@@ -250,7 +372,7 @@ type Step implements Node {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
-  creator: User!
+  creator: Admin!
 
   """
   The Type defines what kind of action this step represents.
@@ -420,8 +542,8 @@ interface Node {
   type and the internal Database ID in the following format: `Model:ID`.
 
   For example:
-  - `Batch:bpi6chiuof2j0lmpgc20`
-  - `Player:9m4e2mr0ui3e8a215n4g`
+  - `Run:bpi6chiuof2j0lmpgc20`
+  - `Participant:9m4e2mr0ui3e8a215n4g`
   """
   id: ID!
 
@@ -472,7 +594,7 @@ enum Status {
 }
 
 """
-Datum is a single piece of custom data set by a player or the Game.
+Datum is a single piece of custom data.
 """
 type Datum implements Node {
   """
@@ -493,7 +615,7 @@ type Datum implements Node {
   """
   Creator is the user or participant that created the Datum.
   """
-  creator: Creator
+  creator: User
 
   """
   deletedAt is the time when the Datum was deleted. If null, the Datum was not
@@ -528,36 +650,38 @@ type Datum implements Node {
   versions: [Datum!]!
 }
 
-union Creator = Participant | User
+"""
+User is either an Admin or a Participant.
+"""
+union User = Participant | Admin
 
 """
 Participant is a worker in the system.
 """
 type Participant implements Node {
-  """
-  id is the unique globally identifier for the record.
-  """
   id: ID!
-
-  """
-  createdAt is the time of creation of the record.
-  """
   createdAt: DateTime!
-
-  """
-  updatedAt is the time of last update of the record.
-  """
   updatedAt: DateTime!
 
   """
-  providerIDs contains the IDs from 3rd providers corresponding the participant.
+  Step during which the Participant was created.
+  """
+  createdBy: StepRun
+
+  """
+  All StepRuns the Participant participated in.
+  """
+  steps: [StepRun!]!
+
+  """
+  ProviderIDs contains the IDs from 3rd providers corresponding the participant.
   A single participant could potentially be referenced in different in multiple
   providers.
   """
   providerIDs: [ProviderID!]!
 
   """
-  data returns the custom data that has been set on the Player.
+  Data returns the custom data that has been set on the Participant.
   """
   data(keys: [String!]): [Datum!]!
 }
@@ -593,9 +717,9 @@ enum PROVIDER {
 }
 
 """
-User is a user that has priviledged access to the data.
+Admin is a user that has priviledged access to the data.
 """
-type User implements Node {
+type Admin implements Node {
   """
   id is the unique globally identifier for the record.
   """
@@ -612,12 +736,12 @@ type User implements Node {
   updatedAt: DateTime!
 
   """
-  name is the full name of the user.
+  name is the full name of the Admin.
   """
   name: String
 
   """
-  email is the email associated with the user.
+  email is the email associated with the Admin.
   """
   email: String!
 }

@@ -9,10 +9,6 @@ import (
 	"time"
 )
 
-type Creator interface {
-	IsCreator()
-}
-
 // Node is an interface allowing simple querying of any node
 type Node interface {
 	IsNode()
@@ -27,6 +23,28 @@ type SelectionCriteria interface {
 type StepArgs interface {
 	IsStepArgs()
 }
+
+// User is either an Admin or a Participant.
+type User interface {
+	IsUser()
+}
+
+// Admin is a user that has priviledged access to the data.
+type Admin struct {
+	// id is the unique globally identifier for the record.
+	ID string `json:"id"`
+	// createdAt is the time of creation of the record.
+	CreatedAt time.Time `json:"createdAt"`
+	// updatedAt is the time of last update of the record.
+	UpdatedAt time.Time `json:"updatedAt"`
+	// name is the full name of the Admin.
+	Name *string `json:"name"`
+	// email is the email associated with the Admin.
+	Email string `json:"email"`
+}
+
+func (Admin) IsUser() {}
+func (Admin) IsNode() {}
 
 // Possible Condition values. Only one of the fields in a CompValue should be
 // defined.
@@ -52,6 +70,34 @@ type Condition struct {
 	Comparator *Comparator  `json:"comparator"`
 	Values     []*CompValue `json:"values"`
 }
+
+// Datum is a single piece of custom data.
+type Datum struct {
+	// id is the unique globally identifier for the record.
+	ID string `json:"id"`
+	// createdAt is the time of creation of the record.
+	CreatedAt time.Time `json:"createdAt"`
+	// updatedAt is the time of last update of the record.
+	UpdatedAt time.Time `json:"updatedAt"`
+	// Creator is the user or participant that created the Datum.
+	Creator User `json:"creator"`
+	// deletedAt is the time when the Datum was deleted. If null, the Datum was not
+	// deleted.
+	DeletedAt *time.Time `json:"deletedAt"`
+	// key identifies the unique key of the Datum.
+	Key string `json:"key"`
+	// val is the value of the Datum. It can be any JSON encodable value.
+	// Passing null will delete the Datum.
+	Val *string `json:"val"`
+	// next returns the Datum ID of the next value in an array of Datum values.
+	Next *string `json:"next"`
+	// root returns the Datum ID of the root value in an array of Datum values.
+	Root *string `json:"root"`
+	// versions returns previous versions for the Datum (they all have the same ID).
+	Versions []*Datum `json:"versions"`
+}
+
+func (Datum) IsNode() {}
 
 // FilterStepArgs are arguments passed to a Pariticipant Filter Step.
 // It must contains **either** JS code or the name of pre-defined filtering function.
@@ -217,30 +263,31 @@ func (MessageStepArgs) IsStepArgs() {}
 
 // Participant is a worker in the system.
 type Participant struct {
-	// id is the unique globally identifier for the record.
-	ID string `json:"id"`
-	// createdAt is the time of creation of the record.
+	ID        string    `json:"id"`
 	CreatedAt time.Time `json:"createdAt"`
-	// updatedAt is the time of last update of the record.
 	UpdatedAt time.Time `json:"updatedAt"`
-	// providerIDs contains the IDs from 3rd providers corresponding the participant.
+	// Step during which the Participant was created.
+	CreatedBy *StepRun `json:"createdBy"`
+	// All StepRuns the Participant participated in.
+	Steps []*StepRun `json:"steps"`
+	// ProviderIDs contains the IDs from 3rd providers corresponding the participant.
 	// A single participant could potentially be referenced in different in multiple
 	// providers.
 	ProviderIDs []*ProviderID `json:"providerIDs"`
-	// data returns the custom data that has been set on the Player.
+	// Data returns the custom data that has been set on the Participant.
 	Data []*Datum `json:"data"`
 }
 
-func (Participant) IsCreator() {}
-func (Participant) IsNode()    {}
+func (Participant) IsUser() {}
+func (Participant) IsNode() {}
 
 // Procedure is a series of Steps to execute in a Procedure Run. A
-// procedure starts with the selection of Players.
+// procedure starts with the selection of Participants.
 type Procedure struct {
 	ID        string    `json:"id"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-	Creator   *User     `json:"creator"`
+	Creator   *Admin    `json:"creator"`
 	// Friendly name.
 	Name string `json:"name"`
 	// Ordered list of Steps in a Procedure.
@@ -255,6 +302,20 @@ type Procedure struct {
 	Adult bool `json:"adult"`
 }
 
+// A Project is a container to organize Procedures and Runs.
+type Project struct {
+	ID        string    `json:"id"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	Creator   *Admin    `json:"creator"`
+	// Human friendly name for Project
+	Name *string `json:"name"`
+	// Procedures contained in Project
+	Procedures []*Procedure `json:"procedures"`
+	// Runs contained in Project
+	Runs []*Run `json:"runs"`
+}
+
 // ProviderID contains the identifier for a 3rd party provider.
 type ProviderID struct {
 	// createdAt is the time of creation of the record.
@@ -265,12 +326,45 @@ type ProviderID struct {
 	Provider *Provider `json:"provider"`
 }
 
+// A Run is an instance of a Procedure. It goes through all Steps in the Procedure,
+// managing participants, timing, messages, redirects, filter, and interactions
+// with external APIs.
+type Run struct {
+	ID        string    `json:"id"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	Creator   *Admin    `json:"creator"`
+	// Procudure this Run corresponds to. When a Run is started, an immutable
+	// copy of the Procedure is made at that point in time so that further changes to
+	// the Procedure will not affect the Run.
+	Procedure *Procedure `json:"procedure"`
+	// Status of the Run, indicating if the Run has started, is ongoing, finished, or
+	// failed.
+	Status Status `json:"status"`
+	// StartAt is the time when the Run should start, if it is not manually started.
+	StartAt *time.Time `json:"startAt"`
+	// Time at which the Run did start.
+	StartedAt *time.Time `json:"startedAt"`
+	// Time at which the Run did end.
+	EndedAt *time.Time `json:"endedAt"`
+	// Steps are instanciated Steps, corresponding to the Procedure Steps and
+	// containing the state of process of each Step.
+	Steps []*StepRun `json:"steps"`
+	// The current Step at which the Run is, while the Run is on going. Before the
+	// Run has started and after it is finished, it is null.
+	CurrentStep *StepRun `json:"currentStep"`
+	// Error reason, if the Run failed.
+	Error *string `json:"error"`
+	// Data returns the custom data that has been set on the Participants.
+	Data []*Datum `json:"data"`
+}
+
 // Steps are the ordered parts of a Procedure.
 type Step struct {
 	ID        string    `json:"id"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
-	Creator   *User     `json:"creator"`
+	Creator   *Admin    `json:"creator"`
 	// The Type defines what kind of action this step represents.
 	Type StepType `json:"type"`
 	// Duration of Step in seconds. At the end of the duration, the next Step will
@@ -283,22 +377,24 @@ type Step struct {
 
 func (Step) IsNode() {}
 
-// User is a user that has priviledged access to the data.
-type User struct {
-	// id is the unique globally identifier for the record.
-	ID string `json:"id"`
-	// createdAt is the time of creation of the record.
-	CreatedAt time.Time `json:"createdAt"`
-	// updatedAt is the time of last update of the record.
-	UpdatedAt time.Time `json:"updatedAt"`
-	// name is the full name of the user.
-	Name *string `json:"name"`
-	// email is the email associated with the user.
-	Email string `json:"email"`
+// A StepRun is an instance of a Step. It manages status and operations of a given
+// Step within a Run.
+type StepRun struct {
+	// Step this StepRun corresponds to. When a Run is started, an immutable
+	// copy of the Steps is made at that point in time so that further changes to
+	// the Steps will not affect the Run.
+	Step *Step `json:"step"`
+	// Status of the StepRun, indicating if the Run has started, is ongoing,
+	// finished, or failed.
+	Status Status `json:"status"`
+	// Time at which the StepRun started.
+	StartedAt *time.Time `json:"startedAt"`
+	// Time at which the StepRun ended.
+	EndedAt *time.Time `json:"endedAt"`
+	// Participants in this Step. Participants can increase while the Step is ongoin.
+	// After it is finished, participants becomes immutable.
+	Participants []*Participant `json:"participants"`
 }
-
-func (User) IsCreator() {}
-func (User) IsNode()    {}
 
 type AuthInput struct {
 	User     string `json:"user"`
@@ -465,18 +561,18 @@ func (e Provider) MarshalGQL(w io.Writer) {
 type Role string
 
 const (
-	RoleAdmin  Role = "ADMIN"
-	RolePlayer Role = "PLAYER"
+	RoleAdmin       Role = "ADMIN"
+	RoleParticipant Role = "PARTICIPANT"
 )
 
 var AllRole = []Role{
 	RoleAdmin,
-	RolePlayer,
+	RoleParticipant,
 }
 
 func (e Role) IsValid() bool {
 	switch e {
-	case RoleAdmin, RolePlayer:
+	case RoleAdmin, RoleParticipant:
 		return true
 	}
 	return false
@@ -603,7 +699,7 @@ func (e Status) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Status of Batches and Games.
+// Type of a Step.
 type StepType string
 
 const (

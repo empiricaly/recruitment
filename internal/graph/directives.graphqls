@@ -2,7 +2,7 @@ directive @hasRole(role: Role!) on FIELD_DEFINITION
 
 enum Role {
   ADMIN
-  PLAYER
+  PARTICIPANT
 }
 
 directive @goModel(

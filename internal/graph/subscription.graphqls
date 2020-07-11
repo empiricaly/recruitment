@@ -1,7 +1,7 @@
 type Subscription {
   """
-  me returns updates the current Player. It is how the Player-side client can
-  keep all Game information needed up to date.
+  me returns the current Admin or Participant, depending on whether the user is
+  logged in.
   """
-  me: Participant @hasRole(role: PLAYER)
+  me: User
 }
