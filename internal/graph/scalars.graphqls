@@ -12,3 +12,8 @@ scalar Uint32
 JSON is a JSON string of any value.
 """
 scalar JSON
+
+"""
+Map is an opaque key-value Map.
+"""
+scalar Map

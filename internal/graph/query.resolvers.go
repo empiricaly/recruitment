@@ -15,7 +15,15 @@ func (r *queryResolver) Projects(ctx context.Context) ([]*model.Project, error) 
 	panic(fmt.Errorf("not implemented"))
 }
 
+func (r *queryResolver) Participants(ctx context.Context, first *int, after *string) (*model.ParticipantsConnection, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *queryResolver) Me(ctx context.Context) (model.User, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) Page(ctx context.Context, token string, participantID string) (*model.Page, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 

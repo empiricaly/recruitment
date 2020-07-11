@@ -1,0 +1,121 @@
+"""
+InternalCriteria is the criteria for internal database participant selection.
+"""
+input InternalCriteriaInput {
+  """
+  Condition set the participant must meet to be allowed to participate.
+  """
+  condition: ConditionInput!
+}
+
+"""
+Possible Condition values. Only one of the fields in a CompValue should be
+defined.
+"""
+input CompValueInput {
+  int: Int
+  float: Float
+  string: String
+  boolean: Boolean
+}
+
+"""
+Condition for a filter. A condition must **either**:
+- have one or more `and` Conditions
+- have one or more `or` Conditions
+- have a comparator and one or more values
+When comparing against values, the first value is used for operands comparing
+single values (LessThan, LessThanOrEqualTo, GreaterThan, GreaterThanOrEqualTo,
+EqualTo, NotEqualTo). When testing for existence an empty array is DoesNotExist
+and an array with one or more values Exists. For In and NotIn all values in the
+values array are used.
+"""
+input ConditionInput {
+  and: [ConditionInput!]
+  or: [ConditionInput!]
+  comparator: Comparator
+  values: [CompValueInput!]
+}
+
+"""
+MTurkCriteria is the criteria for MTurk Qualifications participant selection.
+"""
+input MTurkCriteriaInput {
+  """
+  MTurk Qualifications a Worker must meet before the Worker is allowed to accept
+  and complete the HIT.
+  """
+  qualifications: [MTurkQualificationCriteriaInput!]!
+}
+
+"""
+MTurkQualificationCriteria is an MTurk Qualification requirement. It is an
+MTurk Qualification that a Worker must have before the Worker is allowed to
+accept a HIT.
+See https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_QualificationRequirementDataStructureArticle.html
+"""
+input MTurkQualificationCriteriaInput {
+  """
+  The ID of the MTurk Qualification Type.
+  """
+  id: ID!
+
+  """
+  The kind of comparison to make against a Qualification's value.
+  You can compare a Qualification's value:
+  - To an IntegerValue to see if it is LessThan, LessThanOrEqualTo, GreaterThan,
+    GreaterThanOrEqualTo, EqualTo, or NotEqualTo the IntegerValue.
+  - To a LocaleValue to see if it is EqualTo, or NotEqualTo the LocaleValue.
+  - To see if the value is In or NotIn a set of IntegerValue or LocaleValue
+    values.
+  A Qualification requirement can also test if a Qualification Exists or
+  DoesNotExist in the user's profile, regardless of its value.
+  """
+  comparator: Comparator!
+
+  """
+  Array of integer values to compare against the Qualification's value.
+  IntegerValue must not be present if Comparator is Exists or DoesNotExist.
+  IntegerValue can only be used if the Qualification type has an integer value;
+  it cannot be used with the Worker_Locale QualificationType ID, see
+  Qualification Type IDs.
+  When performing a set comparison by using the In or the NotIn comparator, you
+  can use up to 15 elements in this list.
+  """
+  values: [Int!]
+
+  """
+  The locale value to compare against the Qualification's value. The local value
+  must be a valid ISO 3166 country code or supports ISO 3166-2 subdivisions.
+  LocaleValue can only be used with a Worker_Locale QualificationType ID, see
+  Qualification Type IDs.
+  LocaleValue can only be used with the EqualTo, NotEqualTo, In, and NotIn
+  comparators.
+  You must only use a single LocaleValue element when using the EqualTo or
+  NotEqualTo comparators.
+  When performing a set comparison by using the In or the NotIn comparator, you
+  can use up to 30 LocaleValue elements in a QualificationRequirement data
+  structure.
+  """
+  locales: [MTurkLocaleInput!]
+}
+
+"""
+The Locale data structure represents a geographical region or location in MTurk.
+"""
+input MTurkLocaleInput {
+  """
+  The country of the locale.
+  Type: A valid ISO 3166 country code. For example, the code US refers to the
+  United States of America.
+  """
+  country: String!
+
+  """
+  The state or subdivision of the locale.
+  Type: Type: A valid ISO 3166-2 subdivision code. For example, the code CA
+  refers to the state of California.
+  Subdivisions or states are only available for the United States of America.
+  """
+  subdivision: String
+}

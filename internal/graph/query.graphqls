@@ -1,3 +1,49 @@
+"""
+Page returns everything needed to display a page to Participants or redirect
+them, depending on the Step, whether it's a message, or a lobby, and the token
+used to acquire the page.
+"""
+type Page {
+  """
+  Redirect is URL. If present, the page should just redirect to the given URL.
+  No other field should be present if the redirect is non-null.
+  """
+  redirect: String
+
+  """
+  Props to be passed to the Content (if the Content is dynamic).
+  """
+  props: Map
+
+  """
+  The content to display to the Participant.
+  """
+  content: String
+
+  """
+  The rendered for the content to display.
+  """
+  contentType: ContentType!
+}
+
+type PageInfo {
+  startCursor: ID!
+  endCursor: ID!
+  hasNextPage: Boolean!
+}
+
+type ParticipantsConnection {
+  totalCount: Int!
+  edges: [ParticipantsEdge!]
+  participants: [Participant!]!
+  pageInfo: PageInfo!
+}
+
+type ParticipantsEdge {
+  cursor: ID!
+  node: Participant
+}
+
 type Query {
   """
   Projects returns all projects. It is the entry point for the backend data.
@@ -5,8 +51,20 @@ type Query {
   projects: [Project!]! @hasRole(role: ADMIN)
 
   """
+  Participants returns all participants in DB.
+  """
+  participants(first: Int, after: ID): ParticipantsConnection!
+    @hasRole(role: ADMIN)
+
+  """
   me returns the current Admin or Participant, depending on whether the user is
   logged in.
   """
   me: User
+
+  """
+  Get page information from a token (usually passed in the URL) and a
+  participantID (usually called after registerParticipant).
+  """
+  page(token: String!, participantID: ID!): Page!
 }

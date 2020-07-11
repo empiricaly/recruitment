@@ -85,6 +85,11 @@ type Project {
   Runs contained in Project
   """
   runs: [Run!]!
+
+  """
+  Data returns the custom data that has been set on the Participant.
+  """
+  data(keys: [String!]): [Datum!]!
 }
 
 """
@@ -178,10 +183,15 @@ type StepRun {
   endedAt: DateTime
 
   """
-  Participants in this Step. Participants can increase while the Step is ongoin.
-  After it is finished, participants becomes immutable.
+  Participants in this Step. Participants can increase while the Step is on
+  going. After it is finished, participants becomes immutable.
   """
-  participants: [Participant!]!
+  participants(first: Int, after: ID): ParticipantsConnection!
+
+  """
+  Number of Participants in this Step.
+  """
+  participantsCount: Int!
 }
 
 """
@@ -213,6 +223,11 @@ type Procedure {
   Selection criteria for participants
   """
   criteria: SelectionCriteria
+
+  """
+  Number of participants desired.
+  """
+  participantCount: Int
 
   """
   Contains adult content.
@@ -387,6 +402,9 @@ type Step implements Node {
   """
   duration: Int!
 
+  """
+  Step type specific Step arguments.
+  """
   args: [StepArgs!]!
 }
 
@@ -474,8 +492,10 @@ type HITStepArgs {
 
   """
   Number of HIT workers to accept.
+  Note: is this needed? The count is determined by the selection in the first
+  Step, then by the number of participants remaining at each Step.
   """
-  workers: Int!
+  workersCount: Int!
 }
 
 """

@@ -46,9 +46,31 @@ type Admin struct {
 func (Admin) IsUser() {}
 func (Admin) IsNode() {}
 
+type AuthInput struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type AuthResp struct {
+	Token string `json:"token"`
+}
+
+type CancelRunInput struct {
+	RunID string `json:"runID"`
+}
+
 // Possible Condition values. Only one of the fields in a CompValue should be
 // defined.
 type CompValue struct {
+	Int     *int     `json:"int"`
+	Float   *float64 `json:"float"`
+	String  *string  `json:"string"`
+	Boolean *bool    `json:"boolean"`
+}
+
+// Possible Condition values. Only one of the fields in a CompValue should be
+// defined.
+type CompValueInput struct {
 	Int     *int     `json:"int"`
 	Float   *float64 `json:"float"`
 	String  *string  `json:"string"`
@@ -69,6 +91,52 @@ type Condition struct {
 	Or         []*Condition `json:"or"`
 	Comparator *Comparator  `json:"comparator"`
 	Values     []*CompValue `json:"values"`
+}
+
+// Condition for a filter. A condition must **either**:
+// - have one or more `and` Conditions
+// - have one or more `or` Conditions
+// - have a comparator and one or more values
+// When comparing against values, the first value is used for operands comparing
+// single values (LessThan, LessThanOrEqualTo, GreaterThan, GreaterThanOrEqualTo,
+// EqualTo, NotEqualTo). When testing for existence an empty array is DoesNotExist
+// and an array with one or more values Exists. For In and NotIn all values in the
+// values array are used.
+type ConditionInput struct {
+	And        []*ConditionInput `json:"and"`
+	Or         []*ConditionInput `json:"or"`
+	Comparator *Comparator       `json:"comparator"`
+	Values     []*CompValueInput `json:"values"`
+}
+
+type CreateProcedureInput struct {
+	// Project in which to create the Procedure.
+	ProjectID string `json:"projectID"`
+	// Friendly name.
+	Name string `json:"name"`
+	// Ordered list of Steps for Procedure.
+	Steps []*StepInput `json:"steps"`
+	// Determines participant selection type.
+	SelectionType SelectionType `json:"selectionType"`
+	// Internal Selection criteria for participants
+	InternalCriteria *InternalCriteriaInput `json:"internalCriteria"`
+	// Mturk Selection criteria for participants
+	MturkCriteria *MTurkCriteriaInput `json:"mturkCriteria"`
+	// Number of participants desired.
+	ParticipantCount int `json:"participantCount"`
+	// Contains adult content.
+	// From MTurk: This project may contain potentially explicit or offensive
+	// content, for example, nudity.
+	Adult bool `json:"adult"`
+}
+
+type CreateProjectInput struct {
+	Name string `json:"name"`
+}
+
+type CreateRunInput struct {
+	ProcedureID string     `json:"procedureID"`
+	StartAt     *time.Time `json:"startAt"`
 }
 
 // Datum is a single piece of custom data.
@@ -99,6 +167,12 @@ type Datum struct {
 
 func (Datum) IsNode() {}
 
+type DuplicateProcedureInput struct {
+	ProcedureID string  `json:"procedureID"`
+	ProjectID   string  `json:"projectID"`
+	Name        *string `json:"name"`
+}
+
 // FilterStepArgs are arguments passed to a Pariticipant Filter Step.
 // It must contains **either** JS code or the name of pre-defined filtering function.
 // This is only valid for an PARTICIPANT_FILTER Step.
@@ -121,6 +195,27 @@ type FilterStepArgs struct {
 }
 
 func (FilterStepArgs) IsStepArgs() {}
+
+// FilterStepArgs are arguments passed to a Pariticipant Filter Step.
+// It must contains **either** JS code or the name of pre-defined filtering function.
+// This is only valid for an PARTICIPANT_FILTER Step.
+type FilterStepArgsInput struct {
+	// Javascript to execute as a participant filter step.
+	// The code must contain a functinon exported using a default ES6 export.
+	// The function should accept a single argument object. This object contains the
+	// following fields:
+	// - `participants`: the participants entering this step
+	// - `step`: this step (contains the definition of this step: duration, etc.)
+	// - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
+	// - `procedure`: parent procedure of step (contains the definition of the Procedure)
+	// - `run`: run this step is part of (contains the instance of the Procedure)
+	// The functions should return an array of participants.
+	// If the functions returns null or undefined, the participants are not filtered.
+	// If the function throws an exception, the run will fail.
+	Js *string `json:"js"`
+	// Filter should be the name of pre-defined filtering function.
+	Filter *string `json:"filter"`
+}
 
 // HITStepArgs are arguments passed to a HIT Step.
 // This is only valid for an MTURK_HIT Step.
@@ -149,10 +244,44 @@ type HITStepArgs struct {
 	// Duration in seconds from start of Step before expiration of unconsumed HITs.
 	Duration int `json:"duration"`
 	// Number of HIT workers to accept.
-	Workers int `json:"workers"`
+	// Note: is this needed? The count is determined by the selection in the first
+	// Step, then by the number of participants remaining at each Step.
+	WorkersCount int `json:"workersCount"`
 }
 
 func (HITStepArgs) IsStepArgs() {}
+
+// HITStepArgs are arguments passed to a HIT Step.
+// This is only valid for an MTURK_HIT Step.
+type HITStepArgsInput struct {
+	// Title of HIT.
+	// From MTurk: Describe the task to Workers. Be as specific as possible,
+	// e.g. "answer a survey about movies", instead of "short survey", so Workers
+	// know what to expect.
+	// Tasks that contain adult content are required to include the following phrase
+	// in your task title: (WARNING: This HIT may contain adult content. Worker
+	// discretion is advised.)
+	Title string `json:"title"`
+	// Description of HIT.
+	// From MTurk: Give more detail about this task. This gives Workers a bit more
+	// information before they decide to view your task.
+	Description string `json:"description"`
+	// Keywords of HIT. Comma-seratred.
+	// From MTurk: Provide keywords that will help Workers search for your tasks.
+	Keywords string `json:"keywords"`
+	// DISABLED - Micro-batching is still TBD, probably needs more args.
+	Microbatch bool `json:"microbatch"`
+	// MTurk HIT reward for task in USD.
+	Reward float64 `json:"reward"`
+	// Timeout of a single accepted HIT in seconds.
+	Timeout int `json:"timeout"`
+	// Duration in seconds from start of Step before expiration of unconsumed HITs.
+	Duration int `json:"duration"`
+	// Number of HIT workers to accept.
+	// Note: is this needed? The count is determined by the selection in the first
+	// Step, then by the number of participants remaining at each Step.
+	WorkersCount int `json:"workersCount"`
+}
 
 // InternalCriteria is the criteria for internal database participant selection.
 type InternalCriteria struct {
@@ -161,6 +290,12 @@ type InternalCriteria struct {
 }
 
 func (InternalCriteria) IsSelectionCriteria() {}
+
+// InternalCriteria is the criteria for internal database participant selection.
+type InternalCriteriaInput struct {
+	// Condition set the participant must meet to be allowed to participate.
+	Condition *ConditionInput `json:"condition"`
+}
 
 // MTurkCriteria is the criteria for MTurk Qualifications participant selection.
 type MTurkCriteria struct {
@@ -171,8 +306,28 @@ type MTurkCriteria struct {
 
 func (MTurkCriteria) IsSelectionCriteria() {}
 
+// MTurkCriteria is the criteria for MTurk Qualifications participant selection.
+type MTurkCriteriaInput struct {
+	// MTurk Qualifications a Worker must meet before the Worker is allowed to accept
+	// and complete the HIT.
+	Qualifications []*MTurkQualificationCriteriaInput `json:"qualifications"`
+}
+
 // The Locale data structure represents a geographical region or location in MTurk.
 type MTurkLocale struct {
+	// The country of the locale.
+	// Type: A valid ISO 3166 country code. For example, the code US refers to the
+	// United States of America.
+	Country string `json:"country"`
+	// The state or subdivision of the locale.
+	// Type: Type: A valid ISO 3166-2 subdivision code. For example, the code CA
+	// refers to the state of California.
+	// Subdivisions or states are only available for the United States of America.
+	Subdivision *string `json:"subdivision"`
+}
+
+// The Locale data structure represents a geographical region or location in MTurk.
+type MTurkLocaleInput struct {
 	// The country of the locale.
 	// Type: A valid ISO 3166 country code. For example, the code US refers to the
 	// United States of America.
@@ -223,6 +378,45 @@ type MTurkQualificationCriteria struct {
 	Locales []*MTurkLocale `json:"locales"`
 }
 
+// MTurkQualificationCriteria is an MTurk Qualification requirement. It is an
+// MTurk Qualification that a Worker must have before the Worker is allowed to
+// accept a HIT.
+// See https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_QualificationRequirementDataStructureArticle.html
+type MTurkQualificationCriteriaInput struct {
+	// The ID of the MTurk Qualification Type.
+	ID string `json:"id"`
+	// The kind of comparison to make against a Qualification's value.
+	// You can compare a Qualification's value:
+	// - To an IntegerValue to see if it is LessThan, LessThanOrEqualTo, GreaterThan,
+	//   GreaterThanOrEqualTo, EqualTo, or NotEqualTo the IntegerValue.
+	// - To a LocaleValue to see if it is EqualTo, or NotEqualTo the LocaleValue.
+	// - To see if the value is In or NotIn a set of IntegerValue or LocaleValue
+	//   values.
+	// A Qualification requirement can also test if a Qualification Exists or
+	// DoesNotExist in the user's profile, regardless of its value.
+	Comparator Comparator `json:"comparator"`
+	// Array of integer values to compare against the Qualification's value.
+	// IntegerValue must not be present if Comparator is Exists or DoesNotExist.
+	// IntegerValue can only be used if the Qualification type has an integer value;
+	// it cannot be used with the Worker_Locale QualificationType ID, see
+	// Qualification Type IDs.
+	// When performing a set comparison by using the In or the NotIn comparator, you
+	// can use up to 15 elements in this list.
+	Values []int `json:"values"`
+	// The locale value to compare against the Qualification's value. The local value
+	// must be a valid ISO 3166 country code or supports ISO 3166-2 subdivisions.
+	// LocaleValue can only be used with a Worker_Locale QualificationType ID, see
+	// Qualification Type IDs.
+	// LocaleValue can only be used with the EqualTo, NotEqualTo, In, and NotIn
+	// comparators.
+	// You must only use a single LocaleValue element when using the EqualTo or
+	// NotEqualTo comparators.
+	// When performing a set comparison by using the In or the NotIn comparator, you
+	// can use up to 30 LocaleValue elements in a QualificationRequirement data
+	// structure.
+	Locales []*MTurkLocaleInput `json:"locales"`
+}
+
 // MessageStepArgs are arguments passed to a Step that has a message.
 // This is only valid for MTURK_HIT and MTURK_MESSAGE Steps.
 type MessageStepArgs struct {
@@ -261,6 +455,76 @@ type MessageStepArgs struct {
 
 func (MessageStepArgs) IsStepArgs() {}
 
+// MessageStepArgs are arguments passed to a Step that has a message.
+// This is only valid for MTURK_HIT and MTURK_MESSAGE Steps.
+type MessageStepArgsInput struct {
+	// URL that will be transformed into a redirect (proxy URL) through the Empirica
+	// Recruitment website and passed to the Message template. This URL is the final
+	// destination the worker will land on. Empirica Recruitment redirects
+	// through the app so we can add parameters to the proxy URL and hide the final
+	// URL (to limit sharing of URLs).
+	URL *string `json:"url"`
+	// Message the content to display to the user.
+	// Template variables:
+	// - `url`: proxy URL if `url` exist on Step.
+	// - `step`: this step (contains the definition of this step: duration, etc.)
+	// - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
+	// - `procedure`: parent Procedure of step (contains the definition of the Procedure)
+	// - `run`: run this step is part of (contains the instance of the Procedure)
+	// - `participant`: current participant
+	Message string `json:"message"`
+	// MessageType indicates the rendering language of the Message.
+	MessageType ContentType `json:"messageType"`
+	// Lobby enables to showing a lobby, and rich-text message to put in the lobby
+	// Lobby can either expire (see expiration below) to produce the effect of a
+	// precise start time, or must have a submit button.
+	// Only available if URL is present.
+	// Template variables are identical to message.
+	Lobby *string `json:"lobby"`
+	// LobbyType indicates the rendering language of the Lobby.
+	LobbyType *ContentType `json:"lobbyType"`
+	// useLobby enables to showing a lobby, and rich-text message to put in the lobby
+	// Lobby can either expire (see expiration below) to produce the effect of a
+	// precise start time, or must have a submit button.
+	// The string should be HTML content.
+	// Only available if URL is present.
+	LobbyExpiration *string `json:"lobbyExpiration"`
+}
+
+// MutateDatumInput adds/appends/updates/deletes Data to a Node.
+type MutateDatumInput struct {
+	// Operation to perform on Datum.
+	Operation *DatumOp `json:"operation"`
+	// key identifies the unique key of the Datum.
+	Key string `json:"key"`
+	// val is the value of the Datum. It can be any JSON encodable value.
+	// If Delete op, value is ignored.
+	Val *string `json:"val"`
+	// ID of object on which to set the value.
+	NodeID string `json:"nodeID"`
+}
+
+// Page returns everything needed to display a page to Participants or redirect
+// them, depending on the Step, whether it's a message, or a lobby, and the token
+// used to acquire the page.
+type Page struct {
+	// Redirect is URL. If present, the page should just redirect to the given URL.
+	// No other field should be present if the redirect is non-null.
+	Redirect *string `json:"redirect"`
+	// Props to be passed to the Content (if the Content is dynamic).
+	Props map[string]interface{} `json:"props"`
+	// The content to display to the Participant.
+	Content *string `json:"content"`
+	// The rendered for the content to display.
+	ContentType ContentType `json:"contentType"`
+}
+
+type PageInfo struct {
+	StartCursor string `json:"startCursor"`
+	EndCursor   string `json:"endCursor"`
+	HasNextPage bool   `json:"hasNextPage"`
+}
+
 // Participant is a worker in the system.
 type Participant struct {
 	ID        string    `json:"id"`
@@ -281,6 +545,18 @@ type Participant struct {
 func (Participant) IsUser() {}
 func (Participant) IsNode() {}
 
+type ParticipantsConnection struct {
+	TotalCount   int                 `json:"totalCount"`
+	Edges        []*ParticipantsEdge `json:"edges"`
+	Participants []*Participant      `json:"participants"`
+	PageInfo     *PageInfo           `json:"pageInfo"`
+}
+
+type ParticipantsEdge struct {
+	Cursor string       `json:"cursor"`
+	Node   *Participant `json:"node"`
+}
+
 // Procedure is a series of Steps to execute in a Procedure Run. A
 // procedure starts with the selection of Participants.
 type Procedure struct {
@@ -296,6 +572,8 @@ type Procedure struct {
 	SelectionType *SelectionType `json:"selectionType"`
 	// Selection criteria for participants
 	Criteria SelectionCriteria `json:"criteria"`
+	// Number of participants desired.
+	ParticipantCount *int `json:"participantCount"`
 	// Contains adult content.
 	// From MTurk: This project may contain potentially explicit or offensive
 	// content, for example, nudity.
@@ -314,6 +592,8 @@ type Project struct {
 	Procedures []*Procedure `json:"procedures"`
 	// Runs contained in Project
 	Runs []*Run `json:"runs"`
+	// Data returns the custom data that has been set on the Participant.
+	Data []*Datum `json:"data"`
 }
 
 // ProviderID contains the identifier for a 3rd party provider.
@@ -324,6 +604,15 @@ type ProviderID struct {
 	ProviderID string `json:"providerID"`
 	// ID is the ID of the 3rd party Provider.
 	Provider *Provider `json:"provider"`
+}
+
+type RegisterParticipantInput struct {
+	// ID from provider.
+	ID string `json:"id"`
+	// Provider of ID.
+	Provider *Provider `json:"provider"`
+	// Initial Data to attach to Participant.
+	Data map[string]interface{} `json:"data"`
 }
 
 // A Run is an instance of a Procedure. It goes through all Steps in the Procedure,
@@ -359,6 +648,15 @@ type Run struct {
 	Data []*Datum `json:"data"`
 }
 
+type ScheduleRunInput struct {
+	RunID   string    `json:"runID"`
+	StartAt time.Time `json:"startAt"`
+}
+
+type StartRunInput struct {
+	RunID string `json:"runID"`
+}
+
 // Steps are the ordered parts of a Procedure.
 type Step struct {
 	ID        string    `json:"id"`
@@ -371,11 +669,28 @@ type Step struct {
 	// execute.
 	// If set to 0, the Step executes and immediately moves onto the next Step. This
 	// mostly works for PARTICIPANT_FILTER Steps and the last Step in a Procedure.
-	Duration int        `json:"duration"`
-	Args     []StepArgs `json:"args"`
+	Duration int `json:"duration"`
+	// Step type specific Step arguments.
+	Args []StepArgs `json:"args"`
 }
 
 func (Step) IsNode() {}
+
+type StepInput struct {
+	// The Type defines what kind of action this step represents.
+	Type StepType `json:"type"`
+	// Duration of Step in seconds. At the end of the duration, the next Step will
+	// execute.
+	// If set to 0, the Step executes and immediately moves onto the next Step. This
+	// mostly works for PARTICIPANT_FILTER Steps and the last Step in a Procedure.
+	Duration int `json:"duration"`
+	// Arguments for Message type Step.
+	MsgArgs *MessageStepArgsInput `json:"msgArgs"`
+	// Arguments for HIT type Step.
+	HitArgs *HITStepArgsInput `json:"hitArgs"`
+	// Arguments for Filter type Step.
+	FilterArgs *FilterStepArgsInput `json:"filterArgs"`
+}
 
 // A StepRun is an instance of a Step. It manages status and operations of a given
 // Step within a Run.
@@ -391,18 +706,38 @@ type StepRun struct {
 	StartedAt *time.Time `json:"startedAt"`
 	// Time at which the StepRun ended.
 	EndedAt *time.Time `json:"endedAt"`
-	// Participants in this Step. Participants can increase while the Step is ongoin.
-	// After it is finished, participants becomes immutable.
-	Participants []*Participant `json:"participants"`
+	// Participants in this Step. Participants can increase while the Step is on
+	// going. After it is finished, participants becomes immutable.
+	Participants *ParticipantsConnection `json:"participants"`
+	// Number of Participants in this Step.
+	ParticipantsCount int `json:"participantsCount"`
 }
 
-type AuthInput struct {
-	User     string `json:"user"`
-	Password string `json:"password"`
+type UnscheduleRunInput struct {
+	RunID string `json:"runID"`
 }
 
-type AuthResp struct {
-	Token string `json:"token"`
+type UpdateProcedureInput struct {
+	// Friendly name.
+	Name *string `json:"name"`
+	// Determines participant selection type.
+	SelectionType *SelectionType `json:"selectionType"`
+	// Internal Selection criteria for participants
+	InternalCriteria *InternalCriteriaInput `json:"internalCriteria"`
+	// Mturk Selection criteria for participants
+	MturkCriteria *MTurkCriteriaInput `json:"mturkCriteria"`
+	// Number of participants desired.
+	ParticipantCount *int `json:"participantCount"`
+	// Contains adult content.
+	// From MTurk: This project may contain potentially explicit or offensive
+	// content, for example, nudity.
+	Adult *bool `json:"adult"`
+}
+
+type UpdateStepInput struct {
+	ProcedureID string     `json:"procedureID"`
+	StepID      string     `json:"stepID"`
+	Step        *StepInput `json:"step"`
 }
 
 // The kind of comparison to make against a value.
@@ -514,6 +849,53 @@ func (e *ContentType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ContentType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// Operation to perform on a Datum
+type DatumOp string
+
+const (
+	// Set the datum to given value.
+	DatumOpSet DatumOp = "SET"
+	// Append the datum to given value.
+	DatumOpAppend DatumOp = "APPEND"
+	// Delete the datum.
+	DatumOpDelete DatumOp = "DELETE"
+)
+
+var AllDatumOp = []DatumOp{
+	DatumOpSet,
+	DatumOpAppend,
+	DatumOpDelete,
+}
+
+func (e DatumOp) IsValid() bool {
+	switch e {
+	case DatumOpSet, DatumOpAppend, DatumOpDelete:
+		return true
+	}
+	return false
+}
+
+func (e DatumOp) String() string {
+	return string(e)
+}
+
+func (e *DatumOp) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DatumOp(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DatumOp", str)
+	}
+	return nil
+}
+
+func (e DatumOp) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

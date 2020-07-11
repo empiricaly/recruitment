@@ -1,13 +1,288 @@
-input authInput {
-  user: String!
+input AuthInput {
+  username: String!
   password: String!
 }
 
-type authResp {
+type AuthResp {
   token: String!
 }
 
+input RegisterParticipantInput {
+  """
+  ID from provider.
+  """
+  id: ID!
+
+  """
+  Provider of ID.
+  """
+  provider: PROVIDER
+
+  """
+  Initial Data to attach to Participant.
+  """
+  data: Map
+}
+
+"""
+Operation to perform on a Datum
+"""
+enum DatumOp {
+  """
+  Set the datum to given value.
+  """
+  SET
+
+  """
+  Append the datum to given value.
+  """
+  APPEND
+
+  """
+  Delete the datum.
+  """
+  DELETE
+}
+
+"""
+MutateDatumInput adds/appends/updates/deletes Data to a Node.
+"""
+input MutateDatumInput {
+  """
+  Operation to perform on Datum.
+  """
+  operation: DatumOp
+
+  """
+  key identifies the unique key of the Datum.
+  """
+  key: String!
+
+  """
+  val is the value of the Datum. It can be any JSON encodable value.
+  If Delete op, value is ignored.
+  """
+  val: JSON
+
+  """
+  ID of object on which to set the value.
+  """
+  nodeID: ID!
+}
+
+input CreateProjectInput {
+  name: String!
+}
+
+input CreateProcedureInput {
+  """
+  Project in which to create the Procedure.
+  """
+  projectID: ID!
+
+  """
+  Friendly name.
+  """
+  name: String!
+
+  """
+  Ordered list of Steps for Procedure.
+  """
+  steps: [StepInput!]!
+
+  """
+  Determines participant selection type.
+  """
+  selectionType: SelectionType!
+
+  """
+  Internal Selection criteria for participants
+  """
+  internalCriteria: InternalCriteriaInput
+
+  """
+  Mturk Selection criteria for participants
+  """
+  mturkCriteria: MTurkCriteriaInput
+
+  """
+  Number of participants desired.
+  """
+  participantCount: Int!
+
+  """
+  Contains adult content.
+  From MTurk: This project may contain potentially explicit or offensive
+  content, for example, nudity.
+  """
+  adult: Boolean!
+}
+
+input UpdateProcedureInput {
+  """
+  Friendly name.
+  """
+  name: String
+
+  """
+  Determines participant selection type.
+  """
+  selectionType: SelectionType
+
+  """
+  Internal Selection criteria for participants
+  """
+  internalCriteria: InternalCriteriaInput
+
+  """
+  Mturk Selection criteria for participants
+  """
+  mturkCriteria: MTurkCriteriaInput
+
+  """
+  Number of participants desired.
+  """
+  participantCount: Int
+
+  """
+  Contains adult content.
+  From MTurk: This project may contain potentially explicit or offensive
+  content, for example, nudity.
+  """
+  adult: Boolean
+}
+
+input DuplicateProcedureInput {
+  procedureID: ID!
+  projectID: ID!
+  name: String
+}
+
+input StepInput {
+  """
+  The Type defines what kind of action this step represents.
+  """
+  type: StepType!
+
+  """
+  Duration of Step in seconds. At the end of the duration, the next Step will
+  execute.
+  If set to 0, the Step executes and immediately moves onto the next Step. This
+  mostly works for PARTICIPANT_FILTER Steps and the last Step in a Procedure.
+  """
+  duration: Int!
+
+  """
+  Arguments for Message type Step.
+  """
+  msgArgs: MessageStepArgsInput
+
+  """
+  Arguments for HIT type Step.
+  """
+  hitArgs: HITStepArgsInput
+
+  """
+  Arguments for Filter type Step.
+  """
+  filterArgs: FilterStepArgsInput
+}
+
+input UpdateStepInput {
+  procedureID: ID!
+  stepID: ID!
+  step: StepInput!
+}
+
+input CreateRunInput {
+  procedureID: ID!
+
+  startAt: DateTime
+}
+
+input ScheduleRunInput {
+  runID: ID!
+  startAt: DateTime!
+}
+
+input UnscheduleRunInput {
+  runID: ID!
+}
+
+input StartRunInput {
+  runID: ID!
+}
+
+input CancelRunInput {
+  runID: ID!
+}
+
 type Mutation {
-  auth(input: authInput): authResp
-  createParticipant: Participant! @hasRole(role: PARTICIPANT)
+  """
+  RegisterParticipant finds or creates a Participant from the input data.
+  """
+  registerParticipant(input: RegisterParticipantInput): Participant!
+
+  """
+  MutateDatum adds/appends/updates/deletes Data to a Node.
+  """
+  mutateDatum(input: MutateDatumInput): Datum!
+
+  # Admin
+
+  """
+  Auth allows admins to authenticate.
+  """
+  auth(input: AuthInput): AuthResp
+
+  """
+  Create a new Project.
+  """
+  createProject(input: CreateProjectInput): Project!
+
+  """
+  Create a new Procedure.
+  """
+  createProcedure(input: CreateProcedureInput): Procedure!
+
+  """
+  Update a Procedure.
+  """
+  updateProcedure(input: UpdateProcedureInput): Procedure!
+
+  """
+  Update a Step.
+  """
+  updateStep(input: UpdateStepInput): Procedure!
+
+  """
+  Duplicate a Procedure to a Project.
+  """
+  duplicateProcedure(input: DuplicateProcedureInput): Procedure!
+
+  """
+  Create Run.
+  """
+  createRun(input: CreateRunInput): Run!
+
+  """
+  Schedule Run.
+  """
+  scheduleRun(input: ScheduleRunInput): Run!
+
+  """
+  Unschedule scheduled Run.
+  """
+  unscheduleRun(input: UnscheduleRunInput): Run!
+
+  """
+  Start Run immediately.
+  """
+  startRun(input: StartRunInput): Run!
+
+  """
+  Cancel Run. If running, it will stop the run. If not yet running, it will just
+  mark it as cancelled.
+  """
+  cancelRun(input: CancelRunInput): Run!
 }
