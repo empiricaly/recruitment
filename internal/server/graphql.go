@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/empiricaly/recruitment/internal/graph"
@@ -28,8 +29,10 @@ func (s *Server) startGraphqlServer() {
 
 	// router.Use(MachinesLockMiddleware(r))
 
-	gqlsrv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: r}))
+	gqlsrv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: r}))
 
+	gqlsrv.AddTransport(transport.Options{})
+	gqlsrv.AddTransport(transport.GET{})
 	gqlsrv.AddTransport(transport.POST{})
 	gqlsrv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
@@ -39,10 +42,9 @@ func (s *Server) startGraphqlServer() {
 			},
 		},
 	})
+	gqlsrv.Use(extension.Introspection{})
 
-	// gqlsrv.Use(extension.Introspection{})
-
-	router.Handle("/play", playground.Handler("Recruitment GraphQL", "/query"))
+	router.Handle("/play", playground.Handler("Empirica Recruitment GraphQL", "/query"))
 	router.Handle("/query", c.Handler(gqlsrv))
 
 	srv := &http.Server{
