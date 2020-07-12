@@ -5,9 +5,11 @@
   import CreatedBy from "../misc/CreatedBy.svelte";
 
   export let index = 0;
+  export let projectID;
+  export let templateID;
   export let name;
   export let type = "internal";
-  export let path = "/";
+
   export let stepCount = 0;
   export let runCount = 0;
   export let creator = null;
@@ -21,7 +23,7 @@
 
 <li class={index !== 0 && 'border-t border-gray-200'}>
   <Link
-    to={path}
+    to="/projects/{projectID}/templates/{templateID}"
     className="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50
     transition duration-150 ease-in-out sm:rounded-md">
     <div class="flex items-strect">

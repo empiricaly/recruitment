@@ -7,17 +7,15 @@
   import Duration from "../misc/Duration.svelte";
 
   export let index = 0;
+  export let projectID;
+  export let runID;
   export let name;
   // Can be "created", "running", "done", "terminated", "failed"
   export let status = "internal";
   export let startAt = null;
   export let startedAt = null;
   export let endedAt = null;
-  export let type = "internal";
-  export let path = "/";
   export let stepCount = 0;
-  export let runCount = 0;
-  export let creator = null;
 
   const menuOptions = [{ title: "Duplicate", onClick: handleDuplicate }];
 
@@ -28,7 +26,7 @@
 
 <li class={index !== 0 && 'border-t border-gray-200'}>
   <Link
-    to="#"
+    to="/projects/{projectID}/runs/{runID}"
     className="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50
     transition duration-150 ease-in-out sm:rounded-md">
     <div class="flex items-center px-4 py-4 sm:px-2">

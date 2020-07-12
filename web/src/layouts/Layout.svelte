@@ -6,29 +6,33 @@
   import { path } from "../lib/routing.js";
 
   export let title = null;
+  export let overtitle = null;
   export let action = null;
+
+  let projectName = "Speed Dating";
+  let projectID = "jk3n21kj";
 
   let sidebarOpen = false;
 
   const menuitems = [
     {
       title: "Overview",
-      path: "/overview",
+      path: `/projects/${projectID}/overview`,
       icon: `<path d="M19 21H5a1 1 0 0 1-1-1v-9H1l10.327-9.388a1 1 0 0 1 1.346 0L23 11h-3v9a1 1 0 0 1-1 1zM6 19h12V9.157l-6-5.454-6 5.454V19z"/>`
     },
     {
       title: "Runs",
-      path: "/runs",
+      path: `/projects/${projectID}/runs`,
       icon: `<path d="M16.394 12L10 7.737v8.526L16.394 12zm2.982.416L8.777 19.482A.5.5 0 0 1 8 19.066V4.934a.5.5 0 0 1 .777-.416l10.599 7.066a.5.5 0 0 1 0 .832z"/>`
     },
     {
       title: "Templates",
-      path: "/templates",
+      path: `/projects/${projectID}/templates`,
       icon: `<path d="M15.728 9.686l-1.414-1.414L5 17.586V19h1.414l9.314-9.314zm1.414-1.414l1.414-1.414-1.414-1.414-1.414 1.414 1.414 1.414zM7.242 21H3v-4.243L16.435 3.322a1 1 0 0 1 1.414 0l2.829 2.829a1 1 0 0 1 0 1.414L7.243 21z" />`
     },
     {
       title: "Participants",
-      path: "/participants",
+      path: `/projects/${projectID}/participants`,
       icon: `<path d="M4 22a8 8 0 1 1 16 0h-2a6 6 0 1 0-12 0H4zm8-9c-3.315 0-6-2.685-6-6s2.685-6 6-6 6 2.685 6 6-2.685 6-6 6zm0-2c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" />`
     }
   ];
@@ -165,7 +169,7 @@
               {#each menuitems as item}
                 <Link
                   to={item.path}
-                  className={'group flex items-center px-2 py-2 leading-6 text-base font-medium rounded-md focus:outline-none transition ease-in-out duration-150 ' + ($path === item.path ? 'text-white bg-gray-900 focus:bg-gray-700' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:text-white focus:bg-gray-700')}>
+                  className={'group flex items-center px-2 py-2 leading-6 text-base font-medium rounded-md focus:outline-none transition ease-in-out duration-150 ' + ($path.startsWith(item.path) ? 'text-white bg-gray-900 focus:bg-gray-700' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:text-white focus:bg-gray-700')}>
                   <svg
                     class="mr-3 h-6 w-6 text-gray-300 group-hover:text-gray-300
                     group-focus:text-gray-300 transition ease-in-out
@@ -306,8 +310,14 @@
               fill="#fff" />
           </svg>
         </div>
+        <Link
+          to="/projects"
+          className="mt-5 flex items-center flex-shrink-0 px-4 text-white py-2
+          rounded-md bg-gray-700 font-medium hover:text-gray-200">
+          {projectName}
+        </Link>
         <!-- Sidebar component, swap this element with another sidebar if you like -->
-        <nav class="mt-5 flex-1 px-2 bg-gray-800">
+        <nav class="mt-3 flex-1 px-2 bg-gray-800">
           {#each menuitems as item}
             <Link
               to={item.path}
@@ -383,12 +393,21 @@
         {#if title}
           <div
             class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between">
-            <h1 class="text-2xl font-semibold text-gray-900">{title}</h1>
+            <h1 class="text-2xl font-semibold text-gray-900">
+              {#if overtitle}
+                <span
+                  class="uppercase tracking-wide font-light text-gray-500 mr-1">
+                  {overtitle}
+                </span>
+              {/if}
+              {title}
+            </h1>
             {#if action}
               <Button on:click text={action} />
             {/if}
           </div>
         {/if}
+        <slot name="header" />
         <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
           <div class="py-4">
             <slot />

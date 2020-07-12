@@ -7,25 +7,28 @@
   <div class="bg-white shadow sm:rounded-md">
     <ul>
       <TemplateLine
+        projectID="1234567"
+        templateID="2345678"
         name="Speed Dating Pilot 2"
         type="internal"
-        path="/"
         stepCount={2}
         runCount={0}
         creator="Nicolas" />
       <TemplateLine
+        projectID="1234567"
+        templateID="2345678"
         index="1"
         name="Speed Dating Pilot 2"
         type="internal"
-        path="/"
         stepCount={2}
         runCount={0}
         creator="Nicolas" />
       <TemplateLine
+        projectID="1234567"
+        templateID="2345678"
         index="2"
         name="Speed Dating Pilot 1"
         type="mturk"
-        path="/"
         stepCount={4}
         runCount={5}
         creator="Nicolas" />

@@ -3,6 +3,7 @@
   import Link from "../components/base/Link.svelte";
   import RunLine from "../components/runs/RunLine.svelte";
   import dayjs from "dayjs";
+  import Callout from "../components/base/Callout.svelte";
 </script>
 
 <Layout title="Overview">
@@ -50,37 +51,19 @@
 
   <div class="mt-8">
     <h3 class="text-lg leading-6 font-medium text-gray-900">On Going Runs</h3>
-    <div class="mt-5 rounded-md bg-yellow-50 p-4">
-      <div class="flex">
-        <div class="flex-shrink-0">
-          <svg
-            class="h-5 w-5 text-yellow-400"
-            viewBox="0 0 20 20"
-            fill="currentColor">
-            <path
-              fill-rule="evenodd"
-              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75
-              1.334-.213 2.98-1.742 2.98H4.42c-1.53
-              0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012
-              0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-              clip-rule="evenodd" />
-          </svg>
-        </div>
-        <div class="ml-3">
-          <h3 class="text-sm leading-5 font-medium text-yellow-800">
-            No Runs currently On Going
-          </h3>
-          <div class="mt-2 text-sm leading-5 text-yellow-700">
-            <p>
-              Head over to the
-              <Link className="text-yellow-800 underline" to="/runs">
-                Runs page
-              </Link>
-              to create new Run.
-            </p>
-          </div>
-        </div>
-      </div>
+    <div class="mt-5">
+      <Callout
+        color="yellow"
+        title="No Runs currently On Going"
+        icon={`<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" xclip-rule="evenodd" />`}>
+        <p>
+          Head over to the
+          <Link className="text-yellow-800 underline" to="/runs">
+            Runs page
+          </Link>
+          to create new Run.
+        </p>
+      </Callout>
     </div>
   </div>
 
@@ -89,12 +72,16 @@
     <div class="mt-5 bg-white shadow overflow-hidden sm:rounded-md">
       <ul>
         <RunLine
+          projectID="1234567"
+          runID="2345678"
           startAt={dayjs().add(26, 'hour')}
           name="Speed Dating Pilot 2"
           index={0}
           stepCount={2}
           status="created" />
         <RunLine
+          projectID="1234567"
+          runID="2345678"
           startedAt={dayjs().subtract(122, 'minute')}
           endedAt={dayjs().subtract(22, 'minute')}
           name="Speed Dating Pilot 2"
@@ -102,6 +89,8 @@
           stepCount={2}
           status="done" />
         <RunLine
+          projectID="1234567"
+          runID="2345678"
           endedAt={dayjs().subtract(354, 'minute')}
           name="Speed Dating Pilot 1"
           index={1}

@@ -26,8 +26,11 @@
 <script>
   import Router from "./lib/routing.js";
   import { user } from "./lib/auth.js";
+  import Projects from "./pages/Projects.svelte";
   import Overview from "./pages/Overview.svelte";
   import Runs from "./pages/Runs.svelte";
+  import Run from "./pages/Run.svelte";
+  import Template from "./pages/Template.svelte";
   import Templates from "./pages/Templates.svelte";
   import Participants from "./pages/Participants.svelte";
   import Profile from "./pages/Profile.svelte";
@@ -54,19 +57,31 @@
           component: Signin
         },
         {
-          path: "/overview",
+          path: "/projects",
+          component: Projects
+        },
+        {
+          path: "/projects/:projectID/overview",
           component: Overview
         },
         {
-          path: "/runs",
+          path: "/projects/:projectID/runs",
           component: Runs
         },
         {
-          path: "/templates",
+          path: "/projects/:projectID/runs/:runID",
+          component: Run
+        },
+        {
+          path: "/projects/:projectID/templates",
           component: Templates
         },
         {
-          path: "/participants",
+          path: "/projects/:projectID/templates/:templateID",
+          component: Template
+        },
+        {
+          path: "/projects/:projectID/participants",
           component: Participants
         },
         {
