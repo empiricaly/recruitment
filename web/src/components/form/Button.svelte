@@ -5,13 +5,16 @@
   export let text;
 </script>
 
-<button
-  {type}
-  class="w-full px-2 py-1 rounded focus:outline-none focus:shadow-outline
-  text-gray-100 bg-blue-500 hover:bg-blue-600 active:bg-blue-700
-  active:shadow-inner active:border-transparent font-semibold">
-  {text}
-</button>
+<span class="block w-full rounded-md shadow-sm">
+  <button
+    {type}
+    class="w-full flex justify-center py-2 px-4 border border-transparent
+    text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-500
+    focus:outline-none focus:border-indigo-700 focus:shadow-outline-indigo
+    active:bg-indigo-700 transition duration-150 ease-in-out">
+    {text}
+  </button>
+</span>
 
 <style>
   :global(.focus-disabled) button {

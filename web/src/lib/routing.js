@@ -1,5 +1,8 @@
 import { createBrowserHistory, createHashHistory } from "history";
 import { pathToRegexp } from "path-to-regexp";
+import { writable } from "svelte/store";
+
+export const path = writable("/");
 
 class Router {
   constructor({ target, mode = "hash", routes = [] }) {
@@ -15,6 +18,11 @@ class Router {
         history = createHashHistory();
         break;
     }
+
+    path.set(history.location.pathname);
+    history.listen(({ pathname }) => {
+      path.set(pathname);
+    });
 
     Router.mode = mode;
     Router.history = history;

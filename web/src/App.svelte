@@ -1,8 +1,9 @@
 <script context="module">
+  const debug = true;
   import { pathToRegexp } from "path-to-regexp";
 
   const signinPath = "/signin";
-  const publicPaths = [signinPath, "/lobby/:id"];
+  const publicPaths = [signinPath, "/", "/lobby/:id"];
   const publicPathsRegexp = [];
 
   for (const path of publicPaths) {
@@ -10,6 +11,9 @@
   }
 
   function isPublicPath(path) {
+    if (debug) {
+      return true;
+    }
     for (const regexp of publicPathsRegexp) {
       if (regexp.test(path)) {
         return true;
@@ -22,7 +26,11 @@
 <script>
   import Router from "./lib/routing.js";
   import { user } from "./lib/auth.js";
-  import Home from "./pages/Home.svelte";
+  import Overview from "./pages/Overview.svelte";
+  import Runs from "./pages/Runs.svelte";
+  import Templates from "./pages/Templates.svelte";
+  import Participants from "./pages/Participants.svelte";
+  import Profile from "./pages/Profile.svelte";
   import Signin from "./pages/Signin.svelte";
   import Link from "./components/base/Link.svelte";
 
@@ -42,12 +50,28 @@
       mode: "history",
       routes: [
         {
-          path: "/",
-          component: Home
-        },
-        {
           path: signinPath,
           component: Signin
+        },
+        {
+          path: "/overview",
+          component: Overview
+        },
+        {
+          path: "/runs",
+          component: Runs
+        },
+        {
+          path: "/templates",
+          component: Templates
+        },
+        {
+          path: "/participants",
+          component: Participants
+        },
+        {
+          path: "/profile",
+          component: Profile
         }
       ]
     });

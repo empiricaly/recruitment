@@ -1,8 +1,11 @@
+const defaultTheme = require("tailwindcss/defaultTheme");
+
 module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Open Sans", "sans-serif"],
+        // sans: ["Open Sans", "sans-serif"],
+        sans: ["Inter var", ...defaultTheme.fontFamily.sans],
       },
 
       width: {
@@ -19,5 +22,9 @@ module.exports = {
     borderColor: ["responsive", "hover", "focus", "active", "group-hover"],
     backgroundColor: ["responsive", "hover", "focus", "active", "group-hover"],
   },
-  plugins: [],
+  plugins: [
+    require("@tailwindcss/ui")({
+      layout: "sidebar",
+    }),
+  ],
 };

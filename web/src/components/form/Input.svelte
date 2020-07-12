@@ -1,7 +1,9 @@
 <script>
   import { onMount } from "svelte";
 
+  export let autocomplete = "off";
   export let type = "text";
+  export let id = "";
   export let placeholder = "";
   export let focus = false;
   export let value = "";
@@ -15,9 +17,16 @@
   }
 </script>
 
-<input
-  {placeholder}
-  {required}
-  use:init
-  bind:value
-  class="w-full px-2 py-1 rounded border focus:outline-none focus:shadow-outline" />
+<div class="mt-1 rounded-md shadow-sm">
+  <input
+    {autocomplete}
+    {placeholder}
+    {required}
+    {id}
+    use:init
+    bind:value
+    class="appearance-none block w-full px-3 py-2 border border-gray-300
+    rounded-md placeholder-gray-400 focus:outline-none focus:shadow-outline-blue
+    focus:border-blue-300 transition duration-150 ease-in-out sm:text-sm
+    sm:leading-5" />
+</div>
