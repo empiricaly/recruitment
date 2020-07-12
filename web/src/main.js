@@ -1,5 +1,6 @@
 import App from "./App.svelte";
 import { manageFocus } from "./components/form/focus.js";
+import "./inits/dayjs.js";
 
 manageFocus();
 
