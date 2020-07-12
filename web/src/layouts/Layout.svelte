@@ -1,10 +1,12 @@
 <script>
   import Link from "../components/base/Link.svelte";
+  import Button from "../components/form/Button.svelte";
   import { fade, fly } from "svelte/transition";
   import { quadInOut } from "svelte/easing";
   import { path } from "../lib/routing.js";
 
   export let title = null;
+  export let action = null;
 
   let sidebarOpen = false;
 
@@ -17,12 +19,12 @@
     {
       title: "Runs",
       path: "/runs",
-      icon: `<path d="M15.728 9.686l-1.414-1.414L5 17.586V19h1.414l9.314-9.314zm1.414-1.414l1.414-1.414-1.414-1.414-1.414 1.414 1.414 1.414zM7.242 21H3v-4.243L16.435 3.322a1 1 0 0 1 1.414 0l2.829 2.829a1 1 0 0 1 0 1.414L7.243 21z" />`
+      icon: `<path d="M16.394 12L10 7.737v8.526L16.394 12zm2.982.416L8.777 19.482A.5.5 0 0 1 8 19.066V4.934a.5.5 0 0 1 .777-.416l10.599 7.066a.5.5 0 0 1 0 .832z"/>`
     },
     {
       title: "Templates",
       path: "/templates",
-      icon: `<path d="M16.394 12L10 7.737v8.526L16.394 12zm2.982.416L8.777 19.482A.5.5 0 0 1 8 19.066V4.934a.5.5 0 0 1 .777-.416l10.599 7.066a.5.5 0 0 1 0 .832z"/>`
+      icon: `<path d="M15.728 9.686l-1.414-1.414L5 17.586V19h1.414l9.314-9.314zm1.414-1.414l1.414-1.414-1.414-1.414-1.414 1.414 1.414 1.414zM7.242 21H3v-4.243L16.435 3.322a1 1 0 0 1 1.414 0l2.829 2.829a1 1 0 0 1 0 1.414L7.243 21z" />`
     },
     {
       title: "Participants",
@@ -178,7 +180,7 @@
             </nav>
           </div>
           <div class="flex-shrink-0 flex bg-gray-700 p-4">
-            <a href="/profile" class="flex-shrink-0 group block">
+            <Link to="/profile" className="flex-shrink-0 group block">
               <div class="flex items-center">
                 <div>
                   <span
@@ -205,7 +207,7 @@
                   </p>
                 </div>
               </div>
-            </a>
+            </Link>
           </div>
         </div>
         <div class="flex-shrink-0 w-14">
@@ -309,7 +311,7 @@
           {#each menuitems as item}
             <Link
               to={item.path}
-              className={'group flex items-center px-2 py-2 text-sm leading-5 font-medium rounded-md focus:outline-none transition ease-in-out duration-150 ' + ($path === item.path ? 'text-white bg-gray-900 focus:bg-gray-700' : 'mt-1 text-gray-300 hover:text-white hover:bg-gray-700 focus:text-white focus:bg-gray-700')}>
+              className={'group flex items-center px-2 py-2 text-sm leading-5 font-medium rounded-md focus:outline-none transition ease-in-out duration-150 ' + ($path === item.path ? 'text-white bg-gray-900 focus:bg-gray-700' : 'text-gray-300 hover:text-white hover:bg-gray-700 focus:text-white focus:bg-gray-700')}>
               <svg
                 class="mr-3 h-6 w-6 text-gray-300 group-hover:text-gray-300
                 group-focus:text-gray-300 transition ease-in-out duration-150"
@@ -379,8 +381,12 @@
       tabindex="0">
       <div class="pt-2 pb-6 md:py-6">
         {#if title}
-          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div
+            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between">
             <h1 class="text-2xl font-semibold text-gray-900">{title}</h1>
+            {#if action}
+              <Button on:click text={action} />
+            {/if}
           </div>
         {/if}
         <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
@@ -392,8 +398,3 @@
     </main>
   </div>
 </div>
-
-<style>
-  nav {
-  }
-</style>

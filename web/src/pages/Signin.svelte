@@ -54,7 +54,7 @@
             </div>
 
             <div class="mt-8">
-              <Button type="submit" text="Sign in" />
+              <Button type="submit" text="Sign in" full />
             </div>
           </form>
         </div>
