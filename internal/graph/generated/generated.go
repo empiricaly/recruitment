@@ -70,6 +70,7 @@ type ComplexityRoot struct {
 	Condition struct {
 		And        func(childComplexity int) int
 		Comparator func(childComplexity int) int
+		Key        func(childComplexity int) int
 		Or         func(childComplexity int) int
 		Values     func(childComplexity int) int
 	}
@@ -383,6 +384,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Condition.Comparator(childComplexity), true
+
+	case "Condition.key":
+		if e.complexity.Condition.Key == nil {
+			break
+		}
+
+		return e.complexity.Condition.Key(childComplexity), true
 
 	case "Condition.or":
 		if e.complexity.Condition.Or == nil {
@@ -1703,6 +1711,7 @@ values array are used.
 type Condition {
   and: [Condition!]
   or: [Condition!]
+  key: String
   comparator: Comparator
   values: [CompValue!]
 }
@@ -3594,6 +3603,37 @@ func (ec *executionContext) _Condition_or(ctx context.Context, field graphql.Col
 	res := resTmp.([]*model.Condition)
 	fc.Result = res
 	return ec.marshalOCondition2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Condition_key(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Condition",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Condition_comparator(ctx context.Context, field graphql.CollectedField, obj *model.Condition) (ret graphql.Marshaler) {
@@ -9868,6 +9908,8 @@ func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._Condition_and(ctx, field, obj)
 		case "or":
 			out.Values[i] = ec._Condition_or(ctx, field, obj)
+		case "key":
+			out.Values[i] = ec._Condition_key(ctx, field, obj)
 		case "comparator":
 			out.Values[i] = ec._Condition_comparator(ctx, field, obj)
 		case "values":

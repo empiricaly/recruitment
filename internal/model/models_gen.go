@@ -89,6 +89,7 @@ type CompValueInput struct {
 type Condition struct {
 	And        []*Condition `json:"and"`
 	Or         []*Condition `json:"or"`
+	Key        *string      `json:"key"`
 	Comparator *Comparator  `json:"comparator"`
 	Values     []*CompValue `json:"values"`
 }

@@ -392,19 +392,22 @@
       <div class="pt-2 pb-6 md:py-6">
         {#if title}
           <div
-            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between">
-            <h1 class="text-2xl font-semibold text-gray-900">
+            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between
+            items-baseline">
+            <h1 class="text-2xl font-semibold text-gray-900 leading-snug">
               {#if overtitle}
-                <span
-                  class="uppercase tracking-wide font-light text-gray-500 mr-1">
+                <div
+                  class="uppercase tracking-wide font-medium text-gray-500 mr-1
+                  text-sm">
                   {overtitle}
-                </span>
+                </div>
               {/if}
               {title}
             </h1>
             {#if action}
               <Button on:click text={action} />
             {/if}
+            <slot name="actions" />
           </div>
         {/if}
         <slot name="header" />

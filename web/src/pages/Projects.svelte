@@ -27,7 +27,7 @@
 <main class="flex justify-center items-center h-full w-full">
 
   {#if projects.length === 0}
-    <div class="w-64 px-4 py-4 rounded-md">
+    <div class="w-64 px-4 py-4">
       <Callout color="yellow">
         You have no projects yet.
         <br />
@@ -35,7 +35,7 @@
       </Callout>
     </div>
   {/if}
-  <div class="w-64 px-4 py-4 rounded-md max-h-full overflow-auto">
+  <div class="w-64 px-4 py-4 max-h-full overflow-auto">
     {#if newProject || projects.length === 0}
       <h1 class="font-semibold">New Project</h1>
       <form class="mt-3" on:submit={handleNewProject}>
