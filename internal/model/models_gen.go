@@ -567,12 +567,12 @@ type Procedure struct {
 	Creator   *Admin    `json:"creator"`
 	// Friendly name.
 	Name string `json:"name"`
-	// Ordered list of Steps in a Procedure.
-	Steps []*Step `json:"steps"`
 	// Determines participant selection type.
 	SelectionType *SelectionType `json:"selectionType"`
 	// Selection criteria for participants
 	Criteria SelectionCriteria `json:"criteria"`
+	// Ordered list of Steps in a Procedure.
+	Steps []*Step `json:"steps"`
 	// Number of participants desired.
 	ParticipantCount *int `json:"participantCount"`
 	// Contains adult content.

@@ -1644,11 +1644,6 @@ type Procedure {
   name: String!
 
   """
-  Ordered list of Steps in a Procedure.
-  """
-  steps: [Step!]!
-
-  """
   Determines participant selection type.
   """
   selectionType: SelectionType
@@ -1657,6 +1652,11 @@ type Procedure {
   Selection criteria for participants
   """
   criteria: SelectionCriteria
+
+  """
+  Ordered list of Steps in a Procedure.
+  """
+  steps: [Step!]!
 
   """
   Number of participants desired.
@@ -6181,40 +6181,6 @@ func (ec *executionContext) _Procedure_name(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_steps(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Procedure",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Steps, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Step)
-	fc.Result = res
-	return ec.marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepᚄ(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Procedure_selectionType(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -6275,6 +6241,40 @@ func (ec *executionContext) _Procedure_criteria(ctx context.Context, field graph
 	res := resTmp.(model.SelectionCriteria)
 	fc.Result = res
 	return ec.marshalOSelectionCriteria2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionCriteria(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Procedure_steps(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Procedure",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Steps, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Step)
+	fc.Result = res
+	return ec.marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Procedure_participantCount(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
@@ -10545,15 +10545,15 @@ func (ec *executionContext) _Procedure(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "selectionType":
+			out.Values[i] = ec._Procedure_selectionType(ctx, field, obj)
+		case "criteria":
+			out.Values[i] = ec._Procedure_criteria(ctx, field, obj)
 		case "steps":
 			out.Values[i] = ec._Procedure_steps(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "selectionType":
-			out.Values[i] = ec._Procedure_selectionType(ctx, field, obj)
-		case "criteria":
-			out.Values[i] = ec._Procedure_criteria(ctx, field, obj)
 		case "participantCount":
 			out.Values[i] = ec._Procedure_participantCount(ctx, field, obj)
 		case "adult":

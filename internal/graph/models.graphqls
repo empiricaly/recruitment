@@ -210,11 +210,6 @@ type Procedure {
   name: String!
 
   """
-  Ordered list of Steps in a Procedure.
-  """
-  steps: [Step!]!
-
-  """
   Determines participant selection type.
   """
   selectionType: SelectionType
@@ -223,6 +218,11 @@ type Procedure {
   Selection criteria for participants
   """
   criteria: SelectionCriteria
+
+  """
+  Ordered list of Steps in a Procedure.
+  """
+  steps: [Step!]!
 
   """
   Number of participants desired.
