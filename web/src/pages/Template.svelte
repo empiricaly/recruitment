@@ -15,35 +15,43 @@
   import Layout from "../layouts/Layout.svelte";
   import Label from "../components/form/Label.svelte";
   import Select from "../components/form/Select.svelte";
+  import InternalDbTemplate from "../components/selectionTemplates/InternalDbTemplate.svelte";
 
   let template = {
     name: "Speed Dating 1",
     selectionType: "internal_db",
-    criteria: {
-      and: [
-        {
-          key: "age",
-          comparator: "GreaterThan",
-          values: [{ int: 18 }]
-        },
-        {
-          key: "country",
-          comparator: "In",
-          values: [{ string: "us" }, { string: "id" }]
-        },
-        {
-          or: [
-            {
-              key: "experiment_123",
-              comparator: "DoesNotExist"
-            },
-            {
-              key: "experiment_321",
-              comparator: "DoesNotExist"
-            }
-          ]
-        }
-      ]
+    mTurkCriteria: { qualifications: [] },
+    internalCriteria: {
+      condition: {
+        and: [
+          {
+            key: "age",
+            comparator: "GreaterThan",
+            values: [{ int: 18 }]
+          },
+          {
+            key: "country",
+            comparator: "In",
+            values: [{ string: "us" }, { string: "id" }]
+          },
+          {
+            or: [
+              {
+                key: "experiment_123",
+                comparator: "DoesNotExist"
+              },
+              {
+                key: "experiment_321",
+                comparator: "DoesNotExist"
+              },
+              {
+                key: "experiment_343",
+                comparator: "DoesNotExist"
+              }
+            ]
+          }
+        ]
+      }
     },
     steps: []
   };
@@ -78,7 +86,7 @@
 
     <div class="mt-5 md:mt-0 md:col-span-7">
       <div class="px-4 py-5 shadow sm:rounded-md bg-white sm:p-6">
-        <Label forID="selectionType" text="Particpant Selection Type" />
+        <Label forID="selectionType" text="Participant Selection Type" />
         <Select
           id="selectionType"
           bind:value={template.selectionType}
@@ -87,7 +95,8 @@
 
         <div class="mt-5">
           {#if template.selectionType === 'internal_db'}
-            Internal
+            <InternalDbTemplate
+              bind:criteria={template.internalCriteria.condition} />
           {:else if template.selectionType === 'mturk_qualifications'}
             MTurk
           {:else}Unknow Particpant Selection Type{/if}

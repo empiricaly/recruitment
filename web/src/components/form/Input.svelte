@@ -8,11 +8,17 @@
   export let focus = false;
   export let value = "";
   export let required = "";
-
+  export let onKeyUp = undefined;
+  export let onBlur = undefined;
+  export let disabled = false;
   function init(el) {
     el.type = type;
     if (focus) {
       el.focus();
+    }
+
+    if (id) {
+      el.id = id;
     }
   }
 </script>
@@ -22,7 +28,9 @@
     {autocomplete}
     {placeholder}
     {required}
-    {id}
+    {disabled}
+    on:keyup={onKeyUp}
+    on:blur={onBlur}
     use:init
     bind:value
     class="appearance-none block w-full px-3 py-2 border border-gray-300

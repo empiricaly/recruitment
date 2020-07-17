@@ -215,9 +215,14 @@ type Procedure {
   selectionType: SelectionType
 
   """
-  Selection criteria for participants
+  Selection criteria for internal DB participants.
   """
-  criteria: SelectionCriteria
+  internalCriteria: InternalCriteria
+
+  """
+  Selection criteria for internal DB participants.
+  """
+  mturkCriteria: MTurkCriteria
 
   """
   Ordered list of Steps in a Procedure.
@@ -236,11 +241,6 @@ type Procedure {
   """
   adult: Boolean!
 }
-
-"""
-Participant selection criteria types.
-"""
-union SelectionCriteria = InternalCriteria | MTurkCriteria
 
 """
 InternalCriteria is the criteria for internal database participant selection.
@@ -307,6 +307,30 @@ enum Comparator {
   DoesNotExist
   In
   NotIn
+}
+
+"""
+The QualificationType data structure represents a Qualification type, a description of a property of a Worker that must
+match the requirements of a HIT for the Worker to be able to accept the HIT. The type also describes how a Worker can obtain
+a Qualification of that type, such as through a Qualification test.
+See https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_QualificationTypeDataStructureArticle.html
+"""
+type MTurkQulificationType {
+  """
+  A unique identifier for the Qualification type. A Qualification type is given a Qualification type ID when you call
+  the CreateQualificationType operation operation, and it retains that ID forever. Can be up to 255 bytes in length.
+  """
+  id: ID!
+
+  """
+  The name of the Qualification type. The type name is used to identify the type, and to find the type using a Qualification type search.
+  """
+  name: String!
+
+  """
+  A long description for the Qualification type.
+  """
+  description: String!
 }
 
 """

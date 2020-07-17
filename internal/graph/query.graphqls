@@ -67,4 +67,6 @@ type Query {
   participantID (usually called after registerParticipant).
   """
   page(token: String!, participantID: ID!): Page!
+
+  mturkQualificationTypes: [MTurkQulificationType!]!
 }

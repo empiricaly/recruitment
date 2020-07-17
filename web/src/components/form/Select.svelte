@@ -1,13 +1,17 @@
 <script>
   import { onDestroy } from "svelte";
+  import { createEventDispatcher } from "svelte";
 
   export let id = null;
   export let value = null;
   export let placeholder = "Select Item";
   export let options = [];
+  export let onChange = undefined;
 
   $: empty = value === undefined || value === null;
   $: valueOption = value && options.find(opt => opt.value === value);
+
+  const dispatch = createEventDispatcher();
 
   let open = false;
 
@@ -70,7 +74,7 @@
   </span>
 
   {#if open}
-    <div class="absolute mt-1 w-full rounded-md bg-white shadow-lg">
+    <div class="absolute mt-1 w-full rounded-md bg-white shadow-lg z-50">
       <ul
         tabindex="-1"
         role="listbox"
@@ -89,7 +93,10 @@
             <button
               class="w-full h-full py-2 pl-3 pr-9 focus:outline-none flex
               justify-between"
-              on:click={() => (value = option.value)}>
+              on:click={() => {
+                value = option.value;
+                dispatch('change');
+              }}>
 
               <span
                 class="{value === option.value ? 'font-semibold' : 'font-normal'}

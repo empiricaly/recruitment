@@ -14,11 +14,6 @@ type Node interface {
 	IsNode()
 }
 
-// Participant selection criteria types.
-type SelectionCriteria interface {
-	IsSelectionCriteria()
-}
-
 // Argument groups for Steps.
 type StepArgs interface {
 	IsStepArgs()
@@ -290,8 +285,6 @@ type InternalCriteria struct {
 	Condition *Condition `json:"condition"`
 }
 
-func (InternalCriteria) IsSelectionCriteria() {}
-
 // InternalCriteria is the criteria for internal database participant selection.
 type InternalCriteriaInput struct {
 	// Condition set the participant must meet to be allowed to participate.
@@ -304,8 +297,6 @@ type MTurkCriteria struct {
 	// and complete the HIT.
 	Qualifications []*MTurkQualificationCriteria `json:"qualifications"`
 }
-
-func (MTurkCriteria) IsSelectionCriteria() {}
 
 // MTurkCriteria is the criteria for MTurk Qualifications participant selection.
 type MTurkCriteriaInput struct {
@@ -416,6 +407,20 @@ type MTurkQualificationCriteriaInput struct {
 	// can use up to 30 LocaleValue elements in a QualificationRequirement data
 	// structure.
 	Locales []*MTurkLocaleInput `json:"locales"`
+}
+
+// The QualificationType data structure represents a Qualification type, a description of a property of a Worker that must
+// match the requirements of a HIT for the Worker to be able to accept the HIT. The type also describes how a Worker can obtain
+// a Qualification of that type, such as through a Qualification test.
+// See https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_QualificationTypeDataStructureArticle.html
+type MTurkQulificationType struct {
+	// A unique identifier for the Qualification type. A Qualification type is given a Qualification type ID when you call
+	// the CreateQualificationType operation operation, and it retains that ID forever. Can be up to 255 bytes in length.
+	ID string `json:"id"`
+	// The name of the Qualification type. The type name is used to identify the type, and to find the type using a Qualification type search.
+	Name string `json:"name"`
+	// A long description for the Qualification type.
+	Description string `json:"description"`
 }
 
 // MessageStepArgs are arguments passed to a Step that has a message.
@@ -569,8 +574,10 @@ type Procedure struct {
 	Name string `json:"name"`
 	// Determines participant selection type.
 	SelectionType *SelectionType `json:"selectionType"`
-	// Selection criteria for participants
-	Criteria SelectionCriteria `json:"criteria"`
+	// Selection criteria for internal DB participants.
+	InternalCriteria *InternalCriteria `json:"internalCriteria"`
+	// Selection criteria for internal DB participants.
+	MturkCriteria *MTurkCriteria `json:"mturkCriteria"`
 	// Ordered list of Steps in a Procedure.
 	Steps []*Step `json:"steps"`
 	// Number of participants desired.

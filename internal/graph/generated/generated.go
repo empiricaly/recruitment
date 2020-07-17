@@ -124,6 +124,12 @@ type ComplexityRoot struct {
 		Values     func(childComplexity int) int
 	}
 
+	MTurkQulificationType struct {
+		Description func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
+	}
+
 	MessageStepArgs struct {
 		Lobby           func(childComplexity int) int
 		LobbyExpiration func(childComplexity int) int
@@ -188,8 +194,9 @@ type ComplexityRoot struct {
 		Adult            func(childComplexity int) int
 		CreatedAt        func(childComplexity int) int
 		Creator          func(childComplexity int) int
-		Criteria         func(childComplexity int) int
 		ID               func(childComplexity int) int
+		InternalCriteria func(childComplexity int) int
+		MturkCriteria    func(childComplexity int) int
 		Name             func(childComplexity int) int
 		ParticipantCount func(childComplexity int) int
 		SelectionType    func(childComplexity int) int
@@ -215,10 +222,11 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Me           func(childComplexity int) int
-		Page         func(childComplexity int, token string, participantID string) int
-		Participants func(childComplexity int, first *int, after *string) int
-		Projects     func(childComplexity int) int
+		Me                      func(childComplexity int) int
+		MturkQualificationTypes func(childComplexity int) int
+		Page                    func(childComplexity int, token string, participantID string) int
+		Participants            func(childComplexity int, first *int, after *string) int
+		Projects                func(childComplexity int) int
 	}
 
 	Run struct {
@@ -281,6 +289,7 @@ type QueryResolver interface {
 	Participants(ctx context.Context, first *int, after *string) (*model.ParticipantsConnection, error)
 	Me(ctx context.Context) (model.User, error)
 	Page(ctx context.Context, token string, participantID string) (*model.Page, error)
+	MturkQualificationTypes(ctx context.Context) ([]*model.MTurkQulificationType, error)
 }
 type SubscriptionResolver interface {
 	Me(ctx context.Context) (<-chan model.User, error)
@@ -601,6 +610,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MTurkQualificationCriteria.Values(childComplexity), true
+
+	case "MTurkQulificationType.description":
+		if e.complexity.MTurkQulificationType.Description == nil {
+			break
+		}
+
+		return e.complexity.MTurkQulificationType.Description(childComplexity), true
+
+	case "MTurkQulificationType.id":
+		if e.complexity.MTurkQulificationType.ID == nil {
+			break
+		}
+
+		return e.complexity.MTurkQulificationType.ID(childComplexity), true
+
+	case "MTurkQulificationType.name":
+		if e.complexity.MTurkQulificationType.Name == nil {
+			break
+		}
+
+		return e.complexity.MTurkQulificationType.Name(childComplexity), true
 
 	case "MessageStepArgs.lobby":
 		if e.complexity.MessageStepArgs.Lobby == nil {
@@ -966,19 +996,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Procedure.Creator(childComplexity), true
 
-	case "Procedure.criteria":
-		if e.complexity.Procedure.Criteria == nil {
-			break
-		}
-
-		return e.complexity.Procedure.Criteria(childComplexity), true
-
 	case "Procedure.id":
 		if e.complexity.Procedure.ID == nil {
 			break
 		}
 
 		return e.complexity.Procedure.ID(childComplexity), true
+
+	case "Procedure.internalCriteria":
+		if e.complexity.Procedure.InternalCriteria == nil {
+			break
+		}
+
+		return e.complexity.Procedure.InternalCriteria(childComplexity), true
+
+	case "Procedure.mturkCriteria":
+		if e.complexity.Procedure.MturkCriteria == nil {
+			break
+		}
+
+		return e.complexity.Procedure.MturkCriteria(childComplexity), true
 
 	case "Procedure.name":
 		if e.complexity.Procedure.Name == nil {
@@ -1103,6 +1140,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Me(childComplexity), true
+
+	case "Query.mturkQualificationTypes":
+		if e.complexity.Query.MturkQualificationTypes == nil {
+			break
+		}
+
+		return e.complexity.Query.MturkQualificationTypes(childComplexity), true
 
 	case "Query.page":
 		if e.complexity.Query.Page == nil {
@@ -1649,9 +1693,14 @@ type Procedure {
   selectionType: SelectionType
 
   """
-  Selection criteria for participants
+  Selection criteria for internal DB participants.
   """
-  criteria: SelectionCriteria
+  internalCriteria: InternalCriteria
+
+  """
+  Selection criteria for internal DB participants.
+  """
+  mturkCriteria: MTurkCriteria
 
   """
   Ordered list of Steps in a Procedure.
@@ -1670,11 +1719,6 @@ type Procedure {
   """
   adult: Boolean!
 }
-
-"""
-Participant selection criteria types.
-"""
-union SelectionCriteria = InternalCriteria | MTurkCriteria
 
 """
 InternalCriteria is the criteria for internal database participant selection.
@@ -1741,6 +1785,30 @@ enum Comparator {
   DoesNotExist
   In
   NotIn
+}
+
+"""
+The QualificationType data structure represents a Qualification type, a description of a property of a Worker that must
+match the requirements of a HIT for the Worker to be able to accept the HIT. The type also describes how a Worker can obtain
+a Qualification of that type, such as through a Qualification test.
+See https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_QualificationTypeDataStructureArticle.html
+"""
+type MTurkQulificationType {
+  """
+  A unique identifier for the Qualification type. A Qualification type is given a Qualification type ID when you call
+  the CreateQualificationType operation operation, and it retains that ID forever. Can be up to 255 bytes in length.
+  """
+  id: ID!
+
+  """
+  The name of the Qualification type. The type name is used to identify the type, and to find the type using a Qualification type search.
+  """
+  name: String!
+
+  """
+  A long description for the Qualification type.
+  """
+  description: String!
 }
 
 """
@@ -2821,6 +2889,8 @@ type Query {
   participantID (usually called after registerParticipant).
   """
   page(token: String!, participantID: ID!): Page!
+
+  mturkQualificationTypes: [MTurkQulificationType!]!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "root.graphqls", Input: `schema {
@@ -4620,6 +4690,108 @@ func (ec *executionContext) _MTurkQualificationCriteria_locales(ctx context.Cont
 	return ec.marshalOMTurkLocale2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocaleᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _MTurkQulificationType_id(ctx context.Context, field graphql.CollectedField, obj *model.MTurkQulificationType) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MTurkQulificationType",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MTurkQulificationType_name(ctx context.Context, field graphql.CollectedField, obj *model.MTurkQulificationType) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MTurkQulificationType",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MTurkQulificationType_description(ctx context.Context, field graphql.CollectedField, obj *model.MTurkQulificationType) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MTurkQulificationType",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _MessageStepArgs_url(ctx context.Context, field graphql.CollectedField, obj *model.MessageStepArgs) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -6212,7 +6384,7 @@ func (ec *executionContext) _Procedure_selectionType(ctx context.Context, field 
 	return ec.marshalOSelectionType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_criteria(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_internalCriteria(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6229,7 +6401,7 @@ func (ec *executionContext) _Procedure_criteria(ctx context.Context, field graph
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Criteria, nil
+		return obj.InternalCriteria, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6238,9 +6410,40 @@ func (ec *executionContext) _Procedure_criteria(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(model.SelectionCriteria)
+	res := resTmp.(*model.InternalCriteria)
 	fc.Result = res
-	return ec.marshalOSelectionCriteria2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionCriteria(ctx, field.Selections, res)
+	return ec.marshalOInternalCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteria(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Procedure_mturkCriteria(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Procedure",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MturkCriteria, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MTurkCriteria)
+	fc.Result = res
+	return ec.marshalOMTurkCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteria(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Procedure_steps(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
@@ -6910,6 +7113,40 @@ func (ec *executionContext) _Query_page(ctx context.Context, field graphql.Colle
 	res := resTmp.(*model.Page)
 	fc.Result = res
 	return ec.marshalNPage2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_mturkQualificationTypes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MturkQualificationTypes(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MTurkQulificationType)
+	fc.Result = res
+	return ec.marshalNMTurkQulificationType2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQulificationTypeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -9712,29 +9949,6 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 	}
 }
 
-func (ec *executionContext) _SelectionCriteria(ctx context.Context, sel ast.SelectionSet, obj model.SelectionCriteria) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.InternalCriteria:
-		return ec._InternalCriteria(ctx, sel, &obj)
-	case *model.InternalCriteria:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._InternalCriteria(ctx, sel, obj)
-	case model.MTurkCriteria:
-		return ec._MTurkCriteria(ctx, sel, &obj)
-	case *model.MTurkCriteria:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MTurkCriteria(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
 func (ec *executionContext) _StepArgs(ctx context.Context, sel ast.SelectionSet, obj model.StepArgs) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -10070,7 +10284,7 @@ func (ec *executionContext) _HITStepArgs(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var internalCriteriaImplementors = []string{"InternalCriteria", "SelectionCriteria"}
+var internalCriteriaImplementors = []string{"InternalCriteria"}
 
 func (ec *executionContext) _InternalCriteria(ctx context.Context, sel ast.SelectionSet, obj *model.InternalCriteria) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, internalCriteriaImplementors)
@@ -10097,7 +10311,7 @@ func (ec *executionContext) _InternalCriteria(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var mTurkCriteriaImplementors = []string{"MTurkCriteria", "SelectionCriteria"}
+var mTurkCriteriaImplementors = []string{"MTurkCriteria"}
 
 func (ec *executionContext) _MTurkCriteria(ctx context.Context, sel ast.SelectionSet, obj *model.MTurkCriteria) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, mTurkCriteriaImplementors)
@@ -10178,6 +10392,43 @@ func (ec *executionContext) _MTurkQualificationCriteria(ctx context.Context, sel
 			out.Values[i] = ec._MTurkQualificationCriteria_values(ctx, field, obj)
 		case "locales":
 			out.Values[i] = ec._MTurkQualificationCriteria_locales(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var mTurkQulificationTypeImplementors = []string{"MTurkQulificationType"}
+
+func (ec *executionContext) _MTurkQulificationType(ctx context.Context, sel ast.SelectionSet, obj *model.MTurkQulificationType) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mTurkQulificationTypeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MTurkQulificationType")
+		case "id":
+			out.Values[i] = ec._MTurkQulificationType_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._MTurkQulificationType_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._MTurkQulificationType_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10547,8 +10798,10 @@ func (ec *executionContext) _Procedure(ctx context.Context, sel ast.SelectionSet
 			}
 		case "selectionType":
 			out.Values[i] = ec._Procedure_selectionType(ctx, field, obj)
-		case "criteria":
-			out.Values[i] = ec._Procedure_criteria(ctx, field, obj)
+		case "internalCriteria":
+			out.Values[i] = ec._Procedure_internalCriteria(ctx, field, obj)
+		case "mturkCriteria":
+			out.Values[i] = ec._Procedure_mturkCriteria(ctx, field, obj)
 		case "steps":
 			out.Values[i] = ec._Procedure_steps(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -10728,6 +10981,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_page(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "mturkQualificationTypes":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_mturkQualificationTypes(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -11497,6 +11764,57 @@ func (ec *executionContext) unmarshalNMTurkQualificationCriteriaInput2ᚖgithub�
 	}
 	res, err := ec.unmarshalNMTurkQualificationCriteriaInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteriaInput(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalNMTurkQulificationType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQulificationType(ctx context.Context, sel ast.SelectionSet, v model.MTurkQulificationType) graphql.Marshaler {
+	return ec._MTurkQulificationType(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMTurkQulificationType2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQulificationTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MTurkQulificationType) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMTurkQulificationType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQulificationType(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNMTurkQulificationType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQulificationType(ctx context.Context, sel ast.SelectionSet, v *model.MTurkQulificationType) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MTurkQulificationType(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPage2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPage(ctx context.Context, sel ast.SelectionSet, v model.Page) graphql.Marshaler {
@@ -12713,6 +13031,17 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return ec.marshalOInt2int(ctx, sel, *v)
 }
 
+func (ec *executionContext) marshalOInternalCriteria2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteria(ctx context.Context, sel ast.SelectionSet, v model.InternalCriteria) graphql.Marshaler {
+	return ec._InternalCriteria(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOInternalCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteria(ctx context.Context, sel ast.SelectionSet, v *model.InternalCriteria) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._InternalCriteria(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOInternalCriteriaInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteriaInput(ctx context.Context, v interface{}) (model.InternalCriteriaInput, error) {
 	return ec.unmarshalInputInternalCriteriaInput(ctx, v)
 }
@@ -12746,6 +13075,17 @@ func (ec *executionContext) marshalOJSON2ᚖstring(ctx context.Context, sel ast.
 		return graphql.Null
 	}
 	return ec.marshalOJSON2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalOMTurkCriteria2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteria(ctx context.Context, sel ast.SelectionSet, v model.MTurkCriteria) graphql.Marshaler {
+	return ec._MTurkCriteria(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOMTurkCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteria(ctx context.Context, sel ast.SelectionSet, v *model.MTurkCriteria) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MTurkCriteria(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOMTurkCriteriaInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteriaInput(ctx context.Context, v interface{}) (model.MTurkCriteriaInput, error) {
@@ -12955,13 +13295,6 @@ func (ec *executionContext) unmarshalOScheduleRunInput2ᚖgithubᚗcomᚋempiric
 	}
 	res, err := ec.unmarshalOScheduleRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐScheduleRunInput(ctx, v)
 	return &res, err
-}
-
-func (ec *executionContext) marshalOSelectionCriteria2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionCriteria(ctx context.Context, sel ast.SelectionSet, v model.SelectionCriteria) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._SelectionCriteria(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx context.Context, v interface{}) (model.SelectionType, error) {
