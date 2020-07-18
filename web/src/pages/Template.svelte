@@ -13,8 +13,8 @@
 
 <script>
   import Layout from "../layouts/Layout.svelte";
-  import Label from "../components/form/Label.svelte";
-  import Select from "../components/form/Select.svelte";
+  import Label from "../components/base/Label.svelte";
+  import Select from "../components/base/Select.svelte";
   import InternalDbTemplate from "../components/selectionTemplates/InternalDbTemplate.svelte";
 
   let template = {

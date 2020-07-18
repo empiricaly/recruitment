@@ -1,6 +1,4 @@
 <script>
-  import { manageFocus } from "./focus.js";
-
   export let type = "button";
   export let text;
   export let secondary = false;

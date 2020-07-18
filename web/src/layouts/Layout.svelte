@@ -1,6 +1,7 @@
 <script>
   import Link from "../components/base/Link.svelte";
-  import Button from "../components/form/Button.svelte";
+  import Button from "../components/base/Button.svelte";
+  import Header from "./Header.svelte";
   import { fade, fly } from "svelte/transition";
   import { quadInOut } from "svelte/easing";
   import { path } from "../lib/routing.js";
@@ -391,7 +392,8 @@
       tabindex="0">
       <div class="pt-2 pb-6 md:py-6">
         {#if title}
-          <div
+          <Header {title} {overtitle} {action} on:click />
+          <!-- <div
             class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between
             items-baseline">
             <h1 class="text-2xl font-semibold text-gray-900 leading-snug">
@@ -408,7 +410,7 @@
               <Button on:click text={action} />
             {/if}
             <slot name="actions" />
-          </div>
+          </div> -->
         {/if}
         <slot name="header" />
         <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">

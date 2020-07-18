@@ -1,7 +1,7 @@
 <script>
-  import Label from "../components/form/Label.svelte";
-  import Input from "../components/form/Input.svelte";
-  import Button from "../components/form/Button.svelte";
+  import Label from "../components/base/Label.svelte";
+  import Input from "../components/base/Input.svelte";
+  import Button from "../components/base/Button.svelte";
 
   let username = "";
   let password = "";

@@ -5,6 +5,7 @@
   export let type = "text";
   export let id = "";
   export let placeholder = "";
+  export let pattern = null;
   export let focus = false;
   export let value = "";
   export let required = "";
@@ -20,6 +21,10 @@
     if (id) {
       el.id = id;
     }
+
+    if (pattern) {
+      el.pattern = pattern;
+    }
   }
 </script>
 
@@ -29,8 +34,10 @@
     {placeholder}
     {required}
     {disabled}
+    {pattern}
     on:keyup={onKeyUp}
     on:blur={onBlur}
+    on:focus
     use:init
     bind:value
     class="appearance-none block w-full px-3 py-2 border border-gray-300

@@ -33,9 +33,9 @@
   import Template from "./pages/Template.svelte";
   import Templates from "./pages/Templates.svelte";
   import Participants from "./pages/Participants.svelte";
+  import AllParticipants from "./pages/AllParticipants.svelte";
   import Profile from "./pages/Profile.svelte";
   import Signin from "./pages/Signin.svelte";
-  import Link from "./components/base/Link.svelte";
 
   let initialPath = document.location.pathname;
   function authRedirect() {
@@ -83,6 +83,10 @@
         {
           path: "/projects/:projectID/participants",
           component: Participants
+        },
+        {
+          path: "/participants",
+          component: AllParticipants
         },
         {
           path: "/profile",
