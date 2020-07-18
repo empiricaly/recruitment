@@ -15,7 +15,7 @@
   import Layout from "../layouts/Layout.svelte";
   import Label from "../components/base/Label.svelte";
   import Select from "../components/base/Select.svelte";
-  import InternalDbTemplate from "../components/selectionTemplates/InternalDbTemplate.svelte";
+  import InternalCriteria from "../components/templates/criteria/InternalCriteria.svelte";
 
   let template = {
     name: "Speed Dating 1",
@@ -95,7 +95,7 @@
 
         <div class="mt-5">
           {#if template.selectionType === 'internal_db'}
-            <InternalDbTemplate
+            <InternalCriteria
               bind:criteria={template.internalCriteria.condition} />
           {:else if template.selectionType === 'mturk_qualifications'}
             MTurk

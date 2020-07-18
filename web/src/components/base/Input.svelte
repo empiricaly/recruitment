@@ -9,8 +9,6 @@
   export let focus = false;
   export let value = "";
   export let required = "";
-  export let onKeyUp = undefined;
-  export let onBlur = undefined;
   export let disabled = false;
   function init(el) {
     el.type = type;
@@ -28,15 +26,15 @@
   }
 </script>
 
-<div class="mt-1 rounded-md shadow-sm">
+<div class="rounded-md shadow-sm">
   <input
     {autocomplete}
     {placeholder}
     {required}
     {disabled}
     {pattern}
-    on:keyup={onKeyUp}
-    on:blur={onBlur}
+    on:keyup
+    on:blur
     on:focus
     use:init
     bind:value

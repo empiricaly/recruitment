@@ -1,6 +1,7 @@
 <script>
   export let type = "button";
-  export let text;
+  export let text = "";
+  export let icon = "";
   export let secondary = false;
   export let full = false;
 
@@ -15,6 +16,14 @@
     {type}
     class="{css} flex w-full justify-center px-4 py-2 border border-transparent
     text-sm font-medium rounded-md transition duration-150 ease-in-out">
+    {#if icon}
+      <svg
+        class="h-5 w-5 min-w-6 min-h-6 flex-shrink-0 "
+        fill="currentColor"
+        viewBox="0 0 24 24">
+        {@html icon}
+      </svg>
+    {/if}
     {text}
   </button>
 </span>

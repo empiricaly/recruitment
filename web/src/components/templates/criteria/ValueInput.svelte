@@ -54,7 +54,7 @@
 </script>
 
 <script>
-  import Input from "../form/Input.svelte";
+  import Input from "../../base/Input.svelte";
 
   export let criteria = {};
 
@@ -84,8 +84,8 @@
   <Input
     bind:value
     placeholder="value"
-    onBlur={handleValueOnBlur}
-    onKeyUp={handleValueOnKeyUp} />
+    on:blur={handleValueOnBlur}
+    on:keyup={handleValueOnKeyUp} />
 {:else}
-  <div class="w-full bg-gray-100 border border-gray-300 px-3 py-2 rounded-md" />
+  <div class="w-full h-9 bg-gray-100 rounded-md" />
 {/if}

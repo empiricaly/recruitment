@@ -314,7 +314,7 @@
         <Link
           to="/projects"
           className="mt-5 flex items-center flex-shrink-0 px-4 text-white py-2
-          rounded-md bg-gray-700 font-medium hover:text-gray-200">
+          bg-gray-700 font-medium hover:text-gray-200">
           {projectName}
         </Link>
         <!-- Sidebar component, swap this element with another sidebar if you like -->

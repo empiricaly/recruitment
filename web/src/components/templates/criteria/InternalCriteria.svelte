@@ -13,7 +13,7 @@
 
 <script>
   import Criteria from "./Criteria.svelte";
-  import Select from "../form/Select.svelte";
+  import Select from "../../base/Select.svelte";
 
   export let criteria = {};
 
@@ -23,6 +23,7 @@
 <div class="flex items-center mb-3">
   <p class="mr-2">Participants matching</p>
   <Select
+    className="w-20"
     id="matchType"
     bind:value={match}
     options={matchTypes}
@@ -30,5 +31,5 @@
   <p class="ml-2">of the following conditions:</p>
 </div>
 <ul>
-  <Criteria bind:criteria />
+  <Criteria bind:criteria first />
 </ul>

@@ -5,6 +5,7 @@
   export let id = null;
   export let value = null;
   export let placeholder = "Select Item";
+  export let className = "";
   export let options = [];
   export let onChange = undefined;
 
@@ -39,7 +40,7 @@
   });
 </script>
 
-<div class="mt-1 relative">
+<div class="{className} relative">
   <span class="inline-block w-full rounded-md shadow-sm">
     <button
       {id}
@@ -48,6 +49,7 @@
       aria-haspopup="listbox"
       aria-expanded="true"
       aria-labelledby="listbox-label"
+      title={valueOption.title}
       class="cursor-default relative w-full rounded-md border border-gray-300
       bg-white pl-3 pr-10 py-2 text-left focus:outline-none
       focus:shadow-outline-blue focus:border-blue-300 transition ease-in-out
@@ -93,6 +95,7 @@
             <button
               class="w-full h-full py-2 pl-3 pr-9 focus:outline-none flex
               justify-between"
+              title={option.title}
               on:click={() => {
                 value = option.value;
                 dispatch('change');
