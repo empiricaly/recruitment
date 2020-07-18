@@ -36,7 +36,6 @@
     "dayjs": "1.8.29",
     "graphql": "15.0.0",
     "history": "4.10.1",
-    "lodash": "^4.17.19",
     "path-to-regexp": "6.1.0",
     "sirv-cli": "0.4.6",
     "svelte-apollo": "0.3.0"

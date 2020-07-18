@@ -48,8 +48,6 @@
 </script>
 
 <script>
-  import _ from "lodash";
-
   import { createEventDispatcher } from "svelte";
 
   import ValueInput from "./ValueInput.svelte";
@@ -76,7 +74,7 @@
       }
     } = event.detail;
 
-    const childIndex = criteria[operator].findIndex(c => _.isEqual(c, child));
+    const childIndex = criteria[operator].findIndex(c => c === child);
 
     if (operator === childOperator) {
       criteria[operator].splice(childIndex + 1, 0, newCriteria);
@@ -91,9 +89,7 @@
   function handleChildRemove(event) {
     const { criteria: child } = event.detail;
 
-    criteria[operator] = criteria[operator].filter(
-      item => !_.isEqual(item, child)
-    );
+    criteria[operator] = criteria[operator].filter(item => item !== child);
     if (criteria[operator].length === 1) {
       dispatch("add", {
         criteria,
@@ -104,11 +100,9 @@
     }
   }
 
-  function handleComparatorChange() {
-    if (
-      criteria.comparator === "DoesNotExist" ||
-      (criteria.comparator === "Exists" && criteria.values)
-    ) {
+  function handleComparatorChange(event) {
+    const { value } = event.detail;
+    if (value === "DoesNotExist" || value === "Exists") {
       delete criteria.values;
     } else {
       if (!criteria.values) {

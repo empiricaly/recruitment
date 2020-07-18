@@ -2,11 +2,11 @@
   const matchTypes = [
     {
       label: "All",
-      value: "all"
+      value: "and"
     },
     {
       label: "Any",
-      value: "any"
+      value: "or"
     }
   ];
 </script>
@@ -17,7 +17,35 @@
 
   export let criteria = {};
 
-  let match = "all";
+  let match = criteria.and ? "and" : "or";
+  let prevMatch = match;
+
+  $: {
+    if (prevMatch !== match) {
+      console.log("new value:", match);
+      const oldcrit = criteria[match === "or" ? "and" : "or"];
+      const newCrit = [];
+      for (const crit of oldcrit) {
+        if (crit[match]) {
+          for (const inner of crit[match]) {
+            newCrit.push(inner);
+          }
+        } else {
+          newCrit.push(crit);
+        }
+      }
+
+      const crit = { [match]: newCrit };
+      criteria = crit;
+      prevMatch = match;
+    }
+  }
+
+  function handleChange(event) {
+    const { value } = event.detail;
+  }
+
+  $: console.log(JSON.stringify(criteria, null, "  "));
 </script>
 
 <div class="flex items-center mb-3">

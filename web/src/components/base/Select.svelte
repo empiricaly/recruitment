@@ -7,7 +7,6 @@
   export let placeholder = "Select Item";
   export let className = "";
   export let options = [];
-  export let onChange = undefined;
 
   $: empty = value === undefined || value === null;
   $: valueOption = value && options.find(opt => opt.value === value);
@@ -49,7 +48,7 @@
       aria-haspopup="listbox"
       aria-expanded="true"
       aria-labelledby="listbox-label"
-      title={valueOption.title}
+      title={valueOption && valueOption.title}
       class="cursor-default relative w-full rounded-md border border-gray-300
       bg-white pl-3 pr-10 py-2 text-left focus:outline-none
       focus:shadow-outline-blue focus:border-blue-300 transition ease-in-out
@@ -97,8 +96,10 @@
               justify-between"
               title={option.title}
               on:click={() => {
-                value = option.value;
-                dispatch('change');
+                if (value !== option.value) {
+                  value = option.value;
+                  dispatch('change', { value });
+                }
               }}>
 
               <span

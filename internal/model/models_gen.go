@@ -81,6 +81,7 @@ type CompValueInput struct {
 // EqualTo, NotEqualTo). When testing for existence an empty array is DoesNotExist
 // and an array with one or more values Exists. For In and NotIn all values in the
 // values array are used.
+// If the  condition is empty (no and, no or, no key), it will match any record.
 type Condition struct {
 	And        []*Condition `json:"and"`
 	Or         []*Condition `json:"or"`
