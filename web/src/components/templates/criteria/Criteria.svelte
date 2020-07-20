@@ -90,6 +90,15 @@
     const { criteria: child } = event.detail;
 
     criteria[operator] = criteria[operator].filter(item => item !== child);
+    if (first && criteria[operator].length === 0) {
+      criteria[operator] = [
+        {
+          key: "",
+          comparator: "EqualTo",
+          values: []
+        }
+      ];
+    }
     if (criteria[operator].length === 1) {
       dispatch("add", {
         criteria,

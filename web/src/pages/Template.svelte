@@ -16,6 +16,7 @@
   import Label from "../components/base/Label.svelte";
   import Select from "../components/base/Select.svelte";
   import InternalCriteria from "../components/templates/criteria/InternalCriteria.svelte";
+  import { tick } from "svelte";
 
   let template = {
     name: "Speed Dating 1",
@@ -25,31 +26,36 @@
       condition: {
         and: [
           {
-            key: "age",
-            comparator: "GreaterThan",
-            values: [{ int: 18 }]
-          },
-          {
-            key: "country",
-            comparator: "In",
-            values: [{ string: "us" }, { string: "id" }]
-          },
-          {
-            or: [
-              {
-                key: "experiment_123",
-                comparator: "DoesNotExist"
-              },
-              {
-                key: "experiment_321",
-                comparator: "DoesNotExist"
-              },
-              {
-                key: "experiment_343",
-                comparator: "DoesNotExist"
-              }
-            ]
+            key: "",
+            comparator: "EqualTo",
+            values: []
           }
+          // {
+          //   key: "age",
+          //   comparator: "GreaterThan",
+          //   values: [{ int: 18 }]
+          // },
+          // {
+          //   key: "country",
+          //   comparator: "In",
+          //   values: [{ string: "us" }, { string: "id" }]
+          // },
+          // {
+          //   or: [
+          //     {
+          //       key: "experiment_123",
+          //       comparator: "DoesNotExist"
+          //     },
+          //     {
+          //       key: "experiment_321",
+          //       comparator: "DoesNotExist"
+          //     },
+          //     {
+          //       key: "experiment_343",
+          //       comparator: "DoesNotExist"
+          //     }
+          //   ]
+          // }
         ]
       }
     },
