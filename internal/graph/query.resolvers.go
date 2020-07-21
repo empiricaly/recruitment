@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/mturk"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
 )
@@ -28,20 +30,25 @@ func (r *queryResolver) Page(ctx context.Context, token string, participantID st
 }
 
 func (r *queryResolver) MturkQualificationTypes(ctx context.Context) ([]*model.MTurkQulificationType, error) {
-	panic(fmt.Errorf("not implemented"))
+	var quals []*model.MTurkQulificationType
+	params := &mturk.ListQualificationTypesInput{MustBeRequestable: aws.Bool(true), MustBeOwnedByCaller: aws.Bool(true)}
+
+	err := r.MTurk.ListQualificationTypesPages(params, func(page *mturk.ListQualificationTypesOutput, lastPage bool) bool {
+		for _, qual := range page.QualificationTypes {
+			quals = append(quals, &model.MTurkQulificationType{ID: *qual.QualificationTypeId, Name: *qual.Name, Description: *qual.Description})
+		}
+		return true
+	})
+
+	if err != nil {
+		fmt.Println("Got error calling listQualification Type:")
+		fmt.Print(err.Error())
+	}
+
+	return quals, nil
 }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *queryResolver) MTurkQualificationTypes(ctx context.Context) ([]*model.MTurkQulificationType, error) {
-	panic(fmt.Errorf("not implemented"))
-}

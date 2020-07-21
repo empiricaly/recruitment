@@ -1,5 +1,7 @@
 package graph
 
+import "github.com/empiricaly/recruitment/internal/mturk"
+
 // This file will not be regenerated automatically.
 //
 // It serves as dependency injection for your app, add any dependencies you
@@ -7,4 +9,6 @@ package graph
 
 //go:generate go run github.com/99designs/gqlgen
 
-type Resolver struct{}
+type Resolver struct {
+	MTurk *mturk.Session
+}

@@ -6,6 +6,7 @@ import (
 
 	logger "github.com/empiricaly/recruitment/internal/log"
 	"github.com/empiricaly/recruitment/internal/metrics"
+	"github.com/empiricaly/recruitment/internal/mturk"
 	"github.com/empiricaly/recruitment/internal/store"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -17,6 +18,7 @@ type Server struct {
 	config    *Config
 	storeConn *store.Conn
 
+	mturk   *mturk.Session
 	metrics *metrics.Metrics
 	done    chan struct{}
 	wg      sync.WaitGroup
@@ -47,6 +49,11 @@ func Run(ctx context.Context, config *Config) (err error) {
 	s.storeConn, err = store.Connect(config.Store)
 	if err != nil {
 		return errors.Wrap(err, "store err")
+	}
+
+	s.mturk, err = mturk.New(config.MTurkConfig)
+	if err != nil {
+		return errors.Wrap(err, "mturk err")
 	}
 
 	s.startGraphqlServer()

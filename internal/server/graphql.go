@@ -25,7 +25,7 @@ func (s *Server) startGraphqlServer() {
 		AllowCredentials: true,
 	})
 
-	r := &graph.Resolver{}
+	r := &graph.Resolver{MTurk: s.mturk}
 
 	// router.Use(MachinesLockMiddleware(r))
 

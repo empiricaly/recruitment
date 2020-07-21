@@ -6,6 +6,7 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/log"
 	"github.com/empiricaly/recruitment/internal/metrics"
+	"github.com/empiricaly/recruitment/internal/mturk"
 	"github.com/empiricaly/recruitment/internal/store"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -22,8 +23,9 @@ type admin struct {
 
 // Config is `tawon agent` command line configuration
 type Config struct {
-	GQLAddr string  `mapstructure:"gqladdr"`
-	Admins  []admin `mapstructure:"admins"`
+	GQLAddr     string        `mapstructure:"gqladdr"`
+	MTurkConfig *mturk.Config `mapstructure:"mturk"`
+	Admins      []admin       `mapstructure:"admins"`
 
 	Store   *store.Config   `mapstructure:"store"`
 	Metrics *metrics.Config `mapstructure:"metrics"`
@@ -63,6 +65,10 @@ func (c *Config) Validate() error {
 		return errors.Wrap(err, "logger config error")
 	}
 
+	if err := c.MTurkConfig.Validate(); err != nil {
+		return errors.Wrap(err, "mturk config error")
+	}
+
 	return nil
 }
 
@@ -71,6 +77,7 @@ func ConfigFlags(cmd *cobra.Command) error {
 	store.ConfigFlags(cmd, "store")
 	metrics.ConfigFlags(cmd, "", "recruitment", ":9999", "")
 	log.ConfigFlags(cmd, "", "")
+	mturk.ConfigFlags(cmd, "")
 
 	flag := "gqladdr"
 	val := ":8880"
