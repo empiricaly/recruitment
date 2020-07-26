@@ -19,7 +19,7 @@
   <div class="mt-5 md:mt-0 md:col-span-7 shadow sm:rounded-md bg-white">
     {#if header}
       <header
-        class="px-4 pt-3 pb-4 bg-indigo-600 text-gray-50 sm:px-6 sm:rounded-t-md">
+        class="px-4 py-3 bg-indigo-600 text-gray-50 sm:px-6 sm:rounded-t-md">
         <slot name="header" />
       </header>
     {/if}

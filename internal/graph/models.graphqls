@@ -23,16 +23,16 @@ ContentType is the type rendering used for a field.
 """
 enum ContentType {
   """
-  PLAIN uses a plain text renderer. Templating uses Mustache-style
-  interpolation (i.e. {{url}}).
-  """
-  PLAIN
-
-  """
   MARKDOWN uses a Markdown renderer. Templating uses Mustache-style
   interpolation (i.e. {{url}}).
   """
   MARKDOWN
+
+  """
+  HTML uses an HTML rendered. Templating uses Mustache-style
+  interpolation (i.e. {{url}}).
+  """
+  HTML
 
   """
   REACT uses a React renderer. Templating passes template arguments as props.

@@ -1,24 +1,3 @@
-<script context="module">
-  const modes = [
-    {
-      label: "Markdown",
-      value: "markdown"
-    },
-    {
-      label: "HTML",
-      value: "html"
-    },
-    {
-      label: "React",
-      value: "jsx"
-    },
-    {
-      label: "Svelte",
-      value: "svelte"
-    }
-  ];
-</script>
-
 <script>
   import Select from "../base/Select.svelte";
   import Label from "../base/Label.svelte";
@@ -113,6 +92,21 @@
         id={uniq('timeout')}
         right="seconds"
         bind:value={hitArgs.timeout}
+        inputmode="numeric"
+        required
+        placeholder="0" />
+    </div>
+
+    <div class="mt-4">
+      <Label
+        forID={uniq('workersCount')}
+        text="Number of HITs tp publish"
+        question="Maximum number of HITs to publish." />
+      <Input
+        type="number"
+        id={uniq('workersCount')}
+        right="seconds"
+        bind:value={hitArgs.workersCount}
         inputmode="numeric"
         required
         placeholder="0" />

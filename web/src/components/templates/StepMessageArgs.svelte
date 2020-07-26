@@ -2,21 +2,28 @@
   const modes = [
     {
       label: "Markdown",
-      value: "markdown"
+      value: "MARKDOWN"
     },
     {
       label: "HTML",
-      value: "html"
+      value: "HTML"
     },
     {
       label: "React",
-      value: "jsx"
+      value: "REACT"
     },
     {
       label: "Svelte",
-      value: "svelte"
+      value: "SVELTE"
     }
   ];
+
+  const typeToMode = {
+    MARKDOWN: "markdown",
+    HTML: "html",
+    REACT: "jsx",
+    SVELTE: "svelte"
+  };
 </script>
 
 <script>
@@ -28,7 +35,6 @@
   import { uniqueID } from "../../utils/uniq.js";
 
   export let msgArgs;
-  let mode = "markdown";
   let showVariables = false;
 
   const uniq = uniqueID();
@@ -58,12 +64,18 @@
       </button>
       •
       <div class="w-32 flex-shrink-0">
-        <Select thin bind:value={mode} options={modes} placeholder="Mode" />
+        <Select
+          thin
+          bind:value={msgArgs.messageType}
+          options={modes}
+          placeholder="Mode" />
       </div>
     </div>
   </div>
   <div class="border">
-    <CodeMirror bind:value={msgArgs.message} {mode} />
+    <CodeMirror
+      bind:value={msgArgs.message}
+      mode={typeToMode[msgArgs.messageType]} />
   </div>
 
   <SlideOver title="Message Template Variables" bind:open={showVariables}>

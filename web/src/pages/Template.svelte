@@ -2,20 +2,20 @@
   const selectionTypes = [
     {
       label: "Internal Database",
-      value: "internal_db"
+      value: "INTERNAL_DB"
     },
     {
       label: "MTurk Qualifications",
-      value: "mturk_qualifications"
+      value: "MTURK_QUALIFICATIONS"
     }
   ];
 
   const defaultMessageStepArgs = {
     url: "",
     message: "\n\n\n\n",
-    messageType: "PLAIN",
+    messageType: "MARKDOWN",
     lobby: "",
-    lobbyType: "PLAIN",
+    lobbyType: "MARKDOWN",
     lobbyExpiration: 0
   };
 
@@ -56,7 +56,7 @@
 
   let template = {
     name: "Speed Dating 1",
-    selectionType: "internal_db",
+    selectionType: "INTERNAL_DB",
     participantCount: null,
     adult: false,
     mTurkCriteria: { qualifications: [] },
@@ -120,9 +120,9 @@
     </div>
 
     <div class="mt-5">
-      {#if template.selectionType === 'internal_db'}
+      {#if template.selectionType === 'INTERNAL_DB'}
         <InternalCriteria bind:criteria={template.internalCriteria.condition} />
-      {:else if template.selectionType === 'mturk_qualifications'}
+      {:else if template.selectionType === 'MTURK_QUALIFICATIONS'}
         MTurk
       {:else}Unknow Particpant Selection Type{/if}
     </div>
@@ -196,6 +196,7 @@
       <Button
         secondary={template.steps.length > 0}
         on:click={handleNewStep('MTURK_MESSAGE')}
+        disabled={template.steps.length === 0 && template.selectionType !== 'INTERNAL_DB'}
         text="Add MTurk Message Step" />
     </div>
 
@@ -203,6 +204,7 @@
       <Button
         secondary={template.steps.length > 0}
         on:click={handleNewStep('PARTICIPANT_FILTER')}
+        disabled={template.steps.length === 0 && template.selectionType !== 'INTERNAL_DB'}
         text="Add Participant Filter Step" />
     </div>
   </div>
