@@ -36,6 +36,7 @@
   import AllParticipants from "./pages/AllParticipants.svelte";
   import Profile from "./pages/Profile.svelte";
   import Signin from "./pages/Signin.svelte";
+  import Alert from "./components/overlays/Alert.svelte";
 
   let initialPath = document.location.pathname;
   function authRedirect() {
@@ -107,6 +108,7 @@
 </script>
 
 <main class="antialiased bg-gray-100" use:create />
+<Alert />
 
 <style>
   main {

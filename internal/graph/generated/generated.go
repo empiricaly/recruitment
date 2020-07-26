@@ -1915,7 +1915,7 @@ type Step implements Node {
 """
 Argument groups for Steps.
 """
-union StepArgs = MessageStepArgs | HITStepArgs | FilterStepArgs
+union StepArgs = HITStepArgs | MessageStepArgs | FilterStepArgs
 
 """
 FilterStepArgs are arguments passed to a Pariticipant Filter Step.
@@ -2048,13 +2048,9 @@ type MessageStepArgs {
   lobbyType: ContentType
 
   """
-  useLobby enables to showing a lobby, and rich-text message to put in the lobby
-  Lobby can either expire (see expiration below) to produce the effect of a
-  precise start time, or must have a submit button.
-  The string should be HTML content.
-  Only available if URL is present.
+  LobbyExpirtation in seconds from the beginning of the step.
   """
-  lobbyExpiration: String
+  lobbyExpiration: Int
 }
 
 """
@@ -4980,9 +4976,9 @@ func (ec *executionContext) _MessageStepArgs_lobbyExpiration(ctx context.Context
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_registerParticipant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -9954,13 +9950,6 @@ func (ec *executionContext) _StepArgs(ctx context.Context, sel ast.SelectionSet,
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case model.MessageStepArgs:
-		return ec._MessageStepArgs(ctx, sel, &obj)
-	case *model.MessageStepArgs:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MessageStepArgs(ctx, sel, obj)
 	case model.HITStepArgs:
 		return ec._HITStepArgs(ctx, sel, &obj)
 	case *model.HITStepArgs:
@@ -9968,6 +9957,13 @@ func (ec *executionContext) _StepArgs(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._HITStepArgs(ctx, sel, obj)
+	case model.MessageStepArgs:
+		return ec._MessageStepArgs(ctx, sel, &obj)
+	case *model.MessageStepArgs:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._MessageStepArgs(ctx, sel, obj)
 	case model.FilterStepArgs:
 		return ec._FilterStepArgs(ctx, sel, &obj)
 	case *model.FilterStepArgs:

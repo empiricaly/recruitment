@@ -7,6 +7,7 @@
   export let placeholder = "Select Item";
   export let className = "";
   export let options = [];
+  export let thin = false;
 
   $: empty = value === undefined || value === null;
   $: valueOption = value && options.find(opt => opt.value === value);
@@ -40,7 +41,7 @@
 </script>
 
 <div class="{className} relative">
-  <span class="inline-block w-full rounded-md shadow-sm">
+  <span class="inline-block w-full rounded-md {thin ? '' : 'shadow-sm'}">
     <button
       {id}
       on:click={handleOpen}
@@ -49,15 +50,15 @@
       aria-expanded="true"
       aria-labelledby="listbox-label"
       title={valueOption && valueOption.title}
-      class="cursor-default relative w-full rounded-md border border-gray-300
-      bg-white pl-3 pr-10 py-2 text-left focus:outline-none
-      focus:shadow-outline-blue focus:border-blue-300 transition ease-in-out
-      duration-150 sm:text-sm sm:leading-5">
+      class="{thin ? 'rounded pl-2 pr-8' : 'py-2 border rounded-md pl-3 pr-10'}
+      cursor-default relative w-full border-gray-300 bg-white text-left
+      focus:outline-none focus:shadow-outline-blue focus:border-blue-300
+      transition ease-in-out duration-150 sm:text-sm sm:leading-5">
       <span class="block truncate {empty && 'text-gray-400'}">
         {valueOption ? valueOption.label : placeholder}
       </span>
       <span
-        class="absolute inset-y-0 right-0 flex items-center pr-2
+        class="absolute inset-y-0 right-0 flex items-center pr-0
         pointer-events-none">
         <svg
           class="h-5 w-5 text-gray-400"
@@ -65,7 +66,7 @@
           fill="none"
           stroke="currentColor">
           <path
-            d="M7 7l3-3 3 3m0 6l-3 3-3-3"
+            d="M7 {thin ? '2m0' : '7l3-3 3 3m0'} 6l-3 3-3-3"
             stroke-width="1.5"
             stroke-linecap="round"
             stroke-linejoin="round" />

@@ -452,12 +452,8 @@ type MessageStepArgs struct {
 	Lobby *string `json:"lobby"`
 	// LobbyType indicates the rendering language of the Lobby.
 	LobbyType *ContentType `json:"lobbyType"`
-	// useLobby enables to showing a lobby, and rich-text message to put in the lobby
-	// Lobby can either expire (see expiration below) to produce the effect of a
-	// precise start time, or must have a submit button.
-	// The string should be HTML content.
-	// Only available if URL is present.
-	LobbyExpiration *string `json:"lobbyExpiration"`
+	// LobbyExpirtation in seconds from the beginning of the step.
+	LobbyExpiration *int `json:"lobbyExpiration"`
 }
 
 func (MessageStepArgs) IsStepArgs() {}
