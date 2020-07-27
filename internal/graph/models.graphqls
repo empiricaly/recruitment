@@ -332,6 +332,21 @@ type MTurkQulificationType {
   A long description for the Qualification type.
   """
   description: String!
+
+  """
+  A type that is used to define the comparator.
+  """
+  type: QualType!
+}
+
+"""
+The kind of type used on MTurkQualificationType that later we be used to decide the comparator.
+"""
+enum QualType {
+  Bool
+  Comparison
+  Location
+  Custom
 }
 
 """

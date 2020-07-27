@@ -7,14 +7,41 @@
   export let placeholder = "Select Item";
   export let className = "";
   export let options = [];
+  export let multiple = false;
   export let thin = false;
 
   $: empty = value === undefined || value === null;
-  $: valueOption = value && options.find(opt => opt.value === value);
+  $: valueOption = getValueOption(value);
+  $: valueLabel = getLabel(valueOption);
 
   const dispatch = createEventDispatcher();
 
   let open = false;
+
+  function getValueOption(val) {
+    if (!multiple) {
+      return (
+        val !== undefined &&
+        val !== null &&
+        options.find(opt => opt.value === val)
+      );
+    }
+
+    return (
+      val !== undefined &&
+      val !== null &&
+      val.length > 0 &&
+      val.map(v => options.find(opt => opt.value === v))
+    );
+  }
+
+  function getLabel(val) {
+    if (!multiple) {
+      return val ? val.label : placeholder;
+    }
+
+    return val ? val.map(v => v.label).join(", ") : placeholder;
+  }
 
   function handleOpen(event) {
     event.stopPropagation();
@@ -33,6 +60,13 @@
     } else {
       document.body.removeEventListener("click", close);
     }
+  }
+
+  function isCurrentValue(value, optionValue) {
+    if (!multiple) {
+      return value === optionValue;
+    }
+    return value.includes(optionValue) ? true : false;
   }
 
   onDestroy(() => {
@@ -55,7 +89,7 @@
       focus:outline-none focus:shadow-outline-blue focus:border-blue-300
       transition ease-in-out duration-150 sm:text-sm sm:leading-5">
       <span class="block truncate {empty && 'text-gray-400'}">
-        {valueOption ? valueOption.label : placeholder}
+        {valueLabel}
       </span>
       <span
         class="absolute inset-y-0 right-0 flex items-center pr-0
@@ -97,19 +131,30 @@
               justify-between"
               title={option.title}
               on:click={() => {
-                if (value !== option.value) {
-                  value = option.value;
+                if (!multiple) {
+                  if (value !== option.value) {
+                    value = option.value;
+                    dispatch('change', { value });
+                  }
+                } else {
+                  if (!value.includes(option.value)) {
+                    value.push(option.value);
+                  } else {
+                    const valueIndex = value.findIndex(v => v === option.value);
+                    value.splice(valueIndex, 1);
+                  }
+                  value = value;
                   dispatch('change', { value });
                 }
               }}>
 
               <span
-                class="{value === option.value ? 'font-semibold' : 'font-normal'}
+                class="{isCurrentValue(value, option.value) ? 'font-semibold' : 'font-normal'}
                 block truncate">
                 {option.label || option.value}
               </span>
 
-              {#if value === option.value}
+              {#if isCurrentValue(value, option.value)}
                 <span
                   class="text-indigo-600 absolute inset-y-0 right-0 flex
                   items-center pr-4">

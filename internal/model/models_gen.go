@@ -422,6 +422,8 @@ type MTurkQulificationType struct {
 	Name string `json:"name"`
 	// A long description for the Qualification type.
 	Description string `json:"description"`
+	// A type that is used to define the comparator.
+	Type QualType `json:"type"`
 }
 
 // MessageStepArgs are arguments passed to a Step that has a message.
@@ -942,6 +944,52 @@ func (e *Provider) UnmarshalGQL(v interface{}) error {
 }
 
 func (e Provider) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// The kind of type used on MTurkQualificationType that later we be used to decide the comparator.
+type QualType string
+
+const (
+	QualTypeBool       QualType = "Bool"
+	QualTypeComparison QualType = "Comparison"
+	QualTypeLocation   QualType = "Location"
+	QualTypeCustom     QualType = "Custom"
+)
+
+var AllQualType = []QualType{
+	QualTypeBool,
+	QualTypeComparison,
+	QualTypeLocation,
+	QualTypeCustom,
+}
+
+func (e QualType) IsValid() bool {
+	switch e {
+	case QualTypeBool, QualTypeComparison, QualTypeLocation, QualTypeCustom:
+		return true
+	}
+	return false
+}
+
+func (e QualType) String() string {
+	return string(e)
+}
+
+func (e *QualType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = QualType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid QualType", str)
+	}
+	return nil
+}
+
+func (e QualType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
