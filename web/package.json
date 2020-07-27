@@ -9,8 +9,8 @@
     "dev:nollup": "cross-env NOLLUP=1 nollup -c --hot --port 5000 --content-base ./public --history-api-fallback",
     "dev": "run-p dev:nollup watch:tailwind",
     "start": "sirv public",
-    "watch:tailwind": "postcss src/style.css -o public/index.css -w",
-    "build:tailwind": "NODE_ENV=production postcss src/style.css -o public/index.css"
+    "watch:tailwind": "postcss src/style.css -o public/build/index.css -w",
+    "build:tailwind": "NODE_ENV=production postcss src/style.css -o public/build/index.css"
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "2.2.0",
