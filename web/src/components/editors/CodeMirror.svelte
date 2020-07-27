@@ -58,6 +58,9 @@
     jsx: {
       name: "jsx"
     },
+    javascript: {
+      name: "javascript"
+    },
     html: {
       name: "htmlmixed",
       base: "text/html"
