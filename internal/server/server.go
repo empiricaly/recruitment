@@ -7,7 +7,7 @@ import (
 	logger "github.com/empiricaly/recruitment/internal/log"
 	"github.com/empiricaly/recruitment/internal/metrics"
 	"github.com/empiricaly/recruitment/internal/mturk"
-	"github.com/empiricaly/recruitment/internal/store"
+	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
@@ -16,7 +16,7 @@ import (
 type Server struct {
 	ctx       context.Context
 	config    *Config
-	storeConn *store.Conn
+	storeConn *storage.Conn
 
 	mturk   *mturk.Session
 	metrics *metrics.Metrics
@@ -46,7 +46,7 @@ func Run(ctx context.Context, config *Config) (err error) {
 		return errors.Wrap(err, "could not initialize metrics")
 	}
 
-	s.storeConn, err = store.Connect(config.Store)
+	s.storeConn, err = storage.Connect(config.Store)
 	if err != nil {
 		return errors.Wrap(err, "store err")
 	}

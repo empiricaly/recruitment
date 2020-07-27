@@ -5,15 +5,45 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
+	"github.com/empiricaly/recruitment/internal/storage"
 	errs "github.com/pkg/errors"
 )
 
 func (r *queryResolver) Projects(ctx context.Context) ([]*model.Project, error) {
-	panic(fmt.Errorf("not implemented"))
+	var err error
+	var projects []*model.Project
+	err = r.Mapping.Txn(func(t *storage.MappingTxn) error {
+		projects, err = t.Projects()
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
+func (r *queryResolver) Project(ctx context.Context, id *string, projectID *string) (*model.Project, error) {
+	if id == nil && projectID == nil {
+		return nil, errors.New("id or projectID required")
+	}
+	var project *model.Project
+	var err error
+	err = r.Mapping.Txn(func(t *storage.MappingTxn) error {
+		if projectID != nil {
+			project, err = t.ProjectByProjectID(*projectID)
+		} else if id != nil {
+			project, err = t.Project(*id)
+		}
+		return err
+	})
+
+	return project, err
 }
 
 func (r *queryResolver) Participants(ctx context.Context, first *int, after *string) (*model.ParticipantsConnection, error) {

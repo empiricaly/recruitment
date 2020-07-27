@@ -92,9 +92,16 @@ type Project {
   creator: Admin!
 
   """
+  The Project Identifier is used to label Participants having
+  taken part in the Project. It should be written in Camel Case,
+  e.g., myCoolProject.
+  """
+  projectID: String!
+
+  """
   Human friendly name for Project
   """
-  name: String
+  name: String!
 
   """
   Procedures contained in Project

@@ -37,6 +37,7 @@
   import Profile from "./pages/Profile.svelte";
   import Signin from "./pages/Signin.svelte";
   import Alert from "./components/overlays/Alert.svelte";
+  import Notification from "./components/overlays/Notification.svelte";
 
   let initialPath = document.location.pathname;
   function authRedirect() {
@@ -109,6 +110,7 @@
 
 <main class="antialiased bg-gray-100" use:create />
 <Alert />
+<Notification />
 
 <style>
   main {

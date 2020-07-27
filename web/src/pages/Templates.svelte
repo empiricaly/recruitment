@@ -1,9 +1,59 @@
 <script>
+  import { mutate } from "svelte-apollo";
+  import { client } from "../lib/apollo";
+  import { CREATE_PROCEDURE } from "../lib/queries";
   import Layout from "../layouts/Layout.svelte";
   import TemplateLine from "../components/templates/TemplateLine.svelte";
+  import { notify } from "../components/overlays/Notification.svelte";
+
+  export let params;
+
+  $: console.log("prs", params);
+
+  async function handleCreate() {
+    try {
+      await mutate($client, {
+        mutation: CREATE_PROCEDURE,
+        variables: {
+          input: {
+            projectID: params.projectID,
+            name: "",
+            selectionType: "INTERNAL_DB",
+            participantCount: 100,
+            adult: false,
+            mturkCriteria: { qualifications: [] },
+            internalCriteria: {
+              condition: {
+                and: [
+                  {
+                    key: "",
+                    comparator: "EQUAL_TO",
+                    values: []
+                  }
+                ]
+              }
+            },
+            steps: []
+          }
+        }
+      });
+    } catch (error) {
+      console.error(error);
+      notify({
+        failed: true,
+        title: `Could not create Template`,
+        body:
+          "Something happened on the server, and we could not create a new Template as requested."
+      });
+    }
+  }
 </script>
 
-<Layout title="Templates" action="New Template">
+<Layout
+  title="Templates"
+  action="New Template"
+  on:click={handleCreate}
+  let:project>
   <div class="bg-white shadow sm:rounded-md">
     <ul>
       <TemplateLine

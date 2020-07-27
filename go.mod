@@ -6,6 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.11.3
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/aws/aws-sdk-go v1.33.7
+	github.com/dgraph-io/badger v1.6.1
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/go-chi/chi v3.3.2+incompatible
 	github.com/gorilla/websocket v1.4.2
@@ -18,6 +19,7 @@ require (
 	github.com/prometheus/client_golang v0.9.3
 	github.com/prometheus/common v0.4.0
 	github.com/rs/cors v1.6.0
+	github.com/rs/xid v1.2.1
 	github.com/rs/zerolog v1.18.0
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v1.0.0

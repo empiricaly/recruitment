@@ -46,9 +46,14 @@ type ParticipantsEdge {
 
 type Query {
   """
-  Projects returns all projects. It is the entry point for the backend data.
+  Projects returns all projects.
   """
   projects: [Project!]! @hasRole(role: ADMIN)
+
+  """
+  Projects returns a single project.
+  """
+  project(id: ID, projectID: ID): Project @hasRole(role: ADMIN)
 
   """
   Participants returns all participants in DB.

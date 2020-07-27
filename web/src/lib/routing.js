@@ -1,8 +1,9 @@
 import { createBrowserHistory, createHashHistory } from "history";
-import { pathToRegexp } from "path-to-regexp";
+import { match, pathToRegexp } from "path-to-regexp";
 import { writable } from "svelte/store";
 
 export const path = writable("/");
+export const params = writable({});
 
 class Router {
   constructor({ target, mode = "hash", routes = [] }) {
@@ -51,10 +52,14 @@ class Router {
 
   handleRouteChange({ pathname }) {
     let matchedRoute;
+    let prms;
 
     for (const route of this.routes) {
       const regexp = pathToRegexp(route.path);
       if (regexp.test(pathname)) {
+        const m = match(route.path, { decode: decodeURIComponent });
+        prms = m(pathname).params;
+        params.set(prms);
         matchedRoute = route;
         break;
       }
@@ -66,8 +71,10 @@ class Router {
 
       this.$content = new Component({
         target: this.target,
-        props,
+        props: { params: prms, ...props },
       });
+    } else {
+      params.set({});
     }
   }
 }

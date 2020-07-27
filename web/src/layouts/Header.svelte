@@ -1,6 +1,8 @@
 <script>
   import Button from "../components/base/Button.svelte";
+  import Input from "../components/base/Input.svelte";
   export let title = "";
+  export let titleUpdatable = false;
   export let overtitle = "";
   export let action = "";
 </script>
@@ -15,7 +17,13 @@
         {overtitle}
       </div>
     {/if}
-    {title}
+    {#if titleUpdatable}
+      <input
+        class="font-semibold focus:outline-none focus:shadow-outline-blue
+        rounded-md bg-transparent focus:bg-white"
+        type="text"
+        bind:value={title} />
+    {:else}{title}{/if}
   </h1>
   {#if action}
     <Button on:click text={action} />

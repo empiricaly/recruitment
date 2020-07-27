@@ -56,17 +56,18 @@
   import { tick } from "svelte";
 
   let template = {
+    projectID: "fkelbwkjq",
     name: "Speed Dating 1",
     selectionType: "INTERNAL_DB",
     participantCount: null,
     adult: false,
-    mTurkCriteria: { qualifications: [] },
+    mturkCriteria: { qualifications: [] },
     internalCriteria: {
       condition: {
         and: [
           {
             key: "",
-            comparator: "EqualTo",
+            comparator: "EQUAL_TO",
             values: []
           }
         ]
@@ -103,7 +104,7 @@
   }
 </script>
 
-<Layout title={template.name} overtitle="Template">
+<Layout bind:title={template.name} overtitle="Template" titleUpdatable}>
   <TemplateSection
     title="Participant Selection"
     description="A Procedure starts with the selection of Participants you want
@@ -125,7 +126,7 @@
         <InternalCriteria bind:criteria={template.internalCriteria.condition} />
       {:else if template.selectionType === 'MTURK_QUALIFICATIONS'}
         <MTurkQualifications
-          bind:qualifications={template.mTurkCriteria.qualifications} />
+          bind:qualifications={template.mturkCriteria.qualifications} />
       {:else}Unknow Particpant Selection Type{/if}
     </div>
 

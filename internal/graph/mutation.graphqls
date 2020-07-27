@@ -71,6 +71,7 @@ input MutateDatumInput {
 }
 
 input CreateProjectInput {
+  projectID: String!
   name: String!
 }
 

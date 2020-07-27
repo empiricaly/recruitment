@@ -214,6 +214,7 @@ type ComplexityRoot struct {
 		ID         func(childComplexity int) int
 		Name       func(childComplexity int) int
 		Procedures func(childComplexity int) int
+		ProjectID  func(childComplexity int) int
 		Runs       func(childComplexity int) int
 		UpdatedAt  func(childComplexity int) int
 	}
@@ -230,6 +231,7 @@ type ComplexityRoot struct {
 		MturkQualificationTypes func(childComplexity int) int
 		Page                    func(childComplexity int, token string, participantID string) int
 		Participants            func(childComplexity int, first *int, after *string) int
+		Project                 func(childComplexity int, id *string, projectID *string) int
 		Projects                func(childComplexity int) int
 	}
 
@@ -290,6 +292,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Projects(ctx context.Context) ([]*model.Project, error)
+	Project(ctx context.Context, id *string, projectID *string) (*model.Project, error)
 	Participants(ctx context.Context, first *int, after *string) (*model.ParticipantsConnection, error)
 	Me(ctx context.Context) (model.User, error)
 	Page(ctx context.Context, token string, participantID string) (*model.Page, error)
@@ -1125,6 +1128,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Project.Procedures(childComplexity), true
 
+	case "Project.projectID":
+		if e.complexity.Project.ProjectID == nil {
+			break
+		}
+
+		return e.complexity.Project.ProjectID(childComplexity), true
+
 	case "Project.runs":
 		if e.complexity.Project.Runs == nil {
 			break
@@ -1204,6 +1214,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Participants(childComplexity, args["first"].(*int), args["after"].(*string)), true
+
+	case "Query.project":
+		if e.complexity.Query.Project == nil {
+			break
+		}
+
+		args, err := ec.field_Query_project_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Project(childComplexity, args["id"].(*string), args["projectID"].(*string)), true
 
 	case "Query.projects":
 		if e.complexity.Query.Projects == nil {
@@ -1603,9 +1625,16 @@ type Project {
   creator: Admin!
 
   """
+  The Project Identifier is used to label Participants having
+  taken part in the Project. It should be written in Camel Case,
+  e.g., myCoolProject.
+  """
+  projectID: String!
+
+  """
   Human friendly name for Project
   """
-  name: String
+  name: String!
 
   """
   Procedures contained in Project
@@ -2418,6 +2447,7 @@ input MutateDatumInput {
 }
 
 input CreateProjectInput {
+  projectID: String!
   name: String!
 }
 
@@ -2669,6 +2699,7 @@ values array are used.
 input ConditionInput {
   and: [ConditionInput!]
   or: [ConditionInput!]
+  key: String
   comparator: Comparator
   values: [CompValueInput!]
 }
@@ -2944,9 +2975,14 @@ type ParticipantsEdge {
 
 type Query {
   """
-  Projects returns all projects. It is the entry point for the backend data.
+  Projects returns all projects.
   """
   projects: [Project!]! @hasRole(role: ADMIN)
+
+  """
+  Projects returns a single project.
+  """
+  project(id: ID, projectID: ID): Project @hasRole(role: ADMIN)
 
   """
   Participants returns all participants in DB.
@@ -3291,6 +3327,28 @@ func (ec *executionContext) field_Query_participants_args(ctx context.Context, r
 		}
 	}
 	args["after"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_project_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["projectID"]; ok {
+		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["projectID"] = arg1
 	return args, nil
 }
 
@@ -6858,6 +6916,40 @@ func (ec *executionContext) _Project_creator(ctx context.Context, field graphql.
 	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAdmin(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Project_projectID(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Project",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProjectID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Project_name(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -6882,11 +6974,14 @@ func (ec *executionContext) _Project_name(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Project_procedures(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
@@ -7153,6 +7248,68 @@ func (ec *executionContext) _Query_projects(ctx context.Context, field graphql.C
 	res := resTmp.([]*model.Project)
 	fc.Result = res
 	return ec.marshalNProject2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProjectᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_project(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_project_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Project(rctx, args["id"].(*string), args["projectID"].(*string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.Project); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/model.Project`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Project)
+	fc.Result = res
+	return ec.marshalOProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProject(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_participants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -9495,6 +9652,12 @@ func (ec *executionContext) unmarshalInputConditionInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
+		case "key":
+			var err error
+			it.Key, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "comparator":
 			var err error
 			it.Comparator, err = ec.unmarshalOComparator2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx, v)
@@ -9579,6 +9742,12 @@ func (ec *executionContext) unmarshalInputCreateProjectInput(ctx context.Context
 
 	for k, v := range asMap {
 		switch k {
+		case "projectID":
+			var err error
+			it.ProjectID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
@@ -11079,8 +11248,16 @@ func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "projectID":
+			out.Values[i] = ec._Project_projectID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "name":
 			out.Values[i] = ec._Project_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "procedures":
 			out.Values[i] = ec._Project_procedures(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -11168,6 +11345,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			})
+		case "project":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_project(ctx, field)
 				return res
 			})
 		case "participants":
@@ -13574,6 +13762,17 @@ func (ec *executionContext) marshalOParticipantsEdge2ᚕᚖgithubᚗcomᚋempiri
 	}
 	wg.Wait()
 	return ret
+}
+
+func (ec *executionContext) marshalOProject2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProject(ctx context.Context, sel ast.SelectionSet, v model.Project) graphql.Marshaler {
+	return ec._Project(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProject(ctx context.Context, sel ast.SelectionSet, v *model.Project) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Project(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalORegisterParticipantInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRegisterParticipantInput(ctx context.Context, v interface{}) (model.RegisterParticipantInput, error) {

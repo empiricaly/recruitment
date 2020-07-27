@@ -102,6 +102,7 @@ type Condition struct {
 type ConditionInput struct {
 	And        []*ConditionInput `json:"and"`
 	Or         []*ConditionInput `json:"or"`
+	Key        *string           `json:"key"`
 	Comparator *Comparator       `json:"comparator"`
 	Values     []*CompValueInput `json:"values"`
 }
@@ -128,7 +129,8 @@ type CreateProcedureInput struct {
 }
 
 type CreateProjectInput struct {
-	Name string `json:"name"`
+	ProjectID string `json:"projectID"`
+	Name      string `json:"name"`
 }
 
 type CreateRunInput struct {
@@ -598,8 +600,12 @@ type Project struct {
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 	Creator   *Admin    `json:"creator"`
+	// The Project Identifier is used to label Participants having
+	// taken part in the Project. It should be written in Camel Case,
+	// e.g., myCoolProject.
+	ProjectID string `json:"projectID"`
 	// Human friendly name for Project
-	Name *string `json:"name"`
+	Name string `json:"name"`
 	// Procedures contained in Project
 	Procedures []*Procedure `json:"procedures"`
 	// Runs contained in Project

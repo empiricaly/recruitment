@@ -5,12 +5,16 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/empiricaly/recruitment/internal/graph"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
+	logger "github.com/empiricaly/recruitment/internal/log"
+	"github.com/empiricaly/recruitment/internal/model"
+	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
@@ -25,11 +29,24 @@ func (s *Server) startGraphqlServer() {
 		AllowCredentials: true,
 	})
 
-	r := &graph.Resolver{MTurk: s.mturk}
+	m, _ := storage.NewMapping(s.storeConn)
+	r := &graph.Resolver{MTurk: s.mturk, Store: s.storeConn, Mapping: m}
 
 	// router.Use(MachinesLockMiddleware(r))
+	router.Use(logger.HTTPLogger())
 
-	gqlsrv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: r}))
+	gconf := generated.Config{Resolvers: r}
+	gconf.Directives.HasRole = func(ctx context.Context, obj interface{}, next graphql.Resolver, role model.Role) (interface{}, error) {
+		// if !getCurrentUser(ctx).HasRole(role) {
+		// 	// block calling the next resolver
+		// 	return nil, fmt.Errorf("Access denied")
+		// }
+
+		// or let it pass through
+		return next(ctx)
+	}
+
+	gqlsrv := handler.New(generated.NewExecutableSchema(gconf))
 
 	gqlsrv.AddTransport(transport.Options{})
 	gqlsrv.AddTransport(transport.GET{})

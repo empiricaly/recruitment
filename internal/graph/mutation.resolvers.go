@@ -5,10 +5,13 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
+	"github.com/empiricaly/recruitment/internal/storage"
+	"github.com/rs/xid"
 )
 
 func (r *mutationResolver) RegisterParticipant(ctx context.Context, input *model.RegisterParticipantInput) (*model.Participant, error) {
@@ -24,7 +27,25 @@ func (r *mutationResolver) Auth(ctx context.Context, input *model.AuthInput) (*m
 }
 
 func (r *mutationResolver) CreateProject(ctx context.Context, input *model.CreateProjectInput) (*model.Project, error) {
-	panic(fmt.Errorf("not implemented"))
+	for _, project := range r.projects {
+		if project.ProjectID == input.ProjectID {
+			return nil, errors.New("Project with ID already exists")
+		}
+	}
+
+	project := &model.Project{
+		ID:        xid.New().String(),
+		Name:      input.Name,
+		ProjectID: input.ProjectID,
+	}
+
+	return project, r.Mapping.Txn(func(t *storage.MappingTxn) error {
+		return t.AddProject(project)
+	})
+
+	r.projects = append(r.projects, project)
+	// panic(fmt.Errorf("not implemented"))
+	return project, nil
 }
 
 func (r *mutationResolver) CreateProcedure(ctx context.Context, input *model.CreateProcedureInput) (*model.Procedure, error) {

@@ -33,6 +33,7 @@ values array are used.
 input ConditionInput {
   and: [ConditionInput!]
   or: [ConditionInput!]
+  key: String
   comparator: Comparator
   values: [CompValueInput!]
 }

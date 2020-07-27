@@ -7,7 +7,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/log"
 	"github.com/empiricaly/recruitment/internal/metrics"
 	"github.com/empiricaly/recruitment/internal/mturk"
-	"github.com/empiricaly/recruitment/internal/store"
+	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -27,7 +27,7 @@ type Config struct {
 	MTurkConfig *mturk.Config `mapstructure:"mturk"`
 	Admins      []admin       `mapstructure:"admins"`
 
-	Store   *store.Config   `mapstructure:"store"`
+	Store   *storage.Config `mapstructure:"store"`
 	Metrics *metrics.Config `mapstructure:"metrics"`
 	Logger  *log.Config     `mapstructure:"log"`
 }
@@ -74,7 +74,7 @@ func (c *Config) Validate() error {
 
 // ConfigFlags helps configure cobra and viper flags.
 func ConfigFlags(cmd *cobra.Command) error {
-	store.ConfigFlags(cmd, "store")
+	storage.ConfigFlags(cmd, "store")
 	metrics.ConfigFlags(cmd, "", "recruitment", ":9999", "")
 	log.ConfigFlags(cmd, "", "")
 	mturk.ConfigFlags(cmd, "")
