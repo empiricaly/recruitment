@@ -100,7 +100,7 @@
     <div class="mt-4">
       <Label
         forID={uniq('workersCount')}
-        text="Number of HITs tp publish"
+        text="Number of HITs to publish"
         question="Maximum number of HITs to publish." />
       <Input
         type="number"

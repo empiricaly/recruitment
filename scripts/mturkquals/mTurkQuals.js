@@ -11,10 +11,10 @@ const root = HTMLParser.parse(fs.readFileSync(INPUT_FILE_NAME));
 const getQualsJSON = () => {
   const extractQual = (quals, typeQual) =>
     quals.childNodes.map((q) => {
-      let type = typeQual === "system" ? "Comparison" : "Bool";
+      let type = typeQual === "system" ? "COMPARISON" : "BOOL";
       // if qualification type is a location
       if (q.getAttribute("value") === "00000000000000000071") {
-        type = "Location";
+        type = "LOCATION";
       }
 
       return {

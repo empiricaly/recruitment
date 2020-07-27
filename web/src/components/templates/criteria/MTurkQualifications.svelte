@@ -70,7 +70,3 @@
     </span>
   {/if}
 </div>
-
-<div class="font-bold text-gray-600 text-sm tracking-wide mt-5">
-  Project contains adult content
-</div>

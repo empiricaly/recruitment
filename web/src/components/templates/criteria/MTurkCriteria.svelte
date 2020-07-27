@@ -3,51 +3,51 @@
   const comparisons = [
     {
       label: "<",
-      value: "LessThan",
+      value: "LESS_THAN",
       title: "lesser than"
     },
     {
       label: "≤",
-      value: "LessThanOrEqualTo",
+      value: "LESS_THAN_OR_EQUAL_TO",
       title: "lesser than or equal to"
     },
     {
       label: ">",
-      value: "GreaterThan",
+      value: "GREATER_THAN",
       title: "greater than"
     },
     {
       label: "≥",
-      value: "GreaterThanOrEqualTo",
+      value: "GREATER_THAN_OR_EQUAL_TO",
       title: "greater than or equal to"
     }
   ];
   const locations = [
     {
       label: "is",
-      value: "EqualTo"
+      value: "EQUAL_TO"
     },
     {
       label: "is not",
-      value: "NotEqualTo"
+      value: "NOT_EQUAL_TO"
     },
     {
       label: "is one of",
-      value: "In"
+      value: "IN"
     },
     {
       label: "is not one of",
-      value: "NotIn"
+      value: "NOT_IN"
     }
   ];
   const customs = [
     {
       label: "Has Been Granted",
-      value: "Exists"
+      value: "EXISTS"
     },
     {
       label: "Has Not Been Granted",
-      value: "DoesNotExist"
+      value: "DOES_NOT_EXIST"
     },
     ...comparisons,
     ...locations
@@ -69,13 +69,13 @@
 
   function mapComparator(selectedQual) {
     switch (selectedQual.type) {
-      case "Custom":
+      case "CUSTOM":
         return customs;
 
-      case "Comparison":
+      case "COMPARISON":
         return comparisons;
 
-      case "Location":
+      case "LOCATION":
         return locations;
 
       default:
@@ -136,8 +136,8 @@
     qualification.locales = [];
   }
 
-  $: isLocation = selectedQual && selectedQual.type === "Location";
-  $: isPremium = selectedQual && selectedQual.type === "Bool";
+  $: isLocation = selectedQual && selectedQual.type === "LOCATION";
+  $: isPremium = selectedQual && selectedQual.type === "BOOL";
   $: isPresence =
     qualification &&
     qualification.comparator &&
@@ -196,11 +196,13 @@
           {/if}
 
           {#if qualification.comparator && qualification.comparator && !isLocation && !isPremium && !isPresence}
-            <Select
-              bind:value={qualification.values}
-              options={mapIntegers(qualification.id)}
-              multiple={isMultiSelect}
-              placeholder="Select Value" />
+            <div class="w-24">
+              <Select
+                bind:value={qualification.values}
+                options={mapIntegers(qualification.id)}
+                multiple={isMultiSelect}
+                placeholder="Select Value" />
+            </div>
           {/if}
         {/if}
         <div class="ml-2">

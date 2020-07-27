@@ -174,6 +174,11 @@ type DuplicateProcedureInput struct {
 // It must contains **either** JS code or the name of pre-defined filtering function.
 // This is only valid for an PARTICIPANT_FILTER Step.
 type FilterStepArgs struct {
+	// Type is whether to use a predefined filter, JS code, or the Condition filter
+	// mechanism.
+	Type ParticipantFilterType `json:"type"`
+	// Filter should be the name of pre-defined filtering function.
+	Filter *string `json:"filter"`
 	// Javascript to execute as a participant filter step.
 	// The code must contain a functinon exported using a default ES6 export.
 	// The function should accept a single argument object. This object contains the
@@ -187,8 +192,8 @@ type FilterStepArgs struct {
 	// If the functions returns null or undefined, the participants are not filtered.
 	// If the function throws an exception, the run will fail.
 	Js *string `json:"js"`
-	// Filter should be the name of pre-defined filtering function.
-	Filter *string `json:"filter"`
+	// Condition set the participant must meet to be allowed to participate.
+	Condition *Condition `json:"condition"`
 }
 
 func (FilterStepArgs) IsStepArgs() {}
@@ -751,16 +756,16 @@ type UpdateStepInput struct {
 type Comparator string
 
 const (
-	ComparatorLessThan             Comparator = "LessThan"
-	ComparatorLessThanOrEqualTo    Comparator = "LessThanOrEqualTo"
-	ComparatorGreaterThan          Comparator = "GreaterThan"
-	ComparatorGreaterThanOrEqualTo Comparator = "GreaterThanOrEqualTo"
-	ComparatorEqualTo              Comparator = "EqualTo"
-	ComparatorNotEqualTo           Comparator = "NotEqualTo"
-	ComparatorExists               Comparator = "Exists"
-	ComparatorDoesNotExist         Comparator = "DoesNotExist"
-	ComparatorIn                   Comparator = "In"
-	ComparatorNotIn                Comparator = "NotIn"
+	ComparatorLessThan             Comparator = "LESS_THAN"
+	ComparatorLessThanOrEqualTo    Comparator = "LESS_THAN_OR_EQUAL_TO"
+	ComparatorGreaterThan          Comparator = "GREATER_THAN"
+	ComparatorGreaterThanOrEqualTo Comparator = "GREATER_THAN_OR_EQUAL_TO"
+	ComparatorEqualTo              Comparator = "EQUAL_TO"
+	ComparatorNotEqualTo           Comparator = "NOT_EQUAL_TO"
+	ComparatorExists               Comparator = "EXISTS"
+	ComparatorDoesNotExist         Comparator = "DOES_NOT_EXIST"
+	ComparatorIn                   Comparator = "IN"
+	ComparatorNotIn                Comparator = "NOT_IN"
 )
 
 var AllComparator = []Comparator{
@@ -809,12 +814,12 @@ func (e Comparator) MarshalGQL(w io.Writer) {
 type ContentType string
 
 const (
-	// PLAIN uses a plain text renderer. Templating uses Mustache-style
-	// interpolation (i.e. {{url}}).
-	ContentTypePlain ContentType = "PLAIN"
 	// MARKDOWN uses a Markdown renderer. Templating uses Mustache-style
 	// interpolation (i.e. {{url}}).
 	ContentTypeMarkdown ContentType = "MARKDOWN"
+	// HTML uses an HTML rendered. Templating uses Mustache-style
+	// interpolation (i.e. {{url}}).
+	ContentTypeHTML ContentType = "HTML"
 	// REACT uses a React renderer. Templating passes template arguments as props.
 	// The root component should be the default ES6 export.
 	ContentTypeReact ContentType = "REACT"
@@ -824,15 +829,15 @@ const (
 )
 
 var AllContentType = []ContentType{
-	ContentTypePlain,
 	ContentTypeMarkdown,
+	ContentTypeHTML,
 	ContentTypeReact,
 	ContentTypeSvelte,
 }
 
 func (e ContentType) IsValid() bool {
 	switch e {
-	case ContentTypePlain, ContentTypeMarkdown, ContentTypeReact, ContentTypeSvelte:
+	case ContentTypeMarkdown, ContentTypeHTML, ContentTypeReact, ContentTypeSvelte:
 		return true
 	}
 	return false
@@ -947,14 +952,61 @@ func (e Provider) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// ParticipantFilterType is the type of user filtering to use.
+type ParticipantFilterType string
+
+const (
+	// Predefined Filter is a server side defined filter.
+	ParticipantFilterTypePredefinedFilter ParticipantFilterType = "PREDEFINED_FILTER"
+	// JS is a piece of JAvascript code doing the filtering.
+	ParticipantFilterTypeJs ParticipantFilterType = "JS"
+	// CONDITION uses the Condition object to do the filtering.
+	ParticipantFilterTypeCondition ParticipantFilterType = "CONDITION"
+)
+
+var AllParticipantFilterType = []ParticipantFilterType{
+	ParticipantFilterTypePredefinedFilter,
+	ParticipantFilterTypeJs,
+	ParticipantFilterTypeCondition,
+}
+
+func (e ParticipantFilterType) IsValid() bool {
+	switch e {
+	case ParticipantFilterTypePredefinedFilter, ParticipantFilterTypeJs, ParticipantFilterTypeCondition:
+		return true
+	}
+	return false
+}
+
+func (e ParticipantFilterType) String() string {
+	return string(e)
+}
+
+func (e *ParticipantFilterType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ParticipantFilterType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ParticipantFilterType", str)
+	}
+	return nil
+}
+
+func (e ParticipantFilterType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // The kind of type used on MTurkQualificationType that later we be used to decide the comparator.
 type QualType string
 
 const (
-	QualTypeBool       QualType = "Bool"
-	QualTypeComparison QualType = "Comparison"
-	QualTypeLocation   QualType = "Location"
-	QualTypeCustom     QualType = "Custom"
+	QualTypeBool       QualType = "BOOL"
+	QualTypeComparison QualType = "COMPARISON"
+	QualTypeLocation   QualType = "LOCATION"
+	QualTypeCustom     QualType = "CUSTOM"
 )
 
 var AllQualType = []QualType{

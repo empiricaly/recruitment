@@ -89,8 +89,10 @@ type ComplexityRoot struct {
 	}
 
 	FilterStepArgs struct {
-		Filter func(childComplexity int) int
-		Js     func(childComplexity int) int
+		Condition func(childComplexity int) int
+		Filter    func(childComplexity int) int
+		Js        func(childComplexity int) int
+		Type      func(childComplexity int) int
 	}
 
 	HITStepArgs struct {
@@ -488,6 +490,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Datum.Versions(childComplexity), true
 
+	case "FilterStepArgs.condition":
+		if e.complexity.FilterStepArgs.Condition == nil {
+			break
+		}
+
+		return e.complexity.FilterStepArgs.Condition(childComplexity), true
+
 	case "FilterStepArgs.filter":
 		if e.complexity.FilterStepArgs.Filter == nil {
 			break
@@ -501,6 +510,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FilterStepArgs.Js(childComplexity), true
+
+	case "FilterStepArgs.type":
+		if e.complexity.FilterStepArgs.Type == nil {
+			break
+		}
+
+		return e.complexity.FilterStepArgs.Type(childComplexity), true
 
 	case "HITStepArgs.description":
 		if e.complexity.HITStepArgs.Description == nil {
@@ -1518,16 +1534,16 @@ ContentType is the type rendering used for a field.
 """
 enum ContentType {
   """
-  PLAIN uses a plain text renderer. Templating uses Mustache-style
-  interpolation (i.e. {{url}}).
-  """
-  PLAIN
-
-  """
   MARKDOWN uses a Markdown renderer. Templating uses Mustache-style
   interpolation (i.e. {{url}}).
   """
   MARKDOWN
+
+  """
+  HTML uses an HTML rendered. Templating uses Mustache-style
+  interpolation (i.e. {{url}}).
+  """
+  HTML
 
   """
   REACT uses a React renderer. Templating passes template arguments as props.
@@ -1540,6 +1556,26 @@ enum ContentType {
   The root component should be the default ES6 export.
   """
   SVELTE
+}
+
+"""
+ParticipantFilterType is the type of user filtering to use.
+"""
+enum ParticipantFilterType {
+  """
+  Predefined Filter is a server side defined filter.
+  """
+  PREDEFINED_FILTER
+
+  """
+  JS is a piece of JAvascript code doing the filtering.
+  """
+  JS
+
+  """
+  CONDITION uses the Condition object to do the filtering.
+  """
+  CONDITION
 }
 
 """
@@ -1793,16 +1829,16 @@ type MTurkCriteria {
 The kind of comparison to make against a value.
 """
 enum Comparator {
-  LessThan
-  LessThanOrEqualTo
-  GreaterThan
-  GreaterThanOrEqualTo
-  EqualTo
-  NotEqualTo
-  Exists
-  DoesNotExist
-  In
-  NotIn
+  LESS_THAN
+  LESS_THAN_OR_EQUAL_TO
+  GREATER_THAN
+  GREATER_THAN_OR_EQUAL_TO
+  EQUAL_TO
+  NOT_EQUAL_TO
+  EXISTS
+  DOES_NOT_EXIST
+  IN
+  NOT_IN
 }
 
 """
@@ -1838,10 +1874,10 @@ type MTurkQulificationType {
 The kind of type used on MTurkQualificationType that later we be used to decide the comparator.
 """
 enum QualType {
-  Bool
-  Comparison
-  Location
-  Custom
+  BOOL
+  COMPARISON
+  LOCATION
+  CUSTOM
 }
 
 """
@@ -1956,6 +1992,17 @@ This is only valid for an PARTICIPANT_FILTER Step.
 """
 type FilterStepArgs {
   """
+  Type is whether to use a predefined filter, JS code, or the Condition filter
+  mechanism.
+  """
+  type: ParticipantFilterType!
+
+  """
+  Filter should be the name of pre-defined filtering function.
+  """
+  filter: String
+
+  """
   Javascript to execute as a participant filter step.
   The code must contain a functinon exported using a default ES6 export.
   The function should accept a single argument object. This object contains the
@@ -1972,9 +2019,9 @@ type FilterStepArgs {
   js: String
 
   """
-  Filter should be the name of pre-defined filtering function.
+  Condition set the participant must meet to be allowed to participate.
   """
-  filter: String
+  condition: Condition
 }
 
 """
@@ -4124,7 +4171,7 @@ func (ec *executionContext) _Datum_versions(ctx context.Context, field graphql.C
 	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FilterStepArgs_js(ctx context.Context, field graphql.CollectedField, obj *model.FilterStepArgs) (ret graphql.Marshaler) {
+func (ec *executionContext) _FilterStepArgs_type(ctx context.Context, field graphql.CollectedField, obj *model.FilterStepArgs) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4141,18 +4188,21 @@ func (ec *executionContext) _FilterStepArgs_js(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Js, nil
+		return obj.Type, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(model.ParticipantFilterType)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNParticipantFilterType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FilterStepArgs_filter(ctx context.Context, field graphql.CollectedField, obj *model.FilterStepArgs) (ret graphql.Marshaler) {
@@ -4184,6 +4234,68 @@ func (ec *executionContext) _FilterStepArgs_filter(ctx context.Context, field gr
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FilterStepArgs_js(ctx context.Context, field graphql.CollectedField, obj *model.FilterStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FilterStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Js, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FilterStepArgs_condition(ctx context.Context, field graphql.CollectedField, obj *model.FilterStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FilterStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Condition, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Condition)
+	fc.Result = res
+	return ec.marshalOCondition2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCondition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _HITStepArgs_title(ctx context.Context, field graphql.CollectedField, obj *model.HITStepArgs) (ret graphql.Marshaler) {
@@ -10306,10 +10418,17 @@ func (ec *executionContext) _FilterStepArgs(ctx context.Context, sel ast.Selecti
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("FilterStepArgs")
-		case "js":
-			out.Values[i] = ec._FilterStepArgs_js(ctx, field, obj)
+		case "type":
+			out.Values[i] = ec._FilterStepArgs_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "filter":
 			out.Values[i] = ec._FilterStepArgs_filter(ctx, field, obj)
+		case "js":
+			out.Values[i] = ec._FilterStepArgs_js(ctx, field, obj)
+		case "condition":
+			out.Values[i] = ec._FilterStepArgs_condition(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12051,6 +12170,15 @@ func (ec *executionContext) marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋr
 	return ec._Participant(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNParticipantFilterType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx context.Context, v interface{}) (model.ParticipantFilterType, error) {
+	var res model.ParticipantFilterType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNParticipantFilterType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx context.Context, sel ast.SelectionSet, v model.ParticipantFilterType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNParticipantsConnection2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantsConnection(ctx context.Context, sel ast.SelectionSet, v model.ParticipantsConnection) graphql.Marshaler {
 	return ec._ParticipantsConnection(ctx, sel, &v)
 }
@@ -12891,6 +13019,10 @@ func (ec *executionContext) marshalOComparator2ᚖgithubᚗcomᚋempiricalyᚋre
 	return v
 }
 
+func (ec *executionContext) marshalOCondition2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCondition(ctx context.Context, sel ast.SelectionSet, v model.Condition) graphql.Marshaler {
+	return ec._Condition(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalOCondition2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Condition) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -12929,6 +13061,13 @@ func (ec *executionContext) marshalOCondition2ᚕᚖgithubᚗcomᚋempiricalyᚋ
 	}
 	wg.Wait()
 	return ret
+}
+
+func (ec *executionContext) marshalOCondition2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCondition(ctx context.Context, sel ast.SelectionSet, v *model.Condition) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Condition(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOConditionInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInputᚄ(ctx context.Context, v interface{}) ([]*model.ConditionInput, error) {

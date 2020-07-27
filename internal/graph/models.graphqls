@@ -48,6 +48,26 @@ enum ContentType {
 }
 
 """
+ParticipantFilterType is the type of user filtering to use.
+"""
+enum ParticipantFilterType {
+  """
+  Predefined Filter is a server side defined filter.
+  """
+  PREDEFINED_FILTER
+
+  """
+  JS is a piece of JAvascript code doing the filtering.
+  """
+  JS
+
+  """
+  CONDITION uses the Condition object to do the filtering.
+  """
+  CONDITION
+}
+
+"""
 Participant selection type.
 """
 enum SelectionType {
@@ -298,16 +318,16 @@ type MTurkCriteria {
 The kind of comparison to make against a value.
 """
 enum Comparator {
-  LessThan
-  LessThanOrEqualTo
-  GreaterThan
-  GreaterThanOrEqualTo
-  EqualTo
-  NotEqualTo
-  Exists
-  DoesNotExist
-  In
-  NotIn
+  LESS_THAN
+  LESS_THAN_OR_EQUAL_TO
+  GREATER_THAN
+  GREATER_THAN_OR_EQUAL_TO
+  EQUAL_TO
+  NOT_EQUAL_TO
+  EXISTS
+  DOES_NOT_EXIST
+  IN
+  NOT_IN
 }
 
 """
@@ -343,10 +363,10 @@ type MTurkQulificationType {
 The kind of type used on MTurkQualificationType that later we be used to decide the comparator.
 """
 enum QualType {
-  Bool
-  Comparison
-  Location
-  Custom
+  BOOL
+  COMPARISON
+  LOCATION
+  CUSTOM
 }
 
 """
@@ -461,6 +481,17 @@ This is only valid for an PARTICIPANT_FILTER Step.
 """
 type FilterStepArgs {
   """
+  Type is whether to use a predefined filter, JS code, or the Condition filter
+  mechanism.
+  """
+  type: ParticipantFilterType!
+
+  """
+  Filter should be the name of pre-defined filtering function.
+  """
+  filter: String
+
+  """
   Javascript to execute as a participant filter step.
   The code must contain a functinon exported using a default ES6 export.
   The function should accept a single argument object. This object contains the
@@ -477,9 +508,9 @@ type FilterStepArgs {
   js: String
 
   """
-  Filter should be the name of pre-defined filtering function.
+  Condition set the participant must meet to be allowed to participate.
   """
-  filter: String
+  condition: Condition
 }
 
 """

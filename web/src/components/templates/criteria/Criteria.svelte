@@ -2,47 +2,47 @@
   const comparators = [
     {
       label: "equal to",
-      value: "EqualTo"
+      value: "EQUAL_TO"
     },
     {
       label: "not equal to",
-      value: "NotEqualTo"
+      value: "NOT_EQUAL_TO"
     },
     {
       label: "<",
-      value: "LessThan",
+      value: "LESS_THAN",
       title: "lesser than"
     },
     {
       label: "≤",
-      value: "LessThanOrEqualTo",
+      value: "LESS_THAN_OR_EQUAL_TO",
       title: "lesser than or equal to"
     },
     {
       label: ">",
-      value: "GreaterThan",
+      value: "GREATER_THAN",
       title: "greater than"
     },
     {
       label: "≥",
-      value: "GreaterThanOrEqualTo",
+      value: "GREATER_THAN_OR_EQUAL_TO",
       title: "greater than or equal to"
     },
     {
       label: "exists",
-      value: "Exists"
+      value: "EXISTS"
     },
     {
       label: "does not exist",
-      value: "DoesNotExist"
+      value: "DOES_NOT_EXIST"
     },
     {
       label: "in",
-      value: "In"
+      value: "IN"
     },
     {
       label: "not in",
-      value: "NotIn"
+      value: "NOT_IN"
     }
   ];
 </script>
