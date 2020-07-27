@@ -1,19 +1,28 @@
 const HTMLParser = require("node-html-parser");
 const fs = require("fs");
 
-const EXPORTED_FILE_NAME = "quals.json";
+const isSandbox = true;
+const EXPORTED_FILE_NAME = `../../internal/mturk/quals/${
+  isSandbox ? "sandbox" : "production"
+}.json`;
 const INPUT_FILE_NAME = "input.html";
 const root = HTMLParser.parse(fs.readFileSync(INPUT_FILE_NAME));
 
 const getQualsJSON = () => {
-  const extractQual = (quals) =>
+  const extractQual = (quals, typeQual) =>
     quals.childNodes.map((q) => {
+      let type = typeQual === "system" ? "Comparison" : "Bool";
+      // if qualification type is a location
+      if (q.getAttribute("value") === "00000000000000000071") {
+        type = "Location";
+      }
+
       return {
         id: q.getAttribute("value"),
         name: q.childNodes[0].rawText.replace(" &amp;", " &"),
+        type,
       };
     });
-
   const PREMIUM_QUALIFICATIONS = "Premium Qualifications";
   const SYSTEM_QUALIFICATIONS = "System Qualifications";
 
@@ -30,12 +39,12 @@ const getQualsJSON = () => {
       {
         type: "system",
         name: SYSTEM_QUALIFICATIONS,
-        items: extractQual(systemQuals),
+        items: extractQual(systemQuals, "system"),
       },
       {
         type: "premium",
         name: PREMIUM_QUALIFICATIONS,
-        items: extractQual(premiumQuals),
+        items: extractQual(premiumQuals, "premium"),
       },
     ],
   };

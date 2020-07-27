@@ -7,10 +7,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/mturk"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
+	errs "github.com/pkg/errors"
 )
 
 func (r *queryResolver) Projects(ctx context.Context) ([]*model.Project, error) {
@@ -30,22 +29,21 @@ func (r *queryResolver) Page(ctx context.Context, token string, participantID st
 }
 
 func (r *queryResolver) MturkQualificationTypes(ctx context.Context) ([]*model.MTurkQulificationType, error) {
-	var quals []*model.MTurkQulificationType
-	params := &mturk.ListQualificationTypesInput{MustBeRequestable: aws.Bool(true), MustBeOwnedByCaller: aws.Bool(true)}
-
-	err := r.MTurk.ListQualificationTypesPages(params, func(page *mturk.ListQualificationTypesOutput, lastPage bool) bool {
-		for _, qual := range page.QualificationTypes {
-			quals = append(quals, &model.MTurkQulificationType{ID: *qual.QualificationTypeId, Name: *qual.Name, Description: *qual.Description})
-		}
-		return true
-	})
+	res, err := r.MTurk.GetQuals()
 
 	if err != nil {
-		fmt.Println("Got error calling listQualification Type:")
-		fmt.Print(err.Error())
+		return nil, errs.Wrap(err, "get  qualificationTypes")
 	}
+	return res, nil
+}
 
-	return quals, nil
+func (r *queryResolver) MturkLocales(ctx context.Context) ([]*model.MTurkLocale, error) {
+	res, err := r.MTurk.GetLocales()
+
+	if err != nil {
+		return nil, errs.Wrap(err, "get  locales")
+	}
+	return res, nil
 }
 
 // Query returns generated.QueryResolver implementation.

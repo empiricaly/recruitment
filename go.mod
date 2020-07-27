@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/99designs/gqlgen v0.11.3
+	github.com/GeertJohan/go.rice v1.0.0
 	github.com/aws/aws-sdk-go v1.33.7
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/go-chi/chi v3.3.2+incompatible

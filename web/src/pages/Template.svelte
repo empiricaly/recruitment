@@ -50,6 +50,7 @@
   import Toggle from "../components/base/Toggle.svelte";
   import Select from "../components/base/Select.svelte";
   import InternalCriteria from "../components/templates/criteria/InternalCriteria.svelte";
+  import MTurkQualifications from "../components/templates/criteria/MTurkQualifications.svelte";
   import TemplateSection from "../components/templates/TemplateSection.svelte";
   import Step from "../components/templates/Step.svelte";
   import { tick } from "svelte";
@@ -123,7 +124,8 @@
       {#if template.selectionType === 'INTERNAL_DB'}
         <InternalCriteria bind:criteria={template.internalCriteria.condition} />
       {:else if template.selectionType === 'MTURK_QUALIFICATIONS'}
-        MTurk
+        <MTurkQualifications
+          bind:qualifications={template.mTurkCriteria.qualifications} />
       {:else}Unknow Particpant Selection Type{/if}
     </div>
 

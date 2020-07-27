@@ -69,4 +69,6 @@ type Query {
   page(token: String!, participantID: ID!): Page!
 
   mturkQualificationTypes: [MTurkQulificationType!]!
+
+  mturkLocales: [MTurkLocale!]!
 }
