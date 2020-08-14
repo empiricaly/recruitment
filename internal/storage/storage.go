@@ -4,6 +4,7 @@ package storage
 type Store interface {
 	Txn(txn func(Transaction) error, writes bool) error
 	Close() error
+	DropAll() error
 }
 
 // Transaction is an abstract KV store transaction.

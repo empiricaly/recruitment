@@ -26,6 +26,7 @@ type Config struct {
 	GQLAddr     string        `mapstructure:"gqladdr"`
 	MTurkConfig *mturk.Config `mapstructure:"mturk"`
 	Admins      []admin       `mapstructure:"admins"`
+	DevMode     bool          `mapstructure:"dev"`
 
 	Store   *storage.Config `mapstructure:"store"`
 	Metrics *metrics.Config `mapstructure:"metrics"`
@@ -83,6 +84,11 @@ func ConfigFlags(cmd *cobra.Command) error {
 	val := ":8880"
 	cmd.Flags().String(flag, val, "GraQL API server address")
 	viper.SetDefault(flag, val)
+
+	flag = "dev"
+	bval := false
+	cmd.Flags().Bool(flag, bval, "Run in Developer Mode (enables extra tooling ; do not run in production!)")
+	viper.SetDefault(flag, bval)
 
 	return nil
 }

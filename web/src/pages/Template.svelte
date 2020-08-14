@@ -31,7 +31,7 @@
   };
 
   const defaultFilterStepArgs = {
-    js: "",
+    js: "function (players, step, stepRun) {\n\treturn players;\n}",
     filter: ""
   };
 
@@ -104,7 +104,7 @@
   }
 </script>
 
-<Layout bind:title={template.name} overtitle="Template" titleUpdatable}>
+<Layout bind:title={template.name} overtitle="Template" titleUpdatable>
   <TemplateSection
     title="Participant Selection"
     description="A Procedure starts with the selection of Participants you want

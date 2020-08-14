@@ -14,6 +14,7 @@
 <script>
   import Logo from "../components/base/Logo.svelte";
   import Link from "../components/base/Link.svelte";
+  import Loader from "../components/base/Loader.svelte";
   import Button from "../components/base/Button.svelte";
   import Header from "./Header.svelte";
   import { fade, fly } from "svelte/transition";
@@ -28,12 +29,8 @@
   export let overtitle = null;
   export let action = null;
 
-  let projectName = "Speed Dating";
-  // let projectID = "jk3n21kj";
-
   let sidebarOpen = false;
 
-  $: console.log("params", $params);
   $: projectID = $params.projectID;
 
   $: project =
@@ -76,7 +73,7 @@
 </script>
 
 {#await $project}
-  Loading...
+  <Loader />
 {:then result}
   <div class="h-screen flex overflow-hidden bg-gray-100">
     <!-- Off-canvas menu for mobile -->

@@ -2,7 +2,11 @@ package server
 
 import (
 	"context"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
+	"time"
 
 	logger "github.com/empiricaly/recruitment/internal/log"
 	"github.com/empiricaly/recruitment/internal/metrics"
@@ -49,6 +53,24 @@ func Run(ctx context.Context, config *Config) (err error) {
 	s.storeConn, err = storage.Connect(config.Store)
 	if err != nil {
 		return errors.Wrap(err, "store err")
+	}
+
+	if config.DevMode {
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, syscall.SIGHUP)
+
+		go func() {
+			for range sig {
+				log.Warn().Msg("Clearing DB")
+				dropStart := time.Now()
+				err = s.storeConn.DropAll()
+				if err != nil {
+					log.Error().Err(err).Msg("Failed to clear DB\n")
+				} else {
+					log.Warn().Fields(map[string]interface{}{"took": time.Since(dropStart).String()}).Msg("Cleared DB")
+				}
+			}
+		}()
 	}
 
 	s.mturk, err = mturk.New(config.MTurkConfig)

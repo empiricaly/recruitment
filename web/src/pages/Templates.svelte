@@ -57,7 +57,7 @@
   <div class="bg-white shadow sm:rounded-md">
     <ul>
       <TemplateLine
-        projectID="1234567"
+        projectID={params.projectID}
         templateID="2345678"
         name="Speed Dating Pilot 2"
         type="internal"
@@ -65,7 +65,7 @@
         runCount={0}
         creator="Nicolas" />
       <TemplateLine
-        projectID="1234567"
+        projectID={params.projectID}
         templateID="2345678"
         index="1"
         name="Speed Dating Pilot 2"
@@ -74,7 +74,7 @@
         runCount={0}
         creator="Nicolas" />
       <TemplateLine
-        projectID="1234567"
+        projectID={params.projectID}
         templateID="2345678"
         index="2"
         name="Speed Dating Pilot 1"

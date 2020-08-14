@@ -16,11 +16,11 @@
         </svg>
       </div>
     {/if}
-    <div class="ml-3">
+    <div class={icon ? 'ml-3' : ''}>
       {#if title}
         <h3 class="text-sm leading-5 font-medium text-{color}-800">{title}</h3>
       {/if}
-      <div class="mt-2 text-sm leading-5 text-{color}-700">
+      <div class="{title ? 'mt-2' : ''} text-sm leading-5 text-{color}-700">
         <slot />
       </div>
     </div>
