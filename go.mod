@@ -8,6 +8,7 @@ require (
 	github.com/aws/aws-sdk-go v1.33.7
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/dgraph-io/ristretto v0.0.2 // indirect
+	github.com/facebook/ent v0.4.2
 	github.com/go-chi/chi v3.3.2+incompatible
 	github.com/gorilla/websocket v1.4.2
 	github.com/kr/pretty v0.2.0 // indirect
