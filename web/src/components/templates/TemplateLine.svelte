@@ -14,7 +14,7 @@
   export let runCount = 0;
   export let creator = null;
 
-  const menuOptions = [{ title: "Duplicate", onClick: handleDuplicate }];
+  const menuOptions = [{ text: "Duplicate", onClick: handleDuplicate }];
 
   function handleDuplicate() {
     console.log("should dup");

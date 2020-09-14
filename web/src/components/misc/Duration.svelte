@@ -7,8 +7,10 @@
   $: b = dayjs(to);
   $: relative = a.to(b, true);
   $: duration = dayjs.duration(b.diff(a));
-  $: human = duration.as("minute") + " minute(s)";
+  $: minutes = Math.round(duration.as("minute"));
+  $: human = minutes + ` minute${minutes == 1 ? "" : "s"}`;
+  $: output = minutes < 120 ? human : relative;
   $: computer = duration.toISOString();
 </script>
 
-<time datetime={computer} title={human}>{relative}</time>
+<time datetime={computer} title={human}>{output}</time>

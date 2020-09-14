@@ -9,4 +9,4 @@
   $: computer = dtime.toISOString();
 </script>
 
-<time datetime={computer} title={human}>{relative}</time>
+<time datetime={computer} title={relative}>{human}</time>

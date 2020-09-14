@@ -17,7 +17,7 @@
   export let endedAt = null;
   export let stepCount = 0;
 
-  const menuOptions = [{ title: "Duplicate", onClick: handleDuplicate }];
+  const menuOptions = [{ text: "Duplicate", onClick: handleDuplicate }];
 
   function handleDuplicate() {
     console.log("should dup");
@@ -111,6 +111,11 @@
                   </svg>
                   <div class="mr-1">Starts</div>
                   <RelativeTime time={startAt} />
+                </div>
+              {:else if status === 'created'}
+                <div
+                  class="mr-6 flex items-center text-sm leading-5 text-gray-500">
+                  Not scheduled
                 </div>
               {/if}
 

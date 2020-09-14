@@ -2,6 +2,8 @@
   import Layout from "../layouts/Layout.svelte";
   import RunLine from "../components/runs/RunLine.svelte";
   import dayjs from "dayjs";
+
+  export let params;
 </script>
 
 <Layout title="Runs">
@@ -10,7 +12,7 @@
     <div class="bg-white shadow sm:rounded-md">
       <ul>
         <RunLine
-          projectID="1234567"
+          projectID={params.projectID}
           runID="2345678"
           startAt={dayjs().add(26, 'hour')}
           name="Speed Dating Pilot 2"
@@ -18,7 +20,7 @@
           stepCount={2}
           status="created" />
         <RunLine
-          projectID="1234567"
+          projectID={params.projectID}
           runID="2345678"
           startedAt={dayjs().subtract(10, 'minute')}
           name="Speed Dating Pilot 2"
@@ -26,7 +28,7 @@
           stepCount={2}
           status="running" />
         <RunLine
-          projectID="1234567"
+          projectID={params.projectID}
           runID="2345678"
           startedAt={dayjs().subtract(122, 'minute')}
           endedAt={dayjs().subtract(22, 'minute')}
@@ -35,7 +37,7 @@
           stepCount={2}
           status="done" />
         <RunLine
-          projectID="1234567"
+          projectID={params.projectID}
           runID="2345678"
           endedAt={dayjs().subtract(354, 'minute')}
           name="Speed Dating Pilot 1"
@@ -43,7 +45,7 @@
           stepCount={4}
           status="terminated" />
         <RunLine
-          projectID="1234567"
+          projectID={params.projectID}
           runID="2345678"
           startedAt={dayjs().subtract(574, 'minute')}
           endedAt={dayjs().subtract(570, 'minute')}

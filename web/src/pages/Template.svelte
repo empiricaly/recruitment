@@ -76,7 +76,8 @@
     steps: []
   };
 
-  $: console.log(JSON.stringify(template, "", "  "));
+  // $: console.log(JSON.stringify(template, "", "  "));
+  $: console.log(JSON.stringify(template));
 
   function handleNewStep(stepType) {
     return function(event) {

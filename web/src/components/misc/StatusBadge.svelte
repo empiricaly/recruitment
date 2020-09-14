@@ -25,9 +25,11 @@
 <script>
   import Badge from "../base/Badge.svelte";
   export let status;
+  export let large = false;
 </script>
 
 <Badge
+  {large}
   text={statusText[status]}
   color={statusColors[status]}
   icon={statusIcon[status]} />

@@ -28,6 +28,8 @@
   export let titleUpdatable = false;
   export let overtitle = null;
   export let action = null;
+  export let facts = [];
+  export let actions = [];
 
   let sidebarOpen = false;
 
@@ -259,28 +261,21 @@
         tabindex="0">
         <div class="pt-2 pb-6 md:py-6">
           {#if title}
-            <Header bind:title {overtitle} {action} on:click {titleUpdatable} />
-            <!-- <div
-            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between
-            items-baseline">
-            <h1 class="text-2xl font-semibold text-gray-900 leading-snug">
-              {#if overtitle}
-                <div
-                  class="uppercase tracking-wide font-medium text-gray-500 mr-1
-                  text-sm">
-                  {overtitle}
-                </div>
-              {/if}
-              {title}
-            </h1>
-            {#if action}
-              <Button on:click text={action} />
-            {/if}
-            <slot name="actions" />
-          </div> -->
+            <Header
+              bind:title
+              {overtitle}
+              {actions}
+              {facts}
+              {action}
+              on:click
+              {titleUpdatable}>
+              <div slot="posttitle">
+                <slot name="posttitle" />
+              </div>
+            </Header>
           {/if}
-          <slot name="header" project={result.data.project} />
           <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+            <slot name="header" project={result.data.project} />
             <div class="py-4">
               <slot project={result.data.project} />
             </div>

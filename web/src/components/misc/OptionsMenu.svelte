@@ -1,6 +1,8 @@
 <script>
   import Router from "../../lib/routing.js";
-  import { onDestroy } from "svelte";
+  import { onDestroy, createEventDispatcher } from "svelte";
+
+  const dispatch = createEventDispatcher();
 
   export let className = "";
   export let label = "Options";
@@ -34,23 +36,25 @@
 
 <div class="{className} min-h-full">
   <div class="relative h-full">
-    <button
-      on:click={handleOpen}
-      aria-label={label}
-      aria-haspopup="true"
-      aria-expanded={open}
-      class="flex px-3 h-full items-center text-gray-400 hover:text-gray-600
-      focus:outline-none focus:text-gray-600 z-0">
-      <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-        <path
-          d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10
-          18a2 2 0 110-4 2 2 0 010 4z" />
-      </svg>
-    </button>
+    <slot {handleOpen}>
+      <button
+        on:click={handleOpen}
+        aria-label={label}
+        aria-haspopup="true"
+        aria-expanded={open}
+        class="flex px-3 h-full items-center text-gray-400 hover:text-gray-600
+        focus:outline-none focus:text-gray-600 z-0">
+        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10
+            18a2 2 0 110-4 2 2 0 010 4z" />
+        </svg>
+      </button>
+    </slot>
 
     {#if open}
       <div
-        class="origin-top-right absolute top-0 right-0 mt-6 w-56 rounded-md
+        class="origin-top-right absolute top-0 right-0 mt-12 w-56 rounded-md
         shadow-lg z-10">
         <div class="rounded-md bg-white shadow-xs">
           <div class="py-1" role="menu" aria-orientation="vertical">
@@ -60,7 +64,9 @@
                   open = false;
                   event.preventDefault();
                   event.stopPropagation();
-                  if (option.onClick) {
+                  if (option.action) {
+                    dispatch('click', { action: option.action });
+                  } else if (option.onClick) {
                     option.onClick(event);
                   } else if (option.path) {
                     Router.push(option.path);
@@ -71,7 +77,7 @@
                 hover:bg-gray-100 hover:text-gray-900 focus:outline-none
                 focus:bg-gray-100 focus:text-gray-900 w-full"
                 role="menuitem">
-                {option.title}
+                {option.text}
               </button>
             {/each}
           </div>

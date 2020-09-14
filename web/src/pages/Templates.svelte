@@ -8,8 +8,6 @@
 
   export let params;
 
-  $: console.log("prs", params);
-
   async function handleCreate() {
     try {
       await mutate($client, {
