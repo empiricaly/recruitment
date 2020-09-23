@@ -1,6 +1,7 @@
 node_modules
 web/public/build/
 data/
+*.db
 
 .DS_Store
 recruitment.yaml

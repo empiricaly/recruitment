@@ -5,12 +5,11 @@ package graph
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
+	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
-	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/rs/xid"
 )
 
@@ -26,61 +25,47 @@ func (r *mutationResolver) Auth(ctx context.Context, input *model.AuthInput) (*m
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) CreateProject(ctx context.Context, input *model.CreateProjectInput) (*model.Project, error) {
-	for _, project := range r.projects {
-		if project.ProjectID == input.ProjectID {
-			return nil, errors.New("Project with ID already exists")
-		}
-	}
-
-	project := &model.Project{
-		ID:        xid.New().String(),
-		Name:      input.Name,
-		ProjectID: input.ProjectID,
-	}
-
-	return project, r.Mapping.Txn(func(t *storage.MappingTxn) error {
-		return t.AddProject(project)
-	})
-
-	r.projects = append(r.projects, project)
-	// panic(fmt.Errorf("not implemented"))
-	return project, nil
+func (r *mutationResolver) CreateProject(ctx context.Context, input *model.CreateProjectInput) (*ent.Project, error) {
+	return r.Store.Project.Create().
+		SetID(xid.New().String()).
+		SetName(input.Name).
+		SetProjectID(input.ProjectID).
+		Save(ctx)
 }
 
-func (r *mutationResolver) CreateProcedure(ctx context.Context, input *model.CreateProcedureInput) (*model.Procedure, error) {
+func (r *mutationResolver) CreateProcedure(ctx context.Context, input *model.CreateProcedureInput) (*ent.Procedure, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) UpdateProcedure(ctx context.Context, input *model.UpdateProcedureInput) (*model.Procedure, error) {
+func (r *mutationResolver) UpdateProcedure(ctx context.Context, input *model.UpdateProcedureInput) (*ent.Procedure, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) UpdateStep(ctx context.Context, input *model.UpdateStepInput) (*model.Procedure, error) {
+func (r *mutationResolver) UpdateStep(ctx context.Context, input *model.UpdateStepInput) (*ent.Procedure, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) DuplicateProcedure(ctx context.Context, input *model.DuplicateProcedureInput) (*model.Procedure, error) {
+func (r *mutationResolver) DuplicateProcedure(ctx context.Context, input *model.DuplicateProcedureInput) (*ent.Procedure, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) CreateRun(ctx context.Context, input *model.CreateRunInput) (*model.Run, error) {
+func (r *mutationResolver) CreateRun(ctx context.Context, input *model.CreateRunInput) (*ent.Run, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) ScheduleRun(ctx context.Context, input *model.ScheduleRunInput) (*model.Run, error) {
+func (r *mutationResolver) ScheduleRun(ctx context.Context, input *model.ScheduleRunInput) (*ent.Run, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) UnscheduleRun(ctx context.Context, input *model.UnscheduleRunInput) (*model.Run, error) {
+func (r *mutationResolver) UnscheduleRun(ctx context.Context, input *model.UnscheduleRunInput) (*ent.Run, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) StartRun(ctx context.Context, input *model.StartRunInput) (*model.Run, error) {
+func (r *mutationResolver) StartRun(ctx context.Context, input *model.StartRunInput) (*ent.Run, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) CancelRun(ctx context.Context, input *model.CancelRunInput) (*model.Run, error) {
+func (r *mutationResolver) CancelRun(ctx context.Context, input *model.CancelRunInput) (*ent.Run, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 

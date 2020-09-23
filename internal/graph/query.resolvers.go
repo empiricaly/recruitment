@@ -8,42 +8,27 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/empiricaly/recruitment/internal/ent"
+	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
-	"github.com/empiricaly/recruitment/internal/storage"
 	errs "github.com/pkg/errors"
 )
 
-func (r *queryResolver) Projects(ctx context.Context) ([]*model.Project, error) {
-	var err error
-	var projects []*model.Project
-	err = r.Mapping.Txn(func(t *storage.MappingTxn) error {
-		projects, err = t.Projects()
-		return err
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return projects, nil
+func (r *queryResolver) Projects(ctx context.Context) ([]*ent.Project, error) {
+	return r.Store.Project.Query().Order(ent.Desc(project.FieldCreatedAt)).All(ctx)
 }
 
-func (r *queryResolver) Project(ctx context.Context, id *string, projectID *string) (*model.Project, error) {
+func (r *queryResolver) Project(ctx context.Context, id *string, projectID *string) (*ent.Project, error) {
 	if id == nil && projectID == nil {
 		return nil, errors.New("id or projectID required")
 	}
-	var project *model.Project
-	var err error
-	err = r.Mapping.Txn(func(t *storage.MappingTxn) error {
-		if projectID != nil {
-			project, err = t.ProjectByProjectID(*projectID)
-		} else if id != nil {
-			project, err = t.Project(*id)
-		}
-		return err
-	})
 
-	return project, err
+	if id != nil {
+		return r.Store.Project.Query().Where(project.IDEQ(*id)).First(ctx)
+	} else {
+		return r.Store.Project.Query().Where(project.ProjectIDEQ(*projectID)).First(ctx)
+	}
 }
 
 func (r *queryResolver) Participants(ctx context.Context, first *int, after *string) (*model.ParticipantsConnection, error) {

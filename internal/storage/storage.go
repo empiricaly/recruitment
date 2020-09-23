@@ -1,41 +1,53 @@
 package storage
 
-// Store is an abstract KV store interface (Modeled after Badger...)
-type Store interface {
-	Txn(txn func(Transaction) error, writes bool) error
-	Close() error
-	DropAll() error
-}
+import (
+	"context"
 
-// Transaction is an abstract KV store transaction.
-type Transaction interface {
-	Delete([]byte) error
-	Get([]byte) (Item, error)
-	Set(key, val []byte) error
-	Commit() error
-}
+	"github.com/empiricaly/recruitment/internal/ent"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 
-// Item is a single value returned by a KV store.
-type Item interface {
-	Key() []byte
-	String() string
-	ValueCopy(dst []byte) ([]byte, error)
-}
+	_ "github.com/mattn/go-sqlite3"
+)
 
 // Conn represents a datastore connection.
 type Conn struct {
-	Store
+	*ent.Client
+}
+
+// Connect creates a connection to a messaging service with the given config.
+func dbLog(msg ...interface{}) {
+	for _, m := range msg {
+		log.Debug().Msgf("%v", m)
+	}
 }
 
 // Connect creates a connection to a messaging service with the given config.
 func Connect(config *Config) (c *Conn, err error) {
-	if config.Badger.Enabled {
-		c, err = ConnectBadger(config)
+	options := []ent.Option{}
+	if config.Debug {
+		options = append(options, ent.Log(dbLog))
 	}
 
-	// if config.Redis.Enabled {
-	// 	c, err = ConnectRedis(config)
-	// }
+	client, err := ent.Open("sqlite3", "file:"+config.File+"?mode=rwc&_fk=1", options...)
+	if err != nil {
+		return nil, errors.Wrap(err, "open sqlite conn")
+	}
 
-	return c, err
+	if config.Debug {
+		client = client.Debug()
+	}
+
+	// Run the auto migration tool.
+	if err := client.Schema.Create(context.Background()); err != nil {
+		return nil, errors.Wrap(err, "write sqlite schema")
+	}
+
+	// return c, err
+	return &Conn{Client: client}, nil
+}
+
+// Close cleanlu close the database connection.
+func (c *Conn) Close() error {
+	return c.Client.Close()
 }

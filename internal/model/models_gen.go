@@ -7,12 +7,9 @@ import (
 	"io"
 	"strconv"
 	"time"
-)
 
-// Node is an interface allowing simple querying of any node
-type Node interface {
-	IsNode()
-}
+	"github.com/empiricaly/recruitment/internal/ent"
+)
 
 // Argument groups for Steps.
 type StepArgs interface {
@@ -23,23 +20,6 @@ type StepArgs interface {
 type User interface {
 	IsUser()
 }
-
-// Admin is a user that has priviledged access to the data.
-type Admin struct {
-	// id is the unique globally identifier for the record.
-	ID string `json:"id"`
-	// createdAt is the time of creation of the record.
-	CreatedAt time.Time `json:"createdAt"`
-	// updatedAt is the time of last update of the record.
-	UpdatedAt time.Time `json:"updatedAt"`
-	// name is the full name of the Admin.
-	Name *string `json:"name"`
-	// email is the email associated with the Admin.
-	Email string `json:"email"`
-}
-
-func (Admin) IsUser() {}
-func (Admin) IsNode() {}
 
 type AuthInput struct {
 	Username string `json:"username"`
@@ -163,8 +143,6 @@ type Datum struct {
 	// versions returns previous versions for the Datum (they all have the same ID).
 	Versions []*Datum `json:"versions"`
 }
-
-func (Datum) IsNode() {}
 
 type DuplicateProcedureInput struct {
 	ProcedureID string  `json:"procedureID"`
@@ -543,9 +521,9 @@ type Participant struct {
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 	// Step during which the Participant was created.
-	CreatedBy *StepRun `json:"createdBy"`
+	CreatedBy *ent.StepRun `json:"createdBy"`
 	// All StepRuns the Participant participated in.
-	Steps []*StepRun `json:"steps"`
+	Steps []*ent.StepRun `json:"steps"`
 	// ProviderIDs contains the IDs from 3rd providers corresponding the participant.
 	// A single participant could potentially be referenced in different in multiple
 	// providers.
@@ -555,7 +533,6 @@ type Participant struct {
 }
 
 func (Participant) IsUser() {}
-func (Participant) IsNode() {}
 
 type ParticipantsConnection struct {
 	TotalCount   int                 `json:"totalCount"`
@@ -567,51 +544,6 @@ type ParticipantsConnection struct {
 type ParticipantsEdge struct {
 	Cursor string       `json:"cursor"`
 	Node   *Participant `json:"node"`
-}
-
-// Procedure is a series of Steps to execute in a Procedure Run. A
-// procedure starts with the selection of Participants.
-type Procedure struct {
-	ID        string    `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	Creator   *Admin    `json:"creator"`
-	// Friendly name.
-	Name string `json:"name"`
-	// Determines participant selection type.
-	SelectionType *SelectionType `json:"selectionType"`
-	// Selection criteria for internal DB participants.
-	InternalCriteria *InternalCriteria `json:"internalCriteria"`
-	// Selection criteria for internal DB participants.
-	MturkCriteria *MTurkCriteria `json:"mturkCriteria"`
-	// Ordered list of Steps in a Procedure.
-	Steps []*Step `json:"steps"`
-	// Number of participants desired.
-	ParticipantCount *int `json:"participantCount"`
-	// Contains adult content.
-	// From MTurk: This project may contain potentially explicit or offensive
-	// content, for example, nudity.
-	Adult bool `json:"adult"`
-}
-
-// A Project is a container to organize Procedures and Runs.
-type Project struct {
-	ID        string    `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	Creator   *Admin    `json:"creator"`
-	// The Project Identifier is used to label Participants having
-	// taken part in the Project. It should be written in Camel Case,
-	// e.g., myCoolProject.
-	ProjectID string `json:"projectID"`
-	// Human friendly name for Project
-	Name string `json:"name"`
-	// Procedures contained in Project
-	Procedures []*Procedure `json:"procedures"`
-	// Runs contained in Project
-	Runs []*Run `json:"runs"`
-	// Data returns the custom data that has been set on the Participant.
-	Data []*Datum `json:"data"`
 }
 
 // ProviderID contains the identifier for a 3rd party provider.
@@ -633,39 +565,6 @@ type RegisterParticipantInput struct {
 	Data map[string]interface{} `json:"data"`
 }
 
-// A Run is an instance of a Procedure. It goes through all Steps in the Procedure,
-// managing participants, timing, messages, redirects, filter, and interactions
-// with external APIs.
-type Run struct {
-	ID        string    `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	Creator   *Admin    `json:"creator"`
-	// Procudure this Run corresponds to. When a Run is started, an immutable
-	// copy of the Procedure is made at that point in time so that further changes to
-	// the Procedure will not affect the Run.
-	Procedure *Procedure `json:"procedure"`
-	// Status of the Run, indicating if the Run has started, is ongoing, finished, or
-	// failed.
-	Status Status `json:"status"`
-	// StartAt is the time when the Run should start, if it is not manually started.
-	StartAt *time.Time `json:"startAt"`
-	// Time at which the Run did start.
-	StartedAt *time.Time `json:"startedAt"`
-	// Time at which the Run did end.
-	EndedAt *time.Time `json:"endedAt"`
-	// Steps are instanciated Steps, corresponding to the Procedure Steps and
-	// containing the state of process of each Step.
-	Steps []*StepRun `json:"steps"`
-	// The current Step at which the Run is, while the Run is on going. Before the
-	// Run has started and after it is finished, it is null.
-	CurrentStep *StepRun `json:"currentStep"`
-	// Error reason, if the Run failed.
-	Error *string `json:"error"`
-	// Data returns the custom data that has been set on the Participants.
-	Data []*Datum `json:"data"`
-}
-
 type ScheduleRunInput struct {
 	RunID   string    `json:"runID"`
 	StartAt time.Time `json:"startAt"`
@@ -677,10 +576,10 @@ type StartRunInput struct {
 
 // Steps are the ordered parts of a Procedure.
 type Step struct {
-	ID        string    `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	Creator   *Admin    `json:"creator"`
+	ID        string     `json:"id"`
+	CreatedAt time.Time  `json:"createdAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
+	Creator   *ent.Admin `json:"creator"`
 	// The Type defines what kind of action this step represents.
 	Type StepType `json:"type"`
 	// Duration of Step in seconds. At the end of the duration, the next Step will
@@ -691,8 +590,6 @@ type Step struct {
 	// Step type specific Step arguments.
 	Args []StepArgs `json:"args"`
 }
-
-func (Step) IsNode() {}
 
 type StepInput struct {
 	// The Type defines what kind of action this step represents.
@@ -708,27 +605,6 @@ type StepInput struct {
 	HitArgs *HITStepArgsInput `json:"hitArgs"`
 	// Arguments for Filter type Step.
 	FilterArgs *FilterStepArgsInput `json:"filterArgs"`
-}
-
-// A StepRun is an instance of a Step. It manages status and operations of a given
-// Step within a Run.
-type StepRun struct {
-	// Step this StepRun corresponds to. When a Run is started, an immutable
-	// copy of the Steps is made at that point in time so that further changes to
-	// the Steps will not affect the Run.
-	Step *Step `json:"step"`
-	// Status of the StepRun, indicating if the Run has started, is ongoing,
-	// finished, or failed.
-	Status Status `json:"status"`
-	// Time at which the StepRun started.
-	StartedAt *time.Time `json:"startedAt"`
-	// Time at which the StepRun ended.
-	EndedAt *time.Time `json:"endedAt"`
-	// Participants in this Step. Participants can increase while the Step is on
-	// going. After it is finished, participants becomes immutable.
-	Participants *ParticipantsConnection `json:"participants"`
-	// Number of Participants in this Step.
-	ParticipantsCount int `json:"participantsCount"`
 }
 
 type UnscheduleRunInput struct {

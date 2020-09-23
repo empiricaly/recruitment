@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	logger "github.com/empiricaly/recruitment/internal/log"
 	"github.com/empiricaly/recruitment/internal/metrics"
@@ -28,7 +27,7 @@ type Server struct {
 	wg      sync.WaitGroup
 }
 
-// Run starts the agent process with the given configuration
+// Run starts the server with the given configuration
 func Run(ctx context.Context, config *Config) (err error) {
 	s := Server{
 		ctx:    ctx,
@@ -59,23 +58,28 @@ func Run(ctx context.Context, config *Config) (err error) {
 		sig := make(chan os.Signal, 1)
 		signal.Notify(sig, syscall.SIGHUP)
 
-		go func() {
-			for range sig {
-				log.Warn().Msg("Clearing DB")
-				dropStart := time.Now()
-				err = s.storeConn.DropAll()
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to clear DB\n")
-				} else {
-					log.Warn().Fields(map[string]interface{}{"took": time.Since(dropStart).String()}).Msg("Cleared DB")
-				}
-			}
-		}()
+		// go func() {
+		// 	for range sig {
+		// 		log.Warn().Msg("Clearing DB")
+		// 		dropStart := time.Now()
+		// 		err = s.storeConn.DropAll()
+		// 		if err != nil {
+		// 			log.Error().Err(err).Msg("Failed to clear DB\n")
+		// 		} else {
+		// 			log.Warn().Fields(map[string]interface{}{"took": time.Since(dropStart).String()}).Msg("Cleared DB")
+		// 		}
+		// 	}
+		// }()
+	}
+
+	err = s.initAdmins(ctx)
+	if err != nil {
+		return errors.Wrap(err, "init admins")
 	}
 
 	s.mturk, err = mturk.New(config.MTurkConfig)
 	if err != nil {
-		return errors.Wrap(err, "mturk err")
+		return errors.Wrap(err, "init mturk")
 	}
 
 	s.startGraphqlServer()

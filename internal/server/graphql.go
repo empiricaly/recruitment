@@ -14,7 +14,6 @@ import (
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	logger "github.com/empiricaly/recruitment/internal/log"
 	"github.com/empiricaly/recruitment/internal/model"
-	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
@@ -29,8 +28,8 @@ func (s *Server) startGraphqlServer() {
 		AllowCredentials: true,
 	})
 
-	m, _ := storage.NewMapping(s.storeConn)
-	r := &graph.Resolver{MTurk: s.mturk, Store: s.storeConn, Mapping: m}
+	// m, _ := storage.NewMapping(s.storeConn)
+	r := &graph.Resolver{MTurk: s.mturk, Store: s.storeConn}
 
 	// router.Use(MachinesLockMiddleware(r))
 	router.Use(logger.HTTPLogger())

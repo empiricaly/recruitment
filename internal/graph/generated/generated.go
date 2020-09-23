@@ -15,6 +15,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
+	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/model"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -38,8 +39,13 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Admin() AdminResolver
 	Mutation() MutationResolver
+	Procedure() ProcedureResolver
+	Project() ProjectResolver
 	Query() QueryResolver
+	Run() RunResolver
+	StepRun() StepRunResolver
 	Subscription() SubscriptionResolver
 }
 
@@ -54,6 +60,7 @@ type ComplexityRoot struct {
 		ID        func(childComplexity int) int
 		Name      func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
+		Username  func(childComplexity int) int
 	}
 
 	AuthResp struct {
@@ -275,29 +282,64 @@ type ComplexityRoot struct {
 	}
 }
 
+type AdminResolver interface {
+	Email(ctx context.Context, obj *ent.Admin) (string, error)
+}
 type MutationResolver interface {
 	RegisterParticipant(ctx context.Context, input *model.RegisterParticipantInput) (*model.Participant, error)
 	MutateDatum(ctx context.Context, input *model.MutateDatumInput) (*model.Datum, error)
 	Auth(ctx context.Context, input *model.AuthInput) (*model.AuthResp, error)
-	CreateProject(ctx context.Context, input *model.CreateProjectInput) (*model.Project, error)
-	CreateProcedure(ctx context.Context, input *model.CreateProcedureInput) (*model.Procedure, error)
-	UpdateProcedure(ctx context.Context, input *model.UpdateProcedureInput) (*model.Procedure, error)
-	UpdateStep(ctx context.Context, input *model.UpdateStepInput) (*model.Procedure, error)
-	DuplicateProcedure(ctx context.Context, input *model.DuplicateProcedureInput) (*model.Procedure, error)
-	CreateRun(ctx context.Context, input *model.CreateRunInput) (*model.Run, error)
-	ScheduleRun(ctx context.Context, input *model.ScheduleRunInput) (*model.Run, error)
-	UnscheduleRun(ctx context.Context, input *model.UnscheduleRunInput) (*model.Run, error)
-	StartRun(ctx context.Context, input *model.StartRunInput) (*model.Run, error)
-	CancelRun(ctx context.Context, input *model.CancelRunInput) (*model.Run, error)
+	CreateProject(ctx context.Context, input *model.CreateProjectInput) (*ent.Project, error)
+	CreateProcedure(ctx context.Context, input *model.CreateProcedureInput) (*ent.Procedure, error)
+	UpdateProcedure(ctx context.Context, input *model.UpdateProcedureInput) (*ent.Procedure, error)
+	UpdateStep(ctx context.Context, input *model.UpdateStepInput) (*ent.Procedure, error)
+	DuplicateProcedure(ctx context.Context, input *model.DuplicateProcedureInput) (*ent.Procedure, error)
+	CreateRun(ctx context.Context, input *model.CreateRunInput) (*ent.Run, error)
+	ScheduleRun(ctx context.Context, input *model.ScheduleRunInput) (*ent.Run, error)
+	UnscheduleRun(ctx context.Context, input *model.UnscheduleRunInput) (*ent.Run, error)
+	StartRun(ctx context.Context, input *model.StartRunInput) (*ent.Run, error)
+	CancelRun(ctx context.Context, input *model.CancelRunInput) (*ent.Run, error)
+}
+type ProcedureResolver interface {
+	Creator(ctx context.Context, obj *ent.Procedure) (*ent.Admin, error)
+
+	SelectionType(ctx context.Context, obj *ent.Procedure) (*model.SelectionType, error)
+	InternalCriteria(ctx context.Context, obj *ent.Procedure) (*model.InternalCriteria, error)
+	MturkCriteria(ctx context.Context, obj *ent.Procedure) (*model.MTurkCriteria, error)
+	Steps(ctx context.Context, obj *ent.Procedure) ([]*model.Step, error)
+}
+type ProjectResolver interface {
+	Creator(ctx context.Context, obj *ent.Project) (*ent.Admin, error)
+
+	Procedures(ctx context.Context, obj *ent.Project) ([]*ent.Procedure, error)
+	Runs(ctx context.Context, obj *ent.Project) ([]*ent.Run, error)
+	Data(ctx context.Context, obj *ent.Project, keys []string) ([]*model.Datum, error)
 }
 type QueryResolver interface {
-	Projects(ctx context.Context) ([]*model.Project, error)
-	Project(ctx context.Context, id *string, projectID *string) (*model.Project, error)
+	Projects(ctx context.Context) ([]*ent.Project, error)
+	Project(ctx context.Context, id *string, projectID *string) (*ent.Project, error)
 	Participants(ctx context.Context, first *int, after *string) (*model.ParticipantsConnection, error)
 	Me(ctx context.Context) (model.User, error)
 	Page(ctx context.Context, token string, participantID string) (*model.Page, error)
 	MturkQualificationTypes(ctx context.Context) ([]*model.MTurkQulificationType, error)
 	MturkLocales(ctx context.Context) ([]*model.MTurkLocale, error)
+}
+type RunResolver interface {
+	Creator(ctx context.Context, obj *ent.Run) (*ent.Admin, error)
+	Procedure(ctx context.Context, obj *ent.Run) (*ent.Procedure, error)
+	Status(ctx context.Context, obj *ent.Run) (model.Status, error)
+
+	Steps(ctx context.Context, obj *ent.Run) ([]*ent.StepRun, error)
+	CurrentStep(ctx context.Context, obj *ent.Run) (*ent.StepRun, error)
+
+	Data(ctx context.Context, obj *ent.Run, keys []string) ([]*model.Datum, error)
+}
+type StepRunResolver interface {
+	Step(ctx context.Context, obj *ent.StepRun) (*model.Step, error)
+	Status(ctx context.Context, obj *ent.StepRun) (model.Status, error)
+	StartedAt(ctx context.Context, obj *ent.StepRun) (*time.Time, error)
+
+	Participants(ctx context.Context, obj *ent.StepRun, first *int, after *string) (*model.ParticipantsConnection, error)
 }
 type SubscriptionResolver interface {
 	Me(ctx context.Context) (<-chan model.User, error)
@@ -352,6 +394,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Admin.UpdatedAt(childComplexity), true
+
+	case "Admin.username":
+		if e.complexity.Admin.Username == nil {
+			break
+		}
+
+		return e.complexity.Admin.Username(childComplexity), true
 
 	case "AuthResp.token":
 		if e.complexity.AuthResp.Token == nil {
@@ -1622,7 +1671,7 @@ type Project {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
-  creator: Admin!
+  creator: Admin!  @goField(forceResolver: true)
 
   """
   The Project Identifier is used to label Participants having
@@ -1639,17 +1688,17 @@ type Project {
   """
   Procedures contained in Project
   """
-  procedures: [Procedure!]!
+  procedures: [Procedure!]!  @goField(forceResolver: true)
 
   """
   Runs contained in Project
   """
-  runs: [Run!]!
+  runs: [Run!]!  @goField(forceResolver: true)
 
   """
   Data returns the custom data that has been set on the Participant.
   """
-  data(keys: [String!]): [Datum!]!
+  data(keys: [String!]): [Datum!]!  @goField(forceResolver: true)
 }
 
 """
@@ -1762,7 +1811,7 @@ type Procedure {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
-  creator: Admin!
+  creator: Admin!  @goField(forceResolver: true)
 
   """
   Friendly name.
@@ -1777,17 +1826,17 @@ type Procedure {
   """
   Selection criteria for internal DB participants.
   """
-  internalCriteria: InternalCriteria
+  internalCriteria: InternalCriteria  @goField(forceResolver: true)
 
   """
   Selection criteria for internal DB participants.
   """
-  mturkCriteria: MTurkCriteria
+  mturkCriteria: MTurkCriteria  @goField(forceResolver: true)
 
   """
   Ordered list of Steps in a Procedure.
   """
-  steps: [Step!]!
+  steps: [Step!]!  @goField(forceResolver: true)
 
   """
   Number of participants desired.
@@ -1984,7 +2033,7 @@ type MTurkLocale {
 """
 Steps are the ordered parts of a Procedure.
 """
-type Step implements Node {
+type Step {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -2162,31 +2211,6 @@ type MessageStepArgs {
 }
 
 """
-Node is an interface allowing simple querying of any node
-"""
-interface Node {
-  """
-  id is the unique globally identifier for the record that contains both the
-  type and the internal Database ID in the following format: ` + "`" + `Model:ID` + "`" + `.
-
-  For example:
-  - ` + "`" + `Run:bpi6chiuof2j0lmpgc20` + "`" + `
-  - ` + "`" + `Participant:9m4e2mr0ui3e8a215n4g` + "`" + `
-  """
-  id: ID!
-
-  """
-  createdAt is the time of creation of the record.
-  """
-  createdAt: DateTime!
-
-  """
-  updatedAt is the time of last update of the record.
-  """
-  updatedAt: DateTime!
-}
-
-"""
 Status of Runs.
 """
 enum Status {
@@ -2224,7 +2248,7 @@ enum Status {
 """
 Datum is a single piece of custom data.
 """
-type Datum implements Node {
+type Datum {
   """
   id is the unique globally identifier for the record.
   """
@@ -2286,7 +2310,7 @@ union User = Participant | Admin
 """
 Participant is a worker in the system.
 """
-type Participant implements Node {
+type Participant {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -2347,7 +2371,7 @@ enum PROVIDER {
 """
 Admin is a user that has priviledged access to the data.
 """
-type Admin implements Node {
+type Admin {
   """
   id is the unique globally identifier for the record.
   """
@@ -2367,6 +2391,11 @@ type Admin implements Node {
   name is the full name of the Admin.
   """
   name: String
+
+  """
+  username is the login name of the Admin.
+  """
+  username: String
 
   """
   email is the email associated with the Admin.
@@ -3424,7 +3453,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Admin_id(ctx context.Context, field graphql.CollectedField, obj *model.Admin) (ret graphql.Marshaler) {
+func (ec *executionContext) _Admin_id(ctx context.Context, field graphql.CollectedField, obj *ent.Admin) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3458,7 +3487,7 @@ func (ec *executionContext) _Admin_id(ctx context.Context, field graphql.Collect
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Admin_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Admin) (ret graphql.Marshaler) {
+func (ec *executionContext) _Admin_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Admin) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3492,7 +3521,7 @@ func (ec *executionContext) _Admin_createdAt(ctx context.Context, field graphql.
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Admin_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Admin) (ret graphql.Marshaler) {
+func (ec *executionContext) _Admin_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Admin) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3526,7 +3555,7 @@ func (ec *executionContext) _Admin_updatedAt(ctx context.Context, field graphql.
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Admin_name(ctx context.Context, field graphql.CollectedField, obj *model.Admin) (ret graphql.Marshaler) {
+func (ec *executionContext) _Admin_name(ctx context.Context, field graphql.CollectedField, obj *ent.Admin) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3552,12 +3581,12 @@ func (ec *executionContext) _Admin_name(ctx context.Context, field graphql.Colle
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Admin_email(ctx context.Context, field graphql.CollectedField, obj *model.Admin) (ret graphql.Marshaler) {
+func (ec *executionContext) _Admin_username(ctx context.Context, field graphql.CollectedField, obj *ent.Admin) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3574,7 +3603,38 @@ func (ec *executionContext) _Admin_email(ctx context.Context, field graphql.Coll
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Email, nil
+		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Admin_email(ctx context.Context, field graphql.CollectedField, obj *ent.Admin) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Admin",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Admin().Email(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5375,9 +5435,9 @@ func (ec *executionContext) _Mutation_createProject(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Project)
+	res := resTmp.(*ent.Project)
 	fc.Result = res
-	return ec.marshalNProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProject(ctx, field.Selections, res)
+	return ec.marshalNProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createProcedure(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5416,9 +5476,9 @@ func (ec *executionContext) _Mutation_createProcedure(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Procedure)
+	res := resTmp.(*ent.Procedure)
 	fc.Result = res
-	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedure(ctx, field.Selections, res)
+	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateProcedure(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5457,9 +5517,9 @@ func (ec *executionContext) _Mutation_updateProcedure(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Procedure)
+	res := resTmp.(*ent.Procedure)
 	fc.Result = res
-	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedure(ctx, field.Selections, res)
+	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateStep(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5498,9 +5558,9 @@ func (ec *executionContext) _Mutation_updateStep(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Procedure)
+	res := resTmp.(*ent.Procedure)
 	fc.Result = res
-	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedure(ctx, field.Selections, res)
+	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_duplicateProcedure(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5539,9 +5599,9 @@ func (ec *executionContext) _Mutation_duplicateProcedure(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Procedure)
+	res := resTmp.(*ent.Procedure)
 	fc.Result = res
-	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedure(ctx, field.Selections, res)
+	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createRun(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5580,9 +5640,9 @@ func (ec *executionContext) _Mutation_createRun(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Run)
+	res := resTmp.(*ent.Run)
 	fc.Result = res
-	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRun(ctx, field.Selections, res)
+	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRun(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_scheduleRun(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5621,9 +5681,9 @@ func (ec *executionContext) _Mutation_scheduleRun(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Run)
+	res := resTmp.(*ent.Run)
 	fc.Result = res
-	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRun(ctx, field.Selections, res)
+	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRun(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_unscheduleRun(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5662,9 +5722,9 @@ func (ec *executionContext) _Mutation_unscheduleRun(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Run)
+	res := resTmp.(*ent.Run)
 	fc.Result = res
-	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRun(ctx, field.Selections, res)
+	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRun(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_startRun(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5703,9 +5763,9 @@ func (ec *executionContext) _Mutation_startRun(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Run)
+	res := resTmp.(*ent.Run)
 	fc.Result = res
-	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRun(ctx, field.Selections, res)
+	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRun(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_cancelRun(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5744,9 +5804,9 @@ func (ec *executionContext) _Mutation_cancelRun(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Run)
+	res := resTmp.(*ent.Run)
 	fc.Result = res
-	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRun(ctx, field.Selections, res)
+	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRun(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Page_redirect(ctx context.Context, field graphql.CollectedField, obj *model.Page) (ret graphql.Marshaler) {
@@ -6106,9 +6166,9 @@ func (ec *executionContext) _Participant_createdBy(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.StepRun)
+	res := resTmp.(*ent.StepRun)
 	fc.Result = res
-	return ec.marshalOStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepRun(ctx, field.Selections, res)
+	return ec.marshalOStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Participant_steps(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
@@ -6140,9 +6200,9 @@ func (ec *executionContext) _Participant_steps(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.StepRun)
+	res := resTmp.([]*ent.StepRun)
 	fc.Result = res
-	return ec.marshalNStepRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepRunᚄ(ctx, field.Selections, res)
+	return ec.marshalNStepRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRunᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Participant_providerIDs(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
@@ -6418,7 +6478,7 @@ func (ec *executionContext) _ParticipantsEdge_node(ctx context.Context, field gr
 	return ec.marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_id(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_id(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6452,7 +6512,7 @@ func (ec *executionContext) _Procedure_id(ctx context.Context, field graphql.Col
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6486,7 +6546,7 @@ func (ec *executionContext) _Procedure_createdAt(ctx context.Context, field grap
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6520,7 +6580,7 @@ func (ec *executionContext) _Procedure_updatedAt(ctx context.Context, field grap
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_creator(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_creator(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6531,13 +6591,13 @@ func (ec *executionContext) _Procedure_creator(ctx context.Context, field graphq
 		Object:   "Procedure",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Creator, nil
+		return ec.resolvers.Procedure().Creator(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6549,12 +6609,12 @@ func (ec *executionContext) _Procedure_creator(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Admin)
+	res := resTmp.(*ent.Admin)
 	fc.Result = res
-	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAdmin(ctx, field.Selections, res)
+	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐAdmin(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_name(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_name(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6588,7 +6648,7 @@ func (ec *executionContext) _Procedure_name(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_selectionType(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_selectionType(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6599,13 +6659,13 @@ func (ec *executionContext) _Procedure_selectionType(ctx context.Context, field 
 		Object:   "Procedure",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SelectionType, nil
+		return ec.resolvers.Procedure().SelectionType(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6619,7 +6679,7 @@ func (ec *executionContext) _Procedure_selectionType(ctx context.Context, field 
 	return ec.marshalOSelectionType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_internalCriteria(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_internalCriteria(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6630,13 +6690,13 @@ func (ec *executionContext) _Procedure_internalCriteria(ctx context.Context, fie
 		Object:   "Procedure",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.InternalCriteria, nil
+		return ec.resolvers.Procedure().InternalCriteria(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6650,7 +6710,7 @@ func (ec *executionContext) _Procedure_internalCriteria(ctx context.Context, fie
 	return ec.marshalOInternalCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteria(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_mturkCriteria(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_mturkCriteria(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6661,13 +6721,13 @@ func (ec *executionContext) _Procedure_mturkCriteria(ctx context.Context, field 
 		Object:   "Procedure",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MturkCriteria, nil
+		return ec.resolvers.Procedure().MturkCriteria(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6681,7 +6741,7 @@ func (ec *executionContext) _Procedure_mturkCriteria(ctx context.Context, field 
 	return ec.marshalOMTurkCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteria(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_steps(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_steps(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6692,13 +6752,13 @@ func (ec *executionContext) _Procedure_steps(ctx context.Context, field graphql.
 		Object:   "Procedure",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Steps, nil
+		return ec.resolvers.Procedure().Steps(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6715,7 +6775,7 @@ func (ec *executionContext) _Procedure_steps(ctx context.Context, field graphql.
 	return ec.marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_participantCount(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_participantCount(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6741,12 +6801,12 @@ func (ec *executionContext) _Procedure_participantCount(ctx context.Context, fie
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_adult(ctx context.Context, field graphql.CollectedField, obj *model.Procedure) (ret graphql.Marshaler) {
+func (ec *executionContext) _Procedure_adult(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6780,7 +6840,7 @@ func (ec *executionContext) _Procedure_adult(ctx context.Context, field graphql.
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Project_id(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
+func (ec *executionContext) _Project_id(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6814,7 +6874,7 @@ func (ec *executionContext) _Project_id(ctx context.Context, field graphql.Colle
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Project_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
+func (ec *executionContext) _Project_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6848,7 +6908,7 @@ func (ec *executionContext) _Project_createdAt(ctx context.Context, field graphq
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Project_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
+func (ec *executionContext) _Project_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6882,7 +6942,7 @@ func (ec *executionContext) _Project_updatedAt(ctx context.Context, field graphq
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Project_creator(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
+func (ec *executionContext) _Project_creator(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6893,13 +6953,13 @@ func (ec *executionContext) _Project_creator(ctx context.Context, field graphql.
 		Object:   "Project",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Creator, nil
+		return ec.resolvers.Project().Creator(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6911,12 +6971,12 @@ func (ec *executionContext) _Project_creator(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Admin)
+	res := resTmp.(*ent.Admin)
 	fc.Result = res
-	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAdmin(ctx, field.Selections, res)
+	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐAdmin(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Project_projectID(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
+func (ec *executionContext) _Project_projectID(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6950,7 +7010,7 @@ func (ec *executionContext) _Project_projectID(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Project_name(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
+func (ec *executionContext) _Project_name(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6984,7 +7044,7 @@ func (ec *executionContext) _Project_name(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Project_procedures(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
+func (ec *executionContext) _Project_procedures(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6995,13 +7055,13 @@ func (ec *executionContext) _Project_procedures(ctx context.Context, field graph
 		Object:   "Project",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Procedures, nil
+		return ec.resolvers.Project().Procedures(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7013,12 +7073,12 @@ func (ec *executionContext) _Project_procedures(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Procedure)
+	res := resTmp.([]*ent.Procedure)
 	fc.Result = res
-	return ec.marshalNProcedure2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureᚄ(ctx, field.Selections, res)
+	return ec.marshalNProcedure2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedureᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Project_runs(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
+func (ec *executionContext) _Project_runs(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7029,13 +7089,13 @@ func (ec *executionContext) _Project_runs(ctx context.Context, field graphql.Col
 		Object:   "Project",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Runs, nil
+		return ec.resolvers.Project().Runs(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7047,12 +7107,12 @@ func (ec *executionContext) _Project_runs(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Run)
+	res := resTmp.([]*ent.Run)
 	fc.Result = res
-	return ec.marshalNRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRunᚄ(ctx, field.Selections, res)
+	return ec.marshalNRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRunᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Project_data(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
+func (ec *executionContext) _Project_data(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7063,7 +7123,7 @@ func (ec *executionContext) _Project_data(ctx context.Context, field graphql.Col
 		Object:   "Project",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7076,7 +7136,7 @@ func (ec *executionContext) _Project_data(ctx context.Context, field graphql.Col
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Data, nil
+		return ec.resolvers.Project().Data(rctx, obj, args["keys"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7230,10 +7290,10 @@ func (ec *executionContext) _Query_projects(ctx context.Context, field graphql.C
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.([]*model.Project); ok {
+		if data, ok := tmp.([]*ent.Project); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/empiricaly/recruitment/internal/model.Project`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/empiricaly/recruitment/internal/ent.Project`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7245,9 +7305,9 @@ func (ec *executionContext) _Query_projects(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Project)
+	res := resTmp.([]*ent.Project)
 	fc.Result = res
-	return ec.marshalNProject2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProjectᚄ(ctx, field.Selections, res)
+	return ec.marshalNProject2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProjectᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_project(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7295,10 +7355,10 @@ func (ec *executionContext) _Query_project(ctx context.Context, field graphql.Co
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*model.Project); ok {
+		if data, ok := tmp.(*ent.Project); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/model.Project`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Project`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7307,9 +7367,9 @@ func (ec *executionContext) _Query_project(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Project)
+	res := resTmp.(*ent.Project)
 	fc.Result = res
-	return ec.marshalOProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProject(ctx, field.Selections, res)
+	return ec.marshalOProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_participants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7586,7 +7646,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_id(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_id(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7620,7 +7680,7 @@ func (ec *executionContext) _Run_id(ctx context.Context, field graphql.Collected
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7654,7 +7714,7 @@ func (ec *executionContext) _Run_createdAt(ctx context.Context, field graphql.Co
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7688,7 +7748,7 @@ func (ec *executionContext) _Run_updatedAt(ctx context.Context, field graphql.Co
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_creator(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_creator(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7699,13 +7759,13 @@ func (ec *executionContext) _Run_creator(ctx context.Context, field graphql.Coll
 		Object:   "Run",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Creator, nil
+		return ec.resolvers.Run().Creator(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7717,12 +7777,12 @@ func (ec *executionContext) _Run_creator(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Admin)
+	res := resTmp.(*ent.Admin)
 	fc.Result = res
-	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAdmin(ctx, field.Selections, res)
+	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐAdmin(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_procedure(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_procedure(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7733,13 +7793,13 @@ func (ec *executionContext) _Run_procedure(ctx context.Context, field graphql.Co
 		Object:   "Run",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Procedure, nil
+		return ec.resolvers.Run().Procedure(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7751,12 +7811,12 @@ func (ec *executionContext) _Run_procedure(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Procedure)
+	res := resTmp.(*ent.Procedure)
 	fc.Result = res
-	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedure(ctx, field.Selections, res)
+	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_status(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_status(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7767,13 +7827,13 @@ func (ec *executionContext) _Run_status(ctx context.Context, field graphql.Colle
 		Object:   "Run",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Status, nil
+		return ec.resolvers.Run().Status(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7790,7 +7850,7 @@ func (ec *executionContext) _Run_status(ctx context.Context, field graphql.Colle
 	return ec.marshalNStatus2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_startAt(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_startAt(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7816,12 +7876,12 @@ func (ec *executionContext) _Run_startAt(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalODateTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalODateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_startedAt(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_startedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7847,12 +7907,12 @@ func (ec *executionContext) _Run_startedAt(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalODateTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalODateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_endedAt(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_endedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7878,12 +7938,12 @@ func (ec *executionContext) _Run_endedAt(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalODateTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalODateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_steps(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_steps(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7894,13 +7954,13 @@ func (ec *executionContext) _Run_steps(ctx context.Context, field graphql.Collec
 		Object:   "Run",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Steps, nil
+		return ec.resolvers.Run().Steps(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7912,12 +7972,12 @@ func (ec *executionContext) _Run_steps(ctx context.Context, field graphql.Collec
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.StepRun)
+	res := resTmp.([]*ent.StepRun)
 	fc.Result = res
-	return ec.marshalNStepRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepRunᚄ(ctx, field.Selections, res)
+	return ec.marshalNStepRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRunᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_currentStep(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_currentStep(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7928,13 +7988,13 @@ func (ec *executionContext) _Run_currentStep(ctx context.Context, field graphql.
 		Object:   "Run",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.CurrentStep, nil
+		return ec.resolvers.Run().CurrentStep(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7943,12 +8003,12 @@ func (ec *executionContext) _Run_currentStep(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.StepRun)
+	res := resTmp.(*ent.StepRun)
 	fc.Result = res
-	return ec.marshalOStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepRun(ctx, field.Selections, res)
+	return ec.marshalOStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_error(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_error(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7974,12 +8034,12 @@ func (ec *executionContext) _Run_error(ctx context.Context, field graphql.Collec
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_data(ctx context.Context, field graphql.CollectedField, obj *model.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_data(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7990,7 +8050,7 @@ func (ec *executionContext) _Run_data(ctx context.Context, field graphql.Collect
 		Object:   "Run",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8003,7 +8063,7 @@ func (ec *executionContext) _Run_data(ctx context.Context, field graphql.Collect
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Data, nil
+		return ec.resolvers.Run().Data(rctx, obj, args["keys"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8151,9 +8211,9 @@ func (ec *executionContext) _Step_creator(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Admin)
+	res := resTmp.(*ent.Admin)
 	fc.Result = res
-	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAdmin(ctx, field.Selections, res)
+	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐAdmin(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Step_type(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
@@ -8258,7 +8318,7 @@ func (ec *executionContext) _Step_args(ctx context.Context, field graphql.Collec
 	return ec.marshalNStepArgs2ᚕgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepArgsᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _StepRun_step(ctx context.Context, field graphql.CollectedField, obj *model.StepRun) (ret graphql.Marshaler) {
+func (ec *executionContext) _StepRun_step(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8269,13 +8329,13 @@ func (ec *executionContext) _StepRun_step(ctx context.Context, field graphql.Col
 		Object:   "StepRun",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Step, nil
+		return ec.resolvers.StepRun().Step(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8289,7 +8349,7 @@ func (ec *executionContext) _StepRun_step(ctx context.Context, field graphql.Col
 	return ec.marshalOStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStep(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _StepRun_status(ctx context.Context, field graphql.CollectedField, obj *model.StepRun) (ret graphql.Marshaler) {
+func (ec *executionContext) _StepRun_status(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8300,13 +8360,13 @@ func (ec *executionContext) _StepRun_status(ctx context.Context, field graphql.C
 		Object:   "StepRun",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Status, nil
+		return ec.resolvers.StepRun().Status(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8323,7 +8383,7 @@ func (ec *executionContext) _StepRun_status(ctx context.Context, field graphql.C
 	return ec.marshalNStatus2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _StepRun_startedAt(ctx context.Context, field graphql.CollectedField, obj *model.StepRun) (ret graphql.Marshaler) {
+func (ec *executionContext) _StepRun_startedAt(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8334,13 +8394,13 @@ func (ec *executionContext) _StepRun_startedAt(ctx context.Context, field graphq
 		Object:   "StepRun",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.StartedAt, nil
+		return ec.resolvers.StepRun().StartedAt(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8354,7 +8414,7 @@ func (ec *executionContext) _StepRun_startedAt(ctx context.Context, field graphq
 	return ec.marshalODateTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _StepRun_endedAt(ctx context.Context, field graphql.CollectedField, obj *model.StepRun) (ret graphql.Marshaler) {
+func (ec *executionContext) _StepRun_endedAt(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8380,12 +8440,12 @@ func (ec *executionContext) _StepRun_endedAt(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*time.Time)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalODateTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+	return ec.marshalODateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _StepRun_participants(ctx context.Context, field graphql.CollectedField, obj *model.StepRun) (ret graphql.Marshaler) {
+func (ec *executionContext) _StepRun_participants(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8396,7 +8456,7 @@ func (ec *executionContext) _StepRun_participants(ctx context.Context, field gra
 		Object:   "StepRun",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8409,7 +8469,7 @@ func (ec *executionContext) _StepRun_participants(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Participants, nil
+		return ec.resolvers.StepRun().Participants(rctx, obj, args["first"].(*int), args["after"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8426,7 +8486,7 @@ func (ec *executionContext) _StepRun_participants(ctx context.Context, field gra
 	return ec.marshalNParticipantsConnection2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantsConnection(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _StepRun_participantsCount(ctx context.Context, field graphql.CollectedField, obj *model.StepRun) (ret graphql.Marshaler) {
+func (ec *executionContext) _StepRun_participantsCount(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10292,43 +10352,6 @@ func (ec *executionContext) unmarshalInputUpdateStepInput(ctx context.Context, o
 
 // region    ************************** interface.gotpl ***************************
 
-func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj model.Node) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.Step:
-		return ec._Step(ctx, sel, &obj)
-	case *model.Step:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Step(ctx, sel, obj)
-	case model.Datum:
-		return ec._Datum(ctx, sel, &obj)
-	case *model.Datum:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Datum(ctx, sel, obj)
-	case model.Participant:
-		return ec._Participant(ctx, sel, &obj)
-	case *model.Participant:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Participant(ctx, sel, obj)
-	case model.Admin:
-		return ec._Admin(ctx, sel, &obj)
-	case *model.Admin:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Admin(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
 func (ec *executionContext) _StepArgs(ctx context.Context, sel ast.SelectionSet, obj model.StepArgs) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -10370,9 +10393,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			return graphql.Null
 		}
 		return ec._Participant(ctx, sel, obj)
-	case model.Admin:
-		return ec._Admin(ctx, sel, &obj)
-	case *model.Admin:
+	case *ent.Admin:
 		if obj == nil {
 			return graphql.Null
 		}
@@ -10386,9 +10407,9 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 
 // region    **************************** object.gotpl ****************************
 
-var adminImplementors = []string{"Admin", "User", "Node"}
+var adminImplementors = []string{"Admin", "User"}
 
-func (ec *executionContext) _Admin(ctx context.Context, sel ast.SelectionSet, obj *model.Admin) graphql.Marshaler {
+func (ec *executionContext) _Admin(ctx context.Context, sel ast.SelectionSet, obj *ent.Admin) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, adminImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -10400,25 +10421,36 @@ func (ec *executionContext) _Admin(ctx context.Context, sel ast.SelectionSet, ob
 		case "id":
 			out.Values[i] = ec._Admin_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Admin_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Admin_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Admin_name(ctx, field, obj)
+		case "username":
+			out.Values[i] = ec._Admin_username(ctx, field, obj)
 		case "email":
-			out.Values[i] = ec._Admin_email(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Admin_email(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10519,7 +10551,7 @@ func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var datumImplementors = []string{"Datum", "Node"}
+var datumImplementors = []string{"Datum"}
 
 func (ec *executionContext) _Datum(ctx context.Context, sel ast.SelectionSet, obj *model.Datum) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, datumImplementors)
@@ -11030,7 +11062,7 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
-var participantImplementors = []string{"Participant", "User", "Node"}
+var participantImplementors = []string{"Participant", "User"}
 
 func (ec *executionContext) _Participant(ctx context.Context, sel ast.SelectionSet, obj *model.Participant) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, participantImplementors)
@@ -11154,7 +11186,7 @@ func (ec *executionContext) _ParticipantsEdge(ctx context.Context, sel ast.Selec
 
 var procedureImplementors = []string{"Procedure"}
 
-func (ec *executionContext) _Procedure(ctx context.Context, sel ast.SelectionSet, obj *model.Procedure) graphql.Marshaler {
+func (ec *executionContext) _Procedure(ctx context.Context, sel ast.SelectionSet, obj *ent.Procedure) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, procedureImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -11166,45 +11198,90 @@ func (ec *executionContext) _Procedure(ctx context.Context, sel ast.SelectionSet
 		case "id":
 			out.Values[i] = ec._Procedure_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Procedure_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Procedure_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "creator":
-			out.Values[i] = ec._Procedure_creator(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Procedure_creator(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "name":
 			out.Values[i] = ec._Procedure_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "selectionType":
-			out.Values[i] = ec._Procedure_selectionType(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Procedure_selectionType(ctx, field, obj)
+				return res
+			})
 		case "internalCriteria":
-			out.Values[i] = ec._Procedure_internalCriteria(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Procedure_internalCriteria(ctx, field, obj)
+				return res
+			})
 		case "mturkCriteria":
-			out.Values[i] = ec._Procedure_mturkCriteria(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Procedure_mturkCriteria(ctx, field, obj)
+				return res
+			})
 		case "steps":
-			out.Values[i] = ec._Procedure_steps(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Procedure_steps(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "participantCount":
 			out.Values[i] = ec._Procedure_participantCount(ctx, field, obj)
 		case "adult":
 			out.Values[i] = ec._Procedure_adult(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -11219,7 +11296,7 @@ func (ec *executionContext) _Procedure(ctx context.Context, sel ast.SelectionSet
 
 var projectImplementors = []string{"Project"}
 
-func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, obj *model.Project) graphql.Marshaler {
+func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, obj *ent.Project) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, projectImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -11231,48 +11308,84 @@ func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, 
 		case "id":
 			out.Values[i] = ec._Project_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Project_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Project_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "creator":
-			out.Values[i] = ec._Project_creator(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Project_creator(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "projectID":
 			out.Values[i] = ec._Project_projectID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Project_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "procedures":
-			out.Values[i] = ec._Project_procedures(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Project_procedures(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "runs":
-			out.Values[i] = ec._Project_runs(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Project_runs(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "data":
-			out.Values[i] = ec._Project_data(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Project_data(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11442,7 +11555,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 
 var runImplementors = []string{"Run"}
 
-func (ec *executionContext) _Run(ctx context.Context, sel ast.SelectionSet, obj *model.Run) graphql.Marshaler {
+func (ec *executionContext) _Run(ctx context.Context, sel ast.SelectionSet, obj *ent.Run) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, runImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -11454,33 +11567,60 @@ func (ec *executionContext) _Run(ctx context.Context, sel ast.SelectionSet, obj 
 		case "id":
 			out.Values[i] = ec._Run_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Run_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Run_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "creator":
-			out.Values[i] = ec._Run_creator(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Run_creator(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "procedure":
-			out.Values[i] = ec._Run_procedure(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Run_procedure(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "status":
-			out.Values[i] = ec._Run_status(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Run_status(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "startAt":
 			out.Values[i] = ec._Run_startAt(ctx, field, obj)
 		case "startedAt":
@@ -11488,19 +11628,46 @@ func (ec *executionContext) _Run(ctx context.Context, sel ast.SelectionSet, obj 
 		case "endedAt":
 			out.Values[i] = ec._Run_endedAt(ctx, field, obj)
 		case "steps":
-			out.Values[i] = ec._Run_steps(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Run_steps(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "currentStep":
-			out.Values[i] = ec._Run_currentStep(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Run_currentStep(ctx, field, obj)
+				return res
+			})
 		case "error":
 			out.Values[i] = ec._Run_error(ctx, field, obj)
 		case "data":
-			out.Values[i] = ec._Run_data(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Run_data(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11512,7 +11679,7 @@ func (ec *executionContext) _Run(ctx context.Context, sel ast.SelectionSet, obj 
 	return out
 }
 
-var stepImplementors = []string{"Step", "Node"}
+var stepImplementors = []string{"Step"}
 
 func (ec *executionContext) _Step(ctx context.Context, sel ast.SelectionSet, obj *model.Step) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, stepImplementors)
@@ -11571,7 +11738,7 @@ func (ec *executionContext) _Step(ctx context.Context, sel ast.SelectionSet, obj
 
 var stepRunImplementors = []string{"StepRun"}
 
-func (ec *executionContext) _StepRun(ctx context.Context, sel ast.SelectionSet, obj *model.StepRun) graphql.Marshaler {
+func (ec *executionContext) _StepRun(ctx context.Context, sel ast.SelectionSet, obj *ent.StepRun) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, stepRunImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -11581,25 +11748,61 @@ func (ec *executionContext) _StepRun(ctx context.Context, sel ast.SelectionSet, 
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("StepRun")
 		case "step":
-			out.Values[i] = ec._StepRun_step(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StepRun_step(ctx, field, obj)
+				return res
+			})
 		case "status":
-			out.Values[i] = ec._StepRun_status(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StepRun_status(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "startedAt":
-			out.Values[i] = ec._StepRun_startedAt(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StepRun_startedAt(ctx, field, obj)
+				return res
+			})
 		case "endedAt":
 			out.Values[i] = ec._StepRun_endedAt(ctx, field, obj)
 		case "participants":
-			out.Values[i] = ec._StepRun_participants(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StepRun_participants(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "participantsCount":
 			out.Values[i] = ec._StepRun_participantsCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -11877,11 +12080,11 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) marshalNAdmin2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAdmin(ctx context.Context, sel ast.SelectionSet, v model.Admin) graphql.Marshaler {
+func (ec *executionContext) marshalNAdmin2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐAdmin(ctx context.Context, sel ast.SelectionSet, v ent.Admin) graphql.Marshaler {
 	return ec._Admin(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAdmin(ctx context.Context, sel ast.SelectionSet, v *model.Admin) graphql.Marshaler {
+func (ec *executionContext) marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐAdmin(ctx context.Context, sel ast.SelectionSet, v *ent.Admin) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12395,11 +12598,11 @@ func (ec *executionContext) marshalNParticipantsEdge2ᚖgithubᚗcomᚋempirical
 	return ec._ParticipantsEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProcedure2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedure(ctx context.Context, sel ast.SelectionSet, v model.Procedure) graphql.Marshaler {
+func (ec *executionContext) marshalNProcedure2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx context.Context, sel ast.SelectionSet, v ent.Procedure) graphql.Marshaler {
 	return ec._Procedure(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNProcedure2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Procedure) graphql.Marshaler {
+func (ec *executionContext) marshalNProcedure2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedureᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Procedure) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -12423,7 +12626,7 @@ func (ec *executionContext) marshalNProcedure2ᚕᚖgithubᚗcomᚋempiricalyᚋ
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedure(ctx, sel, v[i])
+			ret[i] = ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -12436,7 +12639,7 @@ func (ec *executionContext) marshalNProcedure2ᚕᚖgithubᚗcomᚋempiricalyᚋ
 	return ret
 }
 
-func (ec *executionContext) marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedure(ctx context.Context, sel ast.SelectionSet, v *model.Procedure) graphql.Marshaler {
+func (ec *executionContext) marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx context.Context, sel ast.SelectionSet, v *ent.Procedure) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12446,11 +12649,11 @@ func (ec *executionContext) marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrec
 	return ec._Procedure(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProject2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProject(ctx context.Context, sel ast.SelectionSet, v model.Project) graphql.Marshaler {
+func (ec *executionContext) marshalNProject2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v ent.Project) graphql.Marshaler {
 	return ec._Project(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNProject2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProjectᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Project) graphql.Marshaler {
+func (ec *executionContext) marshalNProject2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProjectᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Project) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -12474,7 +12677,7 @@ func (ec *executionContext) marshalNProject2ᚕᚖgithubᚗcomᚋempiricalyᚋre
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProject(ctx, sel, v[i])
+			ret[i] = ec.marshalNProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -12487,7 +12690,7 @@ func (ec *executionContext) marshalNProject2ᚕᚖgithubᚗcomᚋempiricalyᚋre
 	return ret
 }
 
-func (ec *executionContext) marshalNProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProject(ctx context.Context, sel ast.SelectionSet, v *model.Project) graphql.Marshaler {
+func (ec *executionContext) marshalNProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v *ent.Project) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12566,11 +12769,11 @@ func (ec *executionContext) marshalNRole2githubᚗcomᚋempiricalyᚋrecruitment
 	return v
 }
 
-func (ec *executionContext) marshalNRun2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRun(ctx context.Context, sel ast.SelectionSet, v model.Run) graphql.Marshaler {
+func (ec *executionContext) marshalNRun2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRun(ctx context.Context, sel ast.SelectionSet, v ent.Run) graphql.Marshaler {
 	return ec._Run(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRunᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Run) graphql.Marshaler {
+func (ec *executionContext) marshalNRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRunᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Run) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -12594,7 +12797,7 @@ func (ec *executionContext) marshalNRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecrui
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRun(ctx, sel, v[i])
+			ret[i] = ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRun(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -12607,7 +12810,7 @@ func (ec *executionContext) marshalNRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecrui
 	return ret
 }
 
-func (ec *executionContext) marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRun(ctx context.Context, sel ast.SelectionSet, v *model.Run) graphql.Marshaler {
+func (ec *executionContext) marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRun(ctx context.Context, sel ast.SelectionSet, v *ent.Run) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12765,11 +12968,11 @@ func (ec *executionContext) unmarshalNStepInput2ᚖgithubᚗcomᚋempiricalyᚋr
 	return &res, err
 }
 
-func (ec *executionContext) marshalNStepRun2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepRun(ctx context.Context, sel ast.SelectionSet, v model.StepRun) graphql.Marshaler {
+func (ec *executionContext) marshalNStepRun2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx context.Context, sel ast.SelectionSet, v ent.StepRun) graphql.Marshaler {
 	return ec._StepRun(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNStepRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepRunᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.StepRun) graphql.Marshaler {
+func (ec *executionContext) marshalNStepRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRunᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.StepRun) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -12793,7 +12996,7 @@ func (ec *executionContext) marshalNStepRun2ᚕᚖgithubᚗcomᚋempiricalyᚋre
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepRun(ctx, sel, v[i])
+			ret[i] = ec.marshalNStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -12806,7 +13009,7 @@ func (ec *executionContext) marshalNStepRun2ᚕᚖgithubᚗcomᚋempiricalyᚋre
 	return ret
 }
 
-func (ec *executionContext) marshalNStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepRun(ctx context.Context, sel ast.SelectionSet, v *model.StepRun) graphql.Marshaler {
+func (ec *executionContext) marshalNStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx context.Context, sel ast.SelectionSet, v *ent.StepRun) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -13764,11 +13967,11 @@ func (ec *executionContext) marshalOParticipantsEdge2ᚕᚖgithubᚗcomᚋempiri
 	return ret
 }
 
-func (ec *executionContext) marshalOProject2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProject(ctx context.Context, sel ast.SelectionSet, v model.Project) graphql.Marshaler {
+func (ec *executionContext) marshalOProject2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v ent.Project) graphql.Marshaler {
 	return ec._Project(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProject(ctx context.Context, sel ast.SelectionSet, v *model.Project) graphql.Marshaler {
+func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v *ent.Project) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -13846,11 +14049,11 @@ func (ec *executionContext) marshalOStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitm
 	return ec._Step(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOStepRun2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepRun(ctx context.Context, sel ast.SelectionSet, v model.StepRun) graphql.Marshaler {
+func (ec *executionContext) marshalOStepRun2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx context.Context, sel ast.SelectionSet, v ent.StepRun) graphql.Marshaler {
 	return ec._StepRun(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepRun(ctx context.Context, sel ast.SelectionSet, v *model.StepRun) graphql.Marshaler {
+func (ec *executionContext) marshalOStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx context.Context, sel ast.SelectionSet, v *ent.StepRun) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

@@ -89,7 +89,7 @@ type Project {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
-  creator: Admin!
+  creator: Admin!  @goField(forceResolver: true)
 
   """
   The Project Identifier is used to label Participants having
@@ -106,17 +106,17 @@ type Project {
   """
   Procedures contained in Project
   """
-  procedures: [Procedure!]!
+  procedures: [Procedure!]!  @goField(forceResolver: true)
 
   """
   Runs contained in Project
   """
-  runs: [Run!]!
+  runs: [Run!]!  @goField(forceResolver: true)
 
   """
   Data returns the custom data that has been set on the Participant.
   """
-  data(keys: [String!]): [Datum!]!
+  data(keys: [String!]): [Datum!]!  @goField(forceResolver: true)
 }
 
 """
@@ -229,7 +229,7 @@ type Procedure {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
-  creator: Admin!
+  creator: Admin!  @goField(forceResolver: true)
 
   """
   Friendly name.
@@ -244,17 +244,17 @@ type Procedure {
   """
   Selection criteria for internal DB participants.
   """
-  internalCriteria: InternalCriteria
+  internalCriteria: InternalCriteria  @goField(forceResolver: true)
 
   """
   Selection criteria for internal DB participants.
   """
-  mturkCriteria: MTurkCriteria
+  mturkCriteria: MTurkCriteria  @goField(forceResolver: true)
 
   """
   Ordered list of Steps in a Procedure.
   """
-  steps: [Step!]!
+  steps: [Step!]!  @goField(forceResolver: true)
 
   """
   Number of participants desired.
@@ -451,7 +451,7 @@ type MTurkLocale {
 """
 Steps are the ordered parts of a Procedure.
 """
-type Step implements Node {
+type Step {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -629,31 +629,6 @@ type MessageStepArgs {
 }
 
 """
-Node is an interface allowing simple querying of any node
-"""
-interface Node {
-  """
-  id is the unique globally identifier for the record that contains both the
-  type and the internal Database ID in the following format: `Model:ID`.
-
-  For example:
-  - `Run:bpi6chiuof2j0lmpgc20`
-  - `Participant:9m4e2mr0ui3e8a215n4g`
-  """
-  id: ID!
-
-  """
-  createdAt is the time of creation of the record.
-  """
-  createdAt: DateTime!
-
-  """
-  updatedAt is the time of last update of the record.
-  """
-  updatedAt: DateTime!
-}
-
-"""
 Status of Runs.
 """
 enum Status {
@@ -691,7 +666,7 @@ enum Status {
 """
 Datum is a single piece of custom data.
 """
-type Datum implements Node {
+type Datum {
   """
   id is the unique globally identifier for the record.
   """
@@ -753,7 +728,7 @@ union User = Participant | Admin
 """
 Participant is a worker in the system.
 """
-type Participant implements Node {
+type Participant {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -814,7 +789,7 @@ enum PROVIDER {
 """
 Admin is a user that has priviledged access to the data.
 """
-type Admin implements Node {
+type Admin {
   """
   id is the unique globally identifier for the record.
   """
@@ -834,6 +809,11 @@ type Admin implements Node {
   name is the full name of the Admin.
   """
   name: String
+
+  """
+  username is the login name of the Admin.
+  """
+  username: String
 
   """
   email is the email associated with the Admin.
