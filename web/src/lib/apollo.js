@@ -1,24 +1,45 @@
-import { InMemoryCache } from "apollo-cache-inmemory";
-import ApolloClient from "apollo-client";
-import { split } from "apollo-link";
-import { createHttpLink } from "apollo-link-http";
-import { WebSocketLink } from "apollo-link-ws";
-import { getMainDefinition } from "apollo-utilities";
-import { writable } from "svelte/store";
+import { InMemoryCache } from "@apollo/client/cache";
+import { ApolloClient, split } from "@apollo/client/core";
+import { setContext } from "@apollo/client/link/context";
+import { HttpLink } from "@apollo/client/link/http";
+import { WebSocketLink } from "@apollo/client/link/ws";
+import { getMainDefinition } from "@apollo/client/utilities";
+
+
 export const uri =
   process.env.NODE_ENV === "development"
     ? "http://localhost:8880/query"
     : document.location.origin + "/query";
-export const client = writable(null);
-const httpLink = createHttpLink({
+
+// Inject authentication
+const authLink = setContext((_, { headers }) => {
+  // get the authentication token from local storage if it exists
+  const token = localStorage.getItem("token");
+  // return the headers to the context so httpLink can read them
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : "",
+    },
+    fetchOptions: {
+      mode: "cors",
+    },
+  };
+});
+
+// Create an HTTP link:
+const httpLink = new HttpLink({
   uri, // use https for secure endpoint
+  // credentials: "include",
   fetchOptions: {
     mode: "cors",
   },
 });
-// Create a WebSocket link:
+
+// Create a WebSocket link
 const wsLink = new WebSocketLink({
   uri: uri.replace("http", "ws"), // use wss for a secure endpoint
+  // credentials: "include",
   options: {
     reconnect: true,
     fetchOptions: {
@@ -26,7 +47,8 @@ const wsLink = new WebSocketLink({
     },
   },
 });
-// using the ability to split links, you can send data to each link
+
+// Using the ability to split links, you can send data to each link
 // depending on what kind of operation is being sent
 const link = split(
   // split based on operation type
@@ -37,9 +59,8 @@ const link = split(
   wsLink,
   httpLink
 );
-client.set(
-  new ApolloClient({
-    link,
-    cache: new InMemoryCache(),
-  })
-);
+
+export const client = new ApolloClient({
+  link: authLink.concat(link),
+  cache: new InMemoryCache(),
+});

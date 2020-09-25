@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/empiricaly/recruitment/internal/admin"
 	"github.com/empiricaly/recruitment/internal/log"
 	"github.com/empiricaly/recruitment/internal/metrics"
 	"github.com/empiricaly/recruitment/internal/mturk"
@@ -15,17 +16,12 @@ import (
 
 const minPasswordSize = 8
 
-type admin struct {
-	Name     string
-	Username string
-	Password string
-}
-
 // Config is `tawon agent` command line configuration
 type Config struct {
 	GQLAddr     string        `mapstructure:"gqladdr"`
 	MTurkConfig *mturk.Config `mapstructure:"mturk"`
-	Admins      []admin       `mapstructure:"admins"`
+	Admins      []admin.User  `mapstructure:"admins"`
+	SecretKey   string        `mapstructure:"secret"`
 	DevMode     bool          `mapstructure:"dev"`
 
 	Store   *storage.Config `mapstructure:"store"`
@@ -52,6 +48,10 @@ func (c *Config) Validate() error {
 
 	if len(c.Admins) == 0 {
 		return errors.New("please add at least one admin in the configuration")
+	}
+
+	if len(c.SecretKey) != 32 {
+		return errors.New("please add a random 32 characters secret key")
 	}
 
 	if err := c.Store.Validate(); err != nil {

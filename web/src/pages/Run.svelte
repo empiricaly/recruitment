@@ -1,7 +1,10 @@
 <script context="module">
-  import hotkeys from "hotkeys-js";
-  import { writable } from "svelte/store";
   import dayjs from "dayjs";
+import hotkeys from "hotkeys-js";
+import { writable } from "svelte/store";
+import StatusBadge from "../components/misc/StatusBadge.svelte";
+import RunCriteriaText from "../components/runs/RunCriteriaText.svelte";
+import Layout from "../layouts/Layout.svelte";
 
   const runDemo = writable({});
 
@@ -152,8 +155,6 @@
     if (index >= runs.length) {
       index = 0;
     }
-
-    console.log(run);
   }
 
   genRun();
@@ -166,9 +167,7 @@
 </script>
 
 <script>
-  import StatusBadge from "../components/misc/StatusBadge.svelte";
-  import RunCriteriaText from "../components/runs/RunCriteriaText.svelte";
-  import Layout from "../layouts/Layout.svelte";
+  
 
   $: run = $runDemo;
 

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/empiricaly/recruitment/internal/admin"
 	logger "github.com/empiricaly/recruitment/internal/log"
 	"github.com/empiricaly/recruitment/internal/metrics"
 	"github.com/empiricaly/recruitment/internal/mturk"
@@ -72,7 +73,7 @@ func Run(ctx context.Context, config *Config) (err error) {
 		// }()
 	}
 
-	err = s.initAdmins(ctx)
+	err = admin.Init(ctx, s.config.Admins, s.storeConn)
 	if err != nil {
 		return errors.Wrap(err, "init admins")
 	}

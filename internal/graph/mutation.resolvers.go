@@ -5,11 +5,15 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	adminU "github.com/empiricaly/recruitment/internal/admin"
 	"github.com/empiricaly/recruitment/internal/ent"
+	"github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
+	errs "github.com/pkg/errors"
 	"github.com/rs/xid"
 )
 
@@ -22,7 +26,24 @@ func (r *mutationResolver) MutateDatum(ctx context.Context, input *model.MutateD
 }
 
 func (r *mutationResolver) Auth(ctx context.Context, input *model.AuthInput) (*model.AuthResp, error) {
-	panic(fmt.Errorf("not implemented"))
+	for _, adminCred := range r.Admins {
+		if adminCred.Username == input.Username && adminCred.Password == input.Password {
+			user, err := r.Store.Admin.Query().Where(admin.UsernameEQ(adminCred.Username)).First(ctx)
+
+			if err != nil {
+				return nil, errs.Wrap(err, "get admin")
+			}
+
+			authResp := &model.AuthResp{}
+			authResp.Token, err = adminU.CreateUserIDToken([]byte(r.SecretKey), user.ID)
+			if err != nil {
+				return nil, errs.Wrap(err, "create admin token")
+			}
+			return authResp, nil
+		}
+	}
+
+	return nil, errors.New("invalid user")
 }
 
 func (r *mutationResolver) CreateProject(ctx context.Context, input *model.CreateProjectInput) (*ent.Project, error) {

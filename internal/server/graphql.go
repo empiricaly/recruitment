@@ -10,6 +10,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/empiricaly/recruitment/internal/admin"
 	"github.com/empiricaly/recruitment/internal/graph"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	logger "github.com/empiricaly/recruitment/internal/log"
@@ -24,15 +25,18 @@ func (s *Server) startGraphqlServer() {
 	router := chi.NewRouter()
 
 	c := cors.New(cors.Options{
+		Debug:            true,
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,
+		AllowedHeaders:   []string{"*"},
 	})
 
 	// m, _ := storage.NewMapping(s.storeConn)
-	r := &graph.Resolver{MTurk: s.mturk, Store: s.storeConn}
+	r := &graph.Resolver{MTurk: s.mturk, Store: s.storeConn, Admins: s.config.Admins, SecretKey: s.config.SecretKey}
 
 	// router.Use(MachinesLockMiddleware(r))
 	router.Use(logger.HTTPLogger())
+	router.Use(admin.Middleware(s.storeConn, []byte(s.config.SecretKey)))
 
 	gconf := generated.Config{Resolvers: r}
 	gconf.Directives.HasRole = func(ctx context.Context, obj interface{}, next graphql.Resolver, role model.Role) (interface{}, error) {

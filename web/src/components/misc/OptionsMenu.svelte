@@ -1,6 +1,7 @@
 <script>
-  import Router from "../../lib/routing.js";
-  import { onDestroy, createEventDispatcher } from "svelte";
+  import { createEventDispatcher,onDestroy } from "svelte";
+import { push } from "../../lib/routing.js";
+
 
   const dispatch = createEventDispatcher();
 
@@ -43,7 +44,7 @@
         aria-haspopup="true"
         aria-expanded={open}
         class="flex px-3 h-full items-center text-gray-400 hover:text-gray-600
-        focus:outline-none focus:text-gray-600 z-0">
+          focus:outline-none focus:text-gray-600 z-0">
         <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
           <path
             d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10
@@ -55,12 +56,12 @@
     {#if open}
       <div
         class="origin-top-right absolute top-0 right-0 mt-12 w-56 rounded-md
-        shadow-lg z-10">
+          shadow-lg z-10">
         <div class="rounded-md bg-white shadow-xs">
           <div class="py-1" role="menu" aria-orientation="vertical">
             {#each options as option, i}
               <button
-                on:click={event => {
+                on:click={(event) => {
                   open = false;
                   event.preventDefault();
                   event.stopPropagation();
@@ -69,13 +70,13 @@
                   } else if (option.onClick) {
                     option.onClick(event);
                   } else if (option.path) {
-                    Router.push(option.path);
+                    push(option.path);
                   }
                 }}
                 href="#"
                 class="block px-4 py-2 text-sm leading-5 text-gray-700
-                hover:bg-gray-100 hover:text-gray-900 focus:outline-none
-                focus:bg-gray-100 focus:text-gray-900 w-full"
+                  hover:bg-gray-100 hover:text-gray-900 focus:outline-none
+                  focus:bg-gray-100 focus:text-gray-900 w-full"
                 role="menuitem">
                 {option.text}
               </button>

@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"github.com/empiricaly/recruitment/internal/admin"
 	"github.com/empiricaly/recruitment/internal/mturk"
 	"github.com/empiricaly/recruitment/internal/storage"
 )
@@ -13,7 +14,8 @@ import (
 //go:generate go run github.com/99designs/gqlgen
 
 type Resolver struct {
-	MTurk *mturk.Session
-	Store *storage.Conn
-	// Mapping  *storage.Mapping
+	MTurk     *mturk.Session
+	Store     *storage.Conn
+	Admins    []admin.User
+	SecretKey string
 }

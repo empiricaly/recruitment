@@ -1,4 +1,4 @@
-import { gql } from "apollo-boost";
+import { gql } from "@apollo/client/core";
 
 export const MTURK_QUALIFICATION_TYPES = gql`
   {
@@ -53,6 +53,25 @@ export const GET_PROJECT = gql`
       id
       projectID
       name
+    }
+  }
+`;
+
+export const AUTH = gql`
+  mutation Auth($input: AuthInput) {
+    auth(input: $input) {
+      token
+    }
+  }
+`;
+
+export const ME = gql`
+  {
+    me {
+      ... on Admin {
+        id
+        name
+      }
     }
   }
 `;

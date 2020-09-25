@@ -1,7 +1,7 @@
 <script context="module">
   function camelize(str) {
     return str
-      .replace(/(?:^\w|[A-Z]|\b\w)/g, function(word, index) {
+      .replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
         return index === 0 ? word.toLowerCase() : word.toUpperCase();
       })
       .replace(/\W/g, "")
@@ -35,20 +35,20 @@
 
   const camelCasePattern = "([a-z]+[A-Z]*\\w+)+";
 
-  $: projects = $client && query($client, { query: GET_PROJECTS });
+  $: projects = query(client, { query: GET_PROJECTS });
 
   async function handleNewProject(event) {
     event.preventDefault();
 
     try {
-      await mutate($client, {
+      await mutate(client, {
         mutation: CREATE_PROJECT,
         variables: {
           input: {
             projectID,
-            name
-          }
-        }
+            name,
+          },
+        },
       });
       projects.refetch();
       newProject = false;
@@ -59,23 +59,20 @@
       notify({
         failed: true,
         title: `Could not create Project`,
-        body: error.graphQLErrors.map(e => e.message).join(", ")
+        body: error.graphQLErrors.map((e) => e.message).join(", "),
       });
     }
   }
 </script>
 
 <main class="flex justify-center items-center h-full w-full">
-
   {#await $projects}
     Loading...
   {:then result}
     {#if result.data.projects.length === 0}
       <div class="w-64 px-4 py-4">
         <Callout color="yellow">
-          You have no projects yet.
-          <br />
-          Create one now!
+          You have no projects yet. <br /> Create one now!
         </Callout>
       </div>
     {/if}
@@ -160,7 +157,6 @@
           </div>
         </div>
       {/if}
-
     </div>
   {:catch error}
     Error loading Projects: {error}

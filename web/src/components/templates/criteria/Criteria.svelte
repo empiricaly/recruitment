@@ -1,10 +1,11 @@
 <script>
   import { createEventDispatcher } from "svelte";
-  import ValueInput from "./ValueInput.svelte";
-  import Select from "../../base/Select.svelte";
-  import Input from "../../base/Input.svelte";
-  import Button from "../../base/Button.svelte";
-  import { comparators } from "criteria.js";
+import Button from "../../base/Button.svelte";
+import Input from "../../base/Input.svelte";
+import Select from "../../base/Select.svelte";
+import { comparators } from "./criteria.js";
+import ValueInput from "./ValueInput.svelte";
+
 
   const dispatch = createEventDispatcher();
 

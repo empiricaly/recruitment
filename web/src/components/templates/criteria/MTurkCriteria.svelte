@@ -1,60 +1,63 @@
 <script context="module">
-  const bools = [{ label: "True", value: 1 }, { label: "False", value: 0 }];
+  const bools = [
+    { label: "True", value: 1 },
+    { label: "False", value: 0 },
+  ];
   const comparisons = [
     {
       label: "<",
       value: "LESS_THAN",
-      title: "lesser than"
+      title: "lesser than",
     },
     {
       label: "≤",
       value: "LESS_THAN_OR_EQUAL_TO",
-      title: "lesser than or equal to"
+      title: "lesser than or equal to",
     },
     {
       label: ">",
       value: "GREATER_THAN",
-      title: "greater than"
+      title: "greater than",
     },
     {
       label: "≥",
       value: "GREATER_THAN_OR_EQUAL_TO",
-      title: "greater than or equal to"
-    }
+      title: "greater than or equal to",
+    },
   ];
   const locations = [
     {
       label: "is",
-      value: "EQUAL_TO"
+      value: "EQUAL_TO",
     },
     {
       label: "is not",
-      value: "NOT_EQUAL_TO"
+      value: "NOT_EQUAL_TO",
     },
     {
       label: "is one of",
-      value: "IN"
+      value: "IN",
     },
     {
       label: "is not one of",
-      value: "NOT_IN"
-    }
+      value: "NOT_IN",
+    },
   ];
   const customs = [
     {
       label: "Has Been Granted",
-      value: "EXISTS"
+      value: "EXISTS",
     },
     {
       label: "Has Not Been Granted",
-      value: "DOES_NOT_EXIST"
+      value: "DOES_NOT_EXIST",
     },
     ...comparisons,
-    ...locations
+    ...locations,
   ];
 
   function mapQualTypes(qualTypes) {
-    return qualTypes.map(q => {
+    return qualTypes.map((q) => {
       return { label: q.name, value: q.id };
     });
   }
@@ -90,7 +93,7 @@
     // Number of HITs approved return different list of integers
     if (isHITsApproved) {
       const intHits = [0, 50, 100, 500, 1000, 5000, 10000];
-      intHits.forEach(h => {
+      intHits.forEach((h) => {
         integers.push({ label: h, value: h });
       });
     } else {
@@ -114,7 +117,7 @@
 
   import {
     MTURK_LOCALES,
-    MTURK_QUALIFICATION_TYPES
+    MTURK_QUALIFICATION_TYPES,
   } from "../../../lib/queries";
 
   export let qualification = {};
@@ -128,7 +131,7 @@
     qualification.values = [];
     qualification.locales = [];
 
-    selectedQual = quals.find(q => q.id === id);
+    selectedQual = quals.find((q) => q.id === id);
   }
 
   function handleComparatorChange(event) {
@@ -148,15 +151,14 @@
     qualification.comparator &&
     (qualification.comparator === "In" || qualification.comparator === "NotIn");
 
-  $: mturkLocales = $client && query($client, { query: MTURK_LOCALES });
-  $: mturkQualTypes =
-    $client && query($client, { query: MTURK_QUALIFICATION_TYPES });
+  $: mturkLocales = query(client, { query: MTURK_LOCALES });
+  $: mturkQualTypes = query(client, { query: MTURK_QUALIFICATION_TYPES });
 </script>
 
 <li>
   <div
     class="min-w-0 flex-1 md:grid md:grid-cols-3 md:gap-2 mt-4 md:mt-2
-    items-center">
+      items-center">
     {#await $mturkQualTypes}
       Loading...
     {:then result}
@@ -164,7 +166,7 @@
         <Select
           bind:value={qualification.id}
           options={mapQualTypes(result.data.mturkQualificationTypes)}
-          on:change={event => handleIdChange(event, result.data.mturkQualificationTypes)}
+          on:change={(event) => handleIdChange(event, result.data.mturkQualificationTypes)}
           placeholder="Select Qualification" />
       </div>
 
@@ -215,6 +217,5 @@
     {:catch error}
       Error loading MTurk qualification types: {error}
     {/await}
-
   </div>
 </li>

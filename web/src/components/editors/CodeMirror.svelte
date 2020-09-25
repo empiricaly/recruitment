@@ -1,18 +1,17 @@
 <script context="module">
-  import "codemirror/mode/javascript/javascript.js";
-  import "codemirror/mode/htmlmixed/htmlmixed.js";
-  import "codemirror/mode/markdown/markdown.js";
-  import "codemirror/mode/handlebars/handlebars.js";
-  import "codemirror/mode/jsx/jsx.js";
+  import CodeMirror from "codemirror";
+  import "codemirror/addon/comment/comment.js";
   import "codemirror/addon/edit/closebrackets.js";
   import "codemirror/addon/edit/closetag.js";
-  import "codemirror/addon/comment/comment.js";
+  import "codemirror/mode/handlebars/handlebars.js";
+  import "codemirror/mode/htmlmixed/htmlmixed.js";
+  import "codemirror/mode/javascript/javascript.js";
+  import "codemirror/mode/jsx/jsx.js";
+  import "codemirror/mode/markdown/markdown.js";
+  import { createEventDispatcher, onMount } from "svelte";
 </script>
 
 <script>
-  import { onMount, createEventDispatcher } from "svelte";
-  import CodeMirror from "codemirror";
-
   const dispatch = createEventDispatcher();
 
   export let value = "";
@@ -27,7 +26,6 @@
   let prevMode = mode;
   $: {
     if (prevMode !== mode) {
-      console.log("updating mode");
       createEditor(mode);
       prevMode = mode;
     }
@@ -53,22 +51,22 @@
   const modes = {
     markdown: {
       name: "markdown",
-      base: "text/x-markdown"
+      base: "text/x-markdown",
     },
     jsx: {
-      name: "jsx"
+      name: "jsx",
     },
     javascript: {
-      name: "javascript"
+      name: "javascript",
     },
     html: {
       name: "htmlmixed",
-      base: "text/html"
+      base: "text/html",
     },
     svelte: {
       name: "handlebars",
-      base: "text/html"
-    }
+      base: "text/html",
+    },
   };
 
   const refs = {};
@@ -92,7 +90,7 @@
         { line, ch },
         { line, ch: ch + 1 },
         {
-          className: "error-loc"
+          className: "error-loc",
         }
       );
       error_line = line;
@@ -136,20 +134,20 @@
       tabSize: 2,
       value: "",
       mode: modes[mode] || {
-        name: mode
+        name: mode,
       },
       readOnly: readonly,
       autoCloseBrackets: true,
       autoCloseTags: true,
       viewportMargin: Infinity,
       extraKeys: {
-        Tab: function(cm) {
+        Tab: function (cm) {
           var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
           cm.replaceSelection(spaces);
         },
         "Cmd-/": "toggleComment",
-        "Ctrl-/": "toggleComment"
-      }
+        "Ctrl-/": "toggleComment",
+      },
     };
 
     // Creating a text editor is a lot of work, so we yield
@@ -157,7 +155,7 @@
     if (first) await sleep(50);
     if (destroyed) return;
     editor = CodeMirror.fromTextArea(refs.editor, opts);
-    editor.on("change", instance => {
+    editor.on("change", (instance) => {
       if (!updating_externally) {
         value = instance.getValue();
         dispatch("change", { value });
@@ -169,7 +167,7 @@
   }
 
   function sleep(ms) {
-    return new Promise(fulfil => setTimeout(fulfil, ms));
+    return new Promise((fulfil) => setTimeout(fulfil, ms));
   }
 </script>
 

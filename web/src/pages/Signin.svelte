@@ -2,20 +2,21 @@
   import Label from "../components/base/Label.svelte";
   import Input from "../components/base/Input.svelte";
   import Button from "../components/base/Button.svelte";
+  import { authenticate } from "../lib/auth";
 
-  let username = "";
-  let password = "";
+  let username = "putu";
+  let password = "123456789";
 
   function submit(event) {
     event.preventDefault();
-    console.log("submit", username, password);
+    authenticate(username, password);
   }
 </script>
 
 <div class="min-h-screen bg-white flex">
   <div
     class="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none
-    lg:px-20 xl:px-24">
+      lg:px-20 xl:px-24">
     <div class="mx-auto w-full max-w-sm">
       <div>
         <!-- <img
@@ -28,7 +29,6 @@
       </div>
 
       <div class="mt-8">
-
         <div class="mt-6">
           <form action="#" method="POST" on:submit={submit}>
             <div>

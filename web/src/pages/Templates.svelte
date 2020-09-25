@@ -10,7 +10,7 @@
 
   async function handleCreate() {
     try {
-      await mutate($client, {
+      await mutate(client, {
         mutation: CREATE_PROCEDURE,
         variables: {
           input: {
@@ -26,14 +26,14 @@
                   {
                     key: "",
                     comparator: "EQUAL_TO",
-                    values: []
-                  }
-                ]
-              }
+                    values: [],
+                  },
+                ],
+              },
             },
-            steps: []
-          }
-        }
+            steps: [],
+          },
+        },
       });
     } catch (error) {
       console.error(error);
@@ -41,7 +41,7 @@
         failed: true,
         title: `Could not create Template`,
         body:
-          "Something happened on the server, and we could not create a new Template as requested."
+          "Something happened on the server, and we could not create a new Template as requested.",
       });
     }
   }

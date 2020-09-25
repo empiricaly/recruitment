@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/empiricaly/recruitment/internal/admin"
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
@@ -36,7 +37,7 @@ func (r *queryResolver) Participants(ctx context.Context, first *int, after *str
 }
 
 func (r *queryResolver) Me(ctx context.Context) (model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return admin.ForContext(ctx), nil
 }
 
 func (r *queryResolver) Page(ctx context.Context, token string, participantID string) (*model.Page, error) {

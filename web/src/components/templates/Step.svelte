@@ -2,25 +2,25 @@
   const stepTypeName = {
     MTURK_HIT: "MTurk HIT Step",
     MTURK_MESSAGE: "MTurk Message Step",
-    PARTICIPANT_FILTER: "Participant Filter Step"
+    PARTICIPANT_FILTER: "Participant Filter Step",
   };
   const stepTypeDesc = {
     MTURK_HIT: "TODO: Add Description",
     MTURK_MESSAGE: "TODO: Add Description",
-    PARTICIPANT_FILTER: "TODO: Add Description"
+    PARTICIPANT_FILTER: "TODO: Add Description",
   };
 </script>
 
 <script>
-  import Label from "../base/Label.svelte";
+  import { createEventDispatcher } from "svelte";
+  import { uniqueID } from "../../utils/uniq.js";
   import Input from "../base/Input.svelte";
-  import TemplateSection from "./TemplateSection.svelte";
+  import Label from "../base/Label.svelte";
+  import { confirm } from "../overlays/Alert.svelte";
   import StepMTurkHit from "./StepMTurkHit.svelte";
   import StepMTurkMessage from "./StepMTurkMessage.svelte";
   import StepParticipantFilter from "./StepParticipantFilter.svelte";
-  import { confirm } from "../overlays/Alert.svelte";
-  import { uniqueID } from "../../utils/uniq.js";
-  import { createEventDispatcher } from "svelte";
+  import TemplateSection from "./TemplateSection.svelte";
 
   export let step;
 
@@ -34,13 +34,12 @@
         title: "Are you sure?",
         body:
           "You are about to delete the current Step. This cannot be undone.",
-        button: "Delete Step"
+        button: "Delete Step",
       });
     } catch (error) {
       return;
     }
     dispatch("delete", { step });
-    console.log("uep");
   }
 </script>
 
