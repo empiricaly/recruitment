@@ -1,9 +1,8 @@
 package schema
 
 import (
-	"time"
-
 	"github.com/facebook/ent"
+	"github.com/facebook/ent/schema/edge"
 	"github.com/facebook/ent/schema/field"
 )
 
@@ -15,18 +14,19 @@ type Run struct {
 // Fields of the Run.
 func (Run) Fields() []ent.Field {
 	// TODO field : creator, procedure, status, steps, data, currentStep
-	return []ent.Field{
-		field.String("id"),
-		field.Time("createdAt").Immutable().Default(time.Now),
-		field.Time("updatedAt").Default(time.Now).UpdateDefault(time.Now),
+	return append(
+		append([]ent.Field{}, commonFields...),
+		field.String("name"),
 		field.Time("startAt"),
 		field.Time("startedAt"),
 		field.Time("endedAt"),
 		field.String("error"),
-	}
+	)
 }
 
 // Edges of the Run.
 func (Run) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.To("procedure", Procedure.Type).Unique(),
+	}
 }

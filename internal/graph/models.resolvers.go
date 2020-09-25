@@ -120,6 +120,9 @@ type stepRunResolver struct{ *Resolver }
 //  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
 //    it when you're done.
 //  - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *runResolver) Name(ctx context.Context, obj *ent.Run) (string, error) {
+	panic(fmt.Errorf("not implemented"))
+}
 func (r *procedureResolver) ParticipantCount(ctx context.Context, obj *ent.Procedure) (*int, error) {
 	panic(fmt.Errorf("not implemented"))
 }

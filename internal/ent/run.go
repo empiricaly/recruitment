@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/facebook/ent/dialect/sql"
 )
@@ -20,6 +21,8 @@ type Run struct {
 	CreatedAt time.Time `json:"createdAt,omitempty"`
 	// UpdatedAt holds the value of the "updatedAt" field.
 	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
 	// StartAt holds the value of the "startAt" field.
 	StartAt time.Time `json:"startAt,omitempty"`
 	// StartedAt holds the value of the "startedAt" field.
@@ -28,6 +31,32 @@ type Run struct {
 	EndedAt time.Time `json:"endedAt,omitempty"`
 	// Error holds the value of the "error" field.
 	Error string `json:"error,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the RunQuery when eager-loading is set.
+	Edges RunEdges `json:"edges"`
+}
+
+// RunEdges holds the relations/edges for other nodes in the graph.
+type RunEdges struct {
+	// Procedure holds the value of the procedure edge.
+	Procedure *Procedure
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// ProcedureOrErr returns the Procedure value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RunEdges) ProcedureOrErr() (*Procedure, error) {
+	if e.loadedTypes[0] {
+		if e.Procedure == nil {
+			// The edge procedure was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: procedure.Label}
+		}
+		return e.Procedure, nil
+	}
+	return nil, &NotLoadedError{edge: "procedure"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -36,6 +65,7 @@ func (*Run) scanValues() []interface{} {
 		&sql.NullString{}, // id
 		&sql.NullTime{},   // createdAt
 		&sql.NullTime{},   // updatedAt
+		&sql.NullString{}, // name
 		&sql.NullTime{},   // startAt
 		&sql.NullTime{},   // startedAt
 		&sql.NullTime{},   // endedAt
@@ -65,27 +95,37 @@ func (r *Run) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		r.UpdatedAt = value.Time
 	}
-	if value, ok := values[2].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field startAt", values[2])
+	if value, ok := values[2].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field name", values[2])
+	} else if value.Valid {
+		r.Name = value.String
+	}
+	if value, ok := values[3].(*sql.NullTime); !ok {
+		return fmt.Errorf("unexpected type %T for field startAt", values[3])
 	} else if value.Valid {
 		r.StartAt = value.Time
 	}
-	if value, ok := values[3].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field startedAt", values[3])
+	if value, ok := values[4].(*sql.NullTime); !ok {
+		return fmt.Errorf("unexpected type %T for field startedAt", values[4])
 	} else if value.Valid {
 		r.StartedAt = value.Time
 	}
-	if value, ok := values[4].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field endedAt", values[4])
+	if value, ok := values[5].(*sql.NullTime); !ok {
+		return fmt.Errorf("unexpected type %T for field endedAt", values[5])
 	} else if value.Valid {
 		r.EndedAt = value.Time
 	}
-	if value, ok := values[5].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field error", values[5])
+	if value, ok := values[6].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field error", values[6])
 	} else if value.Valid {
 		r.Error = value.String
 	}
 	return nil
+}
+
+// QueryProcedure queries the procedure edge of the Run.
+func (r *Run) QueryProcedure() *ProcedureQuery {
+	return (&RunClient{config: r.config}).QueryProcedure(r)
 }
 
 // Update returns a builder for updating this Run.
@@ -115,6 +155,8 @@ func (r *Run) String() string {
 	builder.WriteString(r.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", updatedAt=")
 	builder.WriteString(r.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", name=")
+	builder.WriteString(r.Name)
 	builder.WriteString(", startAt=")
 	builder.WriteString(r.StartAt.Format(time.ANSIC))
 	builder.WriteString(", startedAt=")

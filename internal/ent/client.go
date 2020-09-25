@@ -380,6 +380,22 @@ func (c *ProcedureClient) QueryOwner(pr *Procedure) *AdminQuery {
 	return query
 }
 
+// QueryRun queries the run edge of a Procedure.
+func (c *ProcedureClient) QueryRun(pr *Procedure) *RunQuery {
+	query := &RunQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(procedure.Table, procedure.FieldID, id),
+			sqlgraph.To(run.Table, run.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, procedure.RunTable, procedure.RunColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ProcedureClient) Hooks() []Hook {
 	return c.hooks.Procedure
@@ -586,6 +602,22 @@ func (c *RunClient) GetX(ctx context.Context, id string) *Run {
 		panic(err)
 	}
 	return r
+}
+
+// QueryProcedure queries the procedure edge of a Run.
+func (c *RunClient) QueryProcedure(r *Run) *ProcedureQuery {
+	query := &ProcedureQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(run.Table, run.FieldID, id),
+			sqlgraph.To(procedure.Table, procedure.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, run.ProcedureTable, run.ProcedureColumn),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

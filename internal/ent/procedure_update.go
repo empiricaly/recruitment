@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
+	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -121,6 +123,17 @@ func (pu *ProcedureUpdate) SetOwner(a *Admin) *ProcedureUpdate {
 	return pu.SetOwnerID(a.ID)
 }
 
+// SetRunID sets the run edge to Run by id.
+func (pu *ProcedureUpdate) SetRunID(id string) *ProcedureUpdate {
+	pu.mutation.SetRunID(id)
+	return pu
+}
+
+// SetRun sets the run edge to Run.
+func (pu *ProcedureUpdate) SetRun(r *Run) *ProcedureUpdate {
+	return pu.SetRunID(r.ID)
+}
+
 // Mutation returns the ProcedureMutation object of the builder.
 func (pu *ProcedureUpdate) Mutation() *ProcedureMutation {
 	return pu.mutation
@@ -135,6 +148,12 @@ func (pu *ProcedureUpdate) ClearProject() *ProcedureUpdate {
 // ClearOwner clears the owner edge to Admin.
 func (pu *ProcedureUpdate) ClearOwner() *ProcedureUpdate {
 	pu.mutation.ClearOwner()
+	return pu
+}
+
+// ClearRun clears the run edge to Run.
+func (pu *ProcedureUpdate) ClearRun() *ProcedureUpdate {
+	pu.mutation.ClearRun()
 	return pu
 }
 
@@ -155,6 +174,9 @@ func (pu *ProcedureUpdate) Save(ctx context.Context) (int, error) {
 		}
 	}
 
+	if _, ok := pu.mutation.RunID(); pu.mutation.RunCleared() && !ok {
+		return 0, errors.New("ent: clearing a unique edge \"run\"")
+	}
 	var (
 		err      error
 		affected int
@@ -334,6 +356,41 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if pu.mutation.RunCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   procedure.RunTable,
+			Columns: []string{procedure.RunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RunIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   procedure.RunTable,
+			Columns: []string{procedure.RunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{procedure.Label}
@@ -443,6 +500,17 @@ func (puo *ProcedureUpdateOne) SetOwner(a *Admin) *ProcedureUpdateOne {
 	return puo.SetOwnerID(a.ID)
 }
 
+// SetRunID sets the run edge to Run by id.
+func (puo *ProcedureUpdateOne) SetRunID(id string) *ProcedureUpdateOne {
+	puo.mutation.SetRunID(id)
+	return puo
+}
+
+// SetRun sets the run edge to Run.
+func (puo *ProcedureUpdateOne) SetRun(r *Run) *ProcedureUpdateOne {
+	return puo.SetRunID(r.ID)
+}
+
 // Mutation returns the ProcedureMutation object of the builder.
 func (puo *ProcedureUpdateOne) Mutation() *ProcedureMutation {
 	return puo.mutation
@@ -457,6 +525,12 @@ func (puo *ProcedureUpdateOne) ClearProject() *ProcedureUpdateOne {
 // ClearOwner clears the owner edge to Admin.
 func (puo *ProcedureUpdateOne) ClearOwner() *ProcedureUpdateOne {
 	puo.mutation.ClearOwner()
+	return puo
+}
+
+// ClearRun clears the run edge to Run.
+func (puo *ProcedureUpdateOne) ClearRun() *ProcedureUpdateOne {
+	puo.mutation.ClearRun()
 	return puo
 }
 
@@ -477,6 +551,9 @@ func (puo *ProcedureUpdateOne) Save(ctx context.Context) (*Procedure, error) {
 		}
 	}
 
+	if _, ok := puo.mutation.RunID(); puo.mutation.RunCleared() && !ok {
+		return nil, errors.New("ent: clearing a unique edge \"run\"")
+	}
 	var (
 		err  error
 		node *Procedure
@@ -646,6 +723,41 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: admin.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.RunCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   procedure.RunTable,
+			Columns: []string{procedure.RunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RunIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   procedure.RunTable,
+			Columns: []string{procedure.RunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
 				},
 			},
 		}

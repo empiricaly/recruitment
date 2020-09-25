@@ -32,5 +32,9 @@ func (Procedure) Edges() []ent.Edge {
 		edge.From("owner", Admin.Type).
 			Ref("procedures").
 			Unique(),
+		edge.From("run", Run.Type).
+			Ref("procedure").
+			Unique().
+			Required(),
 	}
 }

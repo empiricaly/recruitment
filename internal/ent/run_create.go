@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -48,6 +49,12 @@ func (rc *RunCreate) SetNillableUpdatedAt(t *time.Time) *RunCreate {
 	return rc
 }
 
+// SetName sets the name field.
+func (rc *RunCreate) SetName(s string) *RunCreate {
+	rc.mutation.SetName(s)
+	return rc
+}
+
 // SetStartAt sets the startAt field.
 func (rc *RunCreate) SetStartAt(t time.Time) *RunCreate {
 	rc.mutation.SetStartAt(t)
@@ -76,6 +83,25 @@ func (rc *RunCreate) SetError(s string) *RunCreate {
 func (rc *RunCreate) SetID(s string) *RunCreate {
 	rc.mutation.SetID(s)
 	return rc
+}
+
+// SetProcedureID sets the procedure edge to Procedure by id.
+func (rc *RunCreate) SetProcedureID(id string) *RunCreate {
+	rc.mutation.SetProcedureID(id)
+	return rc
+}
+
+// SetNillableProcedureID sets the procedure edge to Procedure by id if the given value is not nil.
+func (rc *RunCreate) SetNillableProcedureID(id *string) *RunCreate {
+	if id != nil {
+		rc = rc.SetProcedureID(*id)
+	}
+	return rc
+}
+
+// SetProcedure sets the procedure edge to Procedure.
+func (rc *RunCreate) SetProcedure(p *Procedure) *RunCreate {
+	return rc.SetProcedureID(p.ID)
 }
 
 // Mutation returns the RunMutation object of the builder.
@@ -132,6 +158,9 @@ func (rc *RunCreate) preSave() error {
 	if _, ok := rc.mutation.UpdatedAt(); !ok {
 		v := run.DefaultUpdatedAt()
 		rc.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := rc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
 	}
 	if _, ok := rc.mutation.StartAt(); !ok {
 		return &ValidationError{Name: "startAt", err: errors.New("ent: missing required field \"startAt\"")}
@@ -190,6 +219,14 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 		})
 		r.UpdatedAt = value
 	}
+	if value, ok := rc.mutation.Name(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: run.FieldName,
+		})
+		r.Name = value
+	}
 	if value, ok := rc.mutation.StartAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
@@ -221,6 +258,25 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 			Column: run.FieldError,
 		})
 		r.Error = value
+	}
+	if nodes := rc.mutation.ProcedureIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   run.ProcedureTable,
+			Columns: []string{run.ProcedureColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: procedure.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return r, _spec
 }

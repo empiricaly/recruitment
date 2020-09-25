@@ -89,7 +89,7 @@ type Project {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
-  creator: Admin!  @goField(forceResolver: true)
+  creator: Admin! @goField(forceResolver: true)
 
   """
   The Project Identifier is used to label Participants having
@@ -106,17 +106,17 @@ type Project {
   """
   Procedures contained in Project
   """
-  procedures: [Procedure!]!  @goField(forceResolver: true)
+  procedures: [Procedure!]! @goField(forceResolver: true)
 
   """
   Runs contained in Project
   """
-  runs: [Run!]!  @goField(forceResolver: true)
+  runs: [Run!]! @goField(forceResolver: true)
 
   """
   Data returns the custom data that has been set on the Participant.
   """
-  data(keys: [String!]): [Datum!]!  @goField(forceResolver: true)
+  data(keys: [String!]): [Datum!]! @goField(forceResolver: true)
 }
 
 """
@@ -131,17 +131,22 @@ type Run {
   creator: Admin!
 
   """
+  Human friendly name for Run
+  """
+  name: String!
+
+  """
   Procudure this Run corresponds to. When a Run is started, an immutable
   copy of the Procedure is made at that point in time so that further changes to
   the Procedure will not affect the Run.
   """
-  procedure: Procedure!
+  procedure: Procedure! @goField(forceResolver: true)
 
   """
   Status of the Run, indicating if the Run has started, is ongoing, finished, or
   failed.
   """
-  status: Status!
+  status: Status! @goField(forceResolver: true)
 
   """
   StartAt is the time when the Run should start, if it is not manually started.
@@ -162,13 +167,13 @@ type Run {
   Steps are instanciated Steps, corresponding to the Procedure Steps and
   containing the state of process of each Step.
   """
-  steps: [StepRun!]!
+  steps: [StepRun!]! @goField(forceResolver: true)
 
   """
   The current Step at which the Run is, while the Run is on going. Before the
   Run has started and after it is finished, it is null.
   """
-  currentStep: StepRun
+  currentStep: StepRun @goField(forceResolver: true)
 
   """
   Error reason, if the Run failed.
@@ -178,7 +183,7 @@ type Run {
   """
   Data returns the custom data that has been set on the Participants.
   """
-  data(keys: [String!]): [Datum!]!
+  data(keys: [String!]): [Datum!]! @goField(forceResolver: true)
 }
 
 """
@@ -229,7 +234,7 @@ type Procedure {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
-  creator: Admin!  @goField(forceResolver: true)
+  creator: Admin! @goField(forceResolver: true)
 
   """
   Friendly name.
@@ -244,17 +249,17 @@ type Procedure {
   """
   Selection criteria for internal DB participants.
   """
-  internalCriteria: InternalCriteria  @goField(forceResolver: true)
+  internalCriteria: InternalCriteria @goField(forceResolver: true)
 
   """
   Selection criteria for internal DB participants.
   """
-  mturkCriteria: MTurkCriteria  @goField(forceResolver: true)
+  mturkCriteria: MTurkCriteria @goField(forceResolver: true)
 
   """
   Ordered list of Steps in a Procedure.
   """
-  steps: [Step!]!  @goField(forceResolver: true)
+  steps: [Step!]! @goField(forceResolver: true)
 
   """
   Number of participants desired.

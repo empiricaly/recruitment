@@ -656,6 +656,8 @@ type ProcedureMutation struct {
 	clearedproject      bool
 	owner               *string
 	clearedowner        bool
+	run                 *string
+	clearedrun          bool
 	done                bool
 	oldValue            func(context.Context) (*Procedure, error)
 }
@@ -1065,6 +1067,45 @@ func (m *ProcedureMutation) ResetOwner() {
 	m.clearedowner = false
 }
 
+// SetRunID sets the run edge to Run by id.
+func (m *ProcedureMutation) SetRunID(id string) {
+	m.run = &id
+}
+
+// ClearRun clears the run edge to Run.
+func (m *ProcedureMutation) ClearRun() {
+	m.clearedrun = true
+}
+
+// RunCleared returns if the edge run was cleared.
+func (m *ProcedureMutation) RunCleared() bool {
+	return m.clearedrun
+}
+
+// RunID returns the run id in the mutation.
+func (m *ProcedureMutation) RunID() (id string, exists bool) {
+	if m.run != nil {
+		return *m.run, true
+	}
+	return
+}
+
+// RunIDs returns the run ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// RunID instead. It exists only for internal usage by the builders.
+func (m *ProcedureMutation) RunIDs() (ids []string) {
+	if id := m.run; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRun reset all changes of the "run" edge.
+func (m *ProcedureMutation) ResetRun() {
+	m.run = nil
+	m.clearedrun = false
+}
+
 // Op returns the operation name.
 func (m *ProcedureMutation) Op() Op {
 	return m.op
@@ -1280,12 +1321,15 @@ func (m *ProcedureMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *ProcedureMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.project != nil {
 		edges = append(edges, procedure.EdgeProject)
 	}
 	if m.owner != nil {
 		edges = append(edges, procedure.EdgeOwner)
+	}
+	if m.run != nil {
+		edges = append(edges, procedure.EdgeRun)
 	}
 	return edges
 }
@@ -1302,6 +1346,10 @@ func (m *ProcedureMutation) AddedIDs(name string) []ent.Value {
 		if id := m.owner; id != nil {
 			return []ent.Value{*id}
 		}
+	case procedure.EdgeRun:
+		if id := m.run; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
@@ -1309,7 +1357,7 @@ func (m *ProcedureMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *ProcedureMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	return edges
 }
 
@@ -1324,12 +1372,15 @@ func (m *ProcedureMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *ProcedureMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedproject {
 		edges = append(edges, procedure.EdgeProject)
 	}
 	if m.clearedowner {
 		edges = append(edges, procedure.EdgeOwner)
+	}
+	if m.clearedrun {
+		edges = append(edges, procedure.EdgeRun)
 	}
 	return edges
 }
@@ -1342,6 +1393,8 @@ func (m *ProcedureMutation) EdgeCleared(name string) bool {
 		return m.clearedproject
 	case procedure.EdgeOwner:
 		return m.clearedowner
+	case procedure.EdgeRun:
+		return m.clearedrun
 	}
 	return false
 }
@@ -1355,6 +1408,9 @@ func (m *ProcedureMutation) ClearEdge(name string) error {
 		return nil
 	case procedure.EdgeOwner:
 		m.ClearOwner()
+		return nil
+	case procedure.EdgeRun:
+		m.ClearRun()
 		return nil
 	}
 	return fmt.Errorf("unknown Procedure unique edge %s", name)
@@ -1370,6 +1426,9 @@ func (m *ProcedureMutation) ResetEdge(name string) error {
 		return nil
 	case procedure.EdgeOwner:
 		m.ResetOwner()
+		return nil
+	case procedure.EdgeRun:
+		m.ResetRun()
 		return nil
 	}
 	return fmt.Errorf("unknown Procedure edge %s", name)
@@ -1977,18 +2036,21 @@ func (m *ProjectMutation) ResetEdge(name string) error {
 // nodes in the graph.
 type RunMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *string
-	createdAt     *time.Time
-	updatedAt     *time.Time
-	startAt       *time.Time
-	startedAt     *time.Time
-	endedAt       *time.Time
-	error         *string
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Run, error)
+	op               Op
+	typ              string
+	id               *string
+	createdAt        *time.Time
+	updatedAt        *time.Time
+	name             *string
+	startAt          *time.Time
+	startedAt        *time.Time
+	endedAt          *time.Time
+	error            *string
+	clearedFields    map[string]struct{}
+	procedure        *string
+	clearedprocedure bool
+	done             bool
+	oldValue         func(context.Context) (*Run, error)
 }
 
 var _ ent.Mutation = (*RunMutation)(nil)
@@ -2150,6 +2212,43 @@ func (m *RunMutation) ResetUpdatedAt() {
 	m.updatedAt = nil
 }
 
+// SetName sets the name field.
+func (m *RunMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the name value in the mutation.
+func (m *RunMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old name value of the Run.
+// If the Run object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *RunMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldName is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName reset all changes of the "name" field.
+func (m *RunMutation) ResetName() {
+	m.name = nil
+}
+
 // SetStartAt sets the startAt field.
 func (m *RunMutation) SetStartAt(t time.Time) {
 	m.startAt = &t
@@ -2298,6 +2397,45 @@ func (m *RunMutation) ResetError() {
 	m.error = nil
 }
 
+// SetProcedureID sets the procedure edge to Procedure by id.
+func (m *RunMutation) SetProcedureID(id string) {
+	m.procedure = &id
+}
+
+// ClearProcedure clears the procedure edge to Procedure.
+func (m *RunMutation) ClearProcedure() {
+	m.clearedprocedure = true
+}
+
+// ProcedureCleared returns if the edge procedure was cleared.
+func (m *RunMutation) ProcedureCleared() bool {
+	return m.clearedprocedure
+}
+
+// ProcedureID returns the procedure id in the mutation.
+func (m *RunMutation) ProcedureID() (id string, exists bool) {
+	if m.procedure != nil {
+		return *m.procedure, true
+	}
+	return
+}
+
+// ProcedureIDs returns the procedure ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// ProcedureID instead. It exists only for internal usage by the builders.
+func (m *RunMutation) ProcedureIDs() (ids []string) {
+	if id := m.procedure; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProcedure reset all changes of the "procedure" edge.
+func (m *RunMutation) ResetProcedure() {
+	m.procedure = nil
+	m.clearedprocedure = false
+}
+
 // Op returns the operation name.
 func (m *RunMutation) Op() Op {
 	return m.op
@@ -2312,12 +2450,15 @@ func (m *RunMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *RunMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.createdAt != nil {
 		fields = append(fields, run.FieldCreatedAt)
 	}
 	if m.updatedAt != nil {
 		fields = append(fields, run.FieldUpdatedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, run.FieldName)
 	}
 	if m.startAt != nil {
 		fields = append(fields, run.FieldStartAt)
@@ -2343,6 +2484,8 @@ func (m *RunMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case run.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case run.FieldName:
+		return m.Name()
 	case run.FieldStartAt:
 		return m.StartAt()
 	case run.FieldStartedAt:
@@ -2364,6 +2507,8 @@ func (m *RunMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldCreatedAt(ctx)
 	case run.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case run.FieldName:
+		return m.OldName(ctx)
 	case run.FieldStartAt:
 		return m.OldStartAt(ctx)
 	case run.FieldStartedAt:
@@ -2394,6 +2539,13 @@ func (m *RunMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case run.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
 		return nil
 	case run.FieldStartAt:
 		v, ok := value.(time.Time)
@@ -2479,6 +2631,9 @@ func (m *RunMutation) ResetField(name string) error {
 	case run.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
+	case run.FieldName:
+		m.ResetName()
+		return nil
 	case run.FieldStartAt:
 		m.ResetStartAt()
 		return nil
@@ -2498,45 +2653,68 @@ func (m *RunMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *RunMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.procedure != nil {
+		edges = append(edges, run.EdgeProcedure)
+	}
 	return edges
 }
 
 // AddedIDs returns all ids (to other nodes) that were added for
 // the given edge name.
 func (m *RunMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case run.EdgeProcedure:
+		if id := m.procedure; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *RunMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
 // RemovedIDs returns all ids (to other nodes) that were removed for
 // the given edge name.
 func (m *RunMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *RunMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedprocedure {
+		edges = append(edges, run.EdgeProcedure)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean indicates if this edge was
 // cleared in this mutation.
 func (m *RunMutation) EdgeCleared(name string) bool {
+	switch name {
+	case run.EdgeProcedure:
+		return m.clearedprocedure
+	}
 	return false
 }
 
 // ClearEdge clears the value for the given name. It returns an
 // error if the edge name is not defined in the schema.
 func (m *RunMutation) ClearEdge(name string) error {
+	switch name {
+	case run.EdgeProcedure:
+		m.ClearProcedure()
+		return nil
+	}
 	return fmt.Errorf("unknown Run unique edge %s", name)
 }
 
@@ -2544,6 +2722,11 @@ func (m *RunMutation) ClearEdge(name string) error {
 // given edge name. It returns an error if the edge is not
 // defined in the schema.
 func (m *RunMutation) ResetEdge(name string) error {
+	switch name {
+	case run.EdgeProcedure:
+		m.ResetProcedure()
+		return nil
+	}
 	return fmt.Errorf("unknown Run edge %s", name)
 }
 

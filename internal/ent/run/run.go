@@ -15,6 +15,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updatedat field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
 	// FieldStartAt holds the string denoting the startat field in the database.
 	FieldStartAt = "start_at"
 	// FieldStartedAt holds the string denoting the startedat field in the database.
@@ -24,8 +26,18 @@ const (
 	// FieldError holds the string denoting the error field in the database.
 	FieldError = "error"
 
+	// EdgeProcedure holds the string denoting the procedure edge name in mutations.
+	EdgeProcedure = "procedure"
+
 	// Table holds the table name of the run in the database.
 	Table = "runs"
+	// ProcedureTable is the table the holds the procedure relation/edge.
+	ProcedureTable = "procedures"
+	// ProcedureInverseTable is the table name for the Procedure entity.
+	// It exists in this package in order to avoid circular dependency with the "procedure" package.
+	ProcedureInverseTable = "procedures"
+	// ProcedureColumn is the table column denoting the procedure relation/edge.
+	ProcedureColumn = "run_procedure"
 )
 
 // Columns holds all SQL columns for run fields.
@@ -33,6 +45,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldName,
 	FieldStartAt,
 	FieldStartedAt,
 	FieldEndedAt,

@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import { getPath, listen } from "../../lib/routing.js";
+  import { getPath, listen, push, replace as rplc } from "../../lib/routing.js";
 
   export let to;
   export let replace = false;
@@ -12,7 +12,8 @@
 
   const handleNavigate = (e) => {
     e.preventDefault();
-    Router[replace ? "replace" : "push"](to);
+    const fnc = replace ? rplc : push;
+    fnc(to);
   };
 
   function computeClassName() {

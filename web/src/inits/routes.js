@@ -1,5 +1,3 @@
-const debug = false;
-import { pathToRegexp } from "path-to-regexp";
 import { init } from "../lib/routing.js";
 import AllParticipants from "../pages/AllParticipants.svelte";
 import Overview from "../pages/Overview.svelte";
@@ -11,26 +9,7 @@ import Runs from "../pages/Runs.svelte";
 import Signin from "../pages/Signin.svelte";
 import Template from "../pages/Template.svelte";
 import Templates from "../pages/Templates.svelte";
-
-const signinPath = "/signin";
-const publicPaths = [signinPath, "/", "/lobby/:id"];
-const publicPathsRegexp = [];
-
-for (const path of publicPaths) {
-  publicPathsRegexp.push(pathToRegexp(path));
-}
-
-function isPublicPath(path) {
-  if (debug) {
-    return true;
-  }
-  for (const regexp of publicPathsRegexp) {
-    if (regexp.test(path)) {
-      return true;
-    }
-  }
-  return false; // yo
-}
+import { signinPath } from "./routeparts.js";
 
 init({
   mode: "history",

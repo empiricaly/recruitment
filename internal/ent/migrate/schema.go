@@ -34,6 +34,7 @@ var (
 		{Name: "adult", Type: field.TypeBool},
 		{Name: "admin_procedures", Type: field.TypeString, Nullable: true},
 		{Name: "project_procedures", Type: field.TypeString, Nullable: true},
+		{Name: "run_procedure", Type: field.TypeString, Unique: true, Nullable: true},
 	}
 	// ProceduresTable holds the schema information for the "procedures" table.
 	ProceduresTable = &schema.Table{
@@ -53,6 +54,13 @@ var (
 				Columns: []*schema.Column{ProceduresColumns[8]},
 
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:  "procedures_runs_procedure",
+				Columns: []*schema.Column{ProceduresColumns[9]},
+
+				RefColumns: []*schema.Column{RunsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -86,6 +94,7 @@ var (
 		{Name: "id", Type: field.TypeString},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
 		{Name: "start_at", Type: field.TypeTime},
 		{Name: "started_at", Type: field.TypeTime},
 		{Name: "ended_at", Type: field.TypeTime},
@@ -125,5 +134,6 @@ var (
 func init() {
 	ProceduresTable.ForeignKeys[0].RefTable = AdminsTable
 	ProceduresTable.ForeignKeys[1].RefTable = ProjectsTable
+	ProceduresTable.ForeignKeys[2].RefTable = RunsTable
 	ProjectsTable.ForeignKeys[0].RefTable = AdminsTable
 }

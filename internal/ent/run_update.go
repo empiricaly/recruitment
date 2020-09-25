@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
+	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -31,6 +32,12 @@ func (ru *RunUpdate) Where(ps ...predicate.Run) *RunUpdate {
 // SetUpdatedAt sets the updatedAt field.
 func (ru *RunUpdate) SetUpdatedAt(t time.Time) *RunUpdate {
 	ru.mutation.SetUpdatedAt(t)
+	return ru
+}
+
+// SetName sets the name field.
+func (ru *RunUpdate) SetName(s string) *RunUpdate {
+	ru.mutation.SetName(s)
 	return ru
 }
 
@@ -58,9 +65,34 @@ func (ru *RunUpdate) SetError(s string) *RunUpdate {
 	return ru
 }
 
+// SetProcedureID sets the procedure edge to Procedure by id.
+func (ru *RunUpdate) SetProcedureID(id string) *RunUpdate {
+	ru.mutation.SetProcedureID(id)
+	return ru
+}
+
+// SetNillableProcedureID sets the procedure edge to Procedure by id if the given value is not nil.
+func (ru *RunUpdate) SetNillableProcedureID(id *string) *RunUpdate {
+	if id != nil {
+		ru = ru.SetProcedureID(*id)
+	}
+	return ru
+}
+
+// SetProcedure sets the procedure edge to Procedure.
+func (ru *RunUpdate) SetProcedure(p *Procedure) *RunUpdate {
+	return ru.SetProcedureID(p.ID)
+}
+
 // Mutation returns the RunMutation object of the builder.
 func (ru *RunUpdate) Mutation() *RunMutation {
 	return ru.mutation
+}
+
+// ClearProcedure clears the procedure edge to Procedure.
+func (ru *RunUpdate) ClearProcedure() *RunUpdate {
+	ru.mutation.ClearProcedure()
+	return ru
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
@@ -69,6 +101,7 @@ func (ru *RunUpdate) Save(ctx context.Context) (int, error) {
 		v := run.UpdateDefaultUpdatedAt()
 		ru.mutation.SetUpdatedAt(v)
 	}
+
 	var (
 		err      error
 		affected int
@@ -143,6 +176,13 @@ func (ru *RunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: run.FieldUpdatedAt,
 		})
 	}
+	if value, ok := ru.mutation.Name(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: run.FieldName,
+		})
+	}
 	if value, ok := ru.mutation.StartAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
@@ -171,6 +211,41 @@ func (ru *RunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: run.FieldError,
 		})
 	}
+	if ru.mutation.ProcedureCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   run.ProcedureTable,
+			Columns: []string{run.ProcedureColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: procedure.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.ProcedureIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   run.ProcedureTable,
+			Columns: []string{run.ProcedureColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: procedure.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{run.Label}
@@ -192,6 +267,12 @@ type RunUpdateOne struct {
 // SetUpdatedAt sets the updatedAt field.
 func (ruo *RunUpdateOne) SetUpdatedAt(t time.Time) *RunUpdateOne {
 	ruo.mutation.SetUpdatedAt(t)
+	return ruo
+}
+
+// SetName sets the name field.
+func (ruo *RunUpdateOne) SetName(s string) *RunUpdateOne {
+	ruo.mutation.SetName(s)
 	return ruo
 }
 
@@ -219,9 +300,34 @@ func (ruo *RunUpdateOne) SetError(s string) *RunUpdateOne {
 	return ruo
 }
 
+// SetProcedureID sets the procedure edge to Procedure by id.
+func (ruo *RunUpdateOne) SetProcedureID(id string) *RunUpdateOne {
+	ruo.mutation.SetProcedureID(id)
+	return ruo
+}
+
+// SetNillableProcedureID sets the procedure edge to Procedure by id if the given value is not nil.
+func (ruo *RunUpdateOne) SetNillableProcedureID(id *string) *RunUpdateOne {
+	if id != nil {
+		ruo = ruo.SetProcedureID(*id)
+	}
+	return ruo
+}
+
+// SetProcedure sets the procedure edge to Procedure.
+func (ruo *RunUpdateOne) SetProcedure(p *Procedure) *RunUpdateOne {
+	return ruo.SetProcedureID(p.ID)
+}
+
 // Mutation returns the RunMutation object of the builder.
 func (ruo *RunUpdateOne) Mutation() *RunMutation {
 	return ruo.mutation
+}
+
+// ClearProcedure clears the procedure edge to Procedure.
+func (ruo *RunUpdateOne) ClearProcedure() *RunUpdateOne {
+	ruo.mutation.ClearProcedure()
+	return ruo
 }
 
 // Save executes the query and returns the updated entity.
@@ -230,6 +336,7 @@ func (ruo *RunUpdateOne) Save(ctx context.Context) (*Run, error) {
 		v := run.UpdateDefaultUpdatedAt()
 		ruo.mutation.SetUpdatedAt(v)
 	}
+
 	var (
 		err  error
 		node *Run
@@ -302,6 +409,13 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 			Column: run.FieldUpdatedAt,
 		})
 	}
+	if value, ok := ruo.mutation.Name(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: run.FieldName,
+		})
+	}
 	if value, ok := ruo.mutation.StartAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
@@ -329,6 +443,41 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 			Value:  value,
 			Column: run.FieldError,
 		})
+	}
+	if ruo.mutation.ProcedureCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   run.ProcedureTable,
+			Columns: []string{run.ProcedureColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: procedure.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.ProcedureIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   run.ProcedureTable,
+			Columns: []string{run.ProcedureColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: procedure.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	r = &Run{config: ruo.config}
 	_spec.Assign = r.assignValues

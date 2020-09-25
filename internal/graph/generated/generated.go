@@ -250,6 +250,7 @@ type ComplexityRoot struct {
 		EndedAt     func(childComplexity int) int
 		Error       func(childComplexity int) int
 		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
 		Procedure   func(childComplexity int) int
 		StartAt     func(childComplexity int) int
 		StartedAt   func(childComplexity int) int
@@ -326,6 +327,7 @@ type QueryResolver interface {
 }
 type RunResolver interface {
 	Creator(ctx context.Context, obj *ent.Run) (*ent.Admin, error)
+
 	Procedure(ctx context.Context, obj *ent.Run) (*ent.Procedure, error)
 	Status(ctx context.Context, obj *ent.Run) (model.Status, error)
 
@@ -1337,6 +1339,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Run.ID(childComplexity), true
 
+	case "Run.name":
+		if e.complexity.Run.Name == nil {
+			break
+		}
+
+		return e.complexity.Run.Name(childComplexity), true
+
 	case "Run.procedure":
 		if e.complexity.Run.Procedure == nil {
 			break
@@ -1671,7 +1680,7 @@ type Project {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
-  creator: Admin!  @goField(forceResolver: true)
+  creator: Admin! @goField(forceResolver: true)
 
   """
   The Project Identifier is used to label Participants having
@@ -1688,17 +1697,17 @@ type Project {
   """
   Procedures contained in Project
   """
-  procedures: [Procedure!]!  @goField(forceResolver: true)
+  procedures: [Procedure!]! @goField(forceResolver: true)
 
   """
   Runs contained in Project
   """
-  runs: [Run!]!  @goField(forceResolver: true)
+  runs: [Run!]! @goField(forceResolver: true)
 
   """
   Data returns the custom data that has been set on the Participant.
   """
-  data(keys: [String!]): [Datum!]!  @goField(forceResolver: true)
+  data(keys: [String!]): [Datum!]! @goField(forceResolver: true)
 }
 
 """
@@ -1713,17 +1722,22 @@ type Run {
   creator: Admin!
 
   """
+  Human friendly name for Run
+  """
+  name: String!
+
+  """
   Procudure this Run corresponds to. When a Run is started, an immutable
   copy of the Procedure is made at that point in time so that further changes to
   the Procedure will not affect the Run.
   """
-  procedure: Procedure!
+  procedure: Procedure! @goField(forceResolver: true)
 
   """
   Status of the Run, indicating if the Run has started, is ongoing, finished, or
   failed.
   """
-  status: Status!
+  status: Status! @goField(forceResolver: true)
 
   """
   StartAt is the time when the Run should start, if it is not manually started.
@@ -1744,13 +1758,13 @@ type Run {
   Steps are instanciated Steps, corresponding to the Procedure Steps and
   containing the state of process of each Step.
   """
-  steps: [StepRun!]!
+  steps: [StepRun!]! @goField(forceResolver: true)
 
   """
   The current Step at which the Run is, while the Run is on going. Before the
   Run has started and after it is finished, it is null.
   """
-  currentStep: StepRun
+  currentStep: StepRun @goField(forceResolver: true)
 
   """
   Error reason, if the Run failed.
@@ -1760,7 +1774,7 @@ type Run {
   """
   Data returns the custom data that has been set on the Participants.
   """
-  data(keys: [String!]): [Datum!]!
+  data(keys: [String!]): [Datum!]! @goField(forceResolver: true)
 }
 
 """
@@ -1811,7 +1825,7 @@ type Procedure {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
-  creator: Admin!  @goField(forceResolver: true)
+  creator: Admin! @goField(forceResolver: true)
 
   """
   Friendly name.
@@ -1826,17 +1840,17 @@ type Procedure {
   """
   Selection criteria for internal DB participants.
   """
-  internalCriteria: InternalCriteria  @goField(forceResolver: true)
+  internalCriteria: InternalCriteria @goField(forceResolver: true)
 
   """
   Selection criteria for internal DB participants.
   """
-  mturkCriteria: MTurkCriteria  @goField(forceResolver: true)
+  mturkCriteria: MTurkCriteria @goField(forceResolver: true)
 
   """
   Ordered list of Steps in a Procedure.
   """
-  steps: [Step!]!  @goField(forceResolver: true)
+  steps: [Step!]! @goField(forceResolver: true)
 
   """
   Number of participants desired.
@@ -7782,6 +7796,40 @@ func (ec *executionContext) _Run_creator(ctx context.Context, field graphql.Coll
 	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐAdmin(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Run_name(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Run",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Run_procedure(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -11593,6 +11641,11 @@ func (ec *executionContext) _Run(ctx context.Context, sel ast.SelectionSet, obj 
 				}
 				return res
 			})
+		case "name":
+			out.Values[i] = ec._Run_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "procedure":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

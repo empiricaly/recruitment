@@ -11,6 +11,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
+	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
@@ -134,6 +135,17 @@ func (pc *ProcedureCreate) SetOwner(a *Admin) *ProcedureCreate {
 	return pc.SetOwnerID(a.ID)
 }
 
+// SetRunID sets the run edge to Run by id.
+func (pc *ProcedureCreate) SetRunID(id string) *ProcedureCreate {
+	pc.mutation.SetRunID(id)
+	return pc
+}
+
+// SetRun sets the run edge to Run.
+func (pc *ProcedureCreate) SetRun(r *Run) *ProcedureCreate {
+	return pc.SetRunID(r.ID)
+}
+
 // Mutation returns the ProcedureMutation object of the builder.
 func (pc *ProcedureCreate) Mutation() *ProcedureMutation {
 	return pc.mutation
@@ -212,6 +224,9 @@ func (pc *ProcedureCreate) preSave() error {
 	if _, ok := pc.mutation.Adult(); !ok {
 		v := procedure.DefaultAdult
 		pc.mutation.SetAdult(v)
+	}
+	if _, ok := pc.mutation.RunID(); !ok {
+		return &ValidationError{Name: "run", err: errors.New("ent: missing required edge \"run\"")}
 	}
 	return nil
 }
@@ -320,6 +335,25 @@ func (pc *ProcedureCreate) createSpec() (*Procedure, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: admin.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.RunIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   procedure.RunTable,
+			Columns: []string{procedure.RunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
 				},
 			},
 		}

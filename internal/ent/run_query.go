@@ -4,11 +4,13 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
+	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -23,6 +25,8 @@ type RunQuery struct {
 	order      []OrderFunc
 	unique     []string
 	predicates []predicate.Run
+	// eager-loading edges.
+	withProcedure *ProcedureQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -50,6 +54,24 @@ func (rq *RunQuery) Offset(offset int) *RunQuery {
 func (rq *RunQuery) Order(o ...OrderFunc) *RunQuery {
 	rq.order = append(rq.order, o...)
 	return rq
+}
+
+// QueryProcedure chains the current query on the procedure edge.
+func (rq *RunQuery) QueryProcedure() *ProcedureQuery {
+	query := &ProcedureQuery{config: rq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(run.Table, run.FieldID, rq.sqlQuery()),
+			sqlgraph.To(procedure.Table, procedure.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, run.ProcedureTable, run.ProcedureColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Run entity in the query. Returns *NotFoundError when no run was found.
@@ -231,6 +253,17 @@ func (rq *RunQuery) Clone() *RunQuery {
 	}
 }
 
+//  WithProcedure tells the query-builder to eager-loads the nodes that are connected to
+// the "procedure" edge. The optional arguments used to configure the query builder of the edge.
+func (rq *RunQuery) WithProcedure(opts ...func(*ProcedureQuery)) *RunQuery {
+	query := &ProcedureQuery{config: rq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withProcedure = query
+	return rq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -295,8 +328,11 @@ func (rq *RunQuery) prepareQuery(ctx context.Context) error {
 
 func (rq *RunQuery) sqlAll(ctx context.Context) ([]*Run, error) {
 	var (
-		nodes = []*Run{}
-		_spec = rq.querySpec()
+		nodes       = []*Run{}
+		_spec       = rq.querySpec()
+		loadedTypes = [1]bool{
+			rq.withProcedure != nil,
+		}
 	)
 	_spec.ScanValues = func() []interface{} {
 		node := &Run{config: rq.config}
@@ -309,6 +345,7 @@ func (rq *RunQuery) sqlAll(ctx context.Context) ([]*Run, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(values...)
 	}
 	if err := sqlgraph.QueryNodes(ctx, rq.driver, _spec); err != nil {
@@ -317,6 +354,35 @@ func (rq *RunQuery) sqlAll(ctx context.Context) ([]*Run, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := rq.withProcedure; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[string]*Run)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.Procedure(func(s *sql.Selector) {
+			s.Where(sql.InValues(run.ProcedureColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.run_procedure
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "run_procedure" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "run_procedure" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Procedure = n
+		}
+	}
+
 	return nodes, nil
 }
 

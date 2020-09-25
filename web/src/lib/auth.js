@@ -1,8 +1,9 @@
 import { mutate } from "svelte-apollo";
-import { writable } from "svelte/store";
-import { client } from "../lib/apollo";
-import { AUTH, ME } from "../lib/queries";
-import { getPath, push, replace } from "./routing.js";
+import { get, writable } from "svelte/store";
+import { defaultPath, isPublicPath, signinPath } from "../inits/routeparts.js";
+import { client } from "../lib/apollo.js";
+import { AUTH, ME } from "../lib/queries.js";
+import { getPath, listen, replace } from "./routing.js";
 
 const { subscribe: subscribeLoggingIn, set: setLoggingIn } = writable(true);
 export const loggingIn = { subscribe: subscribeLoggingIn, set: setLoggingIn };
@@ -33,28 +34,33 @@ let initialPath = document.location.pathname;
 subscribeToken(async (token) => {
   console.log("token:", token);
   if (token) {
-    // query user
-    // if fail to get user => token invalid?
-    const meResp = await client.query({ query: ME });
-    const me = meResp.data.me;
-    console.log("me", me);
-    setUser(me.__typename !== "Admin" ? null : me);
-    push(initialPath !== getPath() ? initialPath : "/projects");
+    try {
+      // query user
+      // if fail to get user => token invalid?
+      const meResp = await client.query({ query: ME });
+      const me = meResp.data.me;
+      console.log("me", me);
+      setUser(me.__typename !== "Admin" ? null : me);
+      authRedirect();
+    } catch (error) {
+      console.log(error);
+      localStorage.removeItem("token");
+      setToken(null);
+    }
   } else {
     setUser(null);
-    replace("/signin");
+    authRedirect();
   }
   setLoggingIn(false);
 });
 
-// function authRedirect() {
-//   const path = getPath();
-//   const u = get(user);
-//   if (u && path === signinPath) {
-//     replace(initialPath !== path ? initialPath : "/projects");
-//   } else if (!u && !isPublicPath(path)) {
-//     replace(signinPath);
-//   }
-// }
-// listen(authRedirect);
-// authRedirect();
+function authRedirect() {
+  const path = getPath();
+  const loggedIn = get(user);
+  if (loggedIn && path === signinPath) {
+    replace(initialPath !== path ? initialPath : defaultPath);
+  } else if (!loggedIn && !isPublicPath(path)) {
+    replace(signinPath);
+  }
+}
+listen(authRedirect);

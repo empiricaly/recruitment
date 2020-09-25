@@ -10,6 +10,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/empiricaly/recruitment/internal/admin"
 	"github.com/empiricaly/recruitment/internal/graph"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
@@ -64,7 +65,8 @@ func (s *Server) startGraphqlServer() {
 	})
 	gqlsrv.Use(extension.Introspection{})
 
-	router.Handle("/play", playground.Handler("Empirica Recruitment GraphQL", "/query"))
+	router.Handle("/*", c.Handler(http.FileServer(rice.MustFindBox("../../web/public").HTTPBox())))
+	router.Handle("/play", c.Handler(playground.Handler("Empirica Recruitment GraphQL", "/query")))
 	router.Handle("/query", c.Handler(gqlsrv))
 
 	srv := &http.Server{

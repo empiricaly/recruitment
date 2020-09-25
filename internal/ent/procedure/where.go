@@ -655,6 +655,34 @@ func HasOwnerWith(preds ...predicate.Admin) predicate.Procedure {
 	})
 }
 
+// HasRun applies the HasEdge predicate on the "run" edge.
+func HasRun() predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RunTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, RunTable, RunColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRunWith applies the HasEdge predicate on the "run" edge with a given conditions (other predicates).
+func HasRunWith(preds ...predicate.Run) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RunInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, RunTable, RunColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups list of predicates with the AND operator between them.
 func And(predicates ...predicate.Procedure) predicate.Procedure {
 	return predicate.Procedure(func(s *sql.Selector) {

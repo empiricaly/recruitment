@@ -28,6 +28,8 @@ const (
 	EdgeProject = "project"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
 	EdgeOwner = "owner"
+	// EdgeRun holds the string denoting the run edge name in mutations.
+	EdgeRun = "run"
 
 	// Table holds the table name of the procedure in the database.
 	Table = "procedures"
@@ -45,6 +47,13 @@ const (
 	OwnerInverseTable = "admins"
 	// OwnerColumn is the table column denoting the owner relation/edge.
 	OwnerColumn = "admin_procedures"
+	// RunTable is the table the holds the run relation/edge.
+	RunTable = "procedures"
+	// RunInverseTable is the table name for the Run entity.
+	// It exists in this package in order to avoid circular dependency with the "run" package.
+	RunInverseTable = "runs"
+	// RunColumn is the table column denoting the run relation/edge.
+	RunColumn = "run_procedure"
 )
 
 // Columns holds all SQL columns for procedure fields.
@@ -62,6 +71,7 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"admin_procedures",
 	"project_procedures",
+	"run_procedure",
 }
 
 var (

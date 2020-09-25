@@ -13,7 +13,6 @@ require (
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-sqlite3 v1.14.1
-	github.com/o1egl/paseto v1.0.0
 	github.com/o1egl/paseto/v2 v2.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v0.9.3

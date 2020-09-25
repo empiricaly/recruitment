@@ -10,6 +10,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
+	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/facebook/ent/dialect/sql"
 )
 
@@ -35,6 +36,7 @@ type Procedure struct {
 	Edges              ProcedureEdges `json:"edges"`
 	admin_procedures   *string
 	project_procedures *string
+	run_procedure      *string
 }
 
 // ProcedureEdges holds the relations/edges for other nodes in the graph.
@@ -43,9 +45,11 @@ type ProcedureEdges struct {
 	Project *Project
 	// Owner holds the value of the owner edge.
 	Owner *Admin
+	// Run holds the value of the run edge.
+	Run *Run
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // ProjectOrErr returns the Project value or an error if the edge
@@ -76,6 +80,20 @@ func (e ProcedureEdges) OwnerOrErr() (*Admin, error) {
 	return nil, &NotLoadedError{edge: "owner"}
 }
 
+// RunOrErr returns the Run value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ProcedureEdges) RunOrErr() (*Run, error) {
+	if e.loadedTypes[2] {
+		if e.Run == nil {
+			// The edge run was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: run.Label}
+		}
+		return e.Run, nil
+	}
+	return nil, &NotLoadedError{edge: "run"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Procedure) scanValues() []interface{} {
 	return []interface{}{
@@ -94,6 +112,7 @@ func (*Procedure) fkValues() []interface{} {
 	return []interface{}{
 		&sql.NullString{}, // admin_procedures
 		&sql.NullString{}, // project_procedures
+		&sql.NullString{}, // run_procedure
 	}
 }
 
@@ -153,6 +172,12 @@ func (pr *Procedure) assignValues(values ...interface{}) error {
 			pr.project_procedures = new(string)
 			*pr.project_procedures = value.String
 		}
+		if value, ok := values[2].(*sql.NullString); !ok {
+			return fmt.Errorf("unexpected type %T for field run_procedure", values[2])
+		} else if value.Valid {
+			pr.run_procedure = new(string)
+			*pr.run_procedure = value.String
+		}
 	}
 	return nil
 }
@@ -165,6 +190,11 @@ func (pr *Procedure) QueryProject() *ProjectQuery {
 // QueryOwner queries the owner edge of the Procedure.
 func (pr *Procedure) QueryOwner() *AdminQuery {
 	return (&ProcedureClient{config: pr.config}).QueryOwner(pr)
+}
+
+// QueryRun queries the run edge of the Procedure.
+func (pr *Procedure) QueryRun() *RunQuery {
+	return (&ProcedureClient{config: pr.config}).QueryRun(pr)
 }
 
 // Update returns a builder for updating this Procedure.
