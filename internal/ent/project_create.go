@@ -11,6 +11,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
+	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
@@ -66,6 +67,21 @@ func (pc *ProjectCreate) SetName(s string) *ProjectCreate {
 func (pc *ProjectCreate) SetID(s string) *ProjectCreate {
 	pc.mutation.SetID(s)
 	return pc
+}
+
+// AddRunIDs adds the runs edge to Run by ids.
+func (pc *ProjectCreate) AddRunIDs(ids ...string) *ProjectCreate {
+	pc.mutation.AddRunIDs(ids...)
+	return pc
+}
+
+// AddRuns adds the runs edges to Run.
+func (pc *ProjectCreate) AddRuns(r ...*Run) *ProjectCreate {
+	ids := make([]string, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return pc.AddRunIDs(ids...)
 }
 
 // AddProcedureIDs adds the procedures edge to Procedure by ids.
@@ -223,6 +239,25 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 			Column: project.FieldName,
 		})
 		pr.Name = value
+	}
+	if nodes := pc.mutation.RunsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.RunsTable,
+			Columns: []string{project.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := pc.mutation.ProceduresIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

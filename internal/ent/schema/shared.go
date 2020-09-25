@@ -12,3 +12,5 @@ var commonFields = []ent.Field{
 	field.Time("createdAt").Immutable().Default(time.Now),
 	field.Time("updatedAt").Default(time.Now).UpdateDefault(time.Now),
 }
+
+var statusField = field.Enum("status").Values("CREATED", "RUNNING", "PAUSED", "DONE", "TERMINATED", "FAILED")

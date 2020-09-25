@@ -1,61 +1,78 @@
 <script>
-  import dayjs from "dayjs";
-  import RunLine from "../components/runs/RunLine.svelte";
+  import { mutate, query } from "svelte-apollo";
+  import { notify } from "../components/overlays/Notification.svelte";
+  import RunsList from "../components/runs/RunsList.svelte";
   import Layout from "../layouts/Layout.svelte";
-  import { params } from "../lib/routing.js";
+  import { client } from "../lib/apollo";
+  import { CREATE_RUN, GET_RUNS } from "../lib/queries";
+  import { push } from "../lib/routing";
 
-  $: projectID = $params.projectID;
+  $: runs = query(client, { query: GET_RUNS });
+
+  $: console.log(runs);
+
+  async function handleCreate(event) {
+    const { project } = event.detail;
+    console.log("project", project);
+    let notifClose;
+    try {
+      const input = {
+        procedure: {
+          projectID: project.id,
+          name: "New Run",
+          selectionType: "INTERNAL_DB",
+          participantCount: 100,
+          adult: false,
+          mturkCriteria: { qualifications: [] },
+          internalCriteria: {
+            condition: {
+              and: [
+                {
+                  key: "",
+                  comparator: "EQUAL_TO",
+                  values: [],
+                },
+              ],
+            },
+          },
+          steps: [],
+        },
+      };
+
+      console.log(JSON.stringify(input, null, "  "));
+
+      notifClose = notify({
+        title: `Creating new Run`,
+      });
+
+      const result = await mutate(client, {
+        mutation: CREATE_RUN,
+        variables: {
+          input,
+        },
+      });
+      notifClose();
+      notify({
+        success: true,
+        title: `Created new Run successfully`,
+        // body:
+        //   "Something happened on the server, and we could not create a new Run as requested.",
+      });
+
+      push(`/projects/${project.id}/runs/${result.data.createRun.id}`);
+    } catch (error) {
+      console.error(error);
+      notifClose();
+      notify({
+        failed: true,
+        title: `Could not create Template`,
+        body:
+          "Something happened on the server, and we could not create a new Run as requested.",
+      });
+    }
+  }
 </script>
 
-{#if projectID}
-  <Layout title="Runs">
-    <div>
-      <div class="bg-white shadow sm:rounded-md">
-        <ul>
-          <RunLine
-            {projectID}
-            runID="2345678"
-            startAt={dayjs().add(26, 'hour')}
-            name="Speed Dating Pilot 2"
-            index={0}
-            stepCount={2}
-            status="created" />
-          <RunLine
-            {projectID}
-            runID="2345678"
-            startedAt={dayjs().subtract(10, 'minute')}
-            name="Speed Dating Pilot 2"
-            index={1}
-            stepCount={2}
-            status="running" />
-          <RunLine
-            {projectID}
-            runID="2345678"
-            startedAt={dayjs().subtract(122, 'minute')}
-            endedAt={dayjs().subtract(22, 'minute')}
-            name="Speed Dating Pilot 2"
-            index={1}
-            stepCount={2}
-            status="done" />
-          <RunLine
-            {projectID}
-            runID="2345678"
-            endedAt={dayjs().subtract(354, 'minute')}
-            name="Speed Dating Pilot 1"
-            index={1}
-            stepCount={4}
-            status="terminated" />
-          <RunLine
-            {projectID}
-            runID="2345678"
-            startedAt={dayjs().subtract(574, 'minute')}
-            endedAt={dayjs().subtract(570, 'minute')}
-            name="Speed Dating Pilot 1"
-            index={1}
-            stepCount={4}
-            status="failed" />
-        </ul>
-      </div>
-    </div>
-  </Layout>
-{/if}
+<Layout title="Runs" action="New Run" on:click={handleCreate} let:project>
+  <RunsList {project} />
+</Layout>

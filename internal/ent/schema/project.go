@@ -24,6 +24,7 @@ func (Project) Fields() []ent.Field {
 // Edges of the Project.
 func (Project) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.To("runs", Run.Type),
 		edge.To("procedures", Procedure.Type),
 		edge.From("owner", Admin.Type).
 			Ref("projects").

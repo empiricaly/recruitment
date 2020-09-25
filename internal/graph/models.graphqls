@@ -111,7 +111,7 @@ type Project {
   """
   Runs contained in Project
   """
-  runs: [Run!]! @goField(forceResolver: true)
+  runs(runID: ID): [Run!]! @goField(forceResolver: true)
 
   """
   Data returns the custom data that has been set on the Participant.
@@ -244,7 +244,7 @@ type Procedure {
   """
   Determines participant selection type.
   """
-  selectionType: SelectionType
+  selectionType: SelectionType @goField(forceResolver: true)
 
   """
   Selection criteria for internal DB participants.

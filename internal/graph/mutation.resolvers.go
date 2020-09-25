@@ -5,12 +5,13 @@ package graph
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"fmt"
 
 	adminU "github.com/empiricaly/recruitment/internal/admin"
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
 	errs "github.com/pkg/errors"
@@ -43,7 +44,7 @@ func (r *mutationResolver) Auth(ctx context.Context, input *model.AuthInput) (*m
 		}
 	}
 
-	return nil, errors.New("invalid user")
+	return nil, errs.New("invalid user")
 }
 
 func (r *mutationResolver) CreateProject(ctx context.Context, input *model.CreateProjectInput) (*ent.Project, error) {
@@ -71,7 +72,40 @@ func (r *mutationResolver) DuplicateProcedure(ctx context.Context, input *model.
 }
 
 func (r *mutationResolver) CreateRun(ctx context.Context, input *model.CreateRunInput) (*ent.Run, error) {
-	panic(fmt.Errorf("not implemented"))
+	creator := adminU.ForContext(ctx)
+
+	internalCriteria, err := json.Marshal(input.Procedure.InternalCriteria)
+	if err != nil {
+		return nil, errs.Wrap(err, "encode internal criteria")
+	}
+	mturkCriteria, err := json.Marshal(input.Procedure.MturkCriteria)
+	if err != nil {
+		return nil, errs.Wrap(err, "encode mturk criteria")
+	}
+
+	procedure, err := r.Store.Procedure.Create().
+		SetID(xid.New().String()).
+		SetName(input.Procedure.Name).
+		SetSelectionType(input.Procedure.SelectionType.String()).
+		SetParticipantCount(input.Procedure.ParticipantCount).
+		SetInternalCriteria(internalCriteria).
+		SetMturkCriteria(mturkCriteria).
+		SetCreator(creator).
+		SetProjectID(input.Procedure.ProjectID).
+		Save(ctx)
+	if err != nil {
+		return nil, errs.Wrap(err, "create procedure")
+	}
+
+	run, err := r.Store.Run.Create().
+		SetID(xid.New().String()).
+		SetStatus(run.StatusCREATED).
+		SetProcedure(procedure).
+		SetName(input.Procedure.Name).
+		SetProjectID(input.Procedure.ProjectID).
+		Save(ctx)
+
+	return run, err
 }
 
 func (r *mutationResolver) ScheduleRun(ctx context.Context, input *model.ScheduleRunInput) (*ent.Run, error) {

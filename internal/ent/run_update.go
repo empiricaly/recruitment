@@ -4,11 +4,13 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
+	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -41,9 +43,29 @@ func (ru *RunUpdate) SetName(s string) *RunUpdate {
 	return ru
 }
 
+// SetStatus sets the status field.
+func (ru *RunUpdate) SetStatus(r run.Status) *RunUpdate {
+	ru.mutation.SetStatus(r)
+	return ru
+}
+
 // SetStartAt sets the startAt field.
 func (ru *RunUpdate) SetStartAt(t time.Time) *RunUpdate {
 	ru.mutation.SetStartAt(t)
+	return ru
+}
+
+// SetNillableStartAt sets the startAt field if the given value is not nil.
+func (ru *RunUpdate) SetNillableStartAt(t *time.Time) *RunUpdate {
+	if t != nil {
+		ru.SetStartAt(*t)
+	}
+	return ru
+}
+
+// ClearStartAt clears the value of startAt.
+func (ru *RunUpdate) ClearStartAt() *RunUpdate {
+	ru.mutation.ClearStartAt()
 	return ru
 }
 
@@ -53,9 +75,37 @@ func (ru *RunUpdate) SetStartedAt(t time.Time) *RunUpdate {
 	return ru
 }
 
+// SetNillableStartedAt sets the startedAt field if the given value is not nil.
+func (ru *RunUpdate) SetNillableStartedAt(t *time.Time) *RunUpdate {
+	if t != nil {
+		ru.SetStartedAt(*t)
+	}
+	return ru
+}
+
+// ClearStartedAt clears the value of startedAt.
+func (ru *RunUpdate) ClearStartedAt() *RunUpdate {
+	ru.mutation.ClearStartedAt()
+	return ru
+}
+
 // SetEndedAt sets the endedAt field.
 func (ru *RunUpdate) SetEndedAt(t time.Time) *RunUpdate {
 	ru.mutation.SetEndedAt(t)
+	return ru
+}
+
+// SetNillableEndedAt sets the endedAt field if the given value is not nil.
+func (ru *RunUpdate) SetNillableEndedAt(t *time.Time) *RunUpdate {
+	if t != nil {
+		ru.SetEndedAt(*t)
+	}
+	return ru
+}
+
+// ClearEndedAt clears the value of endedAt.
+func (ru *RunUpdate) ClearEndedAt() *RunUpdate {
+	ru.mutation.ClearEndedAt()
 	return ru
 }
 
@@ -65,17 +115,42 @@ func (ru *RunUpdate) SetError(s string) *RunUpdate {
 	return ru
 }
 
-// SetProcedureID sets the procedure edge to Procedure by id.
-func (ru *RunUpdate) SetProcedureID(id string) *RunUpdate {
-	ru.mutation.SetProcedureID(id)
+// SetNillableError sets the error field if the given value is not nil.
+func (ru *RunUpdate) SetNillableError(s *string) *RunUpdate {
+	if s != nil {
+		ru.SetError(*s)
+	}
 	return ru
 }
 
-// SetNillableProcedureID sets the procedure edge to Procedure by id if the given value is not nil.
-func (ru *RunUpdate) SetNillableProcedureID(id *string) *RunUpdate {
+// ClearError clears the value of error.
+func (ru *RunUpdate) ClearError() *RunUpdate {
+	ru.mutation.ClearError()
+	return ru
+}
+
+// SetProjectID sets the project edge to Project by id.
+func (ru *RunUpdate) SetProjectID(id string) *RunUpdate {
+	ru.mutation.SetProjectID(id)
+	return ru
+}
+
+// SetNillableProjectID sets the project edge to Project by id if the given value is not nil.
+func (ru *RunUpdate) SetNillableProjectID(id *string) *RunUpdate {
 	if id != nil {
-		ru = ru.SetProcedureID(*id)
+		ru = ru.SetProjectID(*id)
 	}
+	return ru
+}
+
+// SetProject sets the project edge to Project.
+func (ru *RunUpdate) SetProject(p *Project) *RunUpdate {
+	return ru.SetProjectID(p.ID)
+}
+
+// SetProcedureID sets the procedure edge to Procedure by id.
+func (ru *RunUpdate) SetProcedureID(id string) *RunUpdate {
+	ru.mutation.SetProcedureID(id)
 	return ru
 }
 
@@ -87,6 +162,12 @@ func (ru *RunUpdate) SetProcedure(p *Procedure) *RunUpdate {
 // Mutation returns the RunMutation object of the builder.
 func (ru *RunUpdate) Mutation() *RunMutation {
 	return ru.mutation
+}
+
+// ClearProject clears the project edge to Project.
+func (ru *RunUpdate) ClearProject() *RunUpdate {
+	ru.mutation.ClearProject()
+	return ru
 }
 
 // ClearProcedure clears the procedure edge to Procedure.
@@ -101,7 +182,15 @@ func (ru *RunUpdate) Save(ctx context.Context) (int, error) {
 		v := run.UpdateDefaultUpdatedAt()
 		ru.mutation.SetUpdatedAt(v)
 	}
+	if v, ok := ru.mutation.Status(); ok {
+		if err := run.StatusValidator(v); err != nil {
+			return 0, &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
+		}
+	}
 
+	if _, ok := ru.mutation.ProcedureID(); ru.mutation.ProcedureCleared() && !ok {
+		return 0, errors.New("ent: clearing a unique edge \"procedure\"")
+	}
 	var (
 		err      error
 		affected int
@@ -183,10 +272,23 @@ func (ru *RunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: run.FieldName,
 		})
 	}
+	if value, ok := ru.mutation.Status(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: run.FieldStatus,
+		})
+	}
 	if value, ok := ru.mutation.StartAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
+			Column: run.FieldStartAt,
+		})
+	}
+	if ru.mutation.StartAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
 			Column: run.FieldStartAt,
 		})
 	}
@@ -197,10 +299,22 @@ func (ru *RunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: run.FieldStartedAt,
 		})
 	}
+	if ru.mutation.StartedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Column: run.FieldStartedAt,
+		})
+	}
 	if value, ok := ru.mutation.EndedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
+			Column: run.FieldEndedAt,
+		})
+	}
+	if ru.mutation.EndedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
 			Column: run.FieldEndedAt,
 		})
 	}
@@ -210,6 +324,47 @@ func (ru *RunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Value:  value,
 			Column: run.FieldError,
 		})
+	}
+	if ru.mutation.ErrorCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: run.FieldError,
+		})
+	}
+	if ru.mutation.ProjectCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   run.ProjectTable,
+			Columns: []string{run.ProjectColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: project.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.ProjectIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   run.ProjectTable,
+			Columns: []string{run.ProjectColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: project.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if ru.mutation.ProcedureCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -276,9 +431,29 @@ func (ruo *RunUpdateOne) SetName(s string) *RunUpdateOne {
 	return ruo
 }
 
+// SetStatus sets the status field.
+func (ruo *RunUpdateOne) SetStatus(r run.Status) *RunUpdateOne {
+	ruo.mutation.SetStatus(r)
+	return ruo
+}
+
 // SetStartAt sets the startAt field.
 func (ruo *RunUpdateOne) SetStartAt(t time.Time) *RunUpdateOne {
 	ruo.mutation.SetStartAt(t)
+	return ruo
+}
+
+// SetNillableStartAt sets the startAt field if the given value is not nil.
+func (ruo *RunUpdateOne) SetNillableStartAt(t *time.Time) *RunUpdateOne {
+	if t != nil {
+		ruo.SetStartAt(*t)
+	}
+	return ruo
+}
+
+// ClearStartAt clears the value of startAt.
+func (ruo *RunUpdateOne) ClearStartAt() *RunUpdateOne {
+	ruo.mutation.ClearStartAt()
 	return ruo
 }
 
@@ -288,9 +463,37 @@ func (ruo *RunUpdateOne) SetStartedAt(t time.Time) *RunUpdateOne {
 	return ruo
 }
 
+// SetNillableStartedAt sets the startedAt field if the given value is not nil.
+func (ruo *RunUpdateOne) SetNillableStartedAt(t *time.Time) *RunUpdateOne {
+	if t != nil {
+		ruo.SetStartedAt(*t)
+	}
+	return ruo
+}
+
+// ClearStartedAt clears the value of startedAt.
+func (ruo *RunUpdateOne) ClearStartedAt() *RunUpdateOne {
+	ruo.mutation.ClearStartedAt()
+	return ruo
+}
+
 // SetEndedAt sets the endedAt field.
 func (ruo *RunUpdateOne) SetEndedAt(t time.Time) *RunUpdateOne {
 	ruo.mutation.SetEndedAt(t)
+	return ruo
+}
+
+// SetNillableEndedAt sets the endedAt field if the given value is not nil.
+func (ruo *RunUpdateOne) SetNillableEndedAt(t *time.Time) *RunUpdateOne {
+	if t != nil {
+		ruo.SetEndedAt(*t)
+	}
+	return ruo
+}
+
+// ClearEndedAt clears the value of endedAt.
+func (ruo *RunUpdateOne) ClearEndedAt() *RunUpdateOne {
+	ruo.mutation.ClearEndedAt()
 	return ruo
 }
 
@@ -300,17 +503,42 @@ func (ruo *RunUpdateOne) SetError(s string) *RunUpdateOne {
 	return ruo
 }
 
-// SetProcedureID sets the procedure edge to Procedure by id.
-func (ruo *RunUpdateOne) SetProcedureID(id string) *RunUpdateOne {
-	ruo.mutation.SetProcedureID(id)
+// SetNillableError sets the error field if the given value is not nil.
+func (ruo *RunUpdateOne) SetNillableError(s *string) *RunUpdateOne {
+	if s != nil {
+		ruo.SetError(*s)
+	}
 	return ruo
 }
 
-// SetNillableProcedureID sets the procedure edge to Procedure by id if the given value is not nil.
-func (ruo *RunUpdateOne) SetNillableProcedureID(id *string) *RunUpdateOne {
+// ClearError clears the value of error.
+func (ruo *RunUpdateOne) ClearError() *RunUpdateOne {
+	ruo.mutation.ClearError()
+	return ruo
+}
+
+// SetProjectID sets the project edge to Project by id.
+func (ruo *RunUpdateOne) SetProjectID(id string) *RunUpdateOne {
+	ruo.mutation.SetProjectID(id)
+	return ruo
+}
+
+// SetNillableProjectID sets the project edge to Project by id if the given value is not nil.
+func (ruo *RunUpdateOne) SetNillableProjectID(id *string) *RunUpdateOne {
 	if id != nil {
-		ruo = ruo.SetProcedureID(*id)
+		ruo = ruo.SetProjectID(*id)
 	}
+	return ruo
+}
+
+// SetProject sets the project edge to Project.
+func (ruo *RunUpdateOne) SetProject(p *Project) *RunUpdateOne {
+	return ruo.SetProjectID(p.ID)
+}
+
+// SetProcedureID sets the procedure edge to Procedure by id.
+func (ruo *RunUpdateOne) SetProcedureID(id string) *RunUpdateOne {
+	ruo.mutation.SetProcedureID(id)
 	return ruo
 }
 
@@ -322,6 +550,12 @@ func (ruo *RunUpdateOne) SetProcedure(p *Procedure) *RunUpdateOne {
 // Mutation returns the RunMutation object of the builder.
 func (ruo *RunUpdateOne) Mutation() *RunMutation {
 	return ruo.mutation
+}
+
+// ClearProject clears the project edge to Project.
+func (ruo *RunUpdateOne) ClearProject() *RunUpdateOne {
+	ruo.mutation.ClearProject()
+	return ruo
 }
 
 // ClearProcedure clears the procedure edge to Procedure.
@@ -336,7 +570,15 @@ func (ruo *RunUpdateOne) Save(ctx context.Context) (*Run, error) {
 		v := run.UpdateDefaultUpdatedAt()
 		ruo.mutation.SetUpdatedAt(v)
 	}
+	if v, ok := ruo.mutation.Status(); ok {
+		if err := run.StatusValidator(v); err != nil {
+			return nil, &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
+		}
+	}
 
+	if _, ok := ruo.mutation.ProcedureID(); ruo.mutation.ProcedureCleared() && !ok {
+		return nil, errors.New("ent: clearing a unique edge \"procedure\"")
+	}
 	var (
 		err  error
 		node *Run
@@ -416,10 +658,23 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 			Column: run.FieldName,
 		})
 	}
+	if value, ok := ruo.mutation.Status(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: run.FieldStatus,
+		})
+	}
 	if value, ok := ruo.mutation.StartAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
+			Column: run.FieldStartAt,
+		})
+	}
+	if ruo.mutation.StartAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
 			Column: run.FieldStartAt,
 		})
 	}
@@ -430,10 +685,22 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 			Column: run.FieldStartedAt,
 		})
 	}
+	if ruo.mutation.StartedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Column: run.FieldStartedAt,
+		})
+	}
 	if value, ok := ruo.mutation.EndedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
+			Column: run.FieldEndedAt,
+		})
+	}
+	if ruo.mutation.EndedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
 			Column: run.FieldEndedAt,
 		})
 	}
@@ -443,6 +710,47 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 			Value:  value,
 			Column: run.FieldError,
 		})
+	}
+	if ruo.mutation.ErrorCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: run.FieldError,
+		})
+	}
+	if ruo.mutation.ProjectCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   run.ProjectTable,
+			Columns: []string{run.ProjectColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: project.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.ProjectIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   run.ProjectTable,
+			Columns: []string{run.ProjectColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: project.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if ruo.mutation.ProcedureCleared() {
 		edge := &sqlgraph.EdgeSpec{

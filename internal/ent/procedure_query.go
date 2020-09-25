@@ -28,7 +28,7 @@ type ProcedureQuery struct {
 	predicates []predicate.Procedure
 	// eager-loading edges.
 	withProject *ProjectQuery
-	withOwner   *AdminQuery
+	withCreator *AdminQuery
 	withRun     *RunQuery
 	withFKs     bool
 	// intermediate query (i.e. traversal path).
@@ -78,8 +78,8 @@ func (pq *ProcedureQuery) QueryProject() *ProjectQuery {
 	return query
 }
 
-// QueryOwner chains the current query on the owner edge.
-func (pq *ProcedureQuery) QueryOwner() *AdminQuery {
+// QueryCreator chains the current query on the creator edge.
+func (pq *ProcedureQuery) QueryCreator() *AdminQuery {
 	query := &AdminQuery{config: pq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
@@ -88,7 +88,7 @@ func (pq *ProcedureQuery) QueryOwner() *AdminQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(procedure.Table, procedure.FieldID, pq.sqlQuery()),
 			sqlgraph.To(admin.Table, admin.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, procedure.OwnerTable, procedure.OwnerColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, procedure.CreatorTable, procedure.CreatorColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -304,14 +304,14 @@ func (pq *ProcedureQuery) WithProject(opts ...func(*ProjectQuery)) *ProcedureQue
 	return pq
 }
 
-//  WithOwner tells the query-builder to eager-loads the nodes that are connected to
-// the "owner" edge. The optional arguments used to configure the query builder of the edge.
-func (pq *ProcedureQuery) WithOwner(opts ...func(*AdminQuery)) *ProcedureQuery {
+//  WithCreator tells the query-builder to eager-loads the nodes that are connected to
+// the "creator" edge. The optional arguments used to configure the query builder of the edge.
+func (pq *ProcedureQuery) WithCreator(opts ...func(*AdminQuery)) *ProcedureQuery {
 	query := &AdminQuery{config: pq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	pq.withOwner = query
+	pq.withCreator = query
 	return pq
 }
 
@@ -395,11 +395,11 @@ func (pq *ProcedureQuery) sqlAll(ctx context.Context) ([]*Procedure, error) {
 		_spec       = pq.querySpec()
 		loadedTypes = [3]bool{
 			pq.withProject != nil,
-			pq.withOwner != nil,
+			pq.withCreator != nil,
 			pq.withRun != nil,
 		}
 	)
-	if pq.withProject != nil || pq.withOwner != nil || pq.withRun != nil {
+	if pq.withProject != nil || pq.withCreator != nil || pq.withRun != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -454,7 +454,7 @@ func (pq *ProcedureQuery) sqlAll(ctx context.Context) ([]*Procedure, error) {
 		}
 	}
 
-	if query := pq.withOwner; query != nil {
+	if query := pq.withCreator; query != nil {
 		ids := make([]string, 0, len(nodes))
 		nodeids := make(map[string][]*Procedure)
 		for i := range nodes {
@@ -474,7 +474,7 @@ func (pq *ProcedureQuery) sqlAll(ctx context.Context) ([]*Procedure, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "admin_procedures" returned %v`, n.ID)
 			}
 			for i := range nodes {
-				nodes[i].Edges.Owner = n
+				nodes[i].Edges.Creator = n
 			}
 		}
 	}

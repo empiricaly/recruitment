@@ -19,6 +19,8 @@ func (Procedure) Fields() []ent.Field {
 		field.String("name").MaxLen(255).MinLen(1),
 		field.String("selectionType"),
 		field.Int("participantCount").NonNegative().Default(0),
+		field.Bytes("internalCriteria"),
+		field.Bytes("mturkCriteria"),
 		field.Bool("adult").Default(false),
 	)
 }
@@ -29,12 +31,11 @@ func (Procedure) Edges() []ent.Edge {
 		edge.From("project", Project.Type).
 			Ref("procedures").
 			Unique(),
-		edge.From("owner", Admin.Type).
+		edge.From("creator", Admin.Type).
 			Ref("procedures").
 			Unique(),
 		edge.From("run", Run.Type).
 			Ref("procedure").
-			Unique().
-			Required(),
+			Unique(),
 	}
 }

@@ -1,10 +1,10 @@
 <script>
   import { mutate } from "svelte-apollo";
+  import { notify } from "../components/overlays/Notification.svelte";
+  import TemplateLine from "../components/templates/TemplateLine.svelte";
+  import Layout from "../layouts/Layout.svelte";
   import { client } from "../lib/apollo";
   import { CREATE_PROCEDURE } from "../lib/queries";
-  import Layout from "../layouts/Layout.svelte";
-  import TemplateLine from "../components/templates/TemplateLine.svelte";
-  import { notify } from "../components/overlays/Notification.svelte";
 
   export let params;
 
@@ -55,7 +55,7 @@
   <div class="bg-white shadow sm:rounded-md">
     <ul>
       <TemplateLine
-        projectID={params.projectID}
+        projectID={project.projectID}
         templateID="2345678"
         name="Speed Dating Pilot 2"
         type="internal"
@@ -63,7 +63,7 @@
         runCount={0}
         creator="Nicolas" />
       <TemplateLine
-        projectID={params.projectID}
+        projectID={project.projectID}
         templateID="2345678"
         index="1"
         name="Speed Dating Pilot 2"
@@ -72,7 +72,7 @@
         runCount={0}
         creator="Nicolas" />
       <TemplateLine
-        projectID={params.projectID}
+        projectID={project.projectID}
         templateID="2345678"
         index="2"
         name="Speed Dating Pilot 1"

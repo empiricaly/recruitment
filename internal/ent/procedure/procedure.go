@@ -21,13 +21,17 @@ const (
 	FieldSelectionType = "selection_type"
 	// FieldParticipantCount holds the string denoting the participantcount field in the database.
 	FieldParticipantCount = "participant_count"
+	// FieldInternalCriteria holds the string denoting the internalcriteria field in the database.
+	FieldInternalCriteria = "internal_criteria"
+	// FieldMturkCriteria holds the string denoting the mturkcriteria field in the database.
+	FieldMturkCriteria = "mturk_criteria"
 	// FieldAdult holds the string denoting the adult field in the database.
 	FieldAdult = "adult"
 
 	// EdgeProject holds the string denoting the project edge name in mutations.
 	EdgeProject = "project"
-	// EdgeOwner holds the string denoting the owner edge name in mutations.
-	EdgeOwner = "owner"
+	// EdgeCreator holds the string denoting the creator edge name in mutations.
+	EdgeCreator = "creator"
 	// EdgeRun holds the string denoting the run edge name in mutations.
 	EdgeRun = "run"
 
@@ -40,13 +44,13 @@ const (
 	ProjectInverseTable = "projects"
 	// ProjectColumn is the table column denoting the project relation/edge.
 	ProjectColumn = "project_procedures"
-	// OwnerTable is the table the holds the owner relation/edge.
-	OwnerTable = "procedures"
-	// OwnerInverseTable is the table name for the Admin entity.
+	// CreatorTable is the table the holds the creator relation/edge.
+	CreatorTable = "procedures"
+	// CreatorInverseTable is the table name for the Admin entity.
 	// It exists in this package in order to avoid circular dependency with the "admin" package.
-	OwnerInverseTable = "admins"
-	// OwnerColumn is the table column denoting the owner relation/edge.
-	OwnerColumn = "admin_procedures"
+	CreatorInverseTable = "admins"
+	// CreatorColumn is the table column denoting the creator relation/edge.
+	CreatorColumn = "admin_procedures"
 	// RunTable is the table the holds the run relation/edge.
 	RunTable = "procedures"
 	// RunInverseTable is the table name for the Run entity.
@@ -64,6 +68,8 @@ var Columns = []string{
 	FieldName,
 	FieldSelectionType,
 	FieldParticipantCount,
+	FieldInternalCriteria,
+	FieldMturkCriteria,
 	FieldAdult,
 }
 

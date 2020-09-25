@@ -5,7 +5,6 @@ import { HttpLink } from "@apollo/client/link/http";
 import { WebSocketLink } from "@apollo/client/link/ws";
 import { getMainDefinition } from "@apollo/client/utilities";
 
-
 export const uri =
   process.env.NODE_ENV === "development"
     ? "http://localhost:8880/query"

@@ -1,10 +1,9 @@
 <script>
   import Link from "../base/Link.svelte";
-  import StatusBadge from "../misc/StatusBadge.svelte";
-  import OptionsMenu from "../misc/OptionsMenu.svelte";
-  import CreatedBy from "../misc/CreatedBy.svelte";
-  import RelativeTime from "../misc/RelativeTime.svelte";
   import Duration from "../misc/Duration.svelte";
+  import OptionsMenu from "../misc/OptionsMenu.svelte";
+  import RelativeTime from "../misc/RelativeTime.svelte";
+  import StatusBadge from "../misc/StatusBadge.svelte";
 
   export let index = 0;
   export let projectID;
@@ -73,9 +72,9 @@
                       1h8v2H8V1z" />
                   </svg>
                   <div class="mr-1">
-                    {#if status === 'terminated'}
+                    {#if status === 'TERMINATED'}
                       Canceled
-                    {:else if status === 'failed'}Failed{:else}Finished{/if}
+                    {:else if status === 'FAILED'}Failed{:else}Finished{/if}
                   </div>
                   <RelativeTime time={endedAt} />
                 </div>
@@ -112,7 +111,7 @@
                   <div class="mr-1">Starts</div>
                   <RelativeTime time={startAt} />
                 </div>
-              {:else if status === 'created'}
+              {:else if status === 'CREATED'}
                 <div
                   class="mr-6 flex items-center text-sm leading-5 text-gray-500">
                   Not scheduled
@@ -136,7 +135,6 @@
                   <Duration from={startedAt} to={endedAt} />
                 </div>
               {/if}
-
             </div>
           </div>
         </div>

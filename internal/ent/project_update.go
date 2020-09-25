@@ -11,6 +11,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
+	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -46,6 +47,21 @@ func (pu *ProjectUpdate) SetProjectID(s string) *ProjectUpdate {
 func (pu *ProjectUpdate) SetName(s string) *ProjectUpdate {
 	pu.mutation.SetName(s)
 	return pu
+}
+
+// AddRunIDs adds the runs edge to Run by ids.
+func (pu *ProjectUpdate) AddRunIDs(ids ...string) *ProjectUpdate {
+	pu.mutation.AddRunIDs(ids...)
+	return pu
+}
+
+// AddRuns adds the runs edges to Run.
+func (pu *ProjectUpdate) AddRuns(r ...*Run) *ProjectUpdate {
+	ids := make([]string, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return pu.AddRunIDs(ids...)
 }
 
 // AddProcedureIDs adds the procedures edge to Procedure by ids.
@@ -85,6 +101,21 @@ func (pu *ProjectUpdate) SetOwner(a *Admin) *ProjectUpdate {
 // Mutation returns the ProjectMutation object of the builder.
 func (pu *ProjectUpdate) Mutation() *ProjectMutation {
 	return pu.mutation
+}
+
+// RemoveRunIDs removes the runs edge to Run by ids.
+func (pu *ProjectUpdate) RemoveRunIDs(ids ...string) *ProjectUpdate {
+	pu.mutation.RemoveRunIDs(ids...)
+	return pu
+}
+
+// RemoveRuns removes runs edges to Run.
+func (pu *ProjectUpdate) RemoveRuns(r ...*Run) *ProjectUpdate {
+	ids := make([]string, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return pu.RemoveRunIDs(ids...)
 }
 
 // RemoveProcedureIDs removes the procedures edge to Procedure by ids.
@@ -203,6 +234,44 @@ func (pu *ProjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: project.FieldName,
 		})
 	}
+	if nodes := pu.mutation.RemovedRunsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.RunsTable,
+			Columns: []string{project.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RunsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.RunsTable,
+			Columns: []string{project.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if nodes := pu.mutation.RemovedProceduresIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -312,6 +381,21 @@ func (puo *ProjectUpdateOne) SetName(s string) *ProjectUpdateOne {
 	return puo
 }
 
+// AddRunIDs adds the runs edge to Run by ids.
+func (puo *ProjectUpdateOne) AddRunIDs(ids ...string) *ProjectUpdateOne {
+	puo.mutation.AddRunIDs(ids...)
+	return puo
+}
+
+// AddRuns adds the runs edges to Run.
+func (puo *ProjectUpdateOne) AddRuns(r ...*Run) *ProjectUpdateOne {
+	ids := make([]string, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return puo.AddRunIDs(ids...)
+}
+
 // AddProcedureIDs adds the procedures edge to Procedure by ids.
 func (puo *ProjectUpdateOne) AddProcedureIDs(ids ...string) *ProjectUpdateOne {
 	puo.mutation.AddProcedureIDs(ids...)
@@ -349,6 +433,21 @@ func (puo *ProjectUpdateOne) SetOwner(a *Admin) *ProjectUpdateOne {
 // Mutation returns the ProjectMutation object of the builder.
 func (puo *ProjectUpdateOne) Mutation() *ProjectMutation {
 	return puo.mutation
+}
+
+// RemoveRunIDs removes the runs edge to Run by ids.
+func (puo *ProjectUpdateOne) RemoveRunIDs(ids ...string) *ProjectUpdateOne {
+	puo.mutation.RemoveRunIDs(ids...)
+	return puo
+}
+
+// RemoveRuns removes runs edges to Run.
+func (puo *ProjectUpdateOne) RemoveRuns(r ...*Run) *ProjectUpdateOne {
+	ids := make([]string, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
+	}
+	return puo.RemoveRunIDs(ids...)
 }
 
 // RemoveProcedureIDs removes the procedures edge to Procedure by ids.
@@ -464,6 +563,44 @@ func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (pr *Project, err erro
 			Value:  value,
 			Column: project.FieldName,
 		})
+	}
+	if nodes := puo.mutation.RemovedRunsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.RunsTable,
+			Columns: []string{project.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RunsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.RunsTable,
+			Columns: []string{project.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if nodes := puo.mutation.RemovedProceduresIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

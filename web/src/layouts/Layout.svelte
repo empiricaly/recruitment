@@ -1,16 +1,16 @@
 <script context="module">
   import { pathToRegexp } from "path-to-regexp";
-import { query } from "svelte-apollo";
-import { quadInOut } from "svelte/easing";
-import { fade,fly } from "svelte/transition";
-import Link from "../components/base/Link.svelte";
-import Loader from "../components/base/Loader.svelte";
-import Logo from "../components/base/Logo.svelte";
-import { client } from "../lib/apollo";
-import { user } from "../lib/auth.js";
-import { GET_PROJECT } from "../lib/queries";
-import { params,path } from "../lib/routing.js";
-import Header from "./Header.svelte";
+  import { query } from "svelte-apollo";
+  import { quadInOut } from "svelte/easing";
+  import { fade, fly } from "svelte/transition";
+  import Link from "../components/base/Link.svelte";
+  import Loader from "../components/base/Loader.svelte";
+  import Logo from "../components/base/Logo.svelte";
+  import { client } from "../lib/apollo";
+  import { user } from "../lib/auth.js";
+  import { GET_PROJECT } from "../lib/queries";
+  import { params, path } from "../lib/routing.js";
+  import Header from "./Header.svelte";
 
   const regexes = {
     overview: pathToRegexp("/projects/:project_id/overview"),
@@ -23,8 +23,6 @@ import Header from "./Header.svelte";
 </script>
 
 <script>
-  
-
   export let title = null;
   export let titleUpdatable = false;
   export let overtitle = null;
@@ -268,6 +266,7 @@ import Header from "./Header.svelte";
         <div class="pt-2 pb-6 md:py-6">
           {#if title}
             <Header
+              project={result.data.project}
               bind:title
               {overtitle}
               {actions}

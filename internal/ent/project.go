@@ -33,19 +33,30 @@ type Project struct {
 
 // ProjectEdges holds the relations/edges for other nodes in the graph.
 type ProjectEdges struct {
+	// Runs holds the value of the runs edge.
+	Runs []*Run
 	// Procedures holds the value of the procedures edge.
 	Procedures []*Procedure
 	// Owner holds the value of the owner edge.
 	Owner *Admin
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
+}
+
+// RunsOrErr returns the Runs value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProjectEdges) RunsOrErr() ([]*Run, error) {
+	if e.loadedTypes[0] {
+		return e.Runs, nil
+	}
+	return nil, &NotLoadedError{edge: "runs"}
 }
 
 // ProceduresOrErr returns the Procedures value or an error if the edge
 // was not loaded in eager-loading.
 func (e ProjectEdges) ProceduresOrErr() ([]*Procedure, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Procedures, nil
 	}
 	return nil, &NotLoadedError{edge: "procedures"}
@@ -54,7 +65,7 @@ func (e ProjectEdges) ProceduresOrErr() ([]*Procedure, error) {
 // OwnerOrErr returns the Owner value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ProjectEdges) OwnerOrErr() (*Admin, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		if e.Owner == nil {
 			// The edge owner was loaded in eager-loading,
 			// but was not found.
@@ -125,6 +136,11 @@ func (pr *Project) assignValues(values ...interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryRuns queries the runs edge of the Project.
+func (pr *Project) QueryRuns() *RunQuery {
+	return (&ProjectClient{config: pr.config}).QueryRuns(pr)
 }
 
 // QueryProcedures queries the procedures edge of the Project.

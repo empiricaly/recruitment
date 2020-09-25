@@ -65,7 +65,7 @@ func init() {
 	// procedure.ParticipantCountValidator is a validator for the "participantCount" field. It is called by the builders before save.
 	procedure.ParticipantCountValidator = procedureDescParticipantCount.Validators[0].(func(int) error)
 	// procedureDescAdult is the schema descriptor for adult field.
-	procedureDescAdult := procedureFields[6].Descriptor()
+	procedureDescAdult := procedureFields[8].Descriptor()
 	// procedure.DefaultAdult holds the default value on creation for the adult field.
 	procedure.DefaultAdult = procedureDescAdult.Default.(bool)
 	projectFields := schema.Project{}.Fields()

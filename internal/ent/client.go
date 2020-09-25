@@ -364,15 +364,15 @@ func (c *ProcedureClient) QueryProject(pr *Procedure) *ProjectQuery {
 	return query
 }
 
-// QueryOwner queries the owner edge of a Procedure.
-func (c *ProcedureClient) QueryOwner(pr *Procedure) *AdminQuery {
+// QueryCreator queries the creator edge of a Procedure.
+func (c *ProcedureClient) QueryCreator(pr *Procedure) *AdminQuery {
 	query := &AdminQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := pr.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(procedure.Table, procedure.FieldID, id),
 			sqlgraph.To(admin.Table, admin.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, procedure.OwnerTable, procedure.OwnerColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, procedure.CreatorTable, procedure.CreatorColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil
@@ -482,6 +482,22 @@ func (c *ProjectClient) GetX(ctx context.Context, id string) *Project {
 		panic(err)
 	}
 	return pr
+}
+
+// QueryRuns queries the runs edge of a Project.
+func (c *ProjectClient) QueryRuns(pr *Project) *RunQuery {
+	query := &RunQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, id),
+			sqlgraph.To(run.Table, run.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, project.RunsTable, project.RunsColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryProcedures queries the procedures edge of a Project.
@@ -602,6 +618,22 @@ func (c *RunClient) GetX(ctx context.Context, id string) *Run {
 		panic(err)
 	}
 	return r
+}
+
+// QueryProject queries the project edge of a Run.
+func (c *RunClient) QueryProject(r *Run) *ProjectQuery {
+	query := &ProjectQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(run.Table, run.FieldID, id),
+			sqlgraph.To(project.Table, project.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, run.ProjectTable, run.ProjectColumn),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryProcedure queries the procedure edge of a Run.

@@ -128,6 +128,20 @@ func ParticipantCount(v int) predicate.Procedure {
 	})
 }
 
+// InternalCriteria applies equality check predicate on the "internalCriteria" field. It's identical to InternalCriteriaEQ.
+func InternalCriteria(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldInternalCriteria), v))
+	})
+}
+
+// MturkCriteria applies equality check predicate on the "mturkCriteria" field. It's identical to MturkCriteriaEQ.
+func MturkCriteria(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldMturkCriteria), v))
+	})
+}
+
 // Adult applies equality check predicate on the "adult" field. It's identical to AdultEQ.
 func Adult(v bool) predicate.Procedure {
 	return predicate.Procedure(func(s *sql.Selector) {
@@ -585,6 +599,158 @@ func ParticipantCountLTE(v int) predicate.Procedure {
 	})
 }
 
+// InternalCriteriaEQ applies the EQ predicate on the "internalCriteria" field.
+func InternalCriteriaEQ(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldInternalCriteria), v))
+	})
+}
+
+// InternalCriteriaNEQ applies the NEQ predicate on the "internalCriteria" field.
+func InternalCriteriaNEQ(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldInternalCriteria), v))
+	})
+}
+
+// InternalCriteriaIn applies the In predicate on the "internalCriteria" field.
+func InternalCriteriaIn(vs ...[]byte) predicate.Procedure {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Procedure(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldInternalCriteria), v...))
+	})
+}
+
+// InternalCriteriaNotIn applies the NotIn predicate on the "internalCriteria" field.
+func InternalCriteriaNotIn(vs ...[]byte) predicate.Procedure {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Procedure(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldInternalCriteria), v...))
+	})
+}
+
+// InternalCriteriaGT applies the GT predicate on the "internalCriteria" field.
+func InternalCriteriaGT(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldInternalCriteria), v))
+	})
+}
+
+// InternalCriteriaGTE applies the GTE predicate on the "internalCriteria" field.
+func InternalCriteriaGTE(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldInternalCriteria), v))
+	})
+}
+
+// InternalCriteriaLT applies the LT predicate on the "internalCriteria" field.
+func InternalCriteriaLT(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldInternalCriteria), v))
+	})
+}
+
+// InternalCriteriaLTE applies the LTE predicate on the "internalCriteria" field.
+func InternalCriteriaLTE(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldInternalCriteria), v))
+	})
+}
+
+// MturkCriteriaEQ applies the EQ predicate on the "mturkCriteria" field.
+func MturkCriteriaEQ(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldMturkCriteria), v))
+	})
+}
+
+// MturkCriteriaNEQ applies the NEQ predicate on the "mturkCriteria" field.
+func MturkCriteriaNEQ(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldMturkCriteria), v))
+	})
+}
+
+// MturkCriteriaIn applies the In predicate on the "mturkCriteria" field.
+func MturkCriteriaIn(vs ...[]byte) predicate.Procedure {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Procedure(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldMturkCriteria), v...))
+	})
+}
+
+// MturkCriteriaNotIn applies the NotIn predicate on the "mturkCriteria" field.
+func MturkCriteriaNotIn(vs ...[]byte) predicate.Procedure {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Procedure(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldMturkCriteria), v...))
+	})
+}
+
+// MturkCriteriaGT applies the GT predicate on the "mturkCriteria" field.
+func MturkCriteriaGT(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldMturkCriteria), v))
+	})
+}
+
+// MturkCriteriaGTE applies the GTE predicate on the "mturkCriteria" field.
+func MturkCriteriaGTE(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldMturkCriteria), v))
+	})
+}
+
+// MturkCriteriaLT applies the LT predicate on the "mturkCriteria" field.
+func MturkCriteriaLT(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldMturkCriteria), v))
+	})
+}
+
+// MturkCriteriaLTE applies the LTE predicate on the "mturkCriteria" field.
+func MturkCriteriaLTE(v []byte) predicate.Procedure {
+	return predicate.Procedure(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldMturkCriteria), v))
+	})
+}
+
 // AdultEQ applies the EQ predicate on the "adult" field.
 func AdultEQ(v bool) predicate.Procedure {
 	return predicate.Procedure(func(s *sql.Selector) {
@@ -627,25 +793,25 @@ func HasProjectWith(preds ...predicate.Project) predicate.Procedure {
 	})
 }
 
-// HasOwner applies the HasEdge predicate on the "owner" edge.
-func HasOwner() predicate.Procedure {
+// HasCreator applies the HasEdge predicate on the "creator" edge.
+func HasCreator() predicate.Procedure {
 	return predicate.Procedure(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(OwnerTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, OwnerTable, OwnerColumn),
+			sqlgraph.To(CreatorTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, CreatorTable, CreatorColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasOwnerWith applies the HasEdge predicate on the "owner" edge with a given conditions (other predicates).
-func HasOwnerWith(preds ...predicate.Admin) predicate.Procedure {
+// HasCreatorWith applies the HasEdge predicate on the "creator" edge with a given conditions (other predicates).
+func HasCreatorWith(preds ...predicate.Admin) predicate.Procedure {
 	return predicate.Procedure(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(OwnerInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, OwnerTable, OwnerColumn),
+			sqlgraph.To(CreatorInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, CreatorTable, CreatorColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

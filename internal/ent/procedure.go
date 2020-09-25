@@ -29,6 +29,10 @@ type Procedure struct {
 	SelectionType string `json:"selectionType,omitempty"`
 	// ParticipantCount holds the value of the "participantCount" field.
 	ParticipantCount int `json:"participantCount,omitempty"`
+	// InternalCriteria holds the value of the "internalCriteria" field.
+	InternalCriteria []byte `json:"internalCriteria,omitempty"`
+	// MturkCriteria holds the value of the "mturkCriteria" field.
+	MturkCriteria []byte `json:"mturkCriteria,omitempty"`
 	// Adult holds the value of the "adult" field.
 	Adult bool `json:"adult,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -43,8 +47,8 @@ type Procedure struct {
 type ProcedureEdges struct {
 	// Project holds the value of the project edge.
 	Project *Project
-	// Owner holds the value of the owner edge.
-	Owner *Admin
+	// Creator holds the value of the creator edge.
+	Creator *Admin
 	// Run holds the value of the run edge.
 	Run *Run
 	// loadedTypes holds the information for reporting if a
@@ -66,18 +70,18 @@ func (e ProcedureEdges) ProjectOrErr() (*Project, error) {
 	return nil, &NotLoadedError{edge: "project"}
 }
 
-// OwnerOrErr returns the Owner value or an error if the edge
+// CreatorOrErr returns the Creator value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e ProcedureEdges) OwnerOrErr() (*Admin, error) {
+func (e ProcedureEdges) CreatorOrErr() (*Admin, error) {
 	if e.loadedTypes[1] {
-		if e.Owner == nil {
-			// The edge owner was loaded in eager-loading,
+		if e.Creator == nil {
+			// The edge creator was loaded in eager-loading,
 			// but was not found.
 			return nil, &NotFoundError{label: admin.Label}
 		}
-		return e.Owner, nil
+		return e.Creator, nil
 	}
-	return nil, &NotLoadedError{edge: "owner"}
+	return nil, &NotLoadedError{edge: "creator"}
 }
 
 // RunOrErr returns the Run value or an error if the edge
@@ -103,6 +107,8 @@ func (*Procedure) scanValues() []interface{} {
 		&sql.NullString{}, // name
 		&sql.NullString{}, // selectionType
 		&sql.NullInt64{},  // participantCount
+		&[]byte{},         // internalCriteria
+		&[]byte{},         // mturkCriteria
 		&sql.NullBool{},   // adult
 	}
 }
@@ -153,12 +159,22 @@ func (pr *Procedure) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		pr.ParticipantCount = int(value.Int64)
 	}
-	if value, ok := values[5].(*sql.NullBool); !ok {
-		return fmt.Errorf("unexpected type %T for field adult", values[5])
+	if value, ok := values[5].(*[]byte); !ok {
+		return fmt.Errorf("unexpected type %T for field internalCriteria", values[5])
+	} else if value != nil {
+		pr.InternalCriteria = *value
+	}
+	if value, ok := values[6].(*[]byte); !ok {
+		return fmt.Errorf("unexpected type %T for field mturkCriteria", values[6])
+	} else if value != nil {
+		pr.MturkCriteria = *value
+	}
+	if value, ok := values[7].(*sql.NullBool); !ok {
+		return fmt.Errorf("unexpected type %T for field adult", values[7])
 	} else if value.Valid {
 		pr.Adult = value.Bool
 	}
-	values = values[6:]
+	values = values[8:]
 	if len(values) == len(procedure.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullString); !ok {
 			return fmt.Errorf("unexpected type %T for field admin_procedures", values[0])
@@ -187,9 +203,9 @@ func (pr *Procedure) QueryProject() *ProjectQuery {
 	return (&ProcedureClient{config: pr.config}).QueryProject(pr)
 }
 
-// QueryOwner queries the owner edge of the Procedure.
-func (pr *Procedure) QueryOwner() *AdminQuery {
-	return (&ProcedureClient{config: pr.config}).QueryOwner(pr)
+// QueryCreator queries the creator edge of the Procedure.
+func (pr *Procedure) QueryCreator() *AdminQuery {
+	return (&ProcedureClient{config: pr.config}).QueryCreator(pr)
 }
 
 // QueryRun queries the run edge of the Procedure.
@@ -230,6 +246,10 @@ func (pr *Procedure) String() string {
 	builder.WriteString(pr.SelectionType)
 	builder.WriteString(", participantCount=")
 	builder.WriteString(fmt.Sprintf("%v", pr.ParticipantCount))
+	builder.WriteString(", internalCriteria=")
+	builder.WriteString(fmt.Sprintf("%v", pr.InternalCriteria))
+	builder.WriteString(", mturkCriteria=")
+	builder.WriteString(fmt.Sprintf("%v", pr.MturkCriteria))
 	builder.WriteString(", adult=")
 	builder.WriteString(fmt.Sprintf("%v", pr.Adult))
 	builder.WriteByte(')')

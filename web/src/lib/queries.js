@@ -28,6 +28,49 @@ export const CREATE_PROCEDURE = gql`
   }
 `;
 
+export const CREATE_RUN = gql`
+  mutation createRun($input: CreateRunInput!) {
+    createRun(input: $input) {
+      id
+    }
+  }
+`;
+
+export const GET_RUNS = gql`
+  query getRuns($projectID: ID!) {
+    project(projectID: $projectID) {
+      runs {
+        id
+        name
+        status
+        startAt
+        startedAt
+        endedAt
+
+        procedure {
+          steps {
+            id
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const GET_RUN = gql`
+  query getRun($projectID: ID!, $runID: ID!) {
+    project(projectID: $projectID) {
+      runs(runID: $runID) {
+        id
+
+        procedure {
+          id
+        }
+      }
+    }
+  }
+`;
+
 export const CREATE_PROJECT = gql`
   mutation createProject($input: CreateProjectInput!) {
     createProject(input: $input) {

@@ -31,6 +31,8 @@ var (
 		{Name: "name", Type: field.TypeString, Size: 255},
 		{Name: "selection_type", Type: field.TypeString},
 		{Name: "participant_count", Type: field.TypeInt},
+		{Name: "internal_criteria", Type: field.TypeBytes},
+		{Name: "mturk_criteria", Type: field.TypeBytes},
 		{Name: "adult", Type: field.TypeBool},
 		{Name: "admin_procedures", Type: field.TypeString, Nullable: true},
 		{Name: "project_procedures", Type: field.TypeString, Nullable: true},
@@ -44,21 +46,21 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "procedures_admins_procedures",
-				Columns: []*schema.Column{ProceduresColumns[7]},
+				Columns: []*schema.Column{ProceduresColumns[9]},
 
 				RefColumns: []*schema.Column{AdminsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:  "procedures_projects_procedures",
-				Columns: []*schema.Column{ProceduresColumns[8]},
+				Columns: []*schema.Column{ProceduresColumns[10]},
 
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:  "procedures_runs_procedure",
-				Columns: []*schema.Column{ProceduresColumns[9]},
+				Columns: []*schema.Column{ProceduresColumns[11]},
 
 				RefColumns: []*schema.Column{RunsColumns[0]},
 				OnDelete:   schema.SetNull,
@@ -95,17 +97,27 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
-		{Name: "start_at", Type: field.TypeTime},
-		{Name: "started_at", Type: field.TypeTime},
-		{Name: "ended_at", Type: field.TypeTime},
-		{Name: "error", Type: field.TypeString},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"CREATED", "RUNNING", "PAUSED", "DONE", "TERMINATED", "FAILED"}},
+		{Name: "start_at", Type: field.TypeTime, Nullable: true},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true},
+		{Name: "ended_at", Type: field.TypeTime, Nullable: true},
+		{Name: "error", Type: field.TypeString, Nullable: true},
+		{Name: "project_runs", Type: field.TypeString, Nullable: true},
 	}
 	// RunsTable holds the schema information for the "runs" table.
 	RunsTable = &schema.Table{
-		Name:        "runs",
-		Columns:     RunsColumns,
-		PrimaryKey:  []*schema.Column{RunsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
+		Name:       "runs",
+		Columns:    RunsColumns,
+		PrimaryKey: []*schema.Column{RunsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "runs_projects_runs",
+				Columns: []*schema.Column{RunsColumns[9]},
+
+				RefColumns: []*schema.Column{ProjectsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// StepRunsColumns holds the columns for the "step_runs" table.
 	StepRunsColumns = []*schema.Column{
@@ -136,4 +148,5 @@ func init() {
 	ProceduresTable.ForeignKeys[1].RefTable = ProjectsTable
 	ProceduresTable.ForeignKeys[2].RefTable = RunsTable
 	ProjectsTable.ForeignKeys[0].RefTable = AdminsTable
+	RunsTable.ForeignKeys[0].RefTable = ProjectsTable
 }

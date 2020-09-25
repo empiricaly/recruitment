@@ -405,6 +405,54 @@ func NameContainsFold(v string) predicate.Run {
 	})
 }
 
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v Status) predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldStatus), v))
+	})
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v Status) predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldStatus), v))
+	})
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...Status) predicate.Run {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Run(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldStatus), v...))
+	})
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...Status) predicate.Run {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Run(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldStatus), v...))
+	})
+}
+
 // StartAtEQ applies the EQ predicate on the "startAt" field.
 func StartAtEQ(v time.Time) predicate.Run {
 	return predicate.Run(func(s *sql.Selector) {
@@ -478,6 +526,20 @@ func StartAtLT(v time.Time) predicate.Run {
 func StartAtLTE(v time.Time) predicate.Run {
 	return predicate.Run(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldStartAt), v))
+	})
+}
+
+// StartAtIsNil applies the IsNil predicate on the "startAt" field.
+func StartAtIsNil() predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldStartAt)))
+	})
+}
+
+// StartAtNotNil applies the NotNil predicate on the "startAt" field.
+func StartAtNotNil() predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldStartAt)))
 	})
 }
 
@@ -557,6 +619,20 @@ func StartedAtLTE(v time.Time) predicate.Run {
 	})
 }
 
+// StartedAtIsNil applies the IsNil predicate on the "startedAt" field.
+func StartedAtIsNil() predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldStartedAt)))
+	})
+}
+
+// StartedAtNotNil applies the NotNil predicate on the "startedAt" field.
+func StartedAtNotNil() predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldStartedAt)))
+	})
+}
+
 // EndedAtEQ applies the EQ predicate on the "endedAt" field.
 func EndedAtEQ(v time.Time) predicate.Run {
 	return predicate.Run(func(s *sql.Selector) {
@@ -630,6 +706,20 @@ func EndedAtLT(v time.Time) predicate.Run {
 func EndedAtLTE(v time.Time) predicate.Run {
 	return predicate.Run(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldEndedAt), v))
+	})
+}
+
+// EndedAtIsNil applies the IsNil predicate on the "endedAt" field.
+func EndedAtIsNil() predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldEndedAt)))
+	})
+}
+
+// EndedAtNotNil applies the NotNil predicate on the "endedAt" field.
+func EndedAtNotNil() predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldEndedAt)))
 	})
 }
 
@@ -730,6 +820,20 @@ func ErrorHasSuffix(v string) predicate.Run {
 	})
 }
 
+// ErrorIsNil applies the IsNil predicate on the "error" field.
+func ErrorIsNil() predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldError)))
+	})
+}
+
+// ErrorNotNil applies the NotNil predicate on the "error" field.
+func ErrorNotNil() predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldError)))
+	})
+}
+
 // ErrorEqualFold applies the EqualFold predicate on the "error" field.
 func ErrorEqualFold(v string) predicate.Run {
 	return predicate.Run(func(s *sql.Selector) {
@@ -741,6 +845,34 @@ func ErrorEqualFold(v string) predicate.Run {
 func ErrorContainsFold(v string) predicate.Run {
 	return predicate.Run(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldError), v))
+	})
+}
+
+// HasProject applies the HasEdge predicate on the "project" edge.
+func HasProject() predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ProjectTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ProjectTable, ProjectColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProjectWith applies the HasEdge predicate on the "project" edge with a given conditions (other predicates).
+func HasProjectWith(preds ...predicate.Project) predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ProjectInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ProjectTable, ProjectColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

@@ -20,6 +20,8 @@ const (
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 
+	// EdgeRuns holds the string denoting the runs edge name in mutations.
+	EdgeRuns = "runs"
 	// EdgeProcedures holds the string denoting the procedures edge name in mutations.
 	EdgeProcedures = "procedures"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
@@ -27,6 +29,13 @@ const (
 
 	// Table holds the table name of the project in the database.
 	Table = "projects"
+	// RunsTable is the table the holds the runs relation/edge.
+	RunsTable = "runs"
+	// RunsInverseTable is the table name for the Run entity.
+	// It exists in this package in order to avoid circular dependency with the "run" package.
+	RunsInverseTable = "runs"
+	// RunsColumn is the table column denoting the runs relation/edge.
+	RunsColumn = "project_runs"
 	// ProceduresTable is the table the holds the procedures relation/edge.
 	ProceduresTable = "procedures"
 	// ProceduresInverseTable is the table name for the Procedure entity.

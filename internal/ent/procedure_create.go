@@ -77,6 +77,18 @@ func (pc *ProcedureCreate) SetNillableParticipantCount(i *int) *ProcedureCreate 
 	return pc
 }
 
+// SetInternalCriteria sets the internalCriteria field.
+func (pc *ProcedureCreate) SetInternalCriteria(b []byte) *ProcedureCreate {
+	pc.mutation.SetInternalCriteria(b)
+	return pc
+}
+
+// SetMturkCriteria sets the mturkCriteria field.
+func (pc *ProcedureCreate) SetMturkCriteria(b []byte) *ProcedureCreate {
+	pc.mutation.SetMturkCriteria(b)
+	return pc
+}
+
 // SetAdult sets the adult field.
 func (pc *ProcedureCreate) SetAdult(b bool) *ProcedureCreate {
 	pc.mutation.SetAdult(b)
@@ -116,28 +128,36 @@ func (pc *ProcedureCreate) SetProject(p *Project) *ProcedureCreate {
 	return pc.SetProjectID(p.ID)
 }
 
-// SetOwnerID sets the owner edge to Admin by id.
-func (pc *ProcedureCreate) SetOwnerID(id string) *ProcedureCreate {
-	pc.mutation.SetOwnerID(id)
+// SetCreatorID sets the creator edge to Admin by id.
+func (pc *ProcedureCreate) SetCreatorID(id string) *ProcedureCreate {
+	pc.mutation.SetCreatorID(id)
 	return pc
 }
 
-// SetNillableOwnerID sets the owner edge to Admin by id if the given value is not nil.
-func (pc *ProcedureCreate) SetNillableOwnerID(id *string) *ProcedureCreate {
+// SetNillableCreatorID sets the creator edge to Admin by id if the given value is not nil.
+func (pc *ProcedureCreate) SetNillableCreatorID(id *string) *ProcedureCreate {
 	if id != nil {
-		pc = pc.SetOwnerID(*id)
+		pc = pc.SetCreatorID(*id)
 	}
 	return pc
 }
 
-// SetOwner sets the owner edge to Admin.
-func (pc *ProcedureCreate) SetOwner(a *Admin) *ProcedureCreate {
-	return pc.SetOwnerID(a.ID)
+// SetCreator sets the creator edge to Admin.
+func (pc *ProcedureCreate) SetCreator(a *Admin) *ProcedureCreate {
+	return pc.SetCreatorID(a.ID)
 }
 
 // SetRunID sets the run edge to Run by id.
 func (pc *ProcedureCreate) SetRunID(id string) *ProcedureCreate {
 	pc.mutation.SetRunID(id)
+	return pc
+}
+
+// SetNillableRunID sets the run edge to Run by id if the given value is not nil.
+func (pc *ProcedureCreate) SetNillableRunID(id *string) *ProcedureCreate {
+	if id != nil {
+		pc = pc.SetRunID(*id)
+	}
 	return pc
 }
 
@@ -221,12 +241,15 @@ func (pc *ProcedureCreate) preSave() error {
 			return &ValidationError{Name: "participantCount", err: fmt.Errorf("ent: validator failed for field \"participantCount\": %w", err)}
 		}
 	}
+	if _, ok := pc.mutation.InternalCriteria(); !ok {
+		return &ValidationError{Name: "internalCriteria", err: errors.New("ent: missing required field \"internalCriteria\"")}
+	}
+	if _, ok := pc.mutation.MturkCriteria(); !ok {
+		return &ValidationError{Name: "mturkCriteria", err: errors.New("ent: missing required field \"mturkCriteria\"")}
+	}
 	if _, ok := pc.mutation.Adult(); !ok {
 		v := procedure.DefaultAdult
 		pc.mutation.SetAdult(v)
-	}
-	if _, ok := pc.mutation.RunID(); !ok {
-		return &ValidationError{Name: "run", err: errors.New("ent: missing required edge \"run\"")}
 	}
 	return nil
 }
@@ -297,6 +320,22 @@ func (pc *ProcedureCreate) createSpec() (*Procedure, *sqlgraph.CreateSpec) {
 		})
 		pr.ParticipantCount = value
 	}
+	if value, ok := pc.mutation.InternalCriteria(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeBytes,
+			Value:  value,
+			Column: procedure.FieldInternalCriteria,
+		})
+		pr.InternalCriteria = value
+	}
+	if value, ok := pc.mutation.MturkCriteria(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeBytes,
+			Value:  value,
+			Column: procedure.FieldMturkCriteria,
+		})
+		pr.MturkCriteria = value
+	}
 	if value, ok := pc.mutation.Adult(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeBool,
@@ -324,12 +363,12 @@ func (pc *ProcedureCreate) createSpec() (*Procedure, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := pc.mutation.OwnerIDs(); len(nodes) > 0 {
+	if nodes := pc.mutation.CreatorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.OwnerTable,
-			Columns: []string{procedure.OwnerColumn},
+			Table:   procedure.CreatorTable,
+			Columns: []string{procedure.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

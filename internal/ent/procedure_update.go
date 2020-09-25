@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -71,6 +70,18 @@ func (pu *ProcedureUpdate) AddParticipantCount(i int) *ProcedureUpdate {
 	return pu
 }
 
+// SetInternalCriteria sets the internalCriteria field.
+func (pu *ProcedureUpdate) SetInternalCriteria(b []byte) *ProcedureUpdate {
+	pu.mutation.SetInternalCriteria(b)
+	return pu
+}
+
+// SetMturkCriteria sets the mturkCriteria field.
+func (pu *ProcedureUpdate) SetMturkCriteria(b []byte) *ProcedureUpdate {
+	pu.mutation.SetMturkCriteria(b)
+	return pu
+}
+
 // SetAdult sets the adult field.
 func (pu *ProcedureUpdate) SetAdult(b bool) *ProcedureUpdate {
 	pu.mutation.SetAdult(b)
@@ -104,28 +115,36 @@ func (pu *ProcedureUpdate) SetProject(p *Project) *ProcedureUpdate {
 	return pu.SetProjectID(p.ID)
 }
 
-// SetOwnerID sets the owner edge to Admin by id.
-func (pu *ProcedureUpdate) SetOwnerID(id string) *ProcedureUpdate {
-	pu.mutation.SetOwnerID(id)
+// SetCreatorID sets the creator edge to Admin by id.
+func (pu *ProcedureUpdate) SetCreatorID(id string) *ProcedureUpdate {
+	pu.mutation.SetCreatorID(id)
 	return pu
 }
 
-// SetNillableOwnerID sets the owner edge to Admin by id if the given value is not nil.
-func (pu *ProcedureUpdate) SetNillableOwnerID(id *string) *ProcedureUpdate {
+// SetNillableCreatorID sets the creator edge to Admin by id if the given value is not nil.
+func (pu *ProcedureUpdate) SetNillableCreatorID(id *string) *ProcedureUpdate {
 	if id != nil {
-		pu = pu.SetOwnerID(*id)
+		pu = pu.SetCreatorID(*id)
 	}
 	return pu
 }
 
-// SetOwner sets the owner edge to Admin.
-func (pu *ProcedureUpdate) SetOwner(a *Admin) *ProcedureUpdate {
-	return pu.SetOwnerID(a.ID)
+// SetCreator sets the creator edge to Admin.
+func (pu *ProcedureUpdate) SetCreator(a *Admin) *ProcedureUpdate {
+	return pu.SetCreatorID(a.ID)
 }
 
 // SetRunID sets the run edge to Run by id.
 func (pu *ProcedureUpdate) SetRunID(id string) *ProcedureUpdate {
 	pu.mutation.SetRunID(id)
+	return pu
+}
+
+// SetNillableRunID sets the run edge to Run by id if the given value is not nil.
+func (pu *ProcedureUpdate) SetNillableRunID(id *string) *ProcedureUpdate {
+	if id != nil {
+		pu = pu.SetRunID(*id)
+	}
 	return pu
 }
 
@@ -145,9 +164,9 @@ func (pu *ProcedureUpdate) ClearProject() *ProcedureUpdate {
 	return pu
 }
 
-// ClearOwner clears the owner edge to Admin.
-func (pu *ProcedureUpdate) ClearOwner() *ProcedureUpdate {
-	pu.mutation.ClearOwner()
+// ClearCreator clears the creator edge to Admin.
+func (pu *ProcedureUpdate) ClearCreator() *ProcedureUpdate {
+	pu.mutation.ClearCreator()
 	return pu
 }
 
@@ -174,9 +193,6 @@ func (pu *ProcedureUpdate) Save(ctx context.Context) (int, error) {
 		}
 	}
 
-	if _, ok := pu.mutation.RunID(); pu.mutation.RunCleared() && !ok {
-		return 0, errors.New("ent: clearing a unique edge \"run\"")
-	}
 	var (
 		err      error
 		affected int
@@ -279,6 +295,20 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: procedure.FieldParticipantCount,
 		})
 	}
+	if value, ok := pu.mutation.InternalCriteria(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBytes,
+			Value:  value,
+			Column: procedure.FieldInternalCriteria,
+		})
+	}
+	if value, ok := pu.mutation.MturkCriteria(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBytes,
+			Value:  value,
+			Column: procedure.FieldMturkCriteria,
+		})
+	}
 	if value, ok := pu.mutation.Adult(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeBool,
@@ -321,12 +351,12 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if pu.mutation.OwnerCleared() {
+	if pu.mutation.CreatorCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.OwnerTable,
-			Columns: []string{procedure.OwnerColumn},
+			Table:   procedure.CreatorTable,
+			Columns: []string{procedure.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -337,12 +367,12 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.OwnerIDs(); len(nodes) > 0 {
+	if nodes := pu.mutation.CreatorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.OwnerTable,
-			Columns: []string{procedure.OwnerColumn},
+			Table:   procedure.CreatorTable,
+			Columns: []string{procedure.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -448,6 +478,18 @@ func (puo *ProcedureUpdateOne) AddParticipantCount(i int) *ProcedureUpdateOne {
 	return puo
 }
 
+// SetInternalCriteria sets the internalCriteria field.
+func (puo *ProcedureUpdateOne) SetInternalCriteria(b []byte) *ProcedureUpdateOne {
+	puo.mutation.SetInternalCriteria(b)
+	return puo
+}
+
+// SetMturkCriteria sets the mturkCriteria field.
+func (puo *ProcedureUpdateOne) SetMturkCriteria(b []byte) *ProcedureUpdateOne {
+	puo.mutation.SetMturkCriteria(b)
+	return puo
+}
+
 // SetAdult sets the adult field.
 func (puo *ProcedureUpdateOne) SetAdult(b bool) *ProcedureUpdateOne {
 	puo.mutation.SetAdult(b)
@@ -481,28 +523,36 @@ func (puo *ProcedureUpdateOne) SetProject(p *Project) *ProcedureUpdateOne {
 	return puo.SetProjectID(p.ID)
 }
 
-// SetOwnerID sets the owner edge to Admin by id.
-func (puo *ProcedureUpdateOne) SetOwnerID(id string) *ProcedureUpdateOne {
-	puo.mutation.SetOwnerID(id)
+// SetCreatorID sets the creator edge to Admin by id.
+func (puo *ProcedureUpdateOne) SetCreatorID(id string) *ProcedureUpdateOne {
+	puo.mutation.SetCreatorID(id)
 	return puo
 }
 
-// SetNillableOwnerID sets the owner edge to Admin by id if the given value is not nil.
-func (puo *ProcedureUpdateOne) SetNillableOwnerID(id *string) *ProcedureUpdateOne {
+// SetNillableCreatorID sets the creator edge to Admin by id if the given value is not nil.
+func (puo *ProcedureUpdateOne) SetNillableCreatorID(id *string) *ProcedureUpdateOne {
 	if id != nil {
-		puo = puo.SetOwnerID(*id)
+		puo = puo.SetCreatorID(*id)
 	}
 	return puo
 }
 
-// SetOwner sets the owner edge to Admin.
-func (puo *ProcedureUpdateOne) SetOwner(a *Admin) *ProcedureUpdateOne {
-	return puo.SetOwnerID(a.ID)
+// SetCreator sets the creator edge to Admin.
+func (puo *ProcedureUpdateOne) SetCreator(a *Admin) *ProcedureUpdateOne {
+	return puo.SetCreatorID(a.ID)
 }
 
 // SetRunID sets the run edge to Run by id.
 func (puo *ProcedureUpdateOne) SetRunID(id string) *ProcedureUpdateOne {
 	puo.mutation.SetRunID(id)
+	return puo
+}
+
+// SetNillableRunID sets the run edge to Run by id if the given value is not nil.
+func (puo *ProcedureUpdateOne) SetNillableRunID(id *string) *ProcedureUpdateOne {
+	if id != nil {
+		puo = puo.SetRunID(*id)
+	}
 	return puo
 }
 
@@ -522,9 +572,9 @@ func (puo *ProcedureUpdateOne) ClearProject() *ProcedureUpdateOne {
 	return puo
 }
 
-// ClearOwner clears the owner edge to Admin.
-func (puo *ProcedureUpdateOne) ClearOwner() *ProcedureUpdateOne {
-	puo.mutation.ClearOwner()
+// ClearCreator clears the creator edge to Admin.
+func (puo *ProcedureUpdateOne) ClearCreator() *ProcedureUpdateOne {
+	puo.mutation.ClearCreator()
 	return puo
 }
 
@@ -551,9 +601,6 @@ func (puo *ProcedureUpdateOne) Save(ctx context.Context) (*Procedure, error) {
 		}
 	}
 
-	if _, ok := puo.mutation.RunID(); puo.mutation.RunCleared() && !ok {
-		return nil, errors.New("ent: clearing a unique edge \"run\"")
-	}
 	var (
 		err  error
 		node *Procedure
@@ -654,6 +701,20 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 			Column: procedure.FieldParticipantCount,
 		})
 	}
+	if value, ok := puo.mutation.InternalCriteria(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBytes,
+			Value:  value,
+			Column: procedure.FieldInternalCriteria,
+		})
+	}
+	if value, ok := puo.mutation.MturkCriteria(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBytes,
+			Value:  value,
+			Column: procedure.FieldMturkCriteria,
+		})
+	}
 	if value, ok := puo.mutation.Adult(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeBool,
@@ -696,12 +757,12 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if puo.mutation.OwnerCleared() {
+	if puo.mutation.CreatorCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.OwnerTable,
-			Columns: []string{procedure.OwnerColumn},
+			Table:   procedure.CreatorTable,
+			Columns: []string{procedure.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -712,12 +773,12 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.OwnerIDs(); len(nodes) > 0 {
+	if nodes := puo.mutation.CreatorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.OwnerTable,
-			Columns: []string{procedure.OwnerColumn},
+			Table:   procedure.CreatorTable,
+			Columns: []string{procedure.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

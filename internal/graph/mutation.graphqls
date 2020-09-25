@@ -196,9 +196,7 @@ input UpdateStepInput {
 }
 
 input CreateRunInput {
-  procedureID: ID!
-
-  startAt: DateTime
+  procedure: CreateProcedureInput!
 }
 
 input ScheduleRunInput {
@@ -239,51 +237,51 @@ type Mutation {
   """
   Create a new Project.
   """
-  createProject(input: CreateProjectInput): Project!
+  createProject(input: CreateProjectInput): Project! @hasRole(role: ADMIN)
 
   """
   Create a new Procedure.
   """
-  createProcedure(input: CreateProcedureInput): Procedure!
+  createProcedure(input: CreateProcedureInput): Procedure! @hasRole(role: ADMIN)
 
   """
   Update a Procedure.
   """
-  updateProcedure(input: UpdateProcedureInput): Procedure!
+  updateProcedure(input: UpdateProcedureInput): Procedure! @hasRole(role: ADMIN)
 
   """
   Update a Step.
   """
-  updateStep(input: UpdateStepInput): Procedure!
+  updateStep(input: UpdateStepInput): Procedure! @hasRole(role: ADMIN)
 
   """
   Duplicate a Procedure to a Project.
   """
-  duplicateProcedure(input: DuplicateProcedureInput): Procedure!
+  duplicateProcedure(input: DuplicateProcedureInput): Procedure! @hasRole(role: ADMIN)
 
   """
   Create Run.
   """
-  createRun(input: CreateRunInput): Run!
+  createRun(input: CreateRunInput): Run! @hasRole(role: ADMIN)
 
   """
   Schedule Run.
   """
-  scheduleRun(input: ScheduleRunInput): Run!
+  scheduleRun(input: ScheduleRunInput): Run! @hasRole(role: ADMIN)
 
   """
   Unschedule scheduled Run.
   """
-  unscheduleRun(input: UnscheduleRunInput): Run!
+  unscheduleRun(input: UnscheduleRunInput): Run! @hasRole(role: ADMIN)
 
   """
   Start Run immediately.
   """
-  startRun(input: StartRunInput): Run!
+  startRun(input: StartRunInput): Run! @hasRole(role: ADMIN)
 
   """
   Cancel Run. If running, it will stop the run. If not yet running, it will just
   mark it as cancelled.
   """
-  cancelRun(input: CancelRunInput): Run!
+  cancelRun(input: CancelRunInput): Run! @hasRole(role: ADMIN)
 }

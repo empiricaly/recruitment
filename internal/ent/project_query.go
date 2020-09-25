@@ -13,6 +13,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
+	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -27,6 +28,7 @@ type ProjectQuery struct {
 	unique     []string
 	predicates []predicate.Project
 	// eager-loading edges.
+	withRuns       *RunQuery
 	withProcedures *ProcedureQuery
 	withOwner      *AdminQuery
 	withFKs        bool
@@ -57,6 +59,24 @@ func (pq *ProjectQuery) Offset(offset int) *ProjectQuery {
 func (pq *ProjectQuery) Order(o ...OrderFunc) *ProjectQuery {
 	pq.order = append(pq.order, o...)
 	return pq
+}
+
+// QueryRuns chains the current query on the runs edge.
+func (pq *ProjectQuery) QueryRuns() *RunQuery {
+	query := &RunQuery{config: pq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, pq.sqlQuery()),
+			sqlgraph.To(run.Table, run.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, project.RunsTable, project.RunsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryProcedures chains the current query on the procedures edge.
@@ -274,6 +294,17 @@ func (pq *ProjectQuery) Clone() *ProjectQuery {
 	}
 }
 
+//  WithRuns tells the query-builder to eager-loads the nodes that are connected to
+// the "runs" edge. The optional arguments used to configure the query builder of the edge.
+func (pq *ProjectQuery) WithRuns(opts ...func(*RunQuery)) *ProjectQuery {
+	query := &RunQuery{config: pq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withRuns = query
+	return pq
+}
+
 //  WithProcedures tells the query-builder to eager-loads the nodes that are connected to
 // the "procedures" edge. The optional arguments used to configure the query builder of the edge.
 func (pq *ProjectQuery) WithProcedures(opts ...func(*ProcedureQuery)) *ProjectQuery {
@@ -363,7 +394,8 @@ func (pq *ProjectQuery) sqlAll(ctx context.Context) ([]*Project, error) {
 		nodes       = []*Project{}
 		withFKs     = pq.withFKs
 		_spec       = pq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
+			pq.withRuns != nil,
 			pq.withProcedures != nil,
 			pq.withOwner != nil,
 		}
@@ -396,6 +428,34 @@ func (pq *ProjectQuery) sqlAll(ctx context.Context) ([]*Project, error) {
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+
+	if query := pq.withRuns; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[string]*Project)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.Run(func(s *sql.Selector) {
+			s.Where(sql.InValues(project.RunsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.project_runs
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "project_runs" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "project_runs" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Runs = append(node.Edges.Runs, n)
+		}
 	}
 
 	if query := pq.withProcedures; query != nil {

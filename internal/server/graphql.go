@@ -18,6 +18,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/go-chi/chi"
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog/log"
 )
@@ -41,12 +42,11 @@ func (s *Server) startGraphqlServer() {
 
 	gconf := generated.Config{Resolvers: r}
 	gconf.Directives.HasRole = func(ctx context.Context, obj interface{}, next graphql.Resolver, role model.Role) (interface{}, error) {
-		// if !getCurrentUser(ctx).HasRole(role) {
-		// 	// block calling the next resolver
-		// 	return nil, fmt.Errorf("Access denied")
-		// }
+		user := admin.ForContext(ctx)
+		if role == model.RoleAdmin && user == nil {
+			return nil, errors.New("Access Denied")
+		}
 
-		// or let it pass through
 		return next(ctx)
 	}
 

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
+	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -55,9 +56,23 @@ func (rc *RunCreate) SetName(s string) *RunCreate {
 	return rc
 }
 
+// SetStatus sets the status field.
+func (rc *RunCreate) SetStatus(r run.Status) *RunCreate {
+	rc.mutation.SetStatus(r)
+	return rc
+}
+
 // SetStartAt sets the startAt field.
 func (rc *RunCreate) SetStartAt(t time.Time) *RunCreate {
 	rc.mutation.SetStartAt(t)
+	return rc
+}
+
+// SetNillableStartAt sets the startAt field if the given value is not nil.
+func (rc *RunCreate) SetNillableStartAt(t *time.Time) *RunCreate {
+	if t != nil {
+		rc.SetStartAt(*t)
+	}
 	return rc
 }
 
@@ -67,9 +82,25 @@ func (rc *RunCreate) SetStartedAt(t time.Time) *RunCreate {
 	return rc
 }
 
+// SetNillableStartedAt sets the startedAt field if the given value is not nil.
+func (rc *RunCreate) SetNillableStartedAt(t *time.Time) *RunCreate {
+	if t != nil {
+		rc.SetStartedAt(*t)
+	}
+	return rc
+}
+
 // SetEndedAt sets the endedAt field.
 func (rc *RunCreate) SetEndedAt(t time.Time) *RunCreate {
 	rc.mutation.SetEndedAt(t)
+	return rc
+}
+
+// SetNillableEndedAt sets the endedAt field if the given value is not nil.
+func (rc *RunCreate) SetNillableEndedAt(t *time.Time) *RunCreate {
+	if t != nil {
+		rc.SetEndedAt(*t)
+	}
 	return rc
 }
 
@@ -79,23 +110,42 @@ func (rc *RunCreate) SetError(s string) *RunCreate {
 	return rc
 }
 
+// SetNillableError sets the error field if the given value is not nil.
+func (rc *RunCreate) SetNillableError(s *string) *RunCreate {
+	if s != nil {
+		rc.SetError(*s)
+	}
+	return rc
+}
+
 // SetID sets the id field.
 func (rc *RunCreate) SetID(s string) *RunCreate {
 	rc.mutation.SetID(s)
 	return rc
 }
 
-// SetProcedureID sets the procedure edge to Procedure by id.
-func (rc *RunCreate) SetProcedureID(id string) *RunCreate {
-	rc.mutation.SetProcedureID(id)
+// SetProjectID sets the project edge to Project by id.
+func (rc *RunCreate) SetProjectID(id string) *RunCreate {
+	rc.mutation.SetProjectID(id)
 	return rc
 }
 
-// SetNillableProcedureID sets the procedure edge to Procedure by id if the given value is not nil.
-func (rc *RunCreate) SetNillableProcedureID(id *string) *RunCreate {
+// SetNillableProjectID sets the project edge to Project by id if the given value is not nil.
+func (rc *RunCreate) SetNillableProjectID(id *string) *RunCreate {
 	if id != nil {
-		rc = rc.SetProcedureID(*id)
+		rc = rc.SetProjectID(*id)
 	}
+	return rc
+}
+
+// SetProject sets the project edge to Project.
+func (rc *RunCreate) SetProject(p *Project) *RunCreate {
+	return rc.SetProjectID(p.ID)
+}
+
+// SetProcedureID sets the procedure edge to Procedure by id.
+func (rc *RunCreate) SetProcedureID(id string) *RunCreate {
+	rc.mutation.SetProcedureID(id)
 	return rc
 }
 
@@ -162,17 +212,16 @@ func (rc *RunCreate) preSave() error {
 	if _, ok := rc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
 	}
-	if _, ok := rc.mutation.StartAt(); !ok {
-		return &ValidationError{Name: "startAt", err: errors.New("ent: missing required field \"startAt\"")}
+	if _, ok := rc.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New("ent: missing required field \"status\"")}
 	}
-	if _, ok := rc.mutation.StartedAt(); !ok {
-		return &ValidationError{Name: "startedAt", err: errors.New("ent: missing required field \"startedAt\"")}
+	if v, ok := rc.mutation.Status(); ok {
+		if err := run.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
+		}
 	}
-	if _, ok := rc.mutation.EndedAt(); !ok {
-		return &ValidationError{Name: "endedAt", err: errors.New("ent: missing required field \"endedAt\"")}
-	}
-	if _, ok := rc.mutation.Error(); !ok {
-		return &ValidationError{Name: "error", err: errors.New("ent: missing required field \"error\"")}
+	if _, ok := rc.mutation.ProcedureID(); !ok {
+		return &ValidationError{Name: "procedure", err: errors.New("ent: missing required edge \"procedure\"")}
 	}
 	return nil
 }
@@ -227,6 +276,14 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 		})
 		r.Name = value
 	}
+	if value, ok := rc.mutation.Status(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: run.FieldStatus,
+		})
+		r.Status = value
+	}
 	if value, ok := rc.mutation.StartAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
@@ -258,6 +315,25 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 			Column: run.FieldError,
 		})
 		r.Error = value
+	}
+	if nodes := rc.mutation.ProjectIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   run.ProjectTable,
+			Columns: []string{run.ProjectColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: project.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := rc.mutation.ProcedureIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -650,12 +650,14 @@ type ProcedureMutation struct {
 	selectionType       *string
 	participantCount    *int
 	addparticipantCount *int
+	internalCriteria    *[]byte
+	mturkCriteria       *[]byte
 	adult               *bool
 	clearedFields       map[string]struct{}
 	project             *string
 	clearedproject      bool
-	owner               *string
-	clearedowner        bool
+	creator             *string
+	clearedcreator      bool
 	run                 *string
 	clearedrun          bool
 	done                bool
@@ -952,6 +954,80 @@ func (m *ProcedureMutation) ResetParticipantCount() {
 	m.addparticipantCount = nil
 }
 
+// SetInternalCriteria sets the internalCriteria field.
+func (m *ProcedureMutation) SetInternalCriteria(b []byte) {
+	m.internalCriteria = &b
+}
+
+// InternalCriteria returns the internalCriteria value in the mutation.
+func (m *ProcedureMutation) InternalCriteria() (r []byte, exists bool) {
+	v := m.internalCriteria
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInternalCriteria returns the old internalCriteria value of the Procedure.
+// If the Procedure object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ProcedureMutation) OldInternalCriteria(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldInternalCriteria is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldInternalCriteria requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInternalCriteria: %w", err)
+	}
+	return oldValue.InternalCriteria, nil
+}
+
+// ResetInternalCriteria reset all changes of the "internalCriteria" field.
+func (m *ProcedureMutation) ResetInternalCriteria() {
+	m.internalCriteria = nil
+}
+
+// SetMturkCriteria sets the mturkCriteria field.
+func (m *ProcedureMutation) SetMturkCriteria(b []byte) {
+	m.mturkCriteria = &b
+}
+
+// MturkCriteria returns the mturkCriteria value in the mutation.
+func (m *ProcedureMutation) MturkCriteria() (r []byte, exists bool) {
+	v := m.mturkCriteria
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMturkCriteria returns the old mturkCriteria value of the Procedure.
+// If the Procedure object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ProcedureMutation) OldMturkCriteria(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMturkCriteria is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMturkCriteria requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMturkCriteria: %w", err)
+	}
+	return oldValue.MturkCriteria, nil
+}
+
+// ResetMturkCriteria reset all changes of the "mturkCriteria" field.
+func (m *ProcedureMutation) ResetMturkCriteria() {
+	m.mturkCriteria = nil
+}
+
 // SetAdult sets the adult field.
 func (m *ProcedureMutation) SetAdult(b bool) {
 	m.adult = &b
@@ -1028,43 +1104,43 @@ func (m *ProcedureMutation) ResetProject() {
 	m.clearedproject = false
 }
 
-// SetOwnerID sets the owner edge to Admin by id.
-func (m *ProcedureMutation) SetOwnerID(id string) {
-	m.owner = &id
+// SetCreatorID sets the creator edge to Admin by id.
+func (m *ProcedureMutation) SetCreatorID(id string) {
+	m.creator = &id
 }
 
-// ClearOwner clears the owner edge to Admin.
-func (m *ProcedureMutation) ClearOwner() {
-	m.clearedowner = true
+// ClearCreator clears the creator edge to Admin.
+func (m *ProcedureMutation) ClearCreator() {
+	m.clearedcreator = true
 }
 
-// OwnerCleared returns if the edge owner was cleared.
-func (m *ProcedureMutation) OwnerCleared() bool {
-	return m.clearedowner
+// CreatorCleared returns if the edge creator was cleared.
+func (m *ProcedureMutation) CreatorCleared() bool {
+	return m.clearedcreator
 }
 
-// OwnerID returns the owner id in the mutation.
-func (m *ProcedureMutation) OwnerID() (id string, exists bool) {
-	if m.owner != nil {
-		return *m.owner, true
+// CreatorID returns the creator id in the mutation.
+func (m *ProcedureMutation) CreatorID() (id string, exists bool) {
+	if m.creator != nil {
+		return *m.creator, true
 	}
 	return
 }
 
-// OwnerIDs returns the owner ids in the mutation.
+// CreatorIDs returns the creator ids in the mutation.
 // Note that ids always returns len(ids) <= 1 for unique edges, and you should use
-// OwnerID instead. It exists only for internal usage by the builders.
-func (m *ProcedureMutation) OwnerIDs() (ids []string) {
-	if id := m.owner; id != nil {
+// CreatorID instead. It exists only for internal usage by the builders.
+func (m *ProcedureMutation) CreatorIDs() (ids []string) {
+	if id := m.creator; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetOwner reset all changes of the "owner" edge.
-func (m *ProcedureMutation) ResetOwner() {
-	m.owner = nil
-	m.clearedowner = false
+// ResetCreator reset all changes of the "creator" edge.
+func (m *ProcedureMutation) ResetCreator() {
+	m.creator = nil
+	m.clearedcreator = false
 }
 
 // SetRunID sets the run edge to Run by id.
@@ -1120,7 +1196,7 @@ func (m *ProcedureMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *ProcedureMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 8)
 	if m.createdAt != nil {
 		fields = append(fields, procedure.FieldCreatedAt)
 	}
@@ -1135,6 +1211,12 @@ func (m *ProcedureMutation) Fields() []string {
 	}
 	if m.participantCount != nil {
 		fields = append(fields, procedure.FieldParticipantCount)
+	}
+	if m.internalCriteria != nil {
+		fields = append(fields, procedure.FieldInternalCriteria)
+	}
+	if m.mturkCriteria != nil {
+		fields = append(fields, procedure.FieldMturkCriteria)
 	}
 	if m.adult != nil {
 		fields = append(fields, procedure.FieldAdult)
@@ -1157,6 +1239,10 @@ func (m *ProcedureMutation) Field(name string) (ent.Value, bool) {
 		return m.SelectionType()
 	case procedure.FieldParticipantCount:
 		return m.ParticipantCount()
+	case procedure.FieldInternalCriteria:
+		return m.InternalCriteria()
+	case procedure.FieldMturkCriteria:
+		return m.MturkCriteria()
 	case procedure.FieldAdult:
 		return m.Adult()
 	}
@@ -1178,6 +1264,10 @@ func (m *ProcedureMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldSelectionType(ctx)
 	case procedure.FieldParticipantCount:
 		return m.OldParticipantCount(ctx)
+	case procedure.FieldInternalCriteria:
+		return m.OldInternalCriteria(ctx)
+	case procedure.FieldMturkCriteria:
+		return m.OldMturkCriteria(ctx)
 	case procedure.FieldAdult:
 		return m.OldAdult(ctx)
 	}
@@ -1223,6 +1313,20 @@ func (m *ProcedureMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetParticipantCount(v)
+		return nil
+	case procedure.FieldInternalCriteria:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInternalCriteria(v)
+		return nil
+	case procedure.FieldMturkCriteria:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMturkCriteria(v)
 		return nil
 	case procedure.FieldAdult:
 		v, ok := value.(bool)
@@ -1311,6 +1415,12 @@ func (m *ProcedureMutation) ResetField(name string) error {
 	case procedure.FieldParticipantCount:
 		m.ResetParticipantCount()
 		return nil
+	case procedure.FieldInternalCriteria:
+		m.ResetInternalCriteria()
+		return nil
+	case procedure.FieldMturkCriteria:
+		m.ResetMturkCriteria()
+		return nil
 	case procedure.FieldAdult:
 		m.ResetAdult()
 		return nil
@@ -1325,8 +1435,8 @@ func (m *ProcedureMutation) AddedEdges() []string {
 	if m.project != nil {
 		edges = append(edges, procedure.EdgeProject)
 	}
-	if m.owner != nil {
-		edges = append(edges, procedure.EdgeOwner)
+	if m.creator != nil {
+		edges = append(edges, procedure.EdgeCreator)
 	}
 	if m.run != nil {
 		edges = append(edges, procedure.EdgeRun)
@@ -1342,8 +1452,8 @@ func (m *ProcedureMutation) AddedIDs(name string) []ent.Value {
 		if id := m.project; id != nil {
 			return []ent.Value{*id}
 		}
-	case procedure.EdgeOwner:
-		if id := m.owner; id != nil {
+	case procedure.EdgeCreator:
+		if id := m.creator; id != nil {
 			return []ent.Value{*id}
 		}
 	case procedure.EdgeRun:
@@ -1376,8 +1486,8 @@ func (m *ProcedureMutation) ClearedEdges() []string {
 	if m.clearedproject {
 		edges = append(edges, procedure.EdgeProject)
 	}
-	if m.clearedowner {
-		edges = append(edges, procedure.EdgeOwner)
+	if m.clearedcreator {
+		edges = append(edges, procedure.EdgeCreator)
 	}
 	if m.clearedrun {
 		edges = append(edges, procedure.EdgeRun)
@@ -1391,8 +1501,8 @@ func (m *ProcedureMutation) EdgeCleared(name string) bool {
 	switch name {
 	case procedure.EdgeProject:
 		return m.clearedproject
-	case procedure.EdgeOwner:
-		return m.clearedowner
+	case procedure.EdgeCreator:
+		return m.clearedcreator
 	case procedure.EdgeRun:
 		return m.clearedrun
 	}
@@ -1406,8 +1516,8 @@ func (m *ProcedureMutation) ClearEdge(name string) error {
 	case procedure.EdgeProject:
 		m.ClearProject()
 		return nil
-	case procedure.EdgeOwner:
-		m.ClearOwner()
+	case procedure.EdgeCreator:
+		m.ClearCreator()
 		return nil
 	case procedure.EdgeRun:
 		m.ClearRun()
@@ -1424,8 +1534,8 @@ func (m *ProcedureMutation) ResetEdge(name string) error {
 	case procedure.EdgeProject:
 		m.ResetProject()
 		return nil
-	case procedure.EdgeOwner:
-		m.ResetOwner()
+	case procedure.EdgeCreator:
+		m.ResetCreator()
 		return nil
 	case procedure.EdgeRun:
 		m.ResetRun()
@@ -1446,6 +1556,8 @@ type ProjectMutation struct {
 	projectID         *string
 	name              *string
 	clearedFields     map[string]struct{}
+	runs              map[string]struct{}
+	removedruns       map[string]struct{}
 	procedures        map[string]struct{}
 	removedprocedures map[string]struct{}
 	owner             *string
@@ -1685,6 +1797,48 @@ func (m *ProjectMutation) OldName(ctx context.Context) (v string, err error) {
 // ResetName reset all changes of the "name" field.
 func (m *ProjectMutation) ResetName() {
 	m.name = nil
+}
+
+// AddRunIDs adds the runs edge to Run by ids.
+func (m *ProjectMutation) AddRunIDs(ids ...string) {
+	if m.runs == nil {
+		m.runs = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.runs[ids[i]] = struct{}{}
+	}
+}
+
+// RemoveRunIDs removes the runs edge to Run by ids.
+func (m *ProjectMutation) RemoveRunIDs(ids ...string) {
+	if m.removedruns == nil {
+		m.removedruns = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedruns[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRuns returns the removed ids of runs.
+func (m *ProjectMutation) RemovedRunsIDs() (ids []string) {
+	for id := range m.removedruns {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RunsIDs returns the runs ids in the mutation.
+func (m *ProjectMutation) RunsIDs() (ids []string) {
+	for id := range m.runs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRuns reset all changes of the "runs" edge.
+func (m *ProjectMutation) ResetRuns() {
+	m.runs = nil
+	m.removedruns = nil
 }
 
 // AddProcedureIDs adds the procedures edge to Procedure by ids.
@@ -1934,7 +2088,10 @@ func (m *ProjectMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *ProjectMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.runs != nil {
+		edges = append(edges, project.EdgeRuns)
+	}
 	if m.procedures != nil {
 		edges = append(edges, project.EdgeProcedures)
 	}
@@ -1948,6 +2105,12 @@ func (m *ProjectMutation) AddedEdges() []string {
 // the given edge name.
 func (m *ProjectMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case project.EdgeRuns:
+		ids := make([]ent.Value, 0, len(m.runs))
+		for id := range m.runs {
+			ids = append(ids, id)
+		}
+		return ids
 	case project.EdgeProcedures:
 		ids := make([]ent.Value, 0, len(m.procedures))
 		for id := range m.procedures {
@@ -1965,7 +2128,10 @@ func (m *ProjectMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *ProjectMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.removedruns != nil {
+		edges = append(edges, project.EdgeRuns)
+	}
 	if m.removedprocedures != nil {
 		edges = append(edges, project.EdgeProcedures)
 	}
@@ -1976,6 +2142,12 @@ func (m *ProjectMutation) RemovedEdges() []string {
 // the given edge name.
 func (m *ProjectMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case project.EdgeRuns:
+		ids := make([]ent.Value, 0, len(m.removedruns))
+		for id := range m.removedruns {
+			ids = append(ids, id)
+		}
+		return ids
 	case project.EdgeProcedures:
 		ids := make([]ent.Value, 0, len(m.removedprocedures))
 		for id := range m.removedprocedures {
@@ -1989,7 +2161,7 @@ func (m *ProjectMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *ProjectMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedowner {
 		edges = append(edges, project.EdgeOwner)
 	}
@@ -2022,6 +2194,9 @@ func (m *ProjectMutation) ClearEdge(name string) error {
 // defined in the schema.
 func (m *ProjectMutation) ResetEdge(name string) error {
 	switch name {
+	case project.EdgeRuns:
+		m.ResetRuns()
+		return nil
 	case project.EdgeProcedures:
 		m.ResetProcedures()
 		return nil
@@ -2042,11 +2217,14 @@ type RunMutation struct {
 	createdAt        *time.Time
 	updatedAt        *time.Time
 	name             *string
+	status           *run.Status
 	startAt          *time.Time
 	startedAt        *time.Time
 	endedAt          *time.Time
 	error            *string
 	clearedFields    map[string]struct{}
+	project          *string
+	clearedproject   bool
 	procedure        *string
 	clearedprocedure bool
 	done             bool
@@ -2249,6 +2427,43 @@ func (m *RunMutation) ResetName() {
 	m.name = nil
 }
 
+// SetStatus sets the status field.
+func (m *RunMutation) SetStatus(r run.Status) {
+	m.status = &r
+}
+
+// Status returns the status value in the mutation.
+func (m *RunMutation) Status() (r run.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old status value of the Run.
+// If the Run object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *RunMutation) OldStatus(ctx context.Context) (v run.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldStatus is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus reset all changes of the "status" field.
+func (m *RunMutation) ResetStatus() {
+	m.status = nil
+}
+
 // SetStartAt sets the startAt field.
 func (m *RunMutation) SetStartAt(t time.Time) {
 	m.startAt = &t
@@ -2281,9 +2496,22 @@ func (m *RunMutation) OldStartAt(ctx context.Context) (v time.Time, err error) {
 	return oldValue.StartAt, nil
 }
 
+// ClearStartAt clears the value of startAt.
+func (m *RunMutation) ClearStartAt() {
+	m.startAt = nil
+	m.clearedFields[run.FieldStartAt] = struct{}{}
+}
+
+// StartAtCleared returns if the field startAt was cleared in this mutation.
+func (m *RunMutation) StartAtCleared() bool {
+	_, ok := m.clearedFields[run.FieldStartAt]
+	return ok
+}
+
 // ResetStartAt reset all changes of the "startAt" field.
 func (m *RunMutation) ResetStartAt() {
 	m.startAt = nil
+	delete(m.clearedFields, run.FieldStartAt)
 }
 
 // SetStartedAt sets the startedAt field.
@@ -2318,9 +2546,22 @@ func (m *RunMutation) OldStartedAt(ctx context.Context) (v time.Time, err error)
 	return oldValue.StartedAt, nil
 }
 
+// ClearStartedAt clears the value of startedAt.
+func (m *RunMutation) ClearStartedAt() {
+	m.startedAt = nil
+	m.clearedFields[run.FieldStartedAt] = struct{}{}
+}
+
+// StartedAtCleared returns if the field startedAt was cleared in this mutation.
+func (m *RunMutation) StartedAtCleared() bool {
+	_, ok := m.clearedFields[run.FieldStartedAt]
+	return ok
+}
+
 // ResetStartedAt reset all changes of the "startedAt" field.
 func (m *RunMutation) ResetStartedAt() {
 	m.startedAt = nil
+	delete(m.clearedFields, run.FieldStartedAt)
 }
 
 // SetEndedAt sets the endedAt field.
@@ -2355,9 +2596,22 @@ func (m *RunMutation) OldEndedAt(ctx context.Context) (v time.Time, err error) {
 	return oldValue.EndedAt, nil
 }
 
+// ClearEndedAt clears the value of endedAt.
+func (m *RunMutation) ClearEndedAt() {
+	m.endedAt = nil
+	m.clearedFields[run.FieldEndedAt] = struct{}{}
+}
+
+// EndedAtCleared returns if the field endedAt was cleared in this mutation.
+func (m *RunMutation) EndedAtCleared() bool {
+	_, ok := m.clearedFields[run.FieldEndedAt]
+	return ok
+}
+
 // ResetEndedAt reset all changes of the "endedAt" field.
 func (m *RunMutation) ResetEndedAt() {
 	m.endedAt = nil
+	delete(m.clearedFields, run.FieldEndedAt)
 }
 
 // SetError sets the error field.
@@ -2392,9 +2646,61 @@ func (m *RunMutation) OldError(ctx context.Context) (v string, err error) {
 	return oldValue.Error, nil
 }
 
+// ClearError clears the value of error.
+func (m *RunMutation) ClearError() {
+	m.error = nil
+	m.clearedFields[run.FieldError] = struct{}{}
+}
+
+// ErrorCleared returns if the field error was cleared in this mutation.
+func (m *RunMutation) ErrorCleared() bool {
+	_, ok := m.clearedFields[run.FieldError]
+	return ok
+}
+
 // ResetError reset all changes of the "error" field.
 func (m *RunMutation) ResetError() {
 	m.error = nil
+	delete(m.clearedFields, run.FieldError)
+}
+
+// SetProjectID sets the project edge to Project by id.
+func (m *RunMutation) SetProjectID(id string) {
+	m.project = &id
+}
+
+// ClearProject clears the project edge to Project.
+func (m *RunMutation) ClearProject() {
+	m.clearedproject = true
+}
+
+// ProjectCleared returns if the edge project was cleared.
+func (m *RunMutation) ProjectCleared() bool {
+	return m.clearedproject
+}
+
+// ProjectID returns the project id in the mutation.
+func (m *RunMutation) ProjectID() (id string, exists bool) {
+	if m.project != nil {
+		return *m.project, true
+	}
+	return
+}
+
+// ProjectIDs returns the project ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// ProjectID instead. It exists only for internal usage by the builders.
+func (m *RunMutation) ProjectIDs() (ids []string) {
+	if id := m.project; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProject reset all changes of the "project" edge.
+func (m *RunMutation) ResetProject() {
+	m.project = nil
+	m.clearedproject = false
 }
 
 // SetProcedureID sets the procedure edge to Procedure by id.
@@ -2450,7 +2756,7 @@ func (m *RunMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *RunMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.createdAt != nil {
 		fields = append(fields, run.FieldCreatedAt)
 	}
@@ -2459,6 +2765,9 @@ func (m *RunMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, run.FieldName)
+	}
+	if m.status != nil {
+		fields = append(fields, run.FieldStatus)
 	}
 	if m.startAt != nil {
 		fields = append(fields, run.FieldStartAt)
@@ -2486,6 +2795,8 @@ func (m *RunMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case run.FieldName:
 		return m.Name()
+	case run.FieldStatus:
+		return m.Status()
 	case run.FieldStartAt:
 		return m.StartAt()
 	case run.FieldStartedAt:
@@ -2509,6 +2820,8 @@ func (m *RunMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldUpdatedAt(ctx)
 	case run.FieldName:
 		return m.OldName(ctx)
+	case run.FieldStatus:
+		return m.OldStatus(ctx)
 	case run.FieldStartAt:
 		return m.OldStartAt(ctx)
 	case run.FieldStartedAt:
@@ -2546,6 +2859,13 @@ func (m *RunMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case run.FieldStatus:
+		v, ok := value.(run.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
 		return nil
 	case run.FieldStartAt:
 		v, ok := value.(time.Time)
@@ -2604,7 +2924,20 @@ func (m *RunMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared
 // during this mutation.
 func (m *RunMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(run.FieldStartAt) {
+		fields = append(fields, run.FieldStartAt)
+	}
+	if m.FieldCleared(run.FieldStartedAt) {
+		fields = append(fields, run.FieldStartedAt)
+	}
+	if m.FieldCleared(run.FieldEndedAt) {
+		fields = append(fields, run.FieldEndedAt)
+	}
+	if m.FieldCleared(run.FieldError) {
+		fields = append(fields, run.FieldError)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicates if this field was
@@ -2617,6 +2950,20 @@ func (m *RunMutation) FieldCleared(name string) bool {
 // ClearField clears the value for the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *RunMutation) ClearField(name string) error {
+	switch name {
+	case run.FieldStartAt:
+		m.ClearStartAt()
+		return nil
+	case run.FieldStartedAt:
+		m.ClearStartedAt()
+		return nil
+	case run.FieldEndedAt:
+		m.ClearEndedAt()
+		return nil
+	case run.FieldError:
+		m.ClearError()
+		return nil
+	}
 	return fmt.Errorf("unknown Run nullable field %s", name)
 }
 
@@ -2633,6 +2980,9 @@ func (m *RunMutation) ResetField(name string) error {
 		return nil
 	case run.FieldName:
 		m.ResetName()
+		return nil
+	case run.FieldStatus:
+		m.ResetStatus()
 		return nil
 	case run.FieldStartAt:
 		m.ResetStartAt()
@@ -2653,7 +3003,10 @@ func (m *RunMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *RunMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.project != nil {
+		edges = append(edges, run.EdgeProject)
+	}
 	if m.procedure != nil {
 		edges = append(edges, run.EdgeProcedure)
 	}
@@ -2664,6 +3017,10 @@ func (m *RunMutation) AddedEdges() []string {
 // the given edge name.
 func (m *RunMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case run.EdgeProject:
+		if id := m.project; id != nil {
+			return []ent.Value{*id}
+		}
 	case run.EdgeProcedure:
 		if id := m.procedure; id != nil {
 			return []ent.Value{*id}
@@ -2675,7 +3032,7 @@ func (m *RunMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *RunMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -2690,7 +3047,10 @@ func (m *RunMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *RunMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.clearedproject {
+		edges = append(edges, run.EdgeProject)
+	}
 	if m.clearedprocedure {
 		edges = append(edges, run.EdgeProcedure)
 	}
@@ -2701,6 +3061,8 @@ func (m *RunMutation) ClearedEdges() []string {
 // cleared in this mutation.
 func (m *RunMutation) EdgeCleared(name string) bool {
 	switch name {
+	case run.EdgeProject:
+		return m.clearedproject
 	case run.EdgeProcedure:
 		return m.clearedprocedure
 	}
@@ -2711,6 +3073,9 @@ func (m *RunMutation) EdgeCleared(name string) bool {
 // error if the edge name is not defined in the schema.
 func (m *RunMutation) ClearEdge(name string) error {
 	switch name {
+	case run.EdgeProject:
+		m.ClearProject()
+		return nil
 	case run.EdgeProcedure:
 		m.ClearProcedure()
 		return nil
@@ -2723,6 +3088,9 @@ func (m *RunMutation) ClearEdge(name string) error {
 // defined in the schema.
 func (m *RunMutation) ResetEdge(name string) error {
 	switch name {
+	case run.EdgeProject:
+		m.ResetProject()
+		return nil
 	case run.EdgeProcedure:
 		m.ResetProcedure()
 		return nil

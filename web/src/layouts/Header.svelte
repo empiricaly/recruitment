@@ -1,17 +1,19 @@
 <script>
   import { createEventDispatcher } from "svelte";
   import Button from "../components/base/Button.svelte";
-  import Input from "../components/base/Input.svelte";
   import OptionsMenu from "../components/misc/OptionsMenu.svelte";
 
   const dispatch = createEventDispatcher();
 
+  export let project;
   export let title = "";
   export let titleUpdatable = false;
   export let overtitle = "";
   export let action = "";
   export let facts = [];
   export let actions = [];
+
+  $: secondaryActions = actions.filter((a) => !a.primary);
 
   // export let facts = [
   //   {
@@ -65,7 +67,7 @@
 
 <div
   class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 lg:flex lg:items-start
-  lg:justify-between">
+    lg:justify-between">
   {#if overtitle}
     <div class="uppercase tracking-wide font-medium text-gray-500 mr-1 text-sm">
       {overtitle}
@@ -75,15 +77,15 @@
 
 <div
   class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 lg:flex lg:items-baseline
-  lg:justify-between">
+    lg:justify-between">
   <div class="flex-1 min-w-0">
     <h1
       class="mt-1 text-2xl font-bold leading-7 text-gray-900 sm:text-3xl
-      sm:leading-9 sm:truncate flex items-center">
+        sm:leading-9 sm:truncate flex items-center">
       {#if titleUpdatable}
         <input
           class="font-bold focus:outline-none focus:shadow-outline-blue
-          rounded-md bg-transparent focus:bg-white"
+            rounded-md bg-transparent focus:bg-white"
           type="text"
           bind:value={title} />
       {:else}
@@ -92,7 +94,6 @@
       <slot name="posttitle" />
     </h1>
     <div class="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap">
-
       {#each facts as fact, i (fact.text)}
         <div
           class="mt-2 flex items-center text-sm leading-5 text-gray-500 sm:mr-6">
@@ -109,37 +110,42 @@
   </div>
 
   {#if action}
-    <Button on:click text={action} />
+    <Button
+      on:click={() => dispatch('click', { action: 'main', project })}
+      text={action} />
   {/if}
   <slot name="actions" />
 
-  <div class="mt-5 flex lg:mt-0 lg:ml-4">
+  {#if actions.length > 0}
+    <div class="mt-5 flex lg:mt-0 lg:ml-4">
+      {#each actions as action, index (action.text)}
+        <span
+          class="{action.primary ? '' : 'hidden sm:block'}
+            {index > 0 ? 'ml-3' : ''} shadow-sm rounded-md">
+          <Button
+            on:click={() => dispatch('click', {
+                action: action.action,
+                project,
+              })}
+            tertiary={!action.primary}
+            icon={action.icon}
+            text={action.text} />
+        </span>
+      {/each}
 
-    {#each actions as action, index (action.text)}
-      <span
-        class="{action.primary ? '' : 'hidden sm:block'}
-        {index > 0 ? 'ml-3' : ''} shadow-sm rounded-md">
-        <Button
-          on:click={() => dispatch('click', { action: action.action })}
-          tertiary={!action.primary}
-          icon={action.icon}
-          text={action.text} />
+      <span class="ml-3 relative shadow-sm rounded-md sm:hidden">
+        <OptionsMenu
+          on:click
+          className="flex-shrink-0"
+          options={secondaryActions}
+          let:handleOpen>
+          <Button
+            tertiary
+            text="More"
+            on:click={handleOpen}
+            icon={`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"></Button><path d="M441.9 167.3l-19.8-19.8c-4.7-4.7-12.3-4.7-17 0L224 328.2 42.9 147.5c-4.7-4.7-12.3-4.7-17 0L6.1 167.3c-4.7 4.7-4.7 12.3 0 17l209.4 209.4c4.7 4.7 12.3 4.7 17 0l209.4-209.4c4.7-4.7 4.7-12.3 0-17z"/></svg>`} />
+        </OptionsMenu>
       </span>
-    {/each}
-
-    <span class="ml-3 relative shadow-sm rounded-md sm:hidden">
-      <OptionsMenu
-        on:click
-        className="flex-shrink-0"
-        options={actions.filter(a => !a.primary)}
-        let:handleOpen>
-        <Button
-          tertiary
-          text="More"
-          on:click={handleOpen}
-          icon={`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"></Button><path d="M441.9 167.3l-19.8-19.8c-4.7-4.7-12.3-4.7-17 0L224 328.2 42.9 147.5c-4.7-4.7-12.3-4.7-17 0L6.1 167.3c-4.7 4.7-4.7 12.3 0 17l209.4 209.4c4.7 4.7 12.3 4.7 17 0l209.4-209.4c4.7-4.7 4.7-12.3 0-17z"/></svg>`} />
-      </OptionsMenu>
-    </span>
-  </div>
-
+    </div>
+  {/if}
 </div>

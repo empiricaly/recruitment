@@ -17,16 +17,22 @@ func (Run) Fields() []ent.Field {
 	return append(
 		append([]ent.Field{}, commonFields...),
 		field.String("name"),
-		field.Time("startAt"),
-		field.Time("startedAt"),
-		field.Time("endedAt"),
-		field.String("error"),
+		statusField,
+		field.Time("startAt").Optional(),
+		field.Time("startedAt").Optional(),
+		field.Time("endedAt").Optional(),
+		field.String("error").Optional(),
 	)
 }
 
 // Edges of the Run.
 func (Run) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("procedure", Procedure.Type).Unique(),
+		edge.From("project", Project.Type).
+			Ref("runs").
+			Unique(),
+		edge.To("procedure", Procedure.Type).
+			Unique().
+			Required(),
 	}
 }

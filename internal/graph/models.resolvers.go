@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent"
+	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
 )
@@ -34,7 +35,7 @@ func (r *procedureResolver) MturkCriteria(ctx context.Context, obj *ent.Procedur
 }
 
 func (r *procedureResolver) Steps(ctx context.Context, obj *ent.Procedure) ([]*model.Step, error) {
-	panic(fmt.Errorf("not implemented"))
+	return []*model.Step{}, nil
 }
 
 func (r *projectResolver) Creator(ctx context.Context, obj *ent.Project) (*ent.Admin, error) {
@@ -45,8 +46,12 @@ func (r *projectResolver) Procedures(ctx context.Context, obj *ent.Project) ([]*
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project) ([]*ent.Run, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project, runID *string) ([]*ent.Run, error) {
+	if runID != nil {
+		panic(fmt.Errorf("not implemented"))
+	}
+
+	return obj.QueryRuns().Order(ent.Desc(run.FieldCreatedAt)).All(ctx)
 }
 
 func (r *projectResolver) Data(ctx context.Context, obj *ent.Project, keys []string) ([]*model.Datum, error) {
@@ -58,11 +63,11 @@ func (r *runResolver) Creator(ctx context.Context, obj *ent.Run) (*ent.Admin, er
 }
 
 func (r *runResolver) Procedure(ctx context.Context, obj *ent.Run) (*ent.Procedure, error) {
-	panic(fmt.Errorf("not implemented"))
+	return obj.QueryProcedure().First(ctx)
 }
 
 func (r *runResolver) Status(ctx context.Context, obj *ent.Run) (model.Status, error) {
-	panic(fmt.Errorf("not implemented"))
+	return model.Status(obj.Status.String()), nil
 }
 
 func (r *runResolver) Steps(ctx context.Context, obj *ent.Run) ([]*ent.StepRun, error) {
@@ -113,16 +118,3 @@ type procedureResolver struct{ *Resolver }
 type projectResolver struct{ *Resolver }
 type runResolver struct{ *Resolver }
 type stepRunResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *runResolver) Name(ctx context.Context, obj *ent.Run) (string, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-func (r *procedureResolver) ParticipantCount(ctx context.Context, obj *ent.Procedure) (*int, error) {
-	panic(fmt.Errorf("not implemented"))
-}

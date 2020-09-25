@@ -114,8 +114,7 @@ type CreateProjectInput struct {
 }
 
 type CreateRunInput struct {
-	ProcedureID string     `json:"procedureID"`
-	StartAt     *time.Time `json:"startAt"`
+	Procedure *CreateProcedureInput `json:"procedure"`
 }
 
 // Datum is a single piece of custom data.

@@ -222,7 +222,7 @@ type ComplexityRoot struct {
 		Name       func(childComplexity int) int
 		Procedures func(childComplexity int) int
 		ProjectID  func(childComplexity int) int
-		Runs       func(childComplexity int) int
+		Runs       func(childComplexity int, runID *string) int
 		UpdatedAt  func(childComplexity int) int
 	}
 
@@ -313,7 +313,7 @@ type ProjectResolver interface {
 	Creator(ctx context.Context, obj *ent.Project) (*ent.Admin, error)
 
 	Procedures(ctx context.Context, obj *ent.Project) ([]*ent.Procedure, error)
-	Runs(ctx context.Context, obj *ent.Project) ([]*ent.Run, error)
+	Runs(ctx context.Context, obj *ent.Project, runID *string) ([]*ent.Run, error)
 	Data(ctx context.Context, obj *ent.Project, keys []string) ([]*model.Datum, error)
 }
 type QueryResolver interface {
@@ -1191,7 +1191,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Project.Runs(childComplexity), true
+		args, err := ec.field_Project_runs_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Project.Runs(childComplexity, args["runID"].(*string)), true
 
 	case "Project.updatedAt":
 		if e.complexity.Project.UpdatedAt == nil {
@@ -1702,7 +1707,7 @@ type Project {
   """
   Runs contained in Project
   """
-  runs: [Run!]! @goField(forceResolver: true)
+  runs(runID: ID): [Run!]! @goField(forceResolver: true)
 
   """
   Data returns the custom data that has been set on the Participant.
@@ -1835,7 +1840,7 @@ type Procedure {
   """
   Determines participant selection type.
   """
-  selectionType: SelectionType
+  selectionType: SelectionType @goField(forceResolver: true)
 
   """
   Selection criteria for internal DB participants.
@@ -2615,9 +2620,7 @@ input UpdateStepInput {
 }
 
 input CreateRunInput {
-  procedureID: ID!
-
-  startAt: DateTime
+  procedure: CreateProcedureInput!
 }
 
 input ScheduleRunInput {
@@ -2658,53 +2661,53 @@ type Mutation {
   """
   Create a new Project.
   """
-  createProject(input: CreateProjectInput): Project!
+  createProject(input: CreateProjectInput): Project! @hasRole(role: ADMIN)
 
   """
   Create a new Procedure.
   """
-  createProcedure(input: CreateProcedureInput): Procedure!
+  createProcedure(input: CreateProcedureInput): Procedure! @hasRole(role: ADMIN)
 
   """
   Update a Procedure.
   """
-  updateProcedure(input: UpdateProcedureInput): Procedure!
+  updateProcedure(input: UpdateProcedureInput): Procedure! @hasRole(role: ADMIN)
 
   """
   Update a Step.
   """
-  updateStep(input: UpdateStepInput): Procedure!
+  updateStep(input: UpdateStepInput): Procedure! @hasRole(role: ADMIN)
 
   """
   Duplicate a Procedure to a Project.
   """
-  duplicateProcedure(input: DuplicateProcedureInput): Procedure!
+  duplicateProcedure(input: DuplicateProcedureInput): Procedure! @hasRole(role: ADMIN)
 
   """
   Create Run.
   """
-  createRun(input: CreateRunInput): Run!
+  createRun(input: CreateRunInput): Run! @hasRole(role: ADMIN)
 
   """
   Schedule Run.
   """
-  scheduleRun(input: ScheduleRunInput): Run!
+  scheduleRun(input: ScheduleRunInput): Run! @hasRole(role: ADMIN)
 
   """
   Unschedule scheduled Run.
   """
-  unscheduleRun(input: UnscheduleRunInput): Run!
+  unscheduleRun(input: UnscheduleRunInput): Run! @hasRole(role: ADMIN)
 
   """
   Start Run immediately.
   """
-  startRun(input: StartRunInput): Run!
+  startRun(input: StartRunInput): Run! @hasRole(role: ADMIN)
 
   """
   Cancel Run. If running, it will stop the run. If not yet running, it will just
   mark it as cancelled.
   """
-  cancelRun(input: CancelRunInput): Run!
+  cancelRun(input: CancelRunInput): Run! @hasRole(role: ADMIN)
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "mutation_selection.graphqls", Input: `"""
@@ -3312,6 +3315,20 @@ func (ec *executionContext) field_Project_data_args(ctx context.Context, rawArgs
 		}
 	}
 	args["keys"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Project_runs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["runID"]; ok {
+		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["runID"] = arg0
 	return args, nil
 }
 
@@ -5436,8 +5453,32 @@ func (ec *executionContext) _Mutation_createProject(ctx context.Context, field g
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateProject(rctx, args["input"].(*model.CreateProjectInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateProject(rctx, args["input"].(*model.CreateProjectInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Project); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Project`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5477,8 +5518,32 @@ func (ec *executionContext) _Mutation_createProcedure(ctx context.Context, field
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateProcedure(rctx, args["input"].(*model.CreateProcedureInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateProcedure(rctx, args["input"].(*model.CreateProcedureInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Procedure); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Procedure`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5518,8 +5583,32 @@ func (ec *executionContext) _Mutation_updateProcedure(ctx context.Context, field
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateProcedure(rctx, args["input"].(*model.UpdateProcedureInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateProcedure(rctx, args["input"].(*model.UpdateProcedureInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Procedure); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Procedure`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5559,8 +5648,32 @@ func (ec *executionContext) _Mutation_updateStep(ctx context.Context, field grap
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateStep(rctx, args["input"].(*model.UpdateStepInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateStep(rctx, args["input"].(*model.UpdateStepInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Procedure); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Procedure`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5600,8 +5713,32 @@ func (ec *executionContext) _Mutation_duplicateProcedure(ctx context.Context, fi
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DuplicateProcedure(rctx, args["input"].(*model.DuplicateProcedureInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DuplicateProcedure(rctx, args["input"].(*model.DuplicateProcedureInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Procedure); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Procedure`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5641,8 +5778,32 @@ func (ec *executionContext) _Mutation_createRun(ctx context.Context, field graph
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateRun(rctx, args["input"].(*model.CreateRunInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreateRun(rctx, args["input"].(*model.CreateRunInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Run); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Run`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5682,8 +5843,32 @@ func (ec *executionContext) _Mutation_scheduleRun(ctx context.Context, field gra
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ScheduleRun(rctx, args["input"].(*model.ScheduleRunInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().ScheduleRun(rctx, args["input"].(*model.ScheduleRunInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Run); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Run`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5723,8 +5908,32 @@ func (ec *executionContext) _Mutation_unscheduleRun(ctx context.Context, field g
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UnscheduleRun(rctx, args["input"].(*model.UnscheduleRunInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UnscheduleRun(rctx, args["input"].(*model.UnscheduleRunInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Run); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Run`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5764,8 +5973,32 @@ func (ec *executionContext) _Mutation_startRun(ctx context.Context, field graphq
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().StartRun(rctx, args["input"].(*model.StartRunInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().StartRun(rctx, args["input"].(*model.StartRunInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Run); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Run`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5805,8 +6038,32 @@ func (ec *executionContext) _Mutation_cancelRun(ctx context.Context, field graph
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CancelRun(rctx, args["input"].(*model.CancelRunInput))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CancelRun(rctx, args["input"].(*model.CancelRunInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Run); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Run`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7107,9 +7364,16 @@ func (ec *executionContext) _Project_runs(ctx context.Context, field graphql.Col
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Project_runs_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Project().Runs(rctx, obj)
+		return ec.resolvers.Project().Runs(rctx, obj, args["runID"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9874,15 +10138,9 @@ func (ec *executionContext) unmarshalInputCreateRunInput(ctx context.Context, ob
 
 	for k, v := range asMap {
 		switch k {
-		case "procedureID":
+		case "procedure":
 			var err error
-			it.ProcedureID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "startAt":
-			var err error
-			it.StartAt, err = ec.unmarshalODateTime2ᚖtimeᚐTime(ctx, v)
+			it.Procedure, err = ec.unmarshalNCreateProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProcedureInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -12229,6 +12487,18 @@ func (ec *executionContext) unmarshalNContentType2githubᚗcomᚋempiricalyᚋre
 
 func (ec *executionContext) marshalNContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, sel ast.SelectionSet, v model.ContentType) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNCreateProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProcedureInput(ctx context.Context, v interface{}) (model.CreateProcedureInput, error) {
+	return ec.unmarshalInputCreateProcedureInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNCreateProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProcedureInput(ctx context.Context, v interface{}) (*model.CreateProcedureInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNCreateProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProcedureInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalNDateTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {

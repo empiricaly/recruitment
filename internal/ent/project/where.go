@@ -495,6 +495,34 @@ func NameContainsFold(v string) predicate.Project {
 	})
 }
 
+// HasRuns applies the HasEdge predicate on the "runs" edge.
+func HasRuns() predicate.Project {
+	return predicate.Project(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RunsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RunsTable, RunsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRunsWith applies the HasEdge predicate on the "runs" edge with a given conditions (other predicates).
+func HasRunsWith(preds ...predicate.Run) predicate.Project {
+	return predicate.Project(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RunsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, RunsTable, RunsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasProcedures applies the HasEdge predicate on the "procedures" edge.
 func HasProcedures() predicate.Project {
 	return predicate.Project(func(s *sql.Selector) {
