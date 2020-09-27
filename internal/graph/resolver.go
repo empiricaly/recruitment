@@ -13,6 +13,7 @@ import (
 
 //go:generate go run github.com/99designs/gqlgen
 
+// Resolver implementation
 type Resolver struct {
 	MTurk     *mturk.Session
 	Store     *storage.Conn

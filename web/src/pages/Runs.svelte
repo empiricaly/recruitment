@@ -17,8 +17,8 @@
     let notifClose;
     try {
       const input = {
+        projectID: project.id,
         procedure: {
-          projectID: project.id,
           name: "New Run",
           selectionType: "INTERNAL_DB",
           participantCount: 100,
@@ -59,7 +59,7 @@
         //   "Something happened on the server, and we could not create a new Run as requested.",
       });
 
-      push(`/projects/${project.id}/runs/${result.data.createRun.id}`);
+      push(`/projects/${project.projectID}/runs/${result.data.createRun.id}`);
     } catch (error) {
       console.error(error);
       notifClose();

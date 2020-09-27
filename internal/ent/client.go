@@ -13,6 +13,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 
 	"github.com/facebook/ent/dialect"
@@ -33,6 +34,8 @@ type Client struct {
 	Project *ProjectClient
 	// Run is the client for interacting with the Run builders.
 	Run *RunClient
+	// Step is the client for interacting with the Step builders.
+	Step *StepClient
 	// StepRun is the client for interacting with the StepRun builders.
 	StepRun *StepRunClient
 }
@@ -52,6 +55,7 @@ func (c *Client) init() {
 	c.Procedure = NewProcedureClient(c.config)
 	c.Project = NewProjectClient(c.config)
 	c.Run = NewRunClient(c.config)
+	c.Step = NewStepClient(c.config)
 	c.StepRun = NewStepRunClient(c.config)
 }
 
@@ -89,6 +93,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Procedure: NewProcedureClient(cfg),
 		Project:   NewProjectClient(cfg),
 		Run:       NewRunClient(cfg),
+		Step:      NewStepClient(cfg),
 		StepRun:   NewStepRunClient(cfg),
 	}, nil
 }
@@ -109,6 +114,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Procedure: NewProcedureClient(cfg),
 		Project:   NewProjectClient(cfg),
 		Run:       NewRunClient(cfg),
+		Step:      NewStepClient(cfg),
 		StepRun:   NewStepRunClient(cfg),
 	}, nil
 }
@@ -142,6 +148,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Procedure.Use(hooks...)
 	c.Project.Use(hooks...)
 	c.Run.Use(hooks...)
+	c.Step.Use(hooks...)
 	c.StepRun.Use(hooks...)
 }
 
@@ -346,6 +353,22 @@ func (c *ProcedureClient) GetX(ctx context.Context, id string) *Procedure {
 		panic(err)
 	}
 	return pr
+}
+
+// QuerySteps queries the steps edge of a Procedure.
+func (c *ProcedureClient) QuerySteps(pr *Procedure) *StepQuery {
+	query := &StepQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(procedure.Table, procedure.FieldID, id),
+			sqlgraph.To(step.Table, step.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, procedure.StepsTable, procedure.StepsColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryProject queries the project edge of a Procedure.
@@ -657,6 +680,110 @@ func (c *RunClient) Hooks() []Hook {
 	return c.hooks.Run
 }
 
+// StepClient is a client for the Step schema.
+type StepClient struct {
+	config
+}
+
+// NewStepClient returns a client for the Step from the given config.
+func NewStepClient(c config) *StepClient {
+	return &StepClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `step.Hooks(f(g(h())))`.
+func (c *StepClient) Use(hooks ...Hook) {
+	c.hooks.Step = append(c.hooks.Step, hooks...)
+}
+
+// Create returns a create builder for Step.
+func (c *StepClient) Create() *StepCreate {
+	mutation := newStepMutation(c.config, OpCreate)
+	return &StepCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// BulkCreate returns a builder for creating a bulk of Step entities.
+func (c *StepClient) CreateBulk(builders ...*StepCreate) *StepCreateBulk {
+	return &StepCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Step.
+func (c *StepClient) Update() *StepUpdate {
+	mutation := newStepMutation(c.config, OpUpdate)
+	return &StepUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *StepClient) UpdateOne(s *Step) *StepUpdateOne {
+	mutation := newStepMutation(c.config, OpUpdateOne, withStep(s))
+	return &StepUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *StepClient) UpdateOneID(id string) *StepUpdateOne {
+	mutation := newStepMutation(c.config, OpUpdateOne, withStepID(id))
+	return &StepUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Step.
+func (c *StepClient) Delete() *StepDelete {
+	mutation := newStepMutation(c.config, OpDelete)
+	return &StepDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *StepClient) DeleteOne(s *Step) *StepDeleteOne {
+	return c.DeleteOneID(s.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *StepClient) DeleteOneID(id string) *StepDeleteOne {
+	builder := c.Delete().Where(step.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &StepDeleteOne{builder}
+}
+
+// Query returns a query builder for Step.
+func (c *StepClient) Query() *StepQuery {
+	return &StepQuery{config: c.config}
+}
+
+// Get returns a Step entity by its id.
+func (c *StepClient) Get(ctx context.Context, id string) (*Step, error) {
+	return c.Query().Where(step.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *StepClient) GetX(ctx context.Context, id string) *Step {
+	s, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+// QueryProcedure queries the procedure edge of a Step.
+func (c *StepClient) QueryProcedure(s *Step) *ProcedureQuery {
+	query := &ProcedureQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(step.Table, step.FieldID, id),
+			sqlgraph.To(procedure.Table, procedure.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, step.ProcedureTable, step.ProcedureColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *StepClient) Hooks() []Hook {
+	return c.hooks.Step
+}
+
 // StepRunClient is a client for the StepRun schema.
 type StepRunClient struct {
 	config
@@ -697,7 +824,7 @@ func (c *StepRunClient) UpdateOne(sr *StepRun) *StepRunUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *StepRunClient) UpdateOneID(id int) *StepRunUpdateOne {
+func (c *StepRunClient) UpdateOneID(id string) *StepRunUpdateOne {
 	mutation := newStepRunMutation(c.config, OpUpdateOne, withStepRunID(id))
 	return &StepRunUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -714,7 +841,7 @@ func (c *StepRunClient) DeleteOne(sr *StepRun) *StepRunDeleteOne {
 }
 
 // DeleteOneID returns a delete builder for the given id.
-func (c *StepRunClient) DeleteOneID(id int) *StepRunDeleteOne {
+func (c *StepRunClient) DeleteOneID(id string) *StepRunDeleteOne {
 	builder := c.Delete().Where(steprun.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -727,12 +854,12 @@ func (c *StepRunClient) Query() *StepRunQuery {
 }
 
 // Get returns a StepRun entity by its id.
-func (c *StepRunClient) Get(ctx context.Context, id int) (*StepRun, error) {
+func (c *StepRunClient) Get(ctx context.Context, id string) (*StepRun, error) {
 	return c.Query().Where(steprun.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *StepRunClient) GetX(ctx context.Context, id int) *StepRun {
+func (c *StepRunClient) GetX(ctx context.Context, id string) *StepRun {
 	sr, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)

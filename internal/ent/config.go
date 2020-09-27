@@ -28,6 +28,7 @@ type hooks struct {
 	Procedure []ent.Hook
 	Project   []ent.Hook
 	Run       []ent.Hook
+	Step      []ent.Hook
 	StepRun   []ent.Hook
 }
 

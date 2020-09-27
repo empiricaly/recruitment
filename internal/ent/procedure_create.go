@@ -12,6 +12,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
@@ -107,6 +108,21 @@ func (pc *ProcedureCreate) SetNillableAdult(b *bool) *ProcedureCreate {
 func (pc *ProcedureCreate) SetID(s string) *ProcedureCreate {
 	pc.mutation.SetID(s)
 	return pc
+}
+
+// AddStepIDs adds the steps edge to Step by ids.
+func (pc *ProcedureCreate) AddStepIDs(ids ...string) *ProcedureCreate {
+	pc.mutation.AddStepIDs(ids...)
+	return pc
+}
+
+// AddSteps adds the steps edges to Step.
+func (pc *ProcedureCreate) AddSteps(s ...*Step) *ProcedureCreate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return pc.AddStepIDs(ids...)
 }
 
 // SetProjectID sets the project edge to Project by id.
@@ -343,6 +359,25 @@ func (pc *ProcedureCreate) createSpec() (*Procedure, *sqlgraph.CreateSpec) {
 			Column: procedure.FieldAdult,
 		})
 		pr.Adult = value
+	}
+	if nodes := pc.mutation.StepsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   procedure.StepsTable,
+			Columns: []string{procedure.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: step.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := pc.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

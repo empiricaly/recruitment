@@ -10,6 +10,8 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/schema"
+	"github.com/empiricaly/recruitment/internal/ent/step"
+	"github.com/empiricaly/recruitment/internal/ent/steprun"
 )
 
 // The init function reads all schema descriptors with runtime
@@ -92,4 +94,28 @@ func init() {
 	run.DefaultUpdatedAt = runDescUpdatedAt.Default.(func() time.Time)
 	// run.UpdateDefaultUpdatedAt holds the default value on update for the updatedAt field.
 	run.UpdateDefaultUpdatedAt = runDescUpdatedAt.UpdateDefault.(func() time.Time)
+	stepFields := schema.Step{}.Fields()
+	_ = stepFields
+	// stepDescCreatedAt is the schema descriptor for createdAt field.
+	stepDescCreatedAt := stepFields[1].Descriptor()
+	// step.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	step.DefaultCreatedAt = stepDescCreatedAt.Default.(func() time.Time)
+	// stepDescUpdatedAt is the schema descriptor for updatedAt field.
+	stepDescUpdatedAt := stepFields[2].Descriptor()
+	// step.DefaultUpdatedAt holds the default value on creation for the updatedAt field.
+	step.DefaultUpdatedAt = stepDescUpdatedAt.Default.(func() time.Time)
+	// step.UpdateDefaultUpdatedAt holds the default value on update for the updatedAt field.
+	step.UpdateDefaultUpdatedAt = stepDescUpdatedAt.UpdateDefault.(func() time.Time)
+	steprunFields := schema.StepRun{}.Fields()
+	_ = steprunFields
+	// steprunDescCreatedAt is the schema descriptor for createdAt field.
+	steprunDescCreatedAt := steprunFields[1].Descriptor()
+	// steprun.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	steprun.DefaultCreatedAt = steprunDescCreatedAt.Default.(func() time.Time)
+	// steprunDescUpdatedAt is the schema descriptor for updatedAt field.
+	steprunDescUpdatedAt := steprunFields[2].Descriptor()
+	// steprun.DefaultUpdatedAt holds the default value on creation for the updatedAt field.
+	steprun.DefaultUpdatedAt = steprunDescUpdatedAt.Default.(func() time.Time)
+	// steprun.UpdateDefaultUpdatedAt holds the default value on update for the updatedAt field.
+	steprun.UpdateDefaultUpdatedAt = steprunDescUpdatedAt.UpdateDefault.(func() time.Time)
 }

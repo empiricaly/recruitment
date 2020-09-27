@@ -1,22 +1,15 @@
 <script>
-  import Select from "../base/Select.svelte";
-  import Label from "../base/Label.svelte";
-  import Input from "../base/Input.svelte";
-  import Textarea from "../base/Textarea.svelte";
-  import SlideOver from "../overlays/SlideOver.svelte";
-  import CodeMirror from "../editors/CodeMirror.svelte";
-  import Button from "../base/Button.svelte";
-  import StepMessageArgs from "./StepMessageArgs.svelte";
   import { uniqueID } from "../../utils/uniq.js";
+  import Input from "../base/Input.svelte";
+  import Label from "../base/Label.svelte";
+  import Textarea from "../base/Textarea.svelte";
+  import StepMessageArgs from "./StepMessageArgs.svelte";
 
   export let step;
   let mode = "markdown";
   let showVariables = false;
 
   const uniq = uniqueID();
-
-  $: hitArgs = step.args[0];
-  $: msgArgs = step.args[1];
 </script>
 
 <div class="md:grid grid-cols-3 gap-6">
@@ -33,12 +26,12 @@
   discretion is advised.)`} />
       <Input
         id={uniq('title')}
-        bind:value={hitArgs.title}
+        bind:value={step.hitArgs.title}
         required
         placeholder="Describe the task to Workers" />
     </div>
 
-    <div class="mt-4 ">
+    <div class="mt-4">
       <Label
         forID={uniq('description')}
         text="HIT Description"
@@ -46,19 +39,19 @@
         more information before they decide to view your task" />
       <Textarea
         id={uniq('description')}
-        bind:value={hitArgs.description}
+        bind:value={step.hitArgs.description}
         required
         placeholder="Give more detail about this task" />
     </div>
 
-    <div class="mt-4 ">
+    <div class="mt-4">
       <Label
         forID={uniq('keywords')}
         text="HIT Keywords"
         question="Provide keywords that will help Workers search for your tasks" />
       <Input
         id={uniq('keywords')}
-        bind:value={hitArgs.keywords}
+        bind:value={step.hitArgs.keywords}
         required
         placeholder="Comma-Seperated Keywords" />
     </div>
@@ -76,7 +69,7 @@
         min="0"
         left="$"
         right="USD"
-        bind:value={hitArgs.reward}
+        bind:value={step.hitArgs.reward}
         inputmode="numeric"
         required
         placeholder="0.0" />
@@ -91,7 +84,7 @@
         type="number"
         id={uniq('timeout')}
         right="seconds"
-        bind:value={hitArgs.timeout}
+        bind:value={step.hitArgs.timeout}
         inputmode="numeric"
         required
         placeholder="0" />
@@ -106,7 +99,7 @@
         type="number"
         id={uniq('workersCount')}
         right="seconds"
-        bind:value={hitArgs.workersCount}
+        bind:value={step.hitArgs.workersCount}
         inputmode="numeric"
         required
         placeholder="0" />
@@ -121,5 +114,5 @@
 </div>
 
 <div class="mt-1">
-  <StepMessageArgs bind:msgArgs />
+  <StepMessageArgs bind:msgArgs={step.msgArgs} />
 </div>

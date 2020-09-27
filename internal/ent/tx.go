@@ -20,6 +20,8 @@ type Tx struct {
 	Project *ProjectClient
 	// Run is the client for interacting with the Run builders.
 	Run *RunClient
+	// Step is the client for interacting with the Step builders.
+	Step *StepClient
 	// StepRun is the client for interacting with the StepRun builders.
 	StepRun *StepRunClient
 
@@ -161,6 +163,7 @@ func (tx *Tx) init() {
 	tx.Procedure = NewProcedureClient(tx.config)
 	tx.Project = NewProjectClient(tx.config)
 	tx.Run = NewRunClient(tx.config)
+	tx.Step = NewStepClient(tx.config)
 	tx.StepRun = NewStepRunClient(tx.config)
 }
 

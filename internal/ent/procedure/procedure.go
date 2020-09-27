@@ -28,6 +28,8 @@ const (
 	// FieldAdult holds the string denoting the adult field in the database.
 	FieldAdult = "adult"
 
+	// EdgeSteps holds the string denoting the steps edge name in mutations.
+	EdgeSteps = "steps"
 	// EdgeProject holds the string denoting the project edge name in mutations.
 	EdgeProject = "project"
 	// EdgeCreator holds the string denoting the creator edge name in mutations.
@@ -37,6 +39,13 @@ const (
 
 	// Table holds the table name of the procedure in the database.
 	Table = "procedures"
+	// StepsTable is the table the holds the steps relation/edge.
+	StepsTable = "steps"
+	// StepsInverseTable is the table name for the Step entity.
+	// It exists in this package in order to avoid circular dependency with the "step" package.
+	StepsInverseTable = "steps"
+	// StepsColumn is the table column denoting the steps relation/edge.
+	StepsColumn = "procedure_steps"
 	// ProjectTable is the table the holds the project relation/edge.
 	ProjectTable = "procedures"
 	// ProjectInverseTable is the table name for the Project entity.

@@ -20,6 +20,34 @@ type StepRunCreate struct {
 	hooks    []Hook
 }
 
+// SetCreatedAt sets the createdAt field.
+func (src *StepRunCreate) SetCreatedAt(t time.Time) *StepRunCreate {
+	src.mutation.SetCreatedAt(t)
+	return src
+}
+
+// SetNillableCreatedAt sets the createdAt field if the given value is not nil.
+func (src *StepRunCreate) SetNillableCreatedAt(t *time.Time) *StepRunCreate {
+	if t != nil {
+		src.SetCreatedAt(*t)
+	}
+	return src
+}
+
+// SetUpdatedAt sets the updatedAt field.
+func (src *StepRunCreate) SetUpdatedAt(t time.Time) *StepRunCreate {
+	src.mutation.SetUpdatedAt(t)
+	return src
+}
+
+// SetNillableUpdatedAt sets the updatedAt field if the given value is not nil.
+func (src *StepRunCreate) SetNillableUpdatedAt(t *time.Time) *StepRunCreate {
+	if t != nil {
+		src.SetUpdatedAt(*t)
+	}
+	return src
+}
+
 // SetStartAt sets the startAt field.
 func (src *StepRunCreate) SetStartAt(t time.Time) *StepRunCreate {
 	src.mutation.SetStartAt(t)
@@ -35,6 +63,12 @@ func (src *StepRunCreate) SetEndedAt(t time.Time) *StepRunCreate {
 // SetParticipantsCount sets the participantsCount field.
 func (src *StepRunCreate) SetParticipantsCount(i int) *StepRunCreate {
 	src.mutation.SetParticipantsCount(i)
+	return src
+}
+
+// SetID sets the id field.
+func (src *StepRunCreate) SetID(s string) *StepRunCreate {
+	src.mutation.SetID(s)
 	return src
 }
 
@@ -85,6 +119,14 @@ func (src *StepRunCreate) SaveX(ctx context.Context) *StepRun {
 }
 
 func (src *StepRunCreate) preSave() error {
+	if _, ok := src.mutation.CreatedAt(); !ok {
+		v := steprun.DefaultCreatedAt()
+		src.mutation.SetCreatedAt(v)
+	}
+	if _, ok := src.mutation.UpdatedAt(); !ok {
+		v := steprun.DefaultUpdatedAt()
+		src.mutation.SetUpdatedAt(v)
+	}
 	if _, ok := src.mutation.StartAt(); !ok {
 		return &ValidationError{Name: "startAt", err: errors.New("ent: missing required field \"startAt\"")}
 	}
@@ -105,8 +147,6 @@ func (src *StepRunCreate) sqlSave(ctx context.Context) (*StepRun, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	sr.ID = int(id)
 	return sr, nil
 }
 
@@ -116,11 +156,31 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 		_spec = &sqlgraph.CreateSpec{
 			Table: steprun.Table,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeString,
 				Column: steprun.FieldID,
 			},
 		}
 	)
+	if id, ok := src.mutation.ID(); ok {
+		sr.ID = id
+		_spec.ID.Value = id
+	}
+	if value, ok := src.mutation.CreatedAt(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: steprun.FieldCreatedAt,
+		})
+		sr.CreatedAt = value
+	}
+	if value, ok := src.mutation.UpdatedAt(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: steprun.FieldUpdatedAt,
+		})
+		sr.UpdatedAt = value
+	}
 	if value, ok := src.mutation.StartAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
@@ -187,8 +247,6 @@ func (srcb *StepRunCreateBulk) Save(ctx context.Context) ([]*StepRun, error) {
 				if err != nil {
 					return nil, err
 				}
-				id := specs[i].ID.Value.(int64)
-				nodes[i].ID = int(id)
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {

@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -13,6 +14,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -27,6 +29,7 @@ type ProcedureQuery struct {
 	unique     []string
 	predicates []predicate.Procedure
 	// eager-loading edges.
+	withSteps   *StepQuery
 	withProject *ProjectQuery
 	withCreator *AdminQuery
 	withRun     *RunQuery
@@ -58,6 +61,24 @@ func (pq *ProcedureQuery) Offset(offset int) *ProcedureQuery {
 func (pq *ProcedureQuery) Order(o ...OrderFunc) *ProcedureQuery {
 	pq.order = append(pq.order, o...)
 	return pq
+}
+
+// QuerySteps chains the current query on the steps edge.
+func (pq *ProcedureQuery) QuerySteps() *StepQuery {
+	query := &StepQuery{config: pq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(procedure.Table, procedure.FieldID, pq.sqlQuery()),
+			sqlgraph.To(step.Table, step.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, procedure.StepsTable, procedure.StepsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryProject chains the current query on the project edge.
@@ -293,6 +314,17 @@ func (pq *ProcedureQuery) Clone() *ProcedureQuery {
 	}
 }
 
+//  WithSteps tells the query-builder to eager-loads the nodes that are connected to
+// the "steps" edge. The optional arguments used to configure the query builder of the edge.
+func (pq *ProcedureQuery) WithSteps(opts ...func(*StepQuery)) *ProcedureQuery {
+	query := &StepQuery{config: pq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withSteps = query
+	return pq
+}
+
 //  WithProject tells the query-builder to eager-loads the nodes that are connected to
 // the "project" edge. The optional arguments used to configure the query builder of the edge.
 func (pq *ProcedureQuery) WithProject(opts ...func(*ProjectQuery)) *ProcedureQuery {
@@ -393,7 +425,8 @@ func (pq *ProcedureQuery) sqlAll(ctx context.Context) ([]*Procedure, error) {
 		nodes       = []*Procedure{}
 		withFKs     = pq.withFKs
 		_spec       = pq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
+			pq.withSteps != nil,
 			pq.withProject != nil,
 			pq.withCreator != nil,
 			pq.withRun != nil,
@@ -427,6 +460,34 @@ func (pq *ProcedureQuery) sqlAll(ctx context.Context) ([]*Procedure, error) {
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+
+	if query := pq.withSteps; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[string]*Procedure)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.Step(func(s *sql.Selector) {
+			s.Where(sql.InValues(procedure.StepsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.procedure_steps
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "procedure_steps" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "procedure_steps" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Steps = append(node.Edges.Steps, n)
+		}
 	}
 
 	if query := pq.withProject; query != nil {

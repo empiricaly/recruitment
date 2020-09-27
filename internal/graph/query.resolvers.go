@@ -27,9 +27,9 @@ func (r *queryResolver) Project(ctx context.Context, id *string, projectID *stri
 
 	if id != nil {
 		return r.Store.Project.Query().Where(project.IDEQ(*id)).First(ctx)
-	} else {
-		return r.Store.Project.Query().Where(project.ProjectIDEQ(*projectID)).First(ctx)
 	}
+
+	return r.Store.Project.Query().Where(project.ProjectIDEQ(*projectID)).First(ctx)
 }
 
 func (r *queryResolver) Participants(ctx context.Context, first *int, after *string) (*model.ParticipantsConnection, error) {

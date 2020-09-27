@@ -18,5 +18,8 @@ type Project func(*sql.Selector)
 // Run is the predicate function for run builders.
 type Run func(*sql.Selector)
 
+// Step is the predicate function for step builders.
+type Step func(*sql.Selector)
+
 // StepRun is the predicate function for steprun builders.
 type StepRun func(*sql.Selector)

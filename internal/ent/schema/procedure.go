@@ -28,6 +28,7 @@ func (Procedure) Fields() []ent.Field {
 // Edges of the Procedure.
 func (Procedure) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.To("steps", Step.Type),
 		edge.From("project", Project.Type).
 			Ref("procedures").
 			Unique(),

@@ -11,11 +11,6 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent"
 )
 
-// Argument groups for Steps.
-type StepArgs interface {
-	IsStepArgs()
-}
-
 // User is either an Admin or a Participant.
 type User interface {
 	IsUser()
@@ -89,23 +84,8 @@ type ConditionInput struct {
 
 type CreateProcedureInput struct {
 	// Project in which to create the Procedure.
-	ProjectID string `json:"projectID"`
-	// Friendly name.
-	Name string `json:"name"`
-	// Ordered list of Steps for Procedure.
-	Steps []*StepInput `json:"steps"`
-	// Determines participant selection type.
-	SelectionType SelectionType `json:"selectionType"`
-	// Internal Selection criteria for participants
-	InternalCriteria *InternalCriteriaInput `json:"internalCriteria"`
-	// Mturk Selection criteria for participants
-	MturkCriteria *MTurkCriteriaInput `json:"mturkCriteria"`
-	// Number of participants desired.
-	ParticipantCount int `json:"participantCount"`
-	// Contains adult content.
-	// From MTurk: This project may contain potentially explicit or offensive
-	// content, for example, nudity.
-	Adult bool `json:"adult"`
+	ProjectID string          `json:"projectID"`
+	Procedure *ProcedureInput `json:"procedure"`
 }
 
 type CreateProjectInput struct {
@@ -114,7 +94,8 @@ type CreateProjectInput struct {
 }
 
 type CreateRunInput struct {
-	Procedure *CreateProcedureInput `json:"procedure"`
+	ProjectID string          `json:"projectID"`
+	Procedure *ProcedureInput `json:"procedure"`
 }
 
 // Datum is a single piece of custom data.
@@ -175,12 +156,13 @@ type FilterStepArgs struct {
 	Condition *Condition `json:"condition"`
 }
 
-func (FilterStepArgs) IsStepArgs() {}
-
 // FilterStepArgs are arguments passed to a Pariticipant Filter Step.
 // It must contains **either** JS code or the name of pre-defined filtering function.
 // This is only valid for an PARTICIPANT_FILTER Step.
 type FilterStepArgsInput struct {
+	// Type is whether to use a predefined filter, JS code, or the Condition filter
+	// mechanism.
+	Type ParticipantFilterType `json:"type"`
 	// Javascript to execute as a participant filter step.
 	// The code must contain a functinon exported using a default ES6 export.
 	// The function should accept a single argument object. This object contains the
@@ -196,6 +178,8 @@ type FilterStepArgsInput struct {
 	Js *string `json:"js"`
 	// Filter should be the name of pre-defined filtering function.
 	Filter *string `json:"filter"`
+	// Condition set the participant must meet to be allowed to participate.
+	Condition *ConditionInput `json:"condition"`
 }
 
 // HITStepArgs are arguments passed to a HIT Step.
@@ -230,8 +214,6 @@ type HITStepArgs struct {
 	WorkersCount int `json:"workersCount"`
 }
 
-func (HITStepArgs) IsStepArgs() {}
-
 // HITStepArgs are arguments passed to a HIT Step.
 // This is only valid for an MTURK_HIT Step.
 type HITStepArgsInput struct {
@@ -242,26 +224,26 @@ type HITStepArgsInput struct {
 	// Tasks that contain adult content are required to include the following phrase
 	// in your task title: (WARNING: This HIT may contain adult content. Worker
 	// discretion is advised.)
-	Title string `json:"title"`
+	Title *string `json:"title"`
 	// Description of HIT.
 	// From MTurk: Give more detail about this task. This gives Workers a bit more
 	// information before they decide to view your task.
-	Description string `json:"description"`
+	Description *string `json:"description"`
 	// Keywords of HIT. Comma-seratred.
 	// From MTurk: Provide keywords that will help Workers search for your tasks.
-	Keywords string `json:"keywords"`
+	Keywords *string `json:"keywords"`
 	// DISABLED - Micro-batching is still TBD, probably needs more args.
-	Microbatch bool `json:"microbatch"`
+	Microbatch *bool `json:"microbatch"`
 	// MTurk HIT reward for task in USD.
-	Reward float64 `json:"reward"`
+	Reward *float64 `json:"reward"`
 	// Timeout of a single accepted HIT in seconds.
-	Timeout int `json:"timeout"`
+	Timeout *int `json:"timeout"`
 	// Duration in seconds from start of Step before expiration of unconsumed HITs.
 	Duration int `json:"duration"`
 	// Number of HIT workers to accept.
 	// Note: is this needed? The count is determined by the selection in the first
 	// Step, then by the number of participants remaining at each Step.
-	WorkersCount int `json:"workersCount"`
+	WorkersCount *int `json:"workersCount"`
 }
 
 // InternalCriteria is the criteria for internal database participant selection.
@@ -442,8 +424,6 @@ type MessageStepArgs struct {
 	LobbyExpiration *int `json:"lobbyExpiration"`
 }
 
-func (MessageStepArgs) IsStepArgs() {}
-
 // MessageStepArgs are arguments passed to a Step that has a message.
 // This is only valid for MTURK_HIT and MTURK_MESSAGE Steps.
 type MessageStepArgsInput struct {
@@ -461,9 +441,9 @@ type MessageStepArgsInput struct {
 	// - `procedure`: parent Procedure of step (contains the definition of the Procedure)
 	// - `run`: run this step is part of (contains the instance of the Procedure)
 	// - `participant`: current participant
-	Message string `json:"message"`
+	Message *string `json:"message"`
 	// MessageType indicates the rendering language of the Message.
-	MessageType ContentType `json:"messageType"`
+	MessageType *ContentType `json:"messageType"`
 	// Lobby enables to showing a lobby, and rich-text message to put in the lobby
 	// Lobby can either expire (see expiration below) to produce the effect of a
 	// precise start time, or must have a submit button.
@@ -472,12 +452,8 @@ type MessageStepArgsInput struct {
 	Lobby *string `json:"lobby"`
 	// LobbyType indicates the rendering language of the Lobby.
 	LobbyType *ContentType `json:"lobbyType"`
-	// useLobby enables to showing a lobby, and rich-text message to put in the lobby
-	// Lobby can either expire (see expiration below) to produce the effect of a
-	// precise start time, or must have a submit button.
-	// The string should be HTML content.
-	// Only available if URL is present.
-	LobbyExpiration *string `json:"lobbyExpiration"`
+	// LobbyExpirtation in seconds from the beginning of the step.
+	LobbyExpiration *int `json:"lobbyExpiration"`
 }
 
 // MutateDatumInput adds/appends/updates/deletes Data to a Node.
@@ -545,6 +521,27 @@ type ParticipantsEdge struct {
 	Node   *Participant `json:"node"`
 }
 
+type ProcedureInput struct {
+	// ID of procedure to update, if updating
+	ID *string `json:"id"`
+	// Friendly name.
+	Name string `json:"name"`
+	// Ordered list of Steps for Procedure.
+	Steps []*StepInput `json:"steps"`
+	// Determines participant selection type.
+	SelectionType SelectionType `json:"selectionType"`
+	// Internal Selection criteria for participants
+	InternalCriteria *InternalCriteriaInput `json:"internalCriteria"`
+	// Mturk Selection criteria for participants
+	MturkCriteria *MTurkCriteriaInput `json:"mturkCriteria"`
+	// Number of participants desired.
+	ParticipantCount int `json:"participantCount"`
+	// Contains adult content.
+	// From MTurk: This project may contain potentially explicit or offensive
+	// content, for example, nudity.
+	Adult bool `json:"adult"`
+}
+
 // ProviderID contains the identifier for a 3rd party provider.
 type ProviderID struct {
 	// createdAt is the time of creation of the record.
@@ -573,24 +570,11 @@ type StartRunInput struct {
 	RunID string `json:"runID"`
 }
 
-// Steps are the ordered parts of a Procedure.
-type Step struct {
-	ID        string     `json:"id"`
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
-	Creator   *ent.Admin `json:"creator"`
-	// The Type defines what kind of action this step represents.
-	Type StepType `json:"type"`
-	// Duration of Step in seconds. At the end of the duration, the next Step will
-	// execute.
-	// If set to 0, the Step executes and immediately moves onto the next Step. This
-	// mostly works for PARTICIPANT_FILTER Steps and the last Step in a Procedure.
-	Duration int `json:"duration"`
-	// Step type specific Step arguments.
-	Args []StepArgs `json:"args"`
-}
-
 type StepInput struct {
+	// ID of the step to update, if updating
+	ID *string `json:"id"`
+	// Index is the position of the step in the Procedure.
+	Index int `json:"index"`
 	// The Type defines what kind of action this step represents.
 	Type StepType `json:"type"`
 	// Duration of Step in seconds. At the end of the duration, the next Step will
@@ -611,26 +595,15 @@ type UnscheduleRunInput struct {
 }
 
 type UpdateProcedureInput struct {
-	// Friendly name.
-	Name *string `json:"name"`
-	// Determines participant selection type.
-	SelectionType *SelectionType `json:"selectionType"`
-	// Internal Selection criteria for participants
-	InternalCriteria *InternalCriteriaInput `json:"internalCriteria"`
-	// Mturk Selection criteria for participants
-	MturkCriteria *MTurkCriteriaInput `json:"mturkCriteria"`
-	// Number of participants desired.
-	ParticipantCount *int `json:"participantCount"`
-	// Contains adult content.
-	// From MTurk: This project may contain potentially explicit or offensive
-	// content, for example, nudity.
-	Adult *bool `json:"adult"`
+	ProjectID string          `json:"projectID"`
+	RunID     string          `json:"runID"`
+	Procedure *ProcedureInput `json:"procedure"`
 }
 
-type UpdateStepInput struct {
-	ProcedureID string     `json:"procedureID"`
-	StepID      string     `json:"stepID"`
-	Step        *StepInput `json:"step"`
+type UpdateRunInput struct {
+	ID        string `json:"ID"`
+	ProjectID string `json:"projectID"`
+	Name      string `json:"name"`
 }
 
 // The kind of comparison to make against a value.

@@ -119,9 +119,39 @@ var (
 			},
 		},
 	}
+	// StepsColumns holds the columns for the "steps" table.
+	StepsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"MTURK_HIT", "MTURK_MESSAGE", "PARTICIPANT_FILTER"}},
+		{Name: "index", Type: field.TypeInt},
+		{Name: "duration", Type: field.TypeInt},
+		{Name: "msg_args", Type: field.TypeBytes, Nullable: true},
+		{Name: "hit_args", Type: field.TypeBytes, Nullable: true},
+		{Name: "filter_args", Type: field.TypeBytes, Nullable: true},
+		{Name: "procedure_steps", Type: field.TypeString, Nullable: true},
+	}
+	// StepsTable holds the schema information for the "steps" table.
+	StepsTable = &schema.Table{
+		Name:       "steps",
+		Columns:    StepsColumns,
+		PrimaryKey: []*schema.Column{StepsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "steps_procedures_steps",
+				Columns: []*schema.Column{StepsColumns[9]},
+
+				RefColumns: []*schema.Column{ProceduresColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// StepRunsColumns holds the columns for the "step_runs" table.
 	StepRunsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "start_at", Type: field.TypeTime},
 		{Name: "ended_at", Type: field.TypeTime},
 		{Name: "participants_count", Type: field.TypeInt},
@@ -139,6 +169,7 @@ var (
 		ProceduresTable,
 		ProjectsTable,
 		RunsTable,
+		StepsTable,
 		StepRunsTable,
 	}
 )
@@ -149,4 +180,5 @@ func init() {
 	ProceduresTable.ForeignKeys[2].RefTable = RunsTable
 	ProjectsTable.ForeignKeys[0].RefTable = AdminsTable
 	RunsTable.ForeignKeys[0].RefTable = ProjectsTable
+	StepsTable.ForeignKeys[0].RefTable = ProceduresTable
 }

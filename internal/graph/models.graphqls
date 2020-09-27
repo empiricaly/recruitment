@@ -111,7 +111,7 @@ type Project {
   """
   Runs contained in Project
   """
-  runs(runID: ID): [Run!]! @goField(forceResolver: true)
+  runs(runID: ID, limit: Int): [Run!]! @goField(forceResolver: true)
 
   """
   Data returns the custom data that has been set on the Participant.
@@ -244,7 +244,7 @@ type Procedure {
   """
   Determines participant selection type.
   """
-  selectionType: SelectionType @goField(forceResolver: true)
+  selectionType: SelectionType! @goField(forceResolver: true)
 
   """
   Selection criteria for internal DB participants.
@@ -463,9 +463,14 @@ type Step {
   creator: Admin!
 
   """
+  Index is the position of the step in the Procedure.
+  """
+  index: Int!
+
+  """
   The Type defines what kind of action this step represents.
   """
-  type: StepType!
+  type: StepType! @goField(forceResolver: true)
 
   """
   Duration of Step in seconds. At the end of the duration, the next Step will
@@ -476,15 +481,20 @@ type Step {
   duration: Int!
 
   """
-  Step type specific Step arguments.
+  Arguments for Message type Step.
   """
-  args: [StepArgs!]!
-}
+  msgArgs: MessageStepArgs @goField(forceResolver: true)
 
-"""
-Argument groups for Steps.
-"""
-union StepArgs = HITStepArgs | MessageStepArgs | FilterStepArgs
+  """
+  Arguments for HIT type Step.
+  """
+  hitArgs: HITStepArgs @goField(forceResolver: true)
+
+  """
+  Arguments for Filter type Step.
+  """
+  filterArgs: FilterStepArgs @goField(forceResolver: true)
+}
 
 """
 FilterStepArgs are arguments passed to a Pariticipant Filter Step.
@@ -496,7 +506,7 @@ type FilterStepArgs {
   Type is whether to use a predefined filter, JS code, or the Condition filter
   mechanism.
   """
-  type: ParticipantFilterType!
+  type: ParticipantFilterType! @goField(forceResolver: true)
 
   """
   Filter should be the name of pre-defined filtering function.
@@ -611,7 +621,7 @@ type MessageStepArgs {
   """
   MessageType indicates the rendering language of the Message.
   """
-  messageType: ContentType!
+  messageType: ContentType! @goField(forceResolver: true)
 
   """
   Lobby enables to showing a lobby, and rich-text message to put in the lobby
@@ -625,7 +635,7 @@ type MessageStepArgs {
   """
   LobbyType indicates the rendering language of the Lobby.
   """
-  lobbyType: ContentType
+  lobbyType: ContentType @goField(forceResolver: true)
 
   """
   LobbyExpirtation in seconds from the beginning of the step.
@@ -819,9 +829,4 @@ type Admin {
   username is the login name of the Admin.
   """
   username: String
-
-  """
-  email is the email associated with the Admin.
-  """
-  email: String!
 }

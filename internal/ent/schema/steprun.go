@@ -12,12 +12,12 @@ type StepRun struct {
 
 // Fields of the StepRun.
 func (StepRun) Fields() []ent.Field {
-	// TODO field : step, status, participants,
-	return []ent.Field{
+	return append(
+		append([]ent.Field{}, commonFields...),
 		field.Time("startAt"),
 		field.Time("endedAt"),
 		field.Int("participantsCount"),
-	}
+	)
 }
 
 // Edges of the StepRun.

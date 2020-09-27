@@ -1,12 +1,11 @@
 <script>
-  import Layout from "../layouts/Layout.svelte";
-  import Link from "../components/base/Link.svelte";
-  import RunLine from "../components/runs/RunLine.svelte";
-  import dayjs from "dayjs";
   import Callout from "../components/base/Callout.svelte";
+  import Link from "../components/base/Link.svelte";
+  import RunsList from "../components/runs/RunsList.svelte";
+  import Layout from "../layouts/Layout.svelte";
 </script>
 
-<Layout title="Overview">
+<Layout title="Overview" let:project>
   <div>
     <!-- <h3 class="text-lg leading-6 font-medium text-gray-900">Last 30 days</h3> -->
     <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
@@ -71,31 +70,7 @@
     <h3 class="text-lg leading-6 font-medium text-gray-900">Last 3 Runs</h3>
     <div class="mt-5 bg-white shadow overflow-hidden sm:rounded-md">
       <ul>
-        <RunLine
-          projectID="1234567"
-          runID="2345678"
-          startAt={dayjs().add(26, 'hour')}
-          name="Speed Dating Pilot 2"
-          index={0}
-          stepCount={2}
-          status="created" />
-        <RunLine
-          projectID="1234567"
-          runID="2345678"
-          startedAt={dayjs().subtract(122, 'minute')}
-          endedAt={dayjs().subtract(22, 'minute')}
-          name="Speed Dating Pilot 2"
-          index={1}
-          stepCount={2}
-          status="done" />
-        <RunLine
-          projectID="1234567"
-          runID="2345678"
-          endedAt={dayjs().subtract(354, 'minute')}
-          name="Speed Dating Pilot 1"
-          index={1}
-          stepCount={4}
-          status="terminated" />
+        <RunsList {project} limit={3} />
       </ul>
     </div>
   </div>

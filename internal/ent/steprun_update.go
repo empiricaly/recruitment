@@ -28,6 +28,12 @@ func (sru *StepRunUpdate) Where(ps ...predicate.StepRun) *StepRunUpdate {
 	return sru
 }
 
+// SetUpdatedAt sets the updatedAt field.
+func (sru *StepRunUpdate) SetUpdatedAt(t time.Time) *StepRunUpdate {
+	sru.mutation.SetUpdatedAt(t)
+	return sru
+}
+
 // SetStartAt sets the startAt field.
 func (sru *StepRunUpdate) SetStartAt(t time.Time) *StepRunUpdate {
 	sru.mutation.SetStartAt(t)
@@ -60,6 +66,10 @@ func (sru *StepRunUpdate) Mutation() *StepRunMutation {
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (sru *StepRunUpdate) Save(ctx context.Context) (int, error) {
+	if _, ok := sru.mutation.UpdatedAt(); !ok {
+		v := steprun.UpdateDefaultUpdatedAt()
+		sru.mutation.SetUpdatedAt(v)
+	}
 	var (
 		err      error
 		affected int
@@ -115,7 +125,7 @@ func (sru *StepRunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Table:   steprun.Table,
 			Columns: steprun.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeString,
 				Column: steprun.FieldID,
 			},
 		},
@@ -126,6 +136,13 @@ func (sru *StepRunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := sru.mutation.UpdatedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: steprun.FieldUpdatedAt,
+		})
 	}
 	if value, ok := sru.mutation.StartAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
@@ -173,6 +190,12 @@ type StepRunUpdateOne struct {
 	mutation *StepRunMutation
 }
 
+// SetUpdatedAt sets the updatedAt field.
+func (sruo *StepRunUpdateOne) SetUpdatedAt(t time.Time) *StepRunUpdateOne {
+	sruo.mutation.SetUpdatedAt(t)
+	return sruo
+}
+
 // SetStartAt sets the startAt field.
 func (sruo *StepRunUpdateOne) SetStartAt(t time.Time) *StepRunUpdateOne {
 	sruo.mutation.SetStartAt(t)
@@ -205,6 +228,10 @@ func (sruo *StepRunUpdateOne) Mutation() *StepRunMutation {
 
 // Save executes the query and returns the updated entity.
 func (sruo *StepRunUpdateOne) Save(ctx context.Context) (*StepRun, error) {
+	if _, ok := sruo.mutation.UpdatedAt(); !ok {
+		v := steprun.UpdateDefaultUpdatedAt()
+		sruo.mutation.SetUpdatedAt(v)
+	}
 	var (
 		err  error
 		node *StepRun
@@ -260,7 +287,7 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 			Table:   steprun.Table,
 			Columns: steprun.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeString,
 				Column: steprun.FieldID,
 			},
 		},
@@ -270,6 +297,13 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing StepRun.ID for update")}
 	}
 	_spec.Node.ID.Value = id
+	if value, ok := sruo.mutation.UpdatedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: steprun.FieldUpdatedAt,
+		})
+	}
 	if value, ok := sruo.mutation.StartAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,

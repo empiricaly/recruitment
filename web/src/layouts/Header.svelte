@@ -73,6 +73,7 @@
       {overtitle}
     </div>
   {/if}
+  <slot name="pretitle" />
 </div>
 
 <div
@@ -85,7 +86,7 @@
       {#if titleUpdatable}
         <input
           class="font-bold focus:outline-none focus:shadow-outline-blue
-            rounded-md bg-transparent focus:bg-white"
+            rounded-md bg-transparent focus:bg-white w-auto"
           type="text"
           bind:value={title} />
       {:else}

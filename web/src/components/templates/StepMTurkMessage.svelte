@@ -1,8 +1,9 @@
 <script>
   import StepMessageArgs from "./StepMessageArgs.svelte";
+
   export let step;
 
-  $: msgArgs = step.args[0];
+  console.log("stepstepstepstep", step);
 </script>
 
-<StepMessageArgs bind:msgArgs />
+<StepMessageArgs bind:msgArgs={step.msgArgs} />

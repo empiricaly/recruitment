@@ -12,6 +12,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 
 	"github.com/facebook/ent"
@@ -30,6 +31,7 @@ const (
 	TypeProcedure = "Procedure"
 	TypeProject   = "Project"
 	TypeRun       = "Run"
+	TypeStep      = "Step"
 	TypeStepRun   = "StepRun"
 )
 
@@ -654,6 +656,8 @@ type ProcedureMutation struct {
 	mturkCriteria       *[]byte
 	adult               *bool
 	clearedFields       map[string]struct{}
+	steps               map[string]struct{}
+	removedsteps        map[string]struct{}
 	project             *string
 	clearedproject      bool
 	creator             *string
@@ -1065,6 +1069,48 @@ func (m *ProcedureMutation) ResetAdult() {
 	m.adult = nil
 }
 
+// AddStepIDs adds the steps edge to Step by ids.
+func (m *ProcedureMutation) AddStepIDs(ids ...string) {
+	if m.steps == nil {
+		m.steps = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.steps[ids[i]] = struct{}{}
+	}
+}
+
+// RemoveStepIDs removes the steps edge to Step by ids.
+func (m *ProcedureMutation) RemoveStepIDs(ids ...string) {
+	if m.removedsteps == nil {
+		m.removedsteps = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedsteps[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSteps returns the removed ids of steps.
+func (m *ProcedureMutation) RemovedStepsIDs() (ids []string) {
+	for id := range m.removedsteps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// StepsIDs returns the steps ids in the mutation.
+func (m *ProcedureMutation) StepsIDs() (ids []string) {
+	for id := range m.steps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSteps reset all changes of the "steps" edge.
+func (m *ProcedureMutation) ResetSteps() {
+	m.steps = nil
+	m.removedsteps = nil
+}
+
 // SetProjectID sets the project edge to Project by id.
 func (m *ProcedureMutation) SetProjectID(id string) {
 	m.project = &id
@@ -1431,7 +1477,10 @@ func (m *ProcedureMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *ProcedureMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
+	if m.steps != nil {
+		edges = append(edges, procedure.EdgeSteps)
+	}
 	if m.project != nil {
 		edges = append(edges, procedure.EdgeProject)
 	}
@@ -1448,6 +1497,12 @@ func (m *ProcedureMutation) AddedEdges() []string {
 // the given edge name.
 func (m *ProcedureMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case procedure.EdgeSteps:
+		ids := make([]ent.Value, 0, len(m.steps))
+		for id := range m.steps {
+			ids = append(ids, id)
+		}
+		return ids
 	case procedure.EdgeProject:
 		if id := m.project; id != nil {
 			return []ent.Value{*id}
@@ -1467,7 +1522,10 @@ func (m *ProcedureMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *ProcedureMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
+	if m.removedsteps != nil {
+		edges = append(edges, procedure.EdgeSteps)
+	}
 	return edges
 }
 
@@ -1475,6 +1533,12 @@ func (m *ProcedureMutation) RemovedEdges() []string {
 // the given edge name.
 func (m *ProcedureMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case procedure.EdgeSteps:
+		ids := make([]ent.Value, 0, len(m.removedsteps))
+		for id := range m.removedsteps {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -1482,7 +1546,7 @@ func (m *ProcedureMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *ProcedureMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedproject {
 		edges = append(edges, procedure.EdgeProject)
 	}
@@ -1531,6 +1595,9 @@ func (m *ProcedureMutation) ClearEdge(name string) error {
 // defined in the schema.
 func (m *ProcedureMutation) ResetEdge(name string) error {
 	switch name {
+	case procedure.EdgeSteps:
+		m.ResetSteps()
+		return nil
 	case procedure.EdgeProject:
 		m.ResetProject()
 		return nil
@@ -3098,13 +3165,897 @@ func (m *RunMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Run edge %s", name)
 }
 
+// StepMutation represents an operation that mutate the Steps
+// nodes in the graph.
+type StepMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *string
+	createdAt        *time.Time
+	updatedAt        *time.Time
+	_type            *step.Type
+	index            *int
+	addindex         *int
+	duration         *int
+	addduration      *int
+	msgArgs          *[]byte
+	hitArgs          *[]byte
+	filterArgs       *[]byte
+	clearedFields    map[string]struct{}
+	procedure        *string
+	clearedprocedure bool
+	done             bool
+	oldValue         func(context.Context) (*Step, error)
+}
+
+var _ ent.Mutation = (*StepMutation)(nil)
+
+// stepOption allows to manage the mutation configuration using functional options.
+type stepOption func(*StepMutation)
+
+// newStepMutation creates new mutation for $n.Name.
+func newStepMutation(c config, op Op, opts ...stepOption) *StepMutation {
+	m := &StepMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeStep,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withStepID sets the id field of the mutation.
+func withStepID(id string) stepOption {
+	return func(m *StepMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Step
+		)
+		m.oldValue = func(ctx context.Context) (*Step, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Step.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withStep sets the old Step of the mutation.
+func withStep(node *Step) stepOption {
+	return func(m *StepMutation) {
+		m.oldValue = func(context.Context) (*Step, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m StepMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m StepMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that, this
+// operation is accepted only on Step creation.
+func (m *StepMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the id value in the mutation. Note that, the id
+// is available only if it was provided to the builder.
+func (m *StepMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetCreatedAt sets the createdAt field.
+func (m *StepMutation) SetCreatedAt(t time.Time) {
+	m.createdAt = &t
+}
+
+// CreatedAt returns the createdAt value in the mutation.
+func (m *StepMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.createdAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old createdAt value of the Step.
+// If the Step object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt reset all changes of the "createdAt" field.
+func (m *StepMutation) ResetCreatedAt() {
+	m.createdAt = nil
+}
+
+// SetUpdatedAt sets the updatedAt field.
+func (m *StepMutation) SetUpdatedAt(t time.Time) {
+	m.updatedAt = &t
+}
+
+// UpdatedAt returns the updatedAt value in the mutation.
+func (m *StepMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updatedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old updatedAt value of the Step.
+// If the Step object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt reset all changes of the "updatedAt" field.
+func (m *StepMutation) ResetUpdatedAt() {
+	m.updatedAt = nil
+}
+
+// SetType sets the type field.
+func (m *StepMutation) SetType(s step.Type) {
+	m._type = &s
+}
+
+// GetType returns the type value in the mutation.
+func (m *StepMutation) GetType() (r step.Type, exists bool) {
+	v := m._type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldType returns the old type value of the Step.
+// If the Step object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepMutation) OldType(ctx context.Context) (v step.Type, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldType is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldType: %w", err)
+	}
+	return oldValue.Type, nil
+}
+
+// ResetType reset all changes of the "type" field.
+func (m *StepMutation) ResetType() {
+	m._type = nil
+}
+
+// SetIndex sets the index field.
+func (m *StepMutation) SetIndex(i int) {
+	m.index = &i
+	m.addindex = nil
+}
+
+// Index returns the index value in the mutation.
+func (m *StepMutation) Index() (r int, exists bool) {
+	v := m.index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIndex returns the old index value of the Step.
+// If the Step object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepMutation) OldIndex(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldIndex is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldIndex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIndex: %w", err)
+	}
+	return oldValue.Index, nil
+}
+
+// AddIndex adds i to index.
+func (m *StepMutation) AddIndex(i int) {
+	if m.addindex != nil {
+		*m.addindex += i
+	} else {
+		m.addindex = &i
+	}
+}
+
+// AddedIndex returns the value that was added to the index field in this mutation.
+func (m *StepMutation) AddedIndex() (r int, exists bool) {
+	v := m.addindex
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetIndex reset all changes of the "index" field.
+func (m *StepMutation) ResetIndex() {
+	m.index = nil
+	m.addindex = nil
+}
+
+// SetDuration sets the duration field.
+func (m *StepMutation) SetDuration(i int) {
+	m.duration = &i
+	m.addduration = nil
+}
+
+// Duration returns the duration value in the mutation.
+func (m *StepMutation) Duration() (r int, exists bool) {
+	v := m.duration
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDuration returns the old duration value of the Step.
+// If the Step object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepMutation) OldDuration(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldDuration is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldDuration requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDuration: %w", err)
+	}
+	return oldValue.Duration, nil
+}
+
+// AddDuration adds i to duration.
+func (m *StepMutation) AddDuration(i int) {
+	if m.addduration != nil {
+		*m.addduration += i
+	} else {
+		m.addduration = &i
+	}
+}
+
+// AddedDuration returns the value that was added to the duration field in this mutation.
+func (m *StepMutation) AddedDuration() (r int, exists bool) {
+	v := m.addduration
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDuration reset all changes of the "duration" field.
+func (m *StepMutation) ResetDuration() {
+	m.duration = nil
+	m.addduration = nil
+}
+
+// SetMsgArgs sets the msgArgs field.
+func (m *StepMutation) SetMsgArgs(b []byte) {
+	m.msgArgs = &b
+}
+
+// MsgArgs returns the msgArgs value in the mutation.
+func (m *StepMutation) MsgArgs() (r []byte, exists bool) {
+	v := m.msgArgs
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMsgArgs returns the old msgArgs value of the Step.
+// If the Step object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepMutation) OldMsgArgs(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMsgArgs is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMsgArgs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMsgArgs: %w", err)
+	}
+	return oldValue.MsgArgs, nil
+}
+
+// ClearMsgArgs clears the value of msgArgs.
+func (m *StepMutation) ClearMsgArgs() {
+	m.msgArgs = nil
+	m.clearedFields[step.FieldMsgArgs] = struct{}{}
+}
+
+// MsgArgsCleared returns if the field msgArgs was cleared in this mutation.
+func (m *StepMutation) MsgArgsCleared() bool {
+	_, ok := m.clearedFields[step.FieldMsgArgs]
+	return ok
+}
+
+// ResetMsgArgs reset all changes of the "msgArgs" field.
+func (m *StepMutation) ResetMsgArgs() {
+	m.msgArgs = nil
+	delete(m.clearedFields, step.FieldMsgArgs)
+}
+
+// SetHitArgs sets the hitArgs field.
+func (m *StepMutation) SetHitArgs(b []byte) {
+	m.hitArgs = &b
+}
+
+// HitArgs returns the hitArgs value in the mutation.
+func (m *StepMutation) HitArgs() (r []byte, exists bool) {
+	v := m.hitArgs
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHitArgs returns the old hitArgs value of the Step.
+// If the Step object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepMutation) OldHitArgs(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldHitArgs is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldHitArgs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHitArgs: %w", err)
+	}
+	return oldValue.HitArgs, nil
+}
+
+// ClearHitArgs clears the value of hitArgs.
+func (m *StepMutation) ClearHitArgs() {
+	m.hitArgs = nil
+	m.clearedFields[step.FieldHitArgs] = struct{}{}
+}
+
+// HitArgsCleared returns if the field hitArgs was cleared in this mutation.
+func (m *StepMutation) HitArgsCleared() bool {
+	_, ok := m.clearedFields[step.FieldHitArgs]
+	return ok
+}
+
+// ResetHitArgs reset all changes of the "hitArgs" field.
+func (m *StepMutation) ResetHitArgs() {
+	m.hitArgs = nil
+	delete(m.clearedFields, step.FieldHitArgs)
+}
+
+// SetFilterArgs sets the filterArgs field.
+func (m *StepMutation) SetFilterArgs(b []byte) {
+	m.filterArgs = &b
+}
+
+// FilterArgs returns the filterArgs value in the mutation.
+func (m *StepMutation) FilterArgs() (r []byte, exists bool) {
+	v := m.filterArgs
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFilterArgs returns the old filterArgs value of the Step.
+// If the Step object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepMutation) OldFilterArgs(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldFilterArgs is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldFilterArgs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFilterArgs: %w", err)
+	}
+	return oldValue.FilterArgs, nil
+}
+
+// ClearFilterArgs clears the value of filterArgs.
+func (m *StepMutation) ClearFilterArgs() {
+	m.filterArgs = nil
+	m.clearedFields[step.FieldFilterArgs] = struct{}{}
+}
+
+// FilterArgsCleared returns if the field filterArgs was cleared in this mutation.
+func (m *StepMutation) FilterArgsCleared() bool {
+	_, ok := m.clearedFields[step.FieldFilterArgs]
+	return ok
+}
+
+// ResetFilterArgs reset all changes of the "filterArgs" field.
+func (m *StepMutation) ResetFilterArgs() {
+	m.filterArgs = nil
+	delete(m.clearedFields, step.FieldFilterArgs)
+}
+
+// SetProcedureID sets the procedure edge to Procedure by id.
+func (m *StepMutation) SetProcedureID(id string) {
+	m.procedure = &id
+}
+
+// ClearProcedure clears the procedure edge to Procedure.
+func (m *StepMutation) ClearProcedure() {
+	m.clearedprocedure = true
+}
+
+// ProcedureCleared returns if the edge procedure was cleared.
+func (m *StepMutation) ProcedureCleared() bool {
+	return m.clearedprocedure
+}
+
+// ProcedureID returns the procedure id in the mutation.
+func (m *StepMutation) ProcedureID() (id string, exists bool) {
+	if m.procedure != nil {
+		return *m.procedure, true
+	}
+	return
+}
+
+// ProcedureIDs returns the procedure ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// ProcedureID instead. It exists only for internal usage by the builders.
+func (m *StepMutation) ProcedureIDs() (ids []string) {
+	if id := m.procedure; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProcedure reset all changes of the "procedure" edge.
+func (m *StepMutation) ResetProcedure() {
+	m.procedure = nil
+	m.clearedprocedure = false
+}
+
+// Op returns the operation name.
+func (m *StepMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Step).
+func (m *StepMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during
+// this mutation. Note that, in order to get all numeric
+// fields that were in/decremented, call AddedFields().
+func (m *StepMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.createdAt != nil {
+		fields = append(fields, step.FieldCreatedAt)
+	}
+	if m.updatedAt != nil {
+		fields = append(fields, step.FieldUpdatedAt)
+	}
+	if m._type != nil {
+		fields = append(fields, step.FieldType)
+	}
+	if m.index != nil {
+		fields = append(fields, step.FieldIndex)
+	}
+	if m.duration != nil {
+		fields = append(fields, step.FieldDuration)
+	}
+	if m.msgArgs != nil {
+		fields = append(fields, step.FieldMsgArgs)
+	}
+	if m.hitArgs != nil {
+		fields = append(fields, step.FieldHitArgs)
+	}
+	if m.filterArgs != nil {
+		fields = append(fields, step.FieldFilterArgs)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name.
+// The second boolean value indicates that this field was
+// not set, or was not define in the schema.
+func (m *StepMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case step.FieldCreatedAt:
+		return m.CreatedAt()
+	case step.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case step.FieldType:
+		return m.GetType()
+	case step.FieldIndex:
+		return m.Index()
+	case step.FieldDuration:
+		return m.Duration()
+	case step.FieldMsgArgs:
+		return m.MsgArgs()
+	case step.FieldHitArgs:
+		return m.HitArgs()
+	case step.FieldFilterArgs:
+		return m.FilterArgs()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database.
+// An error is returned if the mutation operation is not UpdateOne,
+// or the query to the database was failed.
+func (m *StepMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case step.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case step.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case step.FieldType:
+		return m.OldType(ctx)
+	case step.FieldIndex:
+		return m.OldIndex(ctx)
+	case step.FieldDuration:
+		return m.OldDuration(ctx)
+	case step.FieldMsgArgs:
+		return m.OldMsgArgs(ctx)
+	case step.FieldHitArgs:
+		return m.OldHitArgs(ctx)
+	case step.FieldFilterArgs:
+		return m.OldFilterArgs(ctx)
+	}
+	return nil, fmt.Errorf("unknown Step field %s", name)
+}
+
+// SetField sets the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *StepMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case step.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case step.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case step.FieldType:
+		v, ok := value.(step.Type)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetType(v)
+		return nil
+	case step.FieldIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIndex(v)
+		return nil
+	case step.FieldDuration:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDuration(v)
+		return nil
+	case step.FieldMsgArgs:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMsgArgs(v)
+		return nil
+	case step.FieldHitArgs:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHitArgs(v)
+		return nil
+	case step.FieldFilterArgs:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFilterArgs(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Step field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented
+// or decremented during this mutation.
+func (m *StepMutation) AddedFields() []string {
+	var fields []string
+	if m.addindex != nil {
+		fields = append(fields, step.FieldIndex)
+	}
+	if m.addduration != nil {
+		fields = append(fields, step.FieldDuration)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was in/decremented
+// from a field with the given name. The second value indicates
+// that this field was not set, or was not define in the schema.
+func (m *StepMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case step.FieldIndex:
+		return m.AddedIndex()
+	case step.FieldDuration:
+		return m.AddedDuration()
+	}
+	return nil, false
+}
+
+// AddField adds the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *StepMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case step.FieldIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddIndex(v)
+		return nil
+	case step.FieldDuration:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDuration(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Step numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared
+// during this mutation.
+func (m *StepMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(step.FieldMsgArgs) {
+		fields = append(fields, step.FieldMsgArgs)
+	}
+	if m.FieldCleared(step.FieldHitArgs) {
+		fields = append(fields, step.FieldHitArgs)
+	}
+	if m.FieldCleared(step.FieldFilterArgs) {
+		fields = append(fields, step.FieldFilterArgs)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicates if this field was
+// cleared in this mutation.
+func (m *StepMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value for the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *StepMutation) ClearField(name string) error {
+	switch name {
+	case step.FieldMsgArgs:
+		m.ClearMsgArgs()
+		return nil
+	case step.FieldHitArgs:
+		m.ClearHitArgs()
+		return nil
+	case step.FieldFilterArgs:
+		m.ClearFilterArgs()
+		return nil
+	}
+	return fmt.Errorf("unknown Step nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation regarding the
+// given field name. It returns an error if the field is not
+// defined in the schema.
+func (m *StepMutation) ResetField(name string) error {
+	switch name {
+	case step.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case step.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case step.FieldType:
+		m.ResetType()
+		return nil
+	case step.FieldIndex:
+		m.ResetIndex()
+		return nil
+	case step.FieldDuration:
+		m.ResetDuration()
+		return nil
+	case step.FieldMsgArgs:
+		m.ResetMsgArgs()
+		return nil
+	case step.FieldHitArgs:
+		m.ResetHitArgs()
+		return nil
+	case step.FieldFilterArgs:
+		m.ResetFilterArgs()
+		return nil
+	}
+	return fmt.Errorf("unknown Step field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this
+// mutation.
+func (m *StepMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.procedure != nil {
+		edges = append(edges, step.EdgeProcedure)
+	}
+	return edges
+}
+
+// AddedIDs returns all ids (to other nodes) that were added for
+// the given edge name.
+func (m *StepMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case step.EdgeProcedure:
+		if id := m.procedure; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this
+// mutation.
+func (m *StepMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all ids (to other nodes) that were removed for
+// the given edge name.
+func (m *StepMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this
+// mutation.
+func (m *StepMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedprocedure {
+		edges = append(edges, step.EdgeProcedure)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean indicates if this edge was
+// cleared in this mutation.
+func (m *StepMutation) EdgeCleared(name string) bool {
+	switch name {
+	case step.EdgeProcedure:
+		return m.clearedprocedure
+	}
+	return false
+}
+
+// ClearEdge clears the value for the given name. It returns an
+// error if the edge name is not defined in the schema.
+func (m *StepMutation) ClearEdge(name string) error {
+	switch name {
+	case step.EdgeProcedure:
+		m.ClearProcedure()
+		return nil
+	}
+	return fmt.Errorf("unknown Step unique edge %s", name)
+}
+
+// ResetEdge resets all changes in the mutation regarding the
+// given edge name. It returns an error if the edge is not
+// defined in the schema.
+func (m *StepMutation) ResetEdge(name string) error {
+	switch name {
+	case step.EdgeProcedure:
+		m.ResetProcedure()
+		return nil
+	}
+	return fmt.Errorf("unknown Step edge %s", name)
+}
+
 // StepRunMutation represents an operation that mutate the StepRuns
 // nodes in the graph.
 type StepRunMutation struct {
 	config
 	op                   Op
 	typ                  string
-	id                   *int
+	id                   *string
+	createdAt            *time.Time
+	updatedAt            *time.Time
 	startAt              *time.Time
 	endedAt              *time.Time
 	participantsCount    *int
@@ -3134,7 +4085,7 @@ func newStepRunMutation(c config, op Op, opts ...steprunOption) *StepRunMutation
 }
 
 // withStepRunID sets the id field of the mutation.
-func withStepRunID(id int) steprunOption {
+func withStepRunID(id string) steprunOption {
 	return func(m *StepRunMutation) {
 		var (
 			err   error
@@ -3184,13 +4135,93 @@ func (m StepRunMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that, this
+// operation is accepted only on StepRun creation.
+func (m *StepRunMutation) SetID(id string) {
+	m.id = &id
+}
+
 // ID returns the id value in the mutation. Note that, the id
 // is available only if it was provided to the builder.
-func (m *StepRunMutation) ID() (id int, exists bool) {
+func (m *StepRunMutation) ID() (id string, exists bool) {
 	if m.id == nil {
 		return
 	}
 	return *m.id, true
+}
+
+// SetCreatedAt sets the createdAt field.
+func (m *StepRunMutation) SetCreatedAt(t time.Time) {
+	m.createdAt = &t
+}
+
+// CreatedAt returns the createdAt value in the mutation.
+func (m *StepRunMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.createdAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old createdAt value of the StepRun.
+// If the StepRun object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepRunMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt reset all changes of the "createdAt" field.
+func (m *StepRunMutation) ResetCreatedAt() {
+	m.createdAt = nil
+}
+
+// SetUpdatedAt sets the updatedAt field.
+func (m *StepRunMutation) SetUpdatedAt(t time.Time) {
+	m.updatedAt = &t
+}
+
+// UpdatedAt returns the updatedAt value in the mutation.
+func (m *StepRunMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updatedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old updatedAt value of the StepRun.
+// If the StepRun object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepRunMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt reset all changes of the "updatedAt" field.
+func (m *StepRunMutation) ResetUpdatedAt() {
+	m.updatedAt = nil
 }
 
 // SetStartAt sets the startAt field.
@@ -3338,7 +4369,13 @@ func (m *StepRunMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *StepRunMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 5)
+	if m.createdAt != nil {
+		fields = append(fields, steprun.FieldCreatedAt)
+	}
+	if m.updatedAt != nil {
+		fields = append(fields, steprun.FieldUpdatedAt)
+	}
 	if m.startAt != nil {
 		fields = append(fields, steprun.FieldStartAt)
 	}
@@ -3356,6 +4393,10 @@ func (m *StepRunMutation) Fields() []string {
 // not set, or was not define in the schema.
 func (m *StepRunMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case steprun.FieldCreatedAt:
+		return m.CreatedAt()
+	case steprun.FieldUpdatedAt:
+		return m.UpdatedAt()
 	case steprun.FieldStartAt:
 		return m.StartAt()
 	case steprun.FieldEndedAt:
@@ -3371,6 +4412,10 @@ func (m *StepRunMutation) Field(name string) (ent.Value, bool) {
 // or the query to the database was failed.
 func (m *StepRunMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case steprun.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case steprun.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
 	case steprun.FieldStartAt:
 		return m.OldStartAt(ctx)
 	case steprun.FieldEndedAt:
@@ -3386,6 +4431,20 @@ func (m *StepRunMutation) OldField(ctx context.Context, name string) (ent.Value,
 // type mismatch the field type.
 func (m *StepRunMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case steprun.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case steprun.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
 	case steprun.FieldStartAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -3472,6 +4531,12 @@ func (m *StepRunMutation) ClearField(name string) error {
 // defined in the schema.
 func (m *StepRunMutation) ResetField(name string) error {
 	switch name {
+	case steprun.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case steprun.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
 	case steprun.FieldStartAt:
 		m.ResetStartAt()
 		return nil

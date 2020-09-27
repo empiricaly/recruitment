@@ -23,6 +23,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+//go:generate rice embed-go
+
 func (s *Server) startGraphqlServer() {
 	router := chi.NewRouter()
 
@@ -65,7 +67,8 @@ func (s *Server) startGraphqlServer() {
 	})
 	gqlsrv.Use(extension.Introspection{})
 
-	router.Handle("/*", c.Handler(http.FileServer(rice.MustFindBox("../../web/public").HTTPBox())))
+	box := rice.MustFindBox("../../web/public")
+	router.Handle("/*", c.Handler(http.FileServer(MakeSPABox(box))))
 	router.Handle("/play", c.Handler(playground.Handler("Empirica Recruitment GraphQL", "/query")))
 	router.Handle("/query", c.Handler(gqlsrv))
 
@@ -98,4 +101,29 @@ func (s *Server) startGraphqlServer() {
 		}
 		s.wg.Done()
 	}()
+}
+
+// HTTPBox implements http.FileSystem which allows the use of Box with a http.FileServer.
+//   e.g.: http.Handle("/", http.FileServer(rice.MustFindBox("http-files").HTTPBox()))
+type SPABox struct {
+	box   *rice.Box
+	index http.File
+}
+
+// MakeSPABox creates a new SPABox from an existing Box
+func MakeSPABox(box *rice.Box) *SPABox {
+	index, err := box.Open("index.html")
+	if err != nil {
+		panic("public/ must contain an index.html file")
+	}
+	return &SPABox{box, index}
+}
+
+// Open returns a File using the http.File interface
+func (box *SPABox) Open(name string) (http.File, error) {
+	f, err := box.box.Open(name)
+	if err != nil {
+		return box.index, nil
+	}
+	return f, nil
 }

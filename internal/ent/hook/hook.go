@@ -61,6 +61,19 @@ func (f RunFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) 
 	return f(ctx, mv)
 }
 
+// The StepFunc type is an adapter to allow the use of ordinary
+// function as Step mutator.
+type StepFunc func(context.Context, *ent.StepMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f StepFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.StepMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.StepMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The StepRunFunc type is an adapter to allow the use of ordinary
 // function as StepRun mutator.
 type StepRunFunc func(context.Context, *ent.StepRunMutation) (ent.Value, error)

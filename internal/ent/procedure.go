@@ -45,6 +45,8 @@ type Procedure struct {
 
 // ProcedureEdges holds the relations/edges for other nodes in the graph.
 type ProcedureEdges struct {
+	// Steps holds the value of the steps edge.
+	Steps []*Step
 	// Project holds the value of the project edge.
 	Project *Project
 	// Creator holds the value of the creator edge.
@@ -53,13 +55,22 @@ type ProcedureEdges struct {
 	Run *Run
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
+}
+
+// StepsOrErr returns the Steps value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProcedureEdges) StepsOrErr() ([]*Step, error) {
+	if e.loadedTypes[0] {
+		return e.Steps, nil
+	}
+	return nil, &NotLoadedError{edge: "steps"}
 }
 
 // ProjectOrErr returns the Project value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ProcedureEdges) ProjectOrErr() (*Project, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		if e.Project == nil {
 			// The edge project was loaded in eager-loading,
 			// but was not found.
@@ -73,7 +84,7 @@ func (e ProcedureEdges) ProjectOrErr() (*Project, error) {
 // CreatorOrErr returns the Creator value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ProcedureEdges) CreatorOrErr() (*Admin, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		if e.Creator == nil {
 			// The edge creator was loaded in eager-loading,
 			// but was not found.
@@ -87,7 +98,7 @@ func (e ProcedureEdges) CreatorOrErr() (*Admin, error) {
 // RunOrErr returns the Run value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ProcedureEdges) RunOrErr() (*Run, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		if e.Run == nil {
 			// The edge run was loaded in eager-loading,
 			// but was not found.
@@ -196,6 +207,11 @@ func (pr *Procedure) assignValues(values ...interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QuerySteps queries the steps edge of the Procedure.
+func (pr *Procedure) QuerySteps() *StepQuery {
+	return (&ProcedureClient{config: pr.config}).QuerySteps(pr)
 }
 
 // QueryProject queries the project edge of the Procedure.

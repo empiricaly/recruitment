@@ -15,7 +15,11 @@ import (
 type StepRun struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
+	// CreatedAt holds the value of the "createdAt" field.
+	CreatedAt time.Time `json:"createdAt,omitempty"`
+	// UpdatedAt holds the value of the "updatedAt" field.
+	UpdatedAt time.Time `json:"updatedAt,omitempty"`
 	// StartAt holds the value of the "startAt" field.
 	StartAt time.Time `json:"startAt,omitempty"`
 	// EndedAt holds the value of the "endedAt" field.
@@ -27,10 +31,12 @@ type StepRun struct {
 // scanValues returns the types for scanning values from sql.Rows.
 func (*StepRun) scanValues() []interface{} {
 	return []interface{}{
-		&sql.NullInt64{}, // id
-		&sql.NullTime{},  // startAt
-		&sql.NullTime{},  // endedAt
-		&sql.NullInt64{}, // participantsCount
+		&sql.NullString{}, // id
+		&sql.NullTime{},   // createdAt
+		&sql.NullTime{},   // updatedAt
+		&sql.NullTime{},   // startAt
+		&sql.NullTime{},   // endedAt
+		&sql.NullInt64{},  // participantsCount
 	}
 }
 
@@ -40,24 +46,34 @@ func (sr *StepRun) assignValues(values ...interface{}) error {
 	if m, n := len(values), len(steprun.Columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
-	value, ok := values[0].(*sql.NullInt64)
-	if !ok {
-		return fmt.Errorf("unexpected type %T for field id", value)
+	if value, ok := values[0].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field id", values[0])
+	} else if value.Valid {
+		sr.ID = value.String
 	}
-	sr.ID = int(value.Int64)
 	values = values[1:]
 	if value, ok := values[0].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field startAt", values[0])
+		return fmt.Errorf("unexpected type %T for field createdAt", values[0])
+	} else if value.Valid {
+		sr.CreatedAt = value.Time
+	}
+	if value, ok := values[1].(*sql.NullTime); !ok {
+		return fmt.Errorf("unexpected type %T for field updatedAt", values[1])
+	} else if value.Valid {
+		sr.UpdatedAt = value.Time
+	}
+	if value, ok := values[2].(*sql.NullTime); !ok {
+		return fmt.Errorf("unexpected type %T for field startAt", values[2])
 	} else if value.Valid {
 		sr.StartAt = value.Time
 	}
-	if value, ok := values[1].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field endedAt", values[1])
+	if value, ok := values[3].(*sql.NullTime); !ok {
+		return fmt.Errorf("unexpected type %T for field endedAt", values[3])
 	} else if value.Valid {
 		sr.EndedAt = value.Time
 	}
-	if value, ok := values[2].(*sql.NullInt64); !ok {
-		return fmt.Errorf("unexpected type %T for field participantsCount", values[2])
+	if value, ok := values[4].(*sql.NullInt64); !ok {
+		return fmt.Errorf("unexpected type %T for field participantsCount", values[4])
 	} else if value.Valid {
 		sr.ParticipantsCount = int(value.Int64)
 	}
@@ -87,6 +103,10 @@ func (sr *StepRun) String() string {
 	var builder strings.Builder
 	builder.WriteString("StepRun(")
 	builder.WriteString(fmt.Sprintf("id=%v", sr.ID))
+	builder.WriteString(", createdAt=")
+	builder.WriteString(sr.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", updatedAt=")
+	builder.WriteString(sr.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", startAt=")
 	builder.WriteString(sr.StartAt.Format(time.ANSIC))
 	builder.WriteString(", endedAt=")

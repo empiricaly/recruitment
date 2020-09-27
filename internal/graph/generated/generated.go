@@ -39,12 +39,14 @@ type Config struct {
 }
 
 type ResolverRoot interface {
-	Admin() AdminResolver
+	FilterStepArgs() FilterStepArgsResolver
+	MessageStepArgs() MessageStepArgsResolver
 	Mutation() MutationResolver
 	Procedure() ProcedureResolver
 	Project() ProjectResolver
 	Query() QueryResolver
 	Run() RunResolver
+	Step() StepResolver
 	StepRun() StepRunResolver
 	Subscription() SubscriptionResolver
 }
@@ -56,7 +58,6 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	Admin struct {
 		CreatedAt func(childComplexity int) int
-		Email     func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Name      func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
@@ -162,7 +163,7 @@ type ComplexityRoot struct {
 		StartRun            func(childComplexity int, input *model.StartRunInput) int
 		UnscheduleRun       func(childComplexity int, input *model.UnscheduleRunInput) int
 		UpdateProcedure     func(childComplexity int, input *model.UpdateProcedureInput) int
-		UpdateStep          func(childComplexity int, input *model.UpdateStepInput) int
+		UpdateRun           func(childComplexity int, input *model.UpdateRunInput) int
 	}
 
 	Page struct {
@@ -222,7 +223,7 @@ type ComplexityRoot struct {
 		Name       func(childComplexity int) int
 		Procedures func(childComplexity int) int
 		ProjectID  func(childComplexity int) int
-		Runs       func(childComplexity int, runID *string) int
+		Runs       func(childComplexity int, runID *string, limit *int) int
 		UpdatedAt  func(childComplexity int) int
 	}
 
@@ -260,13 +261,16 @@ type ComplexityRoot struct {
 	}
 
 	Step struct {
-		Args      func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		Creator   func(childComplexity int) int
-		Duration  func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Type      func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
+		Creator    func(childComplexity int) int
+		Duration   func(childComplexity int) int
+		FilterArgs func(childComplexity int) int
+		HitArgs    func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Index      func(childComplexity int) int
+		MsgArgs    func(childComplexity int) int
+		Type       func(childComplexity int) int
+		UpdatedAt  func(childComplexity int) int
 	}
 
 	StepRun struct {
@@ -283,8 +287,13 @@ type ComplexityRoot struct {
 	}
 }
 
-type AdminResolver interface {
-	Email(ctx context.Context, obj *ent.Admin) (string, error)
+type FilterStepArgsResolver interface {
+	Type(ctx context.Context, obj *model.FilterStepArgs) (model.ParticipantFilterType, error)
+}
+type MessageStepArgsResolver interface {
+	MessageType(ctx context.Context, obj *model.MessageStepArgs) (model.ContentType, error)
+
+	LobbyType(ctx context.Context, obj *model.MessageStepArgs) (*model.ContentType, error)
 }
 type MutationResolver interface {
 	RegisterParticipant(ctx context.Context, input *model.RegisterParticipantInput) (*model.Participant, error)
@@ -293,9 +302,9 @@ type MutationResolver interface {
 	CreateProject(ctx context.Context, input *model.CreateProjectInput) (*ent.Project, error)
 	CreateProcedure(ctx context.Context, input *model.CreateProcedureInput) (*ent.Procedure, error)
 	UpdateProcedure(ctx context.Context, input *model.UpdateProcedureInput) (*ent.Procedure, error)
-	UpdateStep(ctx context.Context, input *model.UpdateStepInput) (*ent.Procedure, error)
 	DuplicateProcedure(ctx context.Context, input *model.DuplicateProcedureInput) (*ent.Procedure, error)
 	CreateRun(ctx context.Context, input *model.CreateRunInput) (*ent.Run, error)
+	UpdateRun(ctx context.Context, input *model.UpdateRunInput) (*ent.Run, error)
 	ScheduleRun(ctx context.Context, input *model.ScheduleRunInput) (*ent.Run, error)
 	UnscheduleRun(ctx context.Context, input *model.UnscheduleRunInput) (*ent.Run, error)
 	StartRun(ctx context.Context, input *model.StartRunInput) (*ent.Run, error)
@@ -304,16 +313,16 @@ type MutationResolver interface {
 type ProcedureResolver interface {
 	Creator(ctx context.Context, obj *ent.Procedure) (*ent.Admin, error)
 
-	SelectionType(ctx context.Context, obj *ent.Procedure) (*model.SelectionType, error)
+	SelectionType(ctx context.Context, obj *ent.Procedure) (model.SelectionType, error)
 	InternalCriteria(ctx context.Context, obj *ent.Procedure) (*model.InternalCriteria, error)
 	MturkCriteria(ctx context.Context, obj *ent.Procedure) (*model.MTurkCriteria, error)
-	Steps(ctx context.Context, obj *ent.Procedure) ([]*model.Step, error)
+	Steps(ctx context.Context, obj *ent.Procedure) ([]*ent.Step, error)
 }
 type ProjectResolver interface {
 	Creator(ctx context.Context, obj *ent.Project) (*ent.Admin, error)
 
 	Procedures(ctx context.Context, obj *ent.Project) ([]*ent.Procedure, error)
-	Runs(ctx context.Context, obj *ent.Project, runID *string) ([]*ent.Run, error)
+	Runs(ctx context.Context, obj *ent.Project, runID *string, limit *int) ([]*ent.Run, error)
 	Data(ctx context.Context, obj *ent.Project, keys []string) ([]*model.Datum, error)
 }
 type QueryResolver interface {
@@ -336,8 +345,17 @@ type RunResolver interface {
 
 	Data(ctx context.Context, obj *ent.Run, keys []string) ([]*model.Datum, error)
 }
+type StepResolver interface {
+	Creator(ctx context.Context, obj *ent.Step) (*ent.Admin, error)
+
+	Type(ctx context.Context, obj *ent.Step) (model.StepType, error)
+
+	MsgArgs(ctx context.Context, obj *ent.Step) (*model.MessageStepArgs, error)
+	HitArgs(ctx context.Context, obj *ent.Step) (*model.HITStepArgs, error)
+	FilterArgs(ctx context.Context, obj *ent.Step) (*model.FilterStepArgs, error)
+}
 type StepRunResolver interface {
-	Step(ctx context.Context, obj *ent.StepRun) (*model.Step, error)
+	Step(ctx context.Context, obj *ent.StepRun) (*ent.Step, error)
 	Status(ctx context.Context, obj *ent.StepRun) (model.Status, error)
 	StartedAt(ctx context.Context, obj *ent.StepRun) (*time.Time, error)
 
@@ -368,13 +386,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Admin.CreatedAt(childComplexity), true
-
-	case "Admin.email":
-		if e.complexity.Admin.Email == nil {
-			break
-		}
-
-		return e.complexity.Admin.Email(childComplexity), true
 
 	case "Admin.id":
 		if e.complexity.Admin.ID == nil {
@@ -898,17 +909,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateProcedure(childComplexity, args["input"].(*model.UpdateProcedureInput)), true
 
-	case "Mutation.updateStep":
-		if e.complexity.Mutation.UpdateStep == nil {
+	case "Mutation.updateRun":
+		if e.complexity.Mutation.UpdateRun == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_updateStep_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_updateRun_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateStep(childComplexity, args["input"].(*model.UpdateStepInput)), true
+		return e.complexity.Mutation.UpdateRun(childComplexity, args["input"].(*model.UpdateRunInput)), true
 
 	case "Page.content":
 		if e.complexity.Page.Content == nil {
@@ -1196,7 +1207,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Project.Runs(childComplexity, args["runID"].(*string)), true
+		return e.complexity.Project.Runs(childComplexity, args["runID"].(*string), args["limit"].(*int)), true
 
 	case "Project.updatedAt":
 		if e.complexity.Project.UpdatedAt == nil {
@@ -1393,13 +1404,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Run.UpdatedAt(childComplexity), true
 
-	case "Step.args":
-		if e.complexity.Step.Args == nil {
-			break
-		}
-
-		return e.complexity.Step.Args(childComplexity), true
-
 	case "Step.createdAt":
 		if e.complexity.Step.CreatedAt == nil {
 			break
@@ -1421,12 +1425,40 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Step.Duration(childComplexity), true
 
+	case "Step.filterArgs":
+		if e.complexity.Step.FilterArgs == nil {
+			break
+		}
+
+		return e.complexity.Step.FilterArgs(childComplexity), true
+
+	case "Step.hitArgs":
+		if e.complexity.Step.HitArgs == nil {
+			break
+		}
+
+		return e.complexity.Step.HitArgs(childComplexity), true
+
 	case "Step.id":
 		if e.complexity.Step.ID == nil {
 			break
 		}
 
 		return e.complexity.Step.ID(childComplexity), true
+
+	case "Step.index":
+		if e.complexity.Step.Index == nil {
+			break
+		}
+
+		return e.complexity.Step.Index(childComplexity), true
+
+	case "Step.msgArgs":
+		if e.complexity.Step.MsgArgs == nil {
+			break
+		}
+
+		return e.complexity.Step.MsgArgs(childComplexity), true
 
 	case "Step.type":
 		if e.complexity.Step.Type == nil {
@@ -1707,7 +1739,7 @@ type Project {
   """
   Runs contained in Project
   """
-  runs(runID: ID): [Run!]! @goField(forceResolver: true)
+  runs(runID: ID, limit: Int): [Run!]! @goField(forceResolver: true)
 
   """
   Data returns the custom data that has been set on the Participant.
@@ -1840,7 +1872,7 @@ type Procedure {
   """
   Determines participant selection type.
   """
-  selectionType: SelectionType @goField(forceResolver: true)
+  selectionType: SelectionType! @goField(forceResolver: true)
 
   """
   Selection criteria for internal DB participants.
@@ -2059,9 +2091,14 @@ type Step {
   creator: Admin!
 
   """
+  Index is the position of the step in the Procedure.
+  """
+  index: Int!
+
+  """
   The Type defines what kind of action this step represents.
   """
-  type: StepType!
+  type: StepType! @goField(forceResolver: true)
 
   """
   Duration of Step in seconds. At the end of the duration, the next Step will
@@ -2072,15 +2109,20 @@ type Step {
   duration: Int!
 
   """
-  Step type specific Step arguments.
+  Arguments for Message type Step.
   """
-  args: [StepArgs!]!
-}
+  msgArgs: MessageStepArgs @goField(forceResolver: true)
 
-"""
-Argument groups for Steps.
-"""
-union StepArgs = HITStepArgs | MessageStepArgs | FilterStepArgs
+  """
+  Arguments for HIT type Step.
+  """
+  hitArgs: HITStepArgs @goField(forceResolver: true)
+
+  """
+  Arguments for Filter type Step.
+  """
+  filterArgs: FilterStepArgs @goField(forceResolver: true)
+}
 
 """
 FilterStepArgs are arguments passed to a Pariticipant Filter Step.
@@ -2092,7 +2134,7 @@ type FilterStepArgs {
   Type is whether to use a predefined filter, JS code, or the Condition filter
   mechanism.
   """
-  type: ParticipantFilterType!
+  type: ParticipantFilterType! @goField(forceResolver: true)
 
   """
   Filter should be the name of pre-defined filtering function.
@@ -2207,7 +2249,7 @@ type MessageStepArgs {
   """
   MessageType indicates the rendering language of the Message.
   """
-  messageType: ContentType!
+  messageType: ContentType! @goField(forceResolver: true)
 
   """
   Lobby enables to showing a lobby, and rich-text message to put in the lobby
@@ -2221,7 +2263,7 @@ type MessageStepArgs {
   """
   LobbyType indicates the rendering language of the Lobby.
   """
-  lobbyType: ContentType
+  lobbyType: ContentType @goField(forceResolver: true)
 
   """
   LobbyExpirtation in seconds from the beginning of the step.
@@ -2415,11 +2457,6 @@ type Admin {
   username is the login name of the Admin.
   """
   username: String
-
-  """
-  email is the email associated with the Admin.
-  """
-  email: String!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "mutation.graphqls", Input: `input AuthInput {
@@ -2505,6 +2542,15 @@ input CreateProcedureInput {
   """
   projectID: ID!
 
+  procedure: ProcedureInput!
+}
+
+input ProcedureInput {
+  """
+  ID of procedure to update, if updating
+  """
+  id: ID
+
   """
   Friendly name.
   """
@@ -2544,37 +2590,9 @@ input CreateProcedureInput {
 }
 
 input UpdateProcedureInput {
-  """
-  Friendly name.
-  """
-  name: String
-
-  """
-  Determines participant selection type.
-  """
-  selectionType: SelectionType
-
-  """
-  Internal Selection criteria for participants
-  """
-  internalCriteria: InternalCriteriaInput
-
-  """
-  Mturk Selection criteria for participants
-  """
-  mturkCriteria: MTurkCriteriaInput
-
-  """
-  Number of participants desired.
-  """
-  participantCount: Int
-
-  """
-  Contains adult content.
-  From MTurk: This project may contain potentially explicit or offensive
-  content, for example, nudity.
-  """
-  adult: Boolean
+  projectID: ID!
+  runID: ID!
+  procedure: ProcedureInput!
 }
 
 input DuplicateProcedureInput {
@@ -2584,6 +2602,16 @@ input DuplicateProcedureInput {
 }
 
 input StepInput {
+  """
+  ID of the step to update, if updating
+  """
+  id: ID
+
+  """
+  Index is the position of the step in the Procedure.
+  """
+  index: Int!
+
   """
   The Type defines what kind of action this step represents.
   """
@@ -2613,14 +2641,15 @@ input StepInput {
   filterArgs: FilterStepArgsInput
 }
 
-input UpdateStepInput {
-  procedureID: ID!
-  stepID: ID!
-  step: StepInput!
+input CreateRunInput {
+  projectID: ID!
+  procedure: ProcedureInput!
 }
 
-input CreateRunInput {
-  procedure: CreateProcedureInput!
+input UpdateRunInput {
+  ID: ID!
+  projectID: ID!
+  name: String!
 }
 
 input ScheduleRunInput {
@@ -2674,11 +2703,6 @@ type Mutation {
   updateProcedure(input: UpdateProcedureInput): Procedure! @hasRole(role: ADMIN)
 
   """
-  Update a Step.
-  """
-  updateStep(input: UpdateStepInput): Procedure! @hasRole(role: ADMIN)
-
-  """
   Duplicate a Procedure to a Project.
   """
   duplicateProcedure(input: DuplicateProcedureInput): Procedure! @hasRole(role: ADMIN)
@@ -2687,6 +2711,11 @@ type Mutation {
   Create Run.
   """
   createRun(input: CreateRunInput): Run! @hasRole(role: ADMIN)
+
+  """
+  Update a Run.
+  """
+  updateRun(input: UpdateRunInput): Run! @hasRole(role: ADMIN)
 
   """
   Schedule Run.
@@ -2840,6 +2869,12 @@ This is only valid for an PARTICIPANT_FILTER Step.
 """
 input FilterStepArgsInput {
   """
+  Type is whether to use a predefined filter, JS code, or the Condition filter
+  mechanism.
+  """
+  type: ParticipantFilterType! @goField(forceResolver: true)
+
+  """
   Javascript to execute as a participant filter step.
   The code must contain a functinon exported using a default ES6 export.
   The function should accept a single argument object. This object contains the
@@ -2859,6 +2894,11 @@ input FilterStepArgsInput {
   Filter should be the name of pre-defined filtering function.
   """
   filter: String
+
+  """
+  Condition set the participant must meet to be allowed to participate.
+  """
+  condition: ConditionInput
 }
 
 """
@@ -2875,35 +2915,35 @@ input HITStepArgsInput {
   in your task title: (WARNING: This HIT may contain adult content. Worker
   discretion is advised.)
   """
-  title: String!
+  title: String
 
   """
   Description of HIT.
   From MTurk: Give more detail about this task. This gives Workers a bit more
   information before they decide to view your task.
   """
-  description: String!
+  description: String
 
   """
   Keywords of HIT. Comma-seratred.
   From MTurk: Provide keywords that will help Workers search for your tasks.
   """
-  keywords: String!
+  keywords: String
 
   """
   DISABLED - Micro-batching is still TBD, probably needs more args.
   """
-  microbatch: Boolean!
+  microbatch: Boolean
 
   """
   MTurk HIT reward for task in USD.
   """
-  reward: Float!
+  reward: Float
 
   """
   Timeout of a single accepted HIT in seconds.
   """
-  timeout: Int!
+  timeout: Int
 
   """
   Duration in seconds from start of Step before expiration of unconsumed HITs.
@@ -2915,7 +2955,7 @@ input HITStepArgsInput {
   Note: is this needed? The count is determined by the selection in the first
   Step, then by the number of participants remaining at each Step.
   """
-  workersCount: Int!
+  workersCount: Int
 }
 
 """
@@ -2942,12 +2982,12 @@ input MessageStepArgsInput {
   - ` + "`" + `run` + "`" + `: run this step is part of (contains the instance of the Procedure)
   - ` + "`" + `participant` + "`" + `: current participant
   """
-  message: String!
+  message: String
 
   """
   MessageType indicates the rendering language of the Message.
   """
-  messageType: ContentType!
+  messageType: ContentType
 
   """
   Lobby enables to showing a lobby, and rich-text message to put in the lobby
@@ -2964,13 +3004,9 @@ input MessageStepArgsInput {
   lobbyType: ContentType
 
   """
-  useLobby enables to showing a lobby, and rich-text message to put in the lobby
-  Lobby can either expire (see expiration below) to produce the effect of a
-  precise start time, or must have a submit button.
-  The string should be HTML content.
-  Only available if URL is present.
+  LobbyExpirtation in seconds from the beginning of the step.
   """
-  lobbyExpiration: String
+  lobbyExpiration: Int
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "query.graphqls", Input: `"""
@@ -3276,12 +3312,12 @@ func (ec *executionContext) field_Mutation_updateProcedure_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updateStep_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_updateRun_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.UpdateStepInput
+	var arg0 *model.UpdateRunInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOUpdateStepInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateStepInput(ctx, tmp)
+		arg0, err = ec.unmarshalOUpdateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateRunInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3329,6 +3365,14 @@ func (ec *executionContext) field_Project_runs_args(ctx context.Context, rawArgs
 		}
 	}
 	args["runID"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg1
 	return args, nil
 }
 
@@ -3646,40 +3690,6 @@ func (ec *executionContext) _Admin_username(ctx context.Context, field graphql.C
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalOString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Admin_email(ctx context.Context, field graphql.CollectedField, obj *ent.Admin) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Admin",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Admin().Email(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AuthResp_token(ctx context.Context, field graphql.CollectedField, obj *model.AuthResp) (ret graphql.Marshaler) {
@@ -4331,13 +4341,13 @@ func (ec *executionContext) _FilterStepArgs_type(ctx context.Context, field grap
 		Object:   "FilterStepArgs",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Type, nil
+		return ec.resolvers.FilterStepArgs().Type(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5194,13 +5204,13 @@ func (ec *executionContext) _MessageStepArgs_messageType(ctx context.Context, fi
 		Object:   "MessageStepArgs",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MessageType, nil
+		return ec.resolvers.MessageStepArgs().MessageType(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5259,13 +5269,13 @@ func (ec *executionContext) _MessageStepArgs_lobbyType(ctx context.Context, fiel
 		Object:   "MessageStepArgs",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.LobbyType, nil
+		return ec.resolvers.MessageStepArgs().LobbyType(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5625,71 +5635,6 @@ func (ec *executionContext) _Mutation_updateProcedure(ctx context.Context, field
 	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_updateStep(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_updateStep_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateStep(rctx, args["input"].(*model.UpdateStepInput))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.HasRole == nil {
-				return nil, errors.New("directive hasRole is not implemented")
-			}
-			return ec.directives.HasRole(ctx, nil, directive0, role)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*ent.Procedure); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Procedure`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Procedure)
-	fc.Result = res
-	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Mutation_duplicateProcedure(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5781,6 +5726,71 @@ func (ec *executionContext) _Mutation_createRun(ctx context.Context, field graph
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
 			return ec.resolvers.Mutation().CreateRun(rctx, args["input"].(*model.CreateRunInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ent.Run); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Run`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Run)
+	fc.Result = res
+	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRun(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateRun(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateRun_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UpdateRun(rctx, args["input"].(*model.UpdateRunInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
@@ -6943,11 +6953,14 @@ func (ec *executionContext) _Procedure_selectionType(ctx context.Context, field 
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.SelectionType)
+	res := resTmp.(model.SelectionType)
 	fc.Result = res
-	return ec.marshalOSelectionType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, field.Selections, res)
+	return ec.marshalNSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Procedure_internalCriteria(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
@@ -7041,9 +7054,9 @@ func (ec *executionContext) _Procedure_steps(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Step)
+	res := resTmp.([]*ent.Step)
 	fc.Result = res
-	return ec.marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepᚄ(ctx, field.Selections, res)
+	return ec.marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Procedure_participantCount(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
@@ -7373,7 +7386,7 @@ func (ec *executionContext) _Project_runs(ctx context.Context, field graphql.Col
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Project().Runs(rctx, obj, args["runID"].(*string))
+		return ec.resolvers.Project().Runs(rctx, obj, args["runID"].(*string), args["limit"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8392,7 +8405,7 @@ func (ec *executionContext) _Run_data(ctx context.Context, field graphql.Collect
 	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Step_id(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+func (ec *executionContext) _Step_id(ctx context.Context, field graphql.CollectedField, obj *ent.Step) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8426,7 +8439,7 @@ func (ec *executionContext) _Step_id(ctx context.Context, field graphql.Collecte
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Step_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+func (ec *executionContext) _Step_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Step) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8460,7 +8473,7 @@ func (ec *executionContext) _Step_createdAt(ctx context.Context, field graphql.C
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Step_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+func (ec *executionContext) _Step_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Step) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8494,7 +8507,7 @@ func (ec *executionContext) _Step_updatedAt(ctx context.Context, field graphql.C
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Step_creator(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+func (ec *executionContext) _Step_creator(ctx context.Context, field graphql.CollectedField, obj *ent.Step) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8505,13 +8518,13 @@ func (ec *executionContext) _Step_creator(ctx context.Context, field graphql.Col
 		Object:   "Step",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Creator, nil
+		return ec.resolvers.Step().Creator(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8528,7 +8541,7 @@ func (ec *executionContext) _Step_creator(ctx context.Context, field graphql.Col
 	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐAdmin(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Step_type(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+func (ec *executionContext) _Step_index(ctx context.Context, field graphql.CollectedField, obj *ent.Step) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8545,7 +8558,41 @@ func (ec *executionContext) _Step_type(ctx context.Context, field graphql.Collec
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Type, nil
+		return obj.Index, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Step_type(ctx context.Context, field graphql.CollectedField, obj *ent.Step) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Step",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Step().Type(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8562,7 +8609,7 @@ func (ec *executionContext) _Step_type(ctx context.Context, field graphql.Collec
 	return ec.marshalNStepType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Step_duration(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+func (ec *executionContext) _Step_duration(ctx context.Context, field graphql.CollectedField, obj *ent.Step) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8596,7 +8643,7 @@ func (ec *executionContext) _Step_duration(ctx context.Context, field graphql.Co
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Step_args(ctx context.Context, field graphql.CollectedField, obj *model.Step) (ret graphql.Marshaler) {
+func (ec *executionContext) _Step_msgArgs(ctx context.Context, field graphql.CollectedField, obj *ent.Step) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8607,27 +8654,86 @@ func (ec *executionContext) _Step_args(ctx context.Context, field graphql.Collec
 		Object:   "Step",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Args, nil
+		return ec.resolvers.Step().MsgArgs(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]model.StepArgs)
+	res := resTmp.(*model.MessageStepArgs)
 	fc.Result = res
-	return ec.marshalNStepArgs2ᚕgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepArgsᚄ(ctx, field.Selections, res)
+	return ec.marshalOMessageStepArgs2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMessageStepArgs(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Step_hitArgs(ctx context.Context, field graphql.CollectedField, obj *ent.Step) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Step",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Step().HitArgs(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.HITStepArgs)
+	fc.Result = res
+	return ec.marshalOHITStepArgs2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐHITStepArgs(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Step_filterArgs(ctx context.Context, field graphql.CollectedField, obj *ent.Step) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Step",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Step().FilterArgs(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.FilterStepArgs)
+	fc.Result = res
+	return ec.marshalOFilterStepArgs2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐFilterStepArgs(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _StepRun_step(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
@@ -8656,9 +8762,9 @@ func (ec *executionContext) _StepRun_step(ctx context.Context, field graphql.Col
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Step)
+	res := resTmp.(*ent.Step)
 	fc.Result = res
-	return ec.marshalOStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStep(ctx, field.Selections, res)
+	return ec.marshalOStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStep(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _StepRun_status(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
@@ -10060,45 +10166,9 @@ func (ec *executionContext) unmarshalInputCreateProcedureInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
-		case "name":
+		case "procedure":
 			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "steps":
-			var err error
-			it.Steps, err = ec.unmarshalNStepInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "selectionType":
-			var err error
-			it.SelectionType, err = ec.unmarshalNSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "internalCriteria":
-			var err error
-			it.InternalCriteria, err = ec.unmarshalOInternalCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteriaInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "mturkCriteria":
-			var err error
-			it.MturkCriteria, err = ec.unmarshalOMTurkCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteriaInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "participantCount":
-			var err error
-			it.ParticipantCount, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "adult":
-			var err error
-			it.Adult, err = ec.unmarshalNBoolean2bool(ctx, v)
+			it.Procedure, err = ec.unmarshalNProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10138,9 +10208,15 @@ func (ec *executionContext) unmarshalInputCreateRunInput(ctx context.Context, ob
 
 	for k, v := range asMap {
 		switch k {
+		case "projectID":
+			var err error
+			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "procedure":
 			var err error
-			it.Procedure, err = ec.unmarshalNCreateProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProcedureInput(ctx, v)
+			it.Procedure, err = ec.unmarshalNProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10186,6 +10262,12 @@ func (ec *executionContext) unmarshalInputFilterStepArgsInput(ctx context.Contex
 
 	for k, v := range asMap {
 		switch k {
+		case "type":
+			var err error
+			it.Type, err = ec.unmarshalNParticipantFilterType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "js":
 			var err error
 			it.Js, err = ec.unmarshalOString2ᚖstring(ctx, v)
@@ -10195,6 +10277,12 @@ func (ec *executionContext) unmarshalInputFilterStepArgsInput(ctx context.Contex
 		case "filter":
 			var err error
 			it.Filter, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "condition":
+			var err error
+			it.Condition, err = ec.unmarshalOConditionInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10212,37 +10300,37 @@ func (ec *executionContext) unmarshalInputHITStepArgsInput(ctx context.Context, 
 		switch k {
 		case "title":
 			var err error
-			it.Title, err = ec.unmarshalNString2string(ctx, v)
+			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "description":
 			var err error
-			it.Description, err = ec.unmarshalNString2string(ctx, v)
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "keywords":
 			var err error
-			it.Keywords, err = ec.unmarshalNString2string(ctx, v)
+			it.Keywords, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "microbatch":
 			var err error
-			it.Microbatch, err = ec.unmarshalNBoolean2bool(ctx, v)
+			it.Microbatch, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "reward":
 			var err error
-			it.Reward, err = ec.unmarshalNFloat2float64(ctx, v)
+			it.Reward, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "timeout":
 			var err error
-			it.Timeout, err = ec.unmarshalNInt2int(ctx, v)
+			it.Timeout, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10254,7 +10342,7 @@ func (ec *executionContext) unmarshalInputHITStepArgsInput(ctx context.Context, 
 			}
 		case "workersCount":
 			var err error
-			it.WorkersCount, err = ec.unmarshalNInt2int(ctx, v)
+			it.WorkersCount, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10374,13 +10462,13 @@ func (ec *executionContext) unmarshalInputMessageStepArgsInput(ctx context.Conte
 			}
 		case "message":
 			var err error
-			it.Message, err = ec.unmarshalNString2string(ctx, v)
+			it.Message, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "messageType":
 			var err error
-			it.MessageType, err = ec.unmarshalNContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx, v)
+			it.MessageType, err = ec.unmarshalOContentType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10398,7 +10486,7 @@ func (ec *executionContext) unmarshalInputMessageStepArgsInput(ctx context.Conte
 			}
 		case "lobbyExpiration":
 			var err error
-			it.LobbyExpiration, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.LobbyExpiration, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10435,6 +10523,66 @@ func (ec *executionContext) unmarshalInputMutateDatumInput(ctx context.Context, 
 		case "nodeID":
 			var err error
 			it.NodeID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputProcedureInput(ctx context.Context, obj interface{}) (model.ProcedureInput, error) {
+	var it model.ProcedureInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.ID, err = ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "steps":
+			var err error
+			it.Steps, err = ec.unmarshalNStepInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "selectionType":
+			var err error
+			it.SelectionType, err = ec.unmarshalNSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "internalCriteria":
+			var err error
+			it.InternalCriteria, err = ec.unmarshalOInternalCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteriaInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "mturkCriteria":
+			var err error
+			it.MturkCriteria, err = ec.unmarshalOMTurkCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteriaInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "participantCount":
+			var err error
+			it.ParticipantCount, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "adult":
+			var err error
+			it.Adult, err = ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10522,6 +10670,18 @@ func (ec *executionContext) unmarshalInputStepInput(ctx context.Context, obj int
 
 	for k, v := range asMap {
 		switch k {
+		case "id":
+			var err error
+			it.ID, err = ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "index":
+			var err error
+			it.Index, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "type":
 			var err error
 			it.Type, err = ec.unmarshalNStepType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepType(ctx, v)
@@ -10582,39 +10742,21 @@ func (ec *executionContext) unmarshalInputUpdateProcedureInput(ctx context.Conte
 
 	for k, v := range asMap {
 		switch k {
-		case "name":
+		case "projectID":
 			var err error
-			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "selectionType":
+		case "runID":
 			var err error
-			it.SelectionType, err = ec.unmarshalOSelectionType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, v)
+			it.RunID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "internalCriteria":
+		case "procedure":
 			var err error
-			it.InternalCriteria, err = ec.unmarshalOInternalCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteriaInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "mturkCriteria":
-			var err error
-			it.MturkCriteria, err = ec.unmarshalOMTurkCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteriaInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "participantCount":
-			var err error
-			it.ParticipantCount, err = ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "adult":
-			var err error
-			it.Adult, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			it.Procedure, err = ec.unmarshalNProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10624,27 +10766,27 @@ func (ec *executionContext) unmarshalInputUpdateProcedureInput(ctx context.Conte
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUpdateStepInput(ctx context.Context, obj interface{}) (model.UpdateStepInput, error) {
-	var it model.UpdateStepInput
+func (ec *executionContext) unmarshalInputUpdateRunInput(ctx context.Context, obj interface{}) (model.UpdateRunInput, error) {
+	var it model.UpdateRunInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "procedureID":
+		case "ID":
 			var err error
-			it.ProcedureID, err = ec.unmarshalNID2string(ctx, v)
+			it.ID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "stepID":
+		case "projectID":
 			var err error
-			it.StepID, err = ec.unmarshalNID2string(ctx, v)
+			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "step":
+		case "name":
 			var err error
-			it.Step, err = ec.unmarshalNStepInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepInput(ctx, v)
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10657,36 +10799,6 @@ func (ec *executionContext) unmarshalInputUpdateStepInput(ctx context.Context, o
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
-
-func (ec *executionContext) _StepArgs(ctx context.Context, sel ast.SelectionSet, obj model.StepArgs) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.HITStepArgs:
-		return ec._HITStepArgs(ctx, sel, &obj)
-	case *model.HITStepArgs:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._HITStepArgs(ctx, sel, obj)
-	case model.MessageStepArgs:
-		return ec._MessageStepArgs(ctx, sel, &obj)
-	case *model.MessageStepArgs:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MessageStepArgs(ctx, sel, obj)
-	case model.FilterStepArgs:
-		return ec._FilterStepArgs(ctx, sel, &obj)
-	case *model.FilterStepArgs:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._FilterStepArgs(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
 
 func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj model.User) graphql.Marshaler {
 	switch obj := (obj).(type) {
@@ -10727,36 +10839,22 @@ func (ec *executionContext) _Admin(ctx context.Context, sel ast.SelectionSet, ob
 		case "id":
 			out.Values[i] = ec._Admin_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "createdAt":
 			out.Values[i] = ec._Admin_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Admin_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "name":
 			out.Values[i] = ec._Admin_name(ctx, field, obj)
 		case "username":
 			out.Values[i] = ec._Admin_username(ctx, field, obj)
-		case "email":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Admin_email(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10914,7 +11012,7 @@ func (ec *executionContext) _Datum(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
-var filterStepArgsImplementors = []string{"FilterStepArgs", "StepArgs"}
+var filterStepArgsImplementors = []string{"FilterStepArgs"}
 
 func (ec *executionContext) _FilterStepArgs(ctx context.Context, sel ast.SelectionSet, obj *model.FilterStepArgs) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, filterStepArgsImplementors)
@@ -10926,10 +11024,19 @@ func (ec *executionContext) _FilterStepArgs(ctx context.Context, sel ast.Selecti
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("FilterStepArgs")
 		case "type":
-			out.Values[i] = ec._FilterStepArgs_type(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._FilterStepArgs_type(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "filter":
 			out.Values[i] = ec._FilterStepArgs_filter(ctx, field, obj)
 		case "js":
@@ -10947,7 +11054,7 @@ func (ec *executionContext) _FilterStepArgs(ctx context.Context, sel ast.Selecti
 	return out
 }
 
-var hITStepArgsImplementors = []string{"HITStepArgs", "StepArgs"}
+var hITStepArgsImplementors = []string{"HITStepArgs"}
 
 func (ec *executionContext) _HITStepArgs(ctx context.Context, sel ast.SelectionSet, obj *model.HITStepArgs) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, hITStepArgsImplementors)
@@ -11170,7 +11277,7 @@ func (ec *executionContext) _MTurkQulificationType(ctx context.Context, sel ast.
 	return out
 }
 
-var messageStepArgsImplementors = []string{"MessageStepArgs", "StepArgs"}
+var messageStepArgsImplementors = []string{"MessageStepArgs"}
 
 func (ec *executionContext) _MessageStepArgs(ctx context.Context, sel ast.SelectionSet, obj *model.MessageStepArgs) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, messageStepArgsImplementors)
@@ -11186,17 +11293,35 @@ func (ec *executionContext) _MessageStepArgs(ctx context.Context, sel ast.Select
 		case "message":
 			out.Values[i] = ec._MessageStepArgs_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "messageType":
-			out.Values[i] = ec._MessageStepArgs_messageType(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MessageStepArgs_messageType(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "lobby":
 			out.Values[i] = ec._MessageStepArgs_lobby(ctx, field, obj)
 		case "lobbyType":
-			out.Values[i] = ec._MessageStepArgs_lobbyType(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MessageStepArgs_lobbyType(ctx, field, obj)
+				return res
+			})
 		case "lobbyExpiration":
 			out.Values[i] = ec._MessageStepArgs_lobbyExpiration(ctx, field, obj)
 		default:
@@ -11252,11 +11377,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "updateStep":
-			out.Values[i] = ec._Mutation_updateStep(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "duplicateProcedure":
 			out.Values[i] = ec._Mutation_duplicateProcedure(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -11264,6 +11384,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "createRun":
 			out.Values[i] = ec._Mutation_createRun(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateRun":
+			out.Values[i] = ec._Mutation_updateRun(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -11544,6 +11669,9 @@ func (ec *executionContext) _Procedure(ctx context.Context, sel ast.SelectionSet
 					}
 				}()
 				res = ec._Procedure_selectionType(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "internalCriteria":
@@ -11992,7 +12120,7 @@ func (ec *executionContext) _Run(ctx context.Context, sel ast.SelectionSet, obj 
 
 var stepImplementors = []string{"Step"}
 
-func (ec *executionContext) _Step(ctx context.Context, sel ast.SelectionSet, obj *model.Step) graphql.Marshaler {
+func (ec *executionContext) _Step(ctx context.Context, sel ast.SelectionSet, obj *ent.Step) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, stepImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -12004,38 +12132,89 @@ func (ec *executionContext) _Step(ctx context.Context, sel ast.SelectionSet, obj
 		case "id":
 			out.Values[i] = ec._Step_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Step_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Step_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "creator":
-			out.Values[i] = ec._Step_creator(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Step_creator(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "index":
+			out.Values[i] = ec._Step_index(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "type":
-			out.Values[i] = ec._Step_type(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Step_type(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "duration":
 			out.Values[i] = ec._Step_duration(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
-		case "args":
-			out.Values[i] = ec._Step_args(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+		case "msgArgs":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Step_msgArgs(ctx, field, obj)
+				return res
+			})
+		case "hitArgs":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Step_hitArgs(ctx, field, obj)
+				return res
+			})
+		case "filterArgs":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Step_filterArgs(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12487,18 +12666,6 @@ func (ec *executionContext) unmarshalNContentType2githubᚗcomᚋempiricalyᚋre
 
 func (ec *executionContext) marshalNContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, sel ast.SelectionSet, v model.ContentType) graphql.Marshaler {
 	return v
-}
-
-func (ec *executionContext) unmarshalNCreateProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProcedureInput(ctx context.Context, v interface{}) (model.CreateProcedureInput, error) {
-	return ec.unmarshalInputCreateProcedureInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNCreateProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProcedureInput(ctx context.Context, v interface{}) (*model.CreateProcedureInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNCreateProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProcedureInput(ctx, v)
-	return &res, err
 }
 
 func (ec *executionContext) unmarshalNDateTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
@@ -12972,6 +13139,18 @@ func (ec *executionContext) marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrec
 	return ec._Procedure(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureInput(ctx context.Context, v interface{}) (model.ProcedureInput, error) {
+	return ec.unmarshalInputProcedureInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureInput(ctx context.Context, v interface{}) (*model.ProcedureInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalNProject2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v ent.Project) graphql.Marshaler {
 	return ec._Project(ctx, sel, &v)
 }
@@ -13161,11 +13340,11 @@ func (ec *executionContext) marshalNStatus2githubᚗcomᚋempiricalyᚋrecruitme
 	return v
 }
 
-func (ec *executionContext) marshalNStep2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStep(ctx context.Context, sel ast.SelectionSet, v model.Step) graphql.Marshaler {
+func (ec *executionContext) marshalNStep2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStep(ctx context.Context, sel ast.SelectionSet, v ent.Step) graphql.Marshaler {
 	return ec._Step(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Step) graphql.Marshaler {
+func (ec *executionContext) marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Step) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -13189,7 +13368,7 @@ func (ec *executionContext) marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecru
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStep(ctx, sel, v[i])
+			ret[i] = ec.marshalNStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStep(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -13202,7 +13381,7 @@ func (ec *executionContext) marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecru
 	return ret
 }
 
-func (ec *executionContext) marshalNStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStep(ctx context.Context, sel ast.SelectionSet, v *model.Step) graphql.Marshaler {
+func (ec *executionContext) marshalNStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStep(ctx context.Context, sel ast.SelectionSet, v *ent.Step) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -13210,53 +13389,6 @@ func (ec *executionContext) marshalNStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitm
 		return graphql.Null
 	}
 	return ec._Step(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNStepArgs2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepArgs(ctx context.Context, sel ast.SelectionSet, v model.StepArgs) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._StepArgs(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNStepArgs2ᚕgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepArgsᚄ(ctx context.Context, sel ast.SelectionSet, v []model.StepArgs) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNStepArgs2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepArgs(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
 }
 
 func (ec *executionContext) unmarshalNStepInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepInput(ctx context.Context, v interface{}) (model.StepInput, error) {
@@ -13784,6 +13916,10 @@ func (ec *executionContext) marshalOCondition2ᚖgithubᚗcomᚋempiricalyᚋrec
 	return ec._Condition(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOConditionInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInput(ctx context.Context, v interface{}) (model.ConditionInput, error) {
+	return ec.unmarshalInputConditionInput(ctx, v)
+}
+
 func (ec *executionContext) unmarshalOConditionInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInputᚄ(ctx context.Context, v interface{}) ([]*model.ConditionInput, error) {
 	var vSlice []interface{}
 	if v != nil {
@@ -13802,6 +13938,14 @@ func (ec *executionContext) unmarshalOConditionInput2ᚕᚖgithubᚗcomᚋempiri
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) unmarshalOConditionInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInput(ctx context.Context, v interface{}) (*model.ConditionInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOConditionInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, v interface{}) (model.ContentType, error) {
@@ -13923,6 +14067,17 @@ func (ec *executionContext) unmarshalODuplicateProcedureInput2ᚖgithubᚗcomᚋ
 	return &res, err
 }
 
+func (ec *executionContext) marshalOFilterStepArgs2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐFilterStepArgs(ctx context.Context, sel ast.SelectionSet, v model.FilterStepArgs) graphql.Marshaler {
+	return ec._FilterStepArgs(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOFilterStepArgs2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐFilterStepArgs(ctx context.Context, sel ast.SelectionSet, v *model.FilterStepArgs) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._FilterStepArgs(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOFilterStepArgsInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐFilterStepArgsInput(ctx context.Context, v interface{}) (model.FilterStepArgsInput, error) {
 	return ec.unmarshalInputFilterStepArgsInput(ctx, v)
 }
@@ -13956,6 +14111,17 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOFloat2float64(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalOHITStepArgs2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐHITStepArgs(ctx context.Context, sel ast.SelectionSet, v model.HITStepArgs) graphql.Marshaler {
+	return ec._HITStepArgs(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOHITStepArgs2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐHITStepArgs(ctx context.Context, sel ast.SelectionSet, v *model.HITStepArgs) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._HITStepArgs(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOHITStepArgsInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐHITStepArgsInput(ctx context.Context, v interface{}) (model.HITStepArgsInput, error) {
@@ -14191,6 +14357,17 @@ func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.Selecti
 	return graphql.MarshalMap(v)
 }
 
+func (ec *executionContext) marshalOMessageStepArgs2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMessageStepArgs(ctx context.Context, sel ast.SelectionSet, v model.MessageStepArgs) graphql.Marshaler {
+	return ec._MessageStepArgs(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOMessageStepArgs2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMessageStepArgs(ctx context.Context, sel ast.SelectionSet, v *model.MessageStepArgs) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MessageStepArgs(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOMessageStepArgsInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMessageStepArgsInput(ctx context.Context, v interface{}) (model.MessageStepArgsInput, error) {
 	return ec.unmarshalInputMessageStepArgsInput(ctx, v)
 }
@@ -14325,30 +14502,6 @@ func (ec *executionContext) unmarshalOScheduleRunInput2ᚖgithubᚗcomᚋempiric
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx context.Context, v interface{}) (model.SelectionType, error) {
-	var res model.SelectionType
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx context.Context, sel ast.SelectionSet, v model.SelectionType) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalOSelectionType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx context.Context, v interface{}) (*model.SelectionType, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOSelectionType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx context.Context, sel ast.SelectionSet, v *model.SelectionType) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
-}
-
 func (ec *executionContext) unmarshalOStartRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStartRunInput(ctx context.Context, v interface{}) (model.StartRunInput, error) {
 	return ec.unmarshalInputStartRunInput(ctx, v)
 }
@@ -14361,11 +14514,11 @@ func (ec *executionContext) unmarshalOStartRunInput2ᚖgithubᚗcomᚋempiricaly
 	return &res, err
 }
 
-func (ec *executionContext) marshalOStep2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStep(ctx context.Context, sel ast.SelectionSet, v model.Step) graphql.Marshaler {
+func (ec *executionContext) marshalOStep2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStep(ctx context.Context, sel ast.SelectionSet, v ent.Step) graphql.Marshaler {
 	return ec._Step(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStep(ctx context.Context, sel ast.SelectionSet, v *model.Step) graphql.Marshaler {
+func (ec *executionContext) marshalOStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStep(ctx context.Context, sel ast.SelectionSet, v *ent.Step) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -14462,15 +14615,15 @@ func (ec *executionContext) unmarshalOUpdateProcedureInput2ᚖgithubᚗcomᚋemp
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOUpdateStepInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateStepInput(ctx context.Context, v interface{}) (model.UpdateStepInput, error) {
-	return ec.unmarshalInputUpdateStepInput(ctx, v)
+func (ec *executionContext) unmarshalOUpdateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateRunInput(ctx context.Context, v interface{}) (model.UpdateRunInput, error) {
+	return ec.unmarshalInputUpdateRunInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalOUpdateStepInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateStepInput(ctx context.Context, v interface{}) (*model.UpdateStepInput, error) {
+func (ec *executionContext) unmarshalOUpdateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateRunInput(ctx context.Context, v interface{}) (*model.UpdateRunInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOUpdateStepInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateStepInput(ctx, v)
+	res, err := ec.unmarshalOUpdateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateRunInput(ctx, v)
 	return &res, err
 }
 

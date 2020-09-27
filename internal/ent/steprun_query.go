@@ -74,8 +74,8 @@ func (srq *StepRunQuery) FirstX(ctx context.Context) *StepRun {
 }
 
 // FirstID returns the first StepRun id in the query. Returns *NotFoundError when no id was found.
-func (srq *StepRunQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (srq *StepRunQuery) FirstID(ctx context.Context) (id string, err error) {
+	var ids []string
 	if ids, err = srq.Limit(1).IDs(ctx); err != nil {
 		return
 	}
@@ -87,7 +87,7 @@ func (srq *StepRunQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstXID is like FirstID, but panics if an error occurs.
-func (srq *StepRunQuery) FirstXID(ctx context.Context) int {
+func (srq *StepRunQuery) FirstXID(ctx context.Context) string {
 	id, err := srq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -121,8 +121,8 @@ func (srq *StepRunQuery) OnlyX(ctx context.Context) *StepRun {
 }
 
 // OnlyID returns the only StepRun id in the query, returns an error if not exactly one id was returned.
-func (srq *StepRunQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (srq *StepRunQuery) OnlyID(ctx context.Context) (id string, err error) {
+	var ids []string
 	if ids, err = srq.Limit(2).IDs(ctx); err != nil {
 		return
 	}
@@ -138,7 +138,7 @@ func (srq *StepRunQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (srq *StepRunQuery) OnlyIDX(ctx context.Context) int {
+func (srq *StepRunQuery) OnlyIDX(ctx context.Context) string {
 	id, err := srq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -164,8 +164,8 @@ func (srq *StepRunQuery) AllX(ctx context.Context) []*StepRun {
 }
 
 // IDs executes the query and returns a list of StepRun ids.
-func (srq *StepRunQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
+func (srq *StepRunQuery) IDs(ctx context.Context) ([]string, error) {
+	var ids []string
 	if err := srq.Select(steprun.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (srq *StepRunQuery) IDs(ctx context.Context) ([]int, error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (srq *StepRunQuery) IDsX(ctx context.Context) []int {
+func (srq *StepRunQuery) IDsX(ctx context.Context) []string {
 	ids, err := srq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -237,12 +237,12 @@ func (srq *StepRunQuery) Clone() *StepRunQuery {
 // Example:
 //
 //	var v []struct {
-//		StartAt time.Time `json:"startAt,omitempty"`
+//		CreatedAt time.Time `json:"createdAt,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.StepRun.Query().
-//		GroupBy(steprun.FieldStartAt).
+//		GroupBy(steprun.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
@@ -263,11 +263,11 @@ func (srq *StepRunQuery) GroupBy(field string, fields ...string) *StepRunGroupBy
 // Example:
 //
 //	var v []struct {
-//		StartAt time.Time `json:"startAt,omitempty"`
+//		CreatedAt time.Time `json:"createdAt,omitempty"`
 //	}
 //
 //	client.StepRun.Query().
-//		Select(steprun.FieldStartAt).
+//		Select(steprun.FieldCreatedAt).
 //		Scan(ctx, &v)
 //
 func (srq *StepRunQuery) Select(field string, fields ...string) *StepRunSelect {
@@ -339,7 +339,7 @@ func (srq *StepRunQuery) querySpec() *sqlgraph.QuerySpec {
 			Table:   steprun.Table,
 			Columns: steprun.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeString,
 				Column: steprun.FieldID,
 			},
 		},

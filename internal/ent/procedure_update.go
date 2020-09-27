@@ -12,6 +12,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -96,6 +97,21 @@ func (pu *ProcedureUpdate) SetNillableAdult(b *bool) *ProcedureUpdate {
 	return pu
 }
 
+// AddStepIDs adds the steps edge to Step by ids.
+func (pu *ProcedureUpdate) AddStepIDs(ids ...string) *ProcedureUpdate {
+	pu.mutation.AddStepIDs(ids...)
+	return pu
+}
+
+// AddSteps adds the steps edges to Step.
+func (pu *ProcedureUpdate) AddSteps(s ...*Step) *ProcedureUpdate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return pu.AddStepIDs(ids...)
+}
+
 // SetProjectID sets the project edge to Project by id.
 func (pu *ProcedureUpdate) SetProjectID(id string) *ProcedureUpdate {
 	pu.mutation.SetProjectID(id)
@@ -156,6 +172,21 @@ func (pu *ProcedureUpdate) SetRun(r *Run) *ProcedureUpdate {
 // Mutation returns the ProcedureMutation object of the builder.
 func (pu *ProcedureUpdate) Mutation() *ProcedureMutation {
 	return pu.mutation
+}
+
+// RemoveStepIDs removes the steps edge to Step by ids.
+func (pu *ProcedureUpdate) RemoveStepIDs(ids ...string) *ProcedureUpdate {
+	pu.mutation.RemoveStepIDs(ids...)
+	return pu
+}
+
+// RemoveSteps removes steps edges to Step.
+func (pu *ProcedureUpdate) RemoveSteps(s ...*Step) *ProcedureUpdate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return pu.RemoveStepIDs(ids...)
 }
 
 // ClearProject clears the project edge to Project.
@@ -315,6 +346,44 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Value:  value,
 			Column: procedure.FieldAdult,
 		})
+	}
+	if nodes := pu.mutation.RemovedStepsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   procedure.StepsTable,
+			Columns: []string{procedure.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: step.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.StepsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   procedure.StepsTable,
+			Columns: []string{procedure.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: step.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if pu.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -504,6 +573,21 @@ func (puo *ProcedureUpdateOne) SetNillableAdult(b *bool) *ProcedureUpdateOne {
 	return puo
 }
 
+// AddStepIDs adds the steps edge to Step by ids.
+func (puo *ProcedureUpdateOne) AddStepIDs(ids ...string) *ProcedureUpdateOne {
+	puo.mutation.AddStepIDs(ids...)
+	return puo
+}
+
+// AddSteps adds the steps edges to Step.
+func (puo *ProcedureUpdateOne) AddSteps(s ...*Step) *ProcedureUpdateOne {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return puo.AddStepIDs(ids...)
+}
+
 // SetProjectID sets the project edge to Project by id.
 func (puo *ProcedureUpdateOne) SetProjectID(id string) *ProcedureUpdateOne {
 	puo.mutation.SetProjectID(id)
@@ -564,6 +648,21 @@ func (puo *ProcedureUpdateOne) SetRun(r *Run) *ProcedureUpdateOne {
 // Mutation returns the ProcedureMutation object of the builder.
 func (puo *ProcedureUpdateOne) Mutation() *ProcedureMutation {
 	return puo.mutation
+}
+
+// RemoveStepIDs removes the steps edge to Step by ids.
+func (puo *ProcedureUpdateOne) RemoveStepIDs(ids ...string) *ProcedureUpdateOne {
+	puo.mutation.RemoveStepIDs(ids...)
+	return puo
+}
+
+// RemoveSteps removes steps edges to Step.
+func (puo *ProcedureUpdateOne) RemoveSteps(s ...*Step) *ProcedureUpdateOne {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return puo.RemoveStepIDs(ids...)
 }
 
 // ClearProject clears the project edge to Project.
@@ -721,6 +820,44 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 			Value:  value,
 			Column: procedure.FieldAdult,
 		})
+	}
+	if nodes := puo.mutation.RemovedStepsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   procedure.StepsTable,
+			Columns: []string{procedure.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: step.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.StepsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   procedure.StepsTable,
+			Columns: []string{procedure.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: step.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if puo.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
