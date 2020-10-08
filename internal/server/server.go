@@ -11,6 +11,7 @@ import (
 	logger "github.com/empiricaly/recruitment/internal/log"
 	"github.com/empiricaly/recruitment/internal/metrics"
 	"github.com/empiricaly/recruitment/internal/mturk"
+	"github.com/empiricaly/recruitment/internal/runtime"
 	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -23,6 +24,7 @@ type Server struct {
 	storeConn *storage.Conn
 
 	mturk   *mturk.Session
+	runtime *runtime.Runtime
 	metrics *metrics.Metrics
 	done    chan struct{}
 	wg      sync.WaitGroup
@@ -83,6 +85,11 @@ func Run(ctx context.Context, config *Config) (err error) {
 		return errors.Wrap(err, "init mturk")
 	}
 
+	s.runtime, err = runtime.Start(s.storeConn)
+	if err != nil {
+		return errors.Wrap(err, "init runtime")
+	}
+
 	s.startGraphqlServer()
 
 	err = s.start()
@@ -94,6 +101,7 @@ func Run(ctx context.Context, config *Config) (err error) {
 
 	<-s.ctx.Done()
 
+	s.runtime.Stop()
 	close(s.done)
 	s.wg.Wait()
 

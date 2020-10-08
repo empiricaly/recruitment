@@ -3,6 +3,11 @@ InternalCriteria is the criteria for internal database participant selection.
 """
 input InternalCriteriaInput {
   """
+  All means use all participants and ignore the condition field below.
+  """
+  all: Boolean!
+
+  """
   Condition set the participant must meet to be allowed to participate.
   """
   condition: ConditionInput!

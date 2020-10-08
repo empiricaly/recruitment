@@ -25,6 +25,7 @@
           adult: false,
           mturkCriteria: { qualifications: [] },
           internalCriteria: {
+            all: true,
             condition: {
               and: [
                 {

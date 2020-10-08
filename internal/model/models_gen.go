@@ -248,12 +248,16 @@ type HITStepArgsInput struct {
 
 // InternalCriteria is the criteria for internal database participant selection.
 type InternalCriteria struct {
+	// All means use all participants and ignore the condition field below.
+	All bool `json:"all"`
 	// Condition set the participant must meet to be allowed to participate.
 	Condition *Condition `json:"condition"`
 }
 
 // InternalCriteria is the criteria for internal database participant selection.
 type InternalCriteriaInput struct {
+	// All means use all participants and ignore the condition field below.
+	All bool `json:"all"`
 	// Condition set the participant must meet to be allowed to participate.
 	Condition *ConditionInput `json:"condition"`
 }

@@ -5,6 +5,7 @@
   import { client } from "../../lib/apollo";
   import { UPDATE_RUN } from "../../lib/queries";
   import { deepCopy } from "../../utils/copy";
+  import { debounce } from "../../utils/timing";
   import StatusBadge from "../misc/StatusBadge.svelte";
   import { notify } from "../overlays/Notification.svelte";
   import Template from "../templates/Template.svelte";
@@ -22,41 +23,45 @@
     }
   }
 
-  async function update() {
-    console.log("project", project);
-    console.log("run", run);
-    try {
-      const input = {
-        ID: run.id,
-        projectID: project.id,
-        name,
-      };
+  const update = debounce(
+    async () => {
+      console.log("project", project);
+      console.log("run", run);
+      try {
+        const input = {
+          ID: run.id,
+          projectID: project.id,
+          name,
+        };
 
-      console.log(JSON.stringify(input, null, "  "));
+        console.log(JSON.stringify(input, null, "  "));
 
-      await mutate(client, {
-        mutation: UPDATE_RUN,
-        variables: {
-          input,
-        },
-      });
+        await mutate(client, {
+          mutation: UPDATE_RUN,
+          variables: {
+            input,
+          },
+        });
 
-      notify({
-        success: true,
-        title: `Updated Run successfully`,
-        // body:
-        //   "Something happened on the server, and we could not create a new Run as requested.",
-      });
-    } catch (error) {
-      console.error(error);
-      notify({
-        failed: true,
-        title: `Could not save Run update`,
-        body:
-          "Something happened on the server, and we could not save the latest changes to this Run.",
-      });
-    }
-  }
+        notify({
+          success: true,
+          title: `Updated Run successfully`,
+          // body:
+          //   "Something happened on the server, and we could not create a new Run as requested.",
+        });
+      } catch (error) {
+        console.error(error);
+        notify({
+          failed: true,
+          title: `Could not save Run update`,
+          body:
+            "Something happened on the server, and we could not save the latest changes to this Run.",
+        });
+      }
+    },
+    2500,
+    10000
+  );
 
   const procedure = deepCopy(run.procedure);
 

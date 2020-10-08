@@ -3,7 +3,7 @@
   import { client } from "../../lib/apollo";
   import { UPDATE_PROCEDURE } from "../../lib/queries.js";
   import { deepCopy } from "../../utils/copy";
-  import { throttle } from "../../utils/functions.js";
+  import { debounce } from "../../utils/timing";
   import Button from "../base/Button.svelte";
   import Input from "../base/Input.svelte";
   import Label from "../base/Label.svelte";
@@ -24,26 +24,6 @@
   export let project;
   export let run;
   export let template;
-  // let template = {
-  //   projectID: "fkelbwkjq",
-  //   name: "Speed Dating 1",
-  //   selectionType: "INTERNAL_DB",
-  //   participantCount: null,
-  //   adult: false,
-  //   mturkCriteria: { qualifications: [] },
-  //   internalCriteria: {
-  //     condition: {
-  //       and: [
-  //         {
-  //           key: "",
-  //           comparator: "EQUAL_TO",
-  //           values: [],
-  //         },
-  //       ],
-  //     },
-  //   },
-  //   steps: [],
-  // };
 
   // $: console.log(JSON.stringify(template, "", "  "));
   $: console.log(JSON.stringify(template));
@@ -54,34 +34,42 @@
     }
   }
 
-  const save = throttle(async () => {
-    console.log("project", project);
-    console.log("run", run);
-    try {
-      const input = {
-        runID: run.id,
-        projectID: project.id,
-        procedure: template,
-      };
+  const save = debounce(
+    async () => {
+      console.log("project", project);
+      console.log("run", run);
+      try {
+        const input = {
+          runID: run.id,
+          projectID: project.id,
+          procedure: template,
+        };
 
-      console.log(JSON.stringify(input, null, "  "));
+        console.log(JSON.stringify(input, null, "  "));
 
-      await mutate(client, {
-        mutation: UPDATE_PROCEDURE,
-        variables: {
-          input,
-        },
-      });
-    } catch (error) {
-      console.error(error);
-      notify({
-        failed: true,
-        title: `Could not save Template update`,
-        body:
-          "Something happened on the server, and we could not save the latest changes to this Run.",
-      });
-    }
-  }, 1000);
+        await mutate(client, {
+          mutation: UPDATE_PROCEDURE,
+          variables: {
+            input,
+          },
+        });
+        notify({
+          success: true,
+          title: `Updated Run successfully`,
+        });
+      } catch (error) {
+        console.error(error);
+        notify({
+          failed: true,
+          title: `Could not save Template update`,
+          body:
+            "Something happened on the server, and we could not save the latest changes to this Run.",
+        });
+      }
+    },
+    2500,
+    30000
+  );
 
   function handleNewStep(stepType) {
     return function (event) {
@@ -125,7 +113,9 @@
 
   <div class="mt-5">
     {#if template.selectionType === 'INTERNAL_DB'}
-      <InternalCriteria bind:criteria={template.internalCriteria.condition} />
+      <InternalCriteria
+        bind:all={template.internalCriteria.all}
+        bind:criteria={template.internalCriteria.condition} />
     {:else if template.selectionType === 'MTURK_QUALIFICATIONS'}
       <MTurkQualifications
         bind:qualifications={template.mturkCriteria.qualifications} />

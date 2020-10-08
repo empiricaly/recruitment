@@ -11,7 +11,7 @@
     notification.id = genID();
     setTimeout(() => {
       remove(notification);
-    }, 4000);
+    }, notification.duration || 4000);
     notifications.update((notifs) => {
       return [notification, ...notifs];
     });
@@ -56,7 +56,7 @@
 
 <div
   class="fixed inset-0 flex flex-col items-center justify-start px-4 py-6
-    pointer-events-none sm:p-6 sm:items-center sm:justify-start">
+    pointer-events-none sm:p-6 sm:items-end sm:justify-end">
   <!--
     Notification panel, show/hide based on alert state.
 

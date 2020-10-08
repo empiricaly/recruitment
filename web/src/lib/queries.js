@@ -202,6 +202,7 @@ export const GET_RUN = gql`
             }
           }
           internalCriteria {
+            all
             condition {
               and {
                 and {

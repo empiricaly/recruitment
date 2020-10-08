@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 
+	// SQLLite3 package required by ent to init the SQLLite Storage
 	_ "github.com/mattn/go-sqlite3"
 )
 

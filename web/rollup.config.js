@@ -35,6 +35,7 @@ export default {
     format: "iife",
     name: "app",
     file: "public/build/bundle.js",
+    exports: "named" /** Disable warning for default imports */,
   },
   plugins: [
     replace({

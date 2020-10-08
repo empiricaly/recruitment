@@ -1,10 +1,23 @@
-export const debounce = (func, delay) => {
+export const debounce = (func, delay, max = 0) => {
   let inDebounce;
+  let first;
   return function () {
     const context = this;
     const args = arguments;
     clearTimeout(inDebounce);
-    inDebounce = setTimeout(() => func.apply(context, args), delay);
+    let wait = delay;
+    if (max > 0) {
+      if (!first) {
+        first = new Date();
+      } else {
+        const ellapsed = new Date() - first;
+        wait = Math.min(max - ellapsed, delay);
+      }
+    }
+    inDebounce = setTimeout(() => {
+      first = null;
+      func.apply(context, args);
+    }, wait);
   };
 };
 

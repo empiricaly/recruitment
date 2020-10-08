@@ -2,27 +2,29 @@
   const matchTypes = [
     {
       label: "All",
-      value: "and"
+      value: "and",
     },
     {
       label: "Any",
-      value: "or"
-    }
+      value: "or",
+    },
   ];
 </script>
 
 <script>
-  import Criteria from "./Criteria.svelte";
-  import Select from "../../base/Select.svelte";
   import Radio from "../../base/Radio.svelte";
+  import Select from "../../base/Select.svelte";
+  import Criteria from "./Criteria.svelte";
 
+  export let all = true;
   export let criteria = {};
   export let useCriteria = false;
-  let useCriteriaValue = useCriteria ? "useCriteria" : "doNotUseCriteria";
+  let useCriteriaValue = all ? "doNotUseCriteria" : "useCriteria";
 
   $: {
     if (useCriteriaValue) {
       useCriteria = useCriteriaValue === "useCriteria";
+      all = !useCriteria;
     }
   }
 

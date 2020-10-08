@@ -85,8 +85,8 @@
         sm:leading-9 sm:truncate flex items-center">
       {#if titleUpdatable}
         <input
-          class="font-bold focus:outline-none focus:shadow-outline-blue
-            rounded-md bg-transparent focus:bg-white w-auto"
+          class="font-bold focus:outline-none
+            rounded-md bg-transparent focus:bg-white w-full"
           type="text"
           bind:value={title} />
       {:else}
