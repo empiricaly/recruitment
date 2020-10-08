@@ -1,8 +1,8 @@
 <script>
-  import Link from "../base/Link.svelte";
   import Badge from "../base/Badge.svelte";
-  import OptionsMenu from "../misc/OptionsMenu.svelte";
+  import Link from "../base/Link.svelte";
   import CreatedBy from "../misc/CreatedBy.svelte";
+  import OptionsMenu from "../misc/OptionsMenu.svelte";
 
   export let index = 0;
   export let projectID;
@@ -29,7 +29,7 @@
     <div class="flex items-strect">
       <div class="pl-4 py-4 sm:pl-6 flex-1">
         <div class="flex items-center justify-between">
-          <div class="text-sm leading-5 font-medium text-indigo-600 truncate">
+          <div class="text-sm leading-5 font-medium text-mint-600 truncate">
             {name}
           </div>
           <div class="ml-2 flex-shrink-0 flex">
@@ -53,7 +53,8 @@
                   4h6v2h-6v-2zM3 4h6v6H3V4zm2 2v2h2V6H5zm-2 8h6v6H3v-6zm2
                   2v2h2v-2H5z" />
               </svg>
-              {stepCount} Step{stepCount !== 1 && 's'}
+              {stepCount}
+              Step{stepCount !== 1 && 's'}
             </div>
             <div class="mr-6 flex items-center text-sm leading-5 text-gray-500">
               <svg
@@ -66,7 +67,8 @@
                   19.482A.5.5 0 0 1 8 19.066V4.934a.5.5 0 0 1 .777-.416l10.599
                   7.066a.5.5 0 0 1 0 .832z" />
               </svg>
-              {runCount} Run{runCount !== 1 && 's'}
+              {runCount}
+              Run{runCount !== 1 && 's'}
             </div>
           </div>
           <CreatedBy {creator} />

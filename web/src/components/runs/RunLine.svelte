@@ -31,7 +31,7 @@
     <div class="flex items-center px-4 py-4 sm:px-2">
       <div class="min-w-0 flex-1 px-4 md:grid md:grid-cols-2 md:gap-4">
         <div>
-          <div class="text-sm leading-5 font-medium text-indigo-600 truncate">
+          <div class="text-sm leading-5 font-medium text-mint-600 truncate">
             {name}
           </div>
           <div
@@ -46,7 +46,8 @@
                 4h6v2h-6v-2zM3 4h6v6H3V4zm2 2v2h2V6H5zm-2 8h6v6H3v-6zm2
                 2v2h2v-2H5z" />
             </svg>
-            {stepCount} Step{stepCount !== 1 && 's'}
+            {stepCount}
+            Step{stepCount !== 1 && 's'}
           </div>
         </div>
 

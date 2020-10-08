@@ -9,7 +9,7 @@
     bind:group
     {value}
     type="radio"
-    class="form-radio text-indigo-600"
+    class="form-radio text-mint-600"
     {name} />
   <span class="ml-2">
     <slot />

@@ -14,13 +14,13 @@
     <ul>
       <li>
         <a
-          href="#"
+        href="/"
           class="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50
             transition duration-150 ease-in-out">
           <div class="px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
               <div
-                class="text-sm leading-5 font-medium text-indigo-600 truncate">
+                class="text-sm leading-5 font-medium text-mint-600 truncate">
                 Back End Developer
               </div>
               <div class="ml-2 flex-shrink-0 flex">
@@ -85,13 +85,13 @@
       </li>
       <li class="border-t border-gray-200">
         <a
-          href="#"
+        href="/"
           class="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50
             transition duration-150 ease-in-out">
           <div class="px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
               <div
-                class="text-sm leading-5 font-medium text-indigo-600 truncate">
+                class="text-sm leading-5 font-medium text-mint-600 truncate">
                 Back End Developer
               </div>
               <div class="ml-2 flex-shrink-0 flex">
@@ -156,13 +156,13 @@
       </li>
       <li class="border-t border-gray-200">
         <a
-          href="#"
+          href="/"
           class="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50
             transition duration-150 ease-in-out">
           <div class="px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
               <div
-                class="text-sm leading-5 font-medium text-indigo-600 truncate">
+                class="text-sm leading-5 font-medium text-mint-600 truncate">
                 Back End Developer
               </div>
               <div class="ml-2 flex-shrink-0 flex">

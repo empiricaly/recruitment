@@ -1,6 +1,5 @@
 <script>
-  import { onDestroy } from "svelte";
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onDestroy } from "svelte";
 
   export let id = null;
   export let value = null;
@@ -23,7 +22,7 @@
       return (
         val !== undefined &&
         val !== null &&
-        options.find(opt => opt.value === val)
+        options.find((opt) => opt.value === val)
       );
     }
 
@@ -31,7 +30,7 @@
       val !== undefined &&
       val !== null &&
       val.length > 0 &&
-      val.map(v => options.find(opt => opt.value === v))
+      val.map((v) => options.find((opt) => opt.value === v))
     );
   }
 
@@ -40,7 +39,7 @@
       return val ? val.label : placeholder;
     }
 
-    return val ? val.map(v => v.label).join(", ") : placeholder;
+    return val ? val.map((v) => v.label).join(", ") : placeholder;
   }
 
   function handleOpen(event) {
@@ -118,14 +117,12 @@
         aria-activedescendant="listbox-item-3"
         class="max-h-60 rounded-md py-1 text-base leading-6 shadow-xs
         overflow-auto focus:outline-none sm:text-sm sm:leading-5">
-
         {#each options as option, i}
           <li
             id="listbox-option-0"
             role="option"
-            class="hover:text-white hover:bg-indigo-600 text-gray-900
+            class="hover:text-white hover:bg-mint-600 text-gray-900
             cursor-default select-none relative">
-
             <button
               class="w-full h-full py-2 pl-3 pr-9 focus:outline-none flex
               justify-between"
@@ -140,14 +137,13 @@
                   if (!value.includes(option.value)) {
                     value.push(option.value);
                   } else {
-                    const valueIndex = value.findIndex(v => v === option.value);
+                    const valueIndex = value.findIndex((v) => v === option.value);
                     value.splice(valueIndex, 1);
                   }
                   value = value;
                   dispatch('change', { value });
                 }
               }}>
-
               <span
                 class="{isCurrentValue(value, option.value) ? 'font-semibold' : 'font-normal'}
                 block truncate">
@@ -156,7 +152,7 @@
 
               {#if isCurrentValue(value, option.value)}
                 <span
-                  class="text-indigo-600 absolute inset-y-0 right-0 flex
+                  class="text-mint-600 absolute inset-y-0 right-0 flex
                   items-center pr-4">
                   <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path
@@ -168,11 +164,9 @@
                   </svg>
                 </span>
               {/if}
-
             </button>
           </li>
         {/each}
-
       </ul>
     </div>
   {/if}

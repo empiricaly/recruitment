@@ -10,10 +10,10 @@
   $: css = disabled
     ? "text-gray-400 bg-gray-200 hover:bg-gray-50 focus:border-gray-300 focus:shadow-outline-gray active:bg-gray-200"
     : tertiary
-    ? "border-gray-300 text-gray-700 bg-white hover:text-gray-500 focus:shadow-outline-blue focus:border-blue-300 active:text-gray-800 active:bg-gray-50 active:text-gray-800"
+    ? "border-gray-300 text-gray-700 bg-white hover:text-gray-500 focus:shadow-outline-mint focus:border-mint-300 active:text-gray-800 active:bg-gray-50 active:text-gray-800"
     : secondary
-    ? "text-indigo-700 bg-indigo-100 hover:bg-indigo-50 focus:border-indigo-300 focus:shadow-outline-indigo active:bg-indigo-200"
-    : "text-white bg-indigo-600 hover:bg-indigo-500 focus:border-indigo-700 focus:shadow-outline-indigo active:bg-indigo-700";
+    ? "text-mint-700 bg-mint-100 hover:bg-mint-50 focus:border-mint-300 focus:shadow-outline-mint active:bg-mint-200"
+    : "text-white bg-mint-600 hover:bg-mint-500 focus:border-mint-700 focus:shadow-outline-mint active:bg-mint-700";
 </script>
 
 <span class:w-full={full} class="block rounded-md shadow-sm">

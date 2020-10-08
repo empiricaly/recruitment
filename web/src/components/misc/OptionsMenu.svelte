@@ -1,7 +1,6 @@
 <script>
-  import { createEventDispatcher,onDestroy } from "svelte";
-import { push } from "../../lib/routing.js";
-
+  import { createEventDispatcher, onDestroy } from "svelte";
+  import { push } from "../../lib/routing.js";
 
   const dispatch = createEventDispatcher();
 
@@ -73,7 +72,7 @@ import { push } from "../../lib/routing.js";
                     push(option.path);
                   }
                 }}
-                href="#"
+                href="/"
                 class="block px-4 py-2 text-sm leading-5 text-gray-700
                   hover:bg-gray-100 hover:text-gray-900 focus:outline-none
                   focus:bg-gray-100 focus:text-gray-900 w-full"
