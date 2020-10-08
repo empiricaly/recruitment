@@ -27,7 +27,7 @@ func (Step) Fields() []ent.Field {
 // Edges of the Step.
 func (Step) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("procedure", Procedure.Type).
+		edge.From("template", Template.Type).
 			Ref("steps").
 			Unique(),
 	}

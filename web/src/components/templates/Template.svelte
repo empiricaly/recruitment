@@ -1,7 +1,7 @@
 <script>
   import { mutate } from "svelte-apollo";
   import { client } from "../../lib/apollo";
-  import { UPDATE_PROCEDURE } from "../../lib/queries.js";
+  import { UPDATE_TEMPLATE } from "../../lib/queries.js";
   import { deepCopy } from "../../utils/copy";
   import { debounce } from "../../utils/timing";
   import Button from "../base/Button.svelte";
@@ -42,13 +42,13 @@
         const input = {
           runID: run.id,
           projectID: project.id,
-          procedure: template,
+          template,
         };
 
         console.log(JSON.stringify(input, null, "  "));
 
         await mutate(client, {
-          mutation: UPDATE_PROCEDURE,
+          mutation: UPDATE_TEMPLATE,
           variables: {
             input,
           },
@@ -97,7 +97,7 @@
 
 <TemplateSection
   title="Participant Selection"
-  description="A Procedure starts with the selection of Participants you want
+  description="A Template starts with the selection of Participants you want
     in your experiment. Internal Database selection uses Participant information
     collected from previous experiments or recruitment runs. MTurk
     Qualifications uses Worker Qualifications defined on MTurk."

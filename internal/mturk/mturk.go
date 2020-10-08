@@ -122,7 +122,7 @@ func (s *Session) RunStep(run *ent.Run, step *ent.Step) error {
 		params := &mturk.CreateHITInput{
 			AssignmentDurationInSeconds: aws.Int64(int64(hit.Duration)),
 			LifetimeInSeconds:           aws.Int64(int64(hit.Duration)),
-			MaxAssignments:              aws.Int64(int64(run.Edges.Procedure.ParticipantCount)),
+			MaxAssignments:              aws.Int64(int64(run.Edges.Template.ParticipantCount)),
 			Title:                       aws.String(hit.Title),
 			Description:                 aws.String(hit.Description),
 			Keywords:                    aws.String(hit.Keywords),

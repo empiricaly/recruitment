@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 )
 
-// Procedure is the model entity for the Procedure schema.
-type Procedure struct {
+// Template is the model entity for the Template schema.
+type Template struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID string `json:"id,omitempty"`
@@ -36,15 +36,15 @@ type Procedure struct {
 	// Adult holds the value of the "adult" field.
 	Adult bool `json:"adult,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the ProcedureQuery when eager-loading is set.
-	Edges              ProcedureEdges `json:"edges"`
-	admin_procedures   *string
-	project_procedures *string
-	run_procedure      *string
+	// The values are being populated by the TemplateQuery when eager-loading is set.
+	Edges             TemplateEdges `json:"edges"`
+	admin_templates   *string
+	project_templates *string
+	run_template      *string
 }
 
-// ProcedureEdges holds the relations/edges for other nodes in the graph.
-type ProcedureEdges struct {
+// TemplateEdges holds the relations/edges for other nodes in the graph.
+type TemplateEdges struct {
 	// Steps holds the value of the steps edge.
 	Steps []*Step
 	// Project holds the value of the project edge.
@@ -60,7 +60,7 @@ type ProcedureEdges struct {
 
 // StepsOrErr returns the Steps value or an error if the edge
 // was not loaded in eager-loading.
-func (e ProcedureEdges) StepsOrErr() ([]*Step, error) {
+func (e TemplateEdges) StepsOrErr() ([]*Step, error) {
 	if e.loadedTypes[0] {
 		return e.Steps, nil
 	}
@@ -69,7 +69,7 @@ func (e ProcedureEdges) StepsOrErr() ([]*Step, error) {
 
 // ProjectOrErr returns the Project value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e ProcedureEdges) ProjectOrErr() (*Project, error) {
+func (e TemplateEdges) ProjectOrErr() (*Project, error) {
 	if e.loadedTypes[1] {
 		if e.Project == nil {
 			// The edge project was loaded in eager-loading,
@@ -83,7 +83,7 @@ func (e ProcedureEdges) ProjectOrErr() (*Project, error) {
 
 // CreatorOrErr returns the Creator value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e ProcedureEdges) CreatorOrErr() (*Admin, error) {
+func (e TemplateEdges) CreatorOrErr() (*Admin, error) {
 	if e.loadedTypes[2] {
 		if e.Creator == nil {
 			// The edge creator was loaded in eager-loading,
@@ -97,7 +97,7 @@ func (e ProcedureEdges) CreatorOrErr() (*Admin, error) {
 
 // RunOrErr returns the Run value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e ProcedureEdges) RunOrErr() (*Run, error) {
+func (e TemplateEdges) RunOrErr() (*Run, error) {
 	if e.loadedTypes[3] {
 		if e.Run == nil {
 			// The edge run was loaded in eager-loading,
@@ -110,7 +110,7 @@ func (e ProcedureEdges) RunOrErr() (*Run, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Procedure) scanValues() []interface{} {
+func (*Template) scanValues() []interface{} {
 	return []interface{}{
 		&sql.NullString{}, // id
 		&sql.NullTime{},   // createdAt
@@ -125,158 +125,158 @@ func (*Procedure) scanValues() []interface{} {
 }
 
 // fkValues returns the types for scanning foreign-keys values from sql.Rows.
-func (*Procedure) fkValues() []interface{} {
+func (*Template) fkValues() []interface{} {
 	return []interface{}{
-		&sql.NullString{}, // admin_procedures
-		&sql.NullString{}, // project_procedures
-		&sql.NullString{}, // run_procedure
+		&sql.NullString{}, // admin_templates
+		&sql.NullString{}, // project_templates
+		&sql.NullString{}, // run_template
 	}
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the Procedure fields.
-func (pr *Procedure) assignValues(values ...interface{}) error {
-	if m, n := len(values), len(procedure.Columns); m < n {
+// to the Template fields.
+func (t *Template) assignValues(values ...interface{}) error {
+	if m, n := len(values), len(template.Columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	if value, ok := values[0].(*sql.NullString); !ok {
 		return fmt.Errorf("unexpected type %T for field id", values[0])
 	} else if value.Valid {
-		pr.ID = value.String
+		t.ID = value.String
 	}
 	values = values[1:]
 	if value, ok := values[0].(*sql.NullTime); !ok {
 		return fmt.Errorf("unexpected type %T for field createdAt", values[0])
 	} else if value.Valid {
-		pr.CreatedAt = value.Time
+		t.CreatedAt = value.Time
 	}
 	if value, ok := values[1].(*sql.NullTime); !ok {
 		return fmt.Errorf("unexpected type %T for field updatedAt", values[1])
 	} else if value.Valid {
-		pr.UpdatedAt = value.Time
+		t.UpdatedAt = value.Time
 	}
 	if value, ok := values[2].(*sql.NullString); !ok {
 		return fmt.Errorf("unexpected type %T for field name", values[2])
 	} else if value.Valid {
-		pr.Name = value.String
+		t.Name = value.String
 	}
 	if value, ok := values[3].(*sql.NullString); !ok {
 		return fmt.Errorf("unexpected type %T for field selectionType", values[3])
 	} else if value.Valid {
-		pr.SelectionType = value.String
+		t.SelectionType = value.String
 	}
 	if value, ok := values[4].(*sql.NullInt64); !ok {
 		return fmt.Errorf("unexpected type %T for field participantCount", values[4])
 	} else if value.Valid {
-		pr.ParticipantCount = int(value.Int64)
+		t.ParticipantCount = int(value.Int64)
 	}
 	if value, ok := values[5].(*[]byte); !ok {
 		return fmt.Errorf("unexpected type %T for field internalCriteria", values[5])
 	} else if value != nil {
-		pr.InternalCriteria = *value
+		t.InternalCriteria = *value
 	}
 	if value, ok := values[6].(*[]byte); !ok {
 		return fmt.Errorf("unexpected type %T for field mturkCriteria", values[6])
 	} else if value != nil {
-		pr.MturkCriteria = *value
+		t.MturkCriteria = *value
 	}
 	if value, ok := values[7].(*sql.NullBool); !ok {
 		return fmt.Errorf("unexpected type %T for field adult", values[7])
 	} else if value.Valid {
-		pr.Adult = value.Bool
+		t.Adult = value.Bool
 	}
 	values = values[8:]
-	if len(values) == len(procedure.ForeignKeys) {
+	if len(values) == len(template.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullString); !ok {
-			return fmt.Errorf("unexpected type %T for field admin_procedures", values[0])
+			return fmt.Errorf("unexpected type %T for field admin_templates", values[0])
 		} else if value.Valid {
-			pr.admin_procedures = new(string)
-			*pr.admin_procedures = value.String
+			t.admin_templates = new(string)
+			*t.admin_templates = value.String
 		}
 		if value, ok := values[1].(*sql.NullString); !ok {
-			return fmt.Errorf("unexpected type %T for field project_procedures", values[1])
+			return fmt.Errorf("unexpected type %T for field project_templates", values[1])
 		} else if value.Valid {
-			pr.project_procedures = new(string)
-			*pr.project_procedures = value.String
+			t.project_templates = new(string)
+			*t.project_templates = value.String
 		}
 		if value, ok := values[2].(*sql.NullString); !ok {
-			return fmt.Errorf("unexpected type %T for field run_procedure", values[2])
+			return fmt.Errorf("unexpected type %T for field run_template", values[2])
 		} else if value.Valid {
-			pr.run_procedure = new(string)
-			*pr.run_procedure = value.String
+			t.run_template = new(string)
+			*t.run_template = value.String
 		}
 	}
 	return nil
 }
 
-// QuerySteps queries the steps edge of the Procedure.
-func (pr *Procedure) QuerySteps() *StepQuery {
-	return (&ProcedureClient{config: pr.config}).QuerySteps(pr)
+// QuerySteps queries the steps edge of the Template.
+func (t *Template) QuerySteps() *StepQuery {
+	return (&TemplateClient{config: t.config}).QuerySteps(t)
 }
 
-// QueryProject queries the project edge of the Procedure.
-func (pr *Procedure) QueryProject() *ProjectQuery {
-	return (&ProcedureClient{config: pr.config}).QueryProject(pr)
+// QueryProject queries the project edge of the Template.
+func (t *Template) QueryProject() *ProjectQuery {
+	return (&TemplateClient{config: t.config}).QueryProject(t)
 }
 
-// QueryCreator queries the creator edge of the Procedure.
-func (pr *Procedure) QueryCreator() *AdminQuery {
-	return (&ProcedureClient{config: pr.config}).QueryCreator(pr)
+// QueryCreator queries the creator edge of the Template.
+func (t *Template) QueryCreator() *AdminQuery {
+	return (&TemplateClient{config: t.config}).QueryCreator(t)
 }
 
-// QueryRun queries the run edge of the Procedure.
-func (pr *Procedure) QueryRun() *RunQuery {
-	return (&ProcedureClient{config: pr.config}).QueryRun(pr)
+// QueryRun queries the run edge of the Template.
+func (t *Template) QueryRun() *RunQuery {
+	return (&TemplateClient{config: t.config}).QueryRun(t)
 }
 
-// Update returns a builder for updating this Procedure.
-// Note that, you need to call Procedure.Unwrap() before calling this method, if this Procedure
+// Update returns a builder for updating this Template.
+// Note that, you need to call Template.Unwrap() before calling this method, if this Template
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (pr *Procedure) Update() *ProcedureUpdateOne {
-	return (&ProcedureClient{config: pr.config}).UpdateOne(pr)
+func (t *Template) Update() *TemplateUpdateOne {
+	return (&TemplateClient{config: t.config}).UpdateOne(t)
 }
 
 // Unwrap unwraps the entity that was returned from a transaction after it was closed,
 // so that all next queries will be executed through the driver which created the transaction.
-func (pr *Procedure) Unwrap() *Procedure {
-	tx, ok := pr.config.driver.(*txDriver)
+func (t *Template) Unwrap() *Template {
+	tx, ok := t.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: Procedure is not a transactional entity")
+		panic("ent: Template is not a transactional entity")
 	}
-	pr.config.driver = tx.drv
-	return pr
+	t.config.driver = tx.drv
+	return t
 }
 
 // String implements the fmt.Stringer.
-func (pr *Procedure) String() string {
+func (t *Template) String() string {
 	var builder strings.Builder
-	builder.WriteString("Procedure(")
-	builder.WriteString(fmt.Sprintf("id=%v", pr.ID))
+	builder.WriteString("Template(")
+	builder.WriteString(fmt.Sprintf("id=%v", t.ID))
 	builder.WriteString(", createdAt=")
-	builder.WriteString(pr.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(t.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", updatedAt=")
-	builder.WriteString(pr.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(t.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", name=")
-	builder.WriteString(pr.Name)
+	builder.WriteString(t.Name)
 	builder.WriteString(", selectionType=")
-	builder.WriteString(pr.SelectionType)
+	builder.WriteString(t.SelectionType)
 	builder.WriteString(", participantCount=")
-	builder.WriteString(fmt.Sprintf("%v", pr.ParticipantCount))
+	builder.WriteString(fmt.Sprintf("%v", t.ParticipantCount))
 	builder.WriteString(", internalCriteria=")
-	builder.WriteString(fmt.Sprintf("%v", pr.InternalCriteria))
+	builder.WriteString(fmt.Sprintf("%v", t.InternalCriteria))
 	builder.WriteString(", mturkCriteria=")
-	builder.WriteString(fmt.Sprintf("%v", pr.MturkCriteria))
+	builder.WriteString(fmt.Sprintf("%v", t.MturkCriteria))
 	builder.WriteString(", adult=")
-	builder.WriteString(fmt.Sprintf("%v", pr.Adult))
+	builder.WriteString(fmt.Sprintf("%v", t.Adult))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
-// Procedures is a parsable slice of Procedure.
-type Procedures []*Procedure
+// Templates is a parsable slice of Template.
+type Templates []*Template
 
-func (pr Procedures) config(cfg config) {
-	for _i := range pr {
-		pr[_i].config = cfg
+func (t Templates) config(cfg config) {
+	for _i := range t {
+		t[_i].config = cfg
 	}
 }

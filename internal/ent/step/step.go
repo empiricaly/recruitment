@@ -29,18 +29,18 @@ const (
 	// FieldFilterArgs holds the string denoting the filterargs field in the database.
 	FieldFilterArgs = "filter_args"
 
-	// EdgeProcedure holds the string denoting the procedure edge name in mutations.
-	EdgeProcedure = "procedure"
+	// EdgeTemplate holds the string denoting the template edge name in mutations.
+	EdgeTemplate = "template"
 
 	// Table holds the table name of the step in the database.
 	Table = "steps"
-	// ProcedureTable is the table the holds the procedure relation/edge.
-	ProcedureTable = "steps"
-	// ProcedureInverseTable is the table name for the Procedure entity.
-	// It exists in this package in order to avoid circular dependency with the "procedure" package.
-	ProcedureInverseTable = "procedures"
-	// ProcedureColumn is the table column denoting the procedure relation/edge.
-	ProcedureColumn = "procedure_steps"
+	// TemplateTable is the table the holds the template relation/edge.
+	TemplateTable = "steps"
+	// TemplateInverseTable is the table name for the Template entity.
+	// It exists in this package in order to avoid circular dependency with the "template" package.
+	TemplateInverseTable = "templates"
+	// TemplateColumn is the table column denoting the template relation/edge.
+	TemplateColumn = "template_steps"
 )
 
 // Columns holds all SQL columns for step fields.
@@ -58,7 +58,7 @@ var Columns = []string{
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the Step type.
 var ForeignKeys = []string{
-	"procedure_steps",
+	"template_steps",
 }
 
 var (

@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -149,15 +149,15 @@ func (ru *RunUpdate) SetProject(p *Project) *RunUpdate {
 	return ru.SetProjectID(p.ID)
 }
 
-// SetProcedureID sets the procedure edge to Procedure by id.
-func (ru *RunUpdate) SetProcedureID(id string) *RunUpdate {
-	ru.mutation.SetProcedureID(id)
+// SetTemplateID sets the template edge to Template by id.
+func (ru *RunUpdate) SetTemplateID(id string) *RunUpdate {
+	ru.mutation.SetTemplateID(id)
 	return ru
 }
 
-// SetProcedure sets the procedure edge to Procedure.
-func (ru *RunUpdate) SetProcedure(p *Procedure) *RunUpdate {
-	return ru.SetProcedureID(p.ID)
+// SetTemplate sets the template edge to Template.
+func (ru *RunUpdate) SetTemplate(t *Template) *RunUpdate {
+	return ru.SetTemplateID(t.ID)
 }
 
 // AddStepIDs adds the steps edge to StepRun by ids.
@@ -186,9 +186,9 @@ func (ru *RunUpdate) ClearProject() *RunUpdate {
 	return ru
 }
 
-// ClearProcedure clears the procedure edge to Procedure.
-func (ru *RunUpdate) ClearProcedure() *RunUpdate {
-	ru.mutation.ClearProcedure()
+// ClearTemplate clears the template edge to Template.
+func (ru *RunUpdate) ClearTemplate() *RunUpdate {
+	ru.mutation.ClearTemplate()
 	return ru
 }
 
@@ -219,8 +219,8 @@ func (ru *RunUpdate) Save(ctx context.Context) (int, error) {
 		}
 	}
 
-	if _, ok := ru.mutation.ProcedureID(); ru.mutation.ProcedureCleared() && !ok {
-		return 0, errors.New("ent: clearing a unique edge \"procedure\"")
+	if _, ok := ru.mutation.TemplateID(); ru.mutation.TemplateCleared() && !ok {
+		return 0, errors.New("ent: clearing a unique edge \"template\"")
 	}
 
 	var (
@@ -398,33 +398,33 @@ func (ru *RunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ru.mutation.ProcedureCleared() {
+	if ru.mutation.TemplateCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
-			Table:   run.ProcedureTable,
-			Columns: []string{run.ProcedureColumn},
+			Table:   run.TemplateTable,
+			Columns: []string{run.TemplateColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ru.mutation.ProcedureIDs(); len(nodes) > 0 {
+	if nodes := ru.mutation.TemplateIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
-			Table:   run.ProcedureTable,
-			Columns: []string{run.ProcedureColumn},
+			Table:   run.TemplateTable,
+			Columns: []string{run.TemplateColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}
@@ -606,15 +606,15 @@ func (ruo *RunUpdateOne) SetProject(p *Project) *RunUpdateOne {
 	return ruo.SetProjectID(p.ID)
 }
 
-// SetProcedureID sets the procedure edge to Procedure by id.
-func (ruo *RunUpdateOne) SetProcedureID(id string) *RunUpdateOne {
-	ruo.mutation.SetProcedureID(id)
+// SetTemplateID sets the template edge to Template by id.
+func (ruo *RunUpdateOne) SetTemplateID(id string) *RunUpdateOne {
+	ruo.mutation.SetTemplateID(id)
 	return ruo
 }
 
-// SetProcedure sets the procedure edge to Procedure.
-func (ruo *RunUpdateOne) SetProcedure(p *Procedure) *RunUpdateOne {
-	return ruo.SetProcedureID(p.ID)
+// SetTemplate sets the template edge to Template.
+func (ruo *RunUpdateOne) SetTemplate(t *Template) *RunUpdateOne {
+	return ruo.SetTemplateID(t.ID)
 }
 
 // AddStepIDs adds the steps edge to StepRun by ids.
@@ -643,9 +643,9 @@ func (ruo *RunUpdateOne) ClearProject() *RunUpdateOne {
 	return ruo
 }
 
-// ClearProcedure clears the procedure edge to Procedure.
-func (ruo *RunUpdateOne) ClearProcedure() *RunUpdateOne {
-	ruo.mutation.ClearProcedure()
+// ClearTemplate clears the template edge to Template.
+func (ruo *RunUpdateOne) ClearTemplate() *RunUpdateOne {
+	ruo.mutation.ClearTemplate()
 	return ruo
 }
 
@@ -676,8 +676,8 @@ func (ruo *RunUpdateOne) Save(ctx context.Context) (*Run, error) {
 		}
 	}
 
-	if _, ok := ruo.mutation.ProcedureID(); ruo.mutation.ProcedureCleared() && !ok {
-		return nil, errors.New("ent: clearing a unique edge \"procedure\"")
+	if _, ok := ruo.mutation.TemplateID(); ruo.mutation.TemplateCleared() && !ok {
+		return nil, errors.New("ent: clearing a unique edge \"template\"")
 	}
 
 	var (
@@ -853,33 +853,33 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ruo.mutation.ProcedureCleared() {
+	if ruo.mutation.TemplateCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
-			Table:   run.ProcedureTable,
-			Columns: []string{run.ProcedureColumn},
+			Table:   run.TemplateTable,
+			Columns: []string{run.TemplateColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ruo.mutation.ProcedureIDs(); len(nodes) > 0 {
+	if nodes := ruo.mutation.TemplateIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
-			Table:   run.ProcedureTable,
-			Columns: []string{run.ProcedureColumn},
+			Table:   run.TemplateTable,
+			Columns: []string{run.TemplateColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}

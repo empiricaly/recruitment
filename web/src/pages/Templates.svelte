@@ -4,14 +4,14 @@
   import TemplateLine from "../components/templates/TemplateLine.svelte";
   import Layout from "../layouts/Layout.svelte";
   import { client } from "../lib/apollo";
-  import { CREATE_PROCEDURE } from "../lib/queries";
+  import { CREATE_TEMPLATE } from "../lib/queries";
 
   export let params;
 
   async function handleCreate() {
     try {
       await mutate(client, {
-        mutation: CREATE_PROCEDURE,
+        mutation: CREATE_TEMPLATE,
         variables: {
           input: {
             projectID: params.projectID,

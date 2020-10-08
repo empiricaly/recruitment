@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/schema"
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 )
 
 // The init function reads all schema descriptors with runtime
@@ -30,46 +30,6 @@ func init() {
 	admin.DefaultUpdatedAt = adminDescUpdatedAt.Default.(func() time.Time)
 	// admin.UpdateDefaultUpdatedAt holds the default value on update for the updatedAt field.
 	admin.UpdateDefaultUpdatedAt = adminDescUpdatedAt.UpdateDefault.(func() time.Time)
-	procedureFields := schema.Procedure{}.Fields()
-	_ = procedureFields
-	// procedureDescCreatedAt is the schema descriptor for createdAt field.
-	procedureDescCreatedAt := procedureFields[1].Descriptor()
-	// procedure.DefaultCreatedAt holds the default value on creation for the createdAt field.
-	procedure.DefaultCreatedAt = procedureDescCreatedAt.Default.(func() time.Time)
-	// procedureDescUpdatedAt is the schema descriptor for updatedAt field.
-	procedureDescUpdatedAt := procedureFields[2].Descriptor()
-	// procedure.DefaultUpdatedAt holds the default value on creation for the updatedAt field.
-	procedure.DefaultUpdatedAt = procedureDescUpdatedAt.Default.(func() time.Time)
-	// procedure.UpdateDefaultUpdatedAt holds the default value on update for the updatedAt field.
-	procedure.UpdateDefaultUpdatedAt = procedureDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// procedureDescName is the schema descriptor for name field.
-	procedureDescName := procedureFields[3].Descriptor()
-	// procedure.NameValidator is a validator for the "name" field. It is called by the builders before save.
-	procedure.NameValidator = func() func(string) error {
-		validators := procedureDescName.Validators
-		fns := [...]func(string) error{
-			validators[0].(func(string) error),
-			validators[1].(func(string) error),
-		}
-		return func(name string) error {
-			for _, fn := range fns {
-				if err := fn(name); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
-	// procedureDescParticipantCount is the schema descriptor for participantCount field.
-	procedureDescParticipantCount := procedureFields[5].Descriptor()
-	// procedure.DefaultParticipantCount holds the default value on creation for the participantCount field.
-	procedure.DefaultParticipantCount = procedureDescParticipantCount.Default.(int)
-	// procedure.ParticipantCountValidator is a validator for the "participantCount" field. It is called by the builders before save.
-	procedure.ParticipantCountValidator = procedureDescParticipantCount.Validators[0].(func(int) error)
-	// procedureDescAdult is the schema descriptor for adult field.
-	procedureDescAdult := procedureFields[8].Descriptor()
-	// procedure.DefaultAdult holds the default value on creation for the adult field.
-	procedure.DefaultAdult = procedureDescAdult.Default.(bool)
 	projectFields := schema.Project{}.Fields()
 	_ = projectFields
 	// projectDescCreatedAt is the schema descriptor for createdAt field.
@@ -118,4 +78,44 @@ func init() {
 	steprun.DefaultUpdatedAt = steprunDescUpdatedAt.Default.(func() time.Time)
 	// steprun.UpdateDefaultUpdatedAt holds the default value on update for the updatedAt field.
 	steprun.UpdateDefaultUpdatedAt = steprunDescUpdatedAt.UpdateDefault.(func() time.Time)
+	templateFields := schema.Template{}.Fields()
+	_ = templateFields
+	// templateDescCreatedAt is the schema descriptor for createdAt field.
+	templateDescCreatedAt := templateFields[1].Descriptor()
+	// template.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	template.DefaultCreatedAt = templateDescCreatedAt.Default.(func() time.Time)
+	// templateDescUpdatedAt is the schema descriptor for updatedAt field.
+	templateDescUpdatedAt := templateFields[2].Descriptor()
+	// template.DefaultUpdatedAt holds the default value on creation for the updatedAt field.
+	template.DefaultUpdatedAt = templateDescUpdatedAt.Default.(func() time.Time)
+	// template.UpdateDefaultUpdatedAt holds the default value on update for the updatedAt field.
+	template.UpdateDefaultUpdatedAt = templateDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// templateDescName is the schema descriptor for name field.
+	templateDescName := templateFields[3].Descriptor()
+	// template.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	template.NameValidator = func() func(string) error {
+		validators := templateDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// templateDescParticipantCount is the schema descriptor for participantCount field.
+	templateDescParticipantCount := templateFields[5].Descriptor()
+	// template.DefaultParticipantCount holds the default value on creation for the participantCount field.
+	template.DefaultParticipantCount = templateDescParticipantCount.Default.(int)
+	// template.ParticipantCountValidator is a validator for the "participantCount" field. It is called by the builders before save.
+	template.ParticipantCountValidator = templateDescParticipantCount.Validators[0].(func(int) error)
+	// templateDescAdult is the schema descriptor for adult field.
+	templateDescAdult := templateFields[8].Descriptor()
+	// template.DefaultAdult holds the default value on creation for the adult field.
+	template.DefaultAdult = templateDescAdult.Default.(bool)
 }

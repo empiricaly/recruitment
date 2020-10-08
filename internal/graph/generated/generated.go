@@ -42,13 +42,13 @@ type ResolverRoot interface {
 	FilterStepArgs() FilterStepArgsResolver
 	MessageStepArgs() MessageStepArgsResolver
 	Mutation() MutationResolver
-	Procedure() ProcedureResolver
 	Project() ProjectResolver
 	Query() QueryResolver
 	Run() RunResolver
 	Step() StepResolver
 	StepRun() StepRunResolver
 	Subscription() SubscriptionResolver
+	Template() TemplateResolver
 }
 
 type DirectiveRoot struct {
@@ -154,17 +154,17 @@ type ComplexityRoot struct {
 	Mutation struct {
 		Auth                func(childComplexity int, input *model.AuthInput) int
 		CancelRun           func(childComplexity int, input *model.CancelRunInput) int
-		CreateProcedure     func(childComplexity int, input *model.CreateProcedureInput) int
 		CreateProject       func(childComplexity int, input *model.CreateProjectInput) int
 		CreateRun           func(childComplexity int, input *model.CreateRunInput) int
-		DuplicateProcedure  func(childComplexity int, input *model.DuplicateProcedureInput) int
+		CreateTemplate      func(childComplexity int, input *model.CreateTemplateInput) int
+		DuplicateTemplate   func(childComplexity int, input *model.DuplicateTemplateInput) int
 		MutateDatum         func(childComplexity int, input *model.MutateDatumInput) int
 		RegisterParticipant func(childComplexity int, input *model.RegisterParticipantInput) int
 		ScheduleRun         func(childComplexity int, input *model.ScheduleRunInput) int
 		StartRun            func(childComplexity int, input *model.StartRunInput) int
 		UnscheduleRun       func(childComplexity int, input *model.UnscheduleRunInput) int
-		UpdateProcedure     func(childComplexity int, input *model.UpdateProcedureInput) int
 		UpdateRun           func(childComplexity int, input *model.UpdateRunInput) int
+		UpdateTemplate      func(childComplexity int, input *model.UpdateTemplateInput) int
 	}
 
 	Page struct {
@@ -202,30 +202,16 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
-	Procedure struct {
-		Adult            func(childComplexity int) int
-		CreatedAt        func(childComplexity int) int
-		Creator          func(childComplexity int) int
-		ID               func(childComplexity int) int
-		InternalCriteria func(childComplexity int) int
-		MturkCriteria    func(childComplexity int) int
-		Name             func(childComplexity int) int
-		ParticipantCount func(childComplexity int) int
-		SelectionType    func(childComplexity int) int
-		Steps            func(childComplexity int) int
-		UpdatedAt        func(childComplexity int) int
-	}
-
 	Project struct {
-		CreatedAt  func(childComplexity int) int
-		Creator    func(childComplexity int) int
-		Data       func(childComplexity int, keys []string) int
-		ID         func(childComplexity int) int
-		Name       func(childComplexity int) int
-		Procedures func(childComplexity int) int
-		ProjectID  func(childComplexity int) int
-		Runs       func(childComplexity int, runID *string, limit *int) int
-		UpdatedAt  func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		Creator   func(childComplexity int) int
+		Data      func(childComplexity int, keys []string) int
+		ID        func(childComplexity int) int
+		Name      func(childComplexity int) int
+		ProjectID func(childComplexity int) int
+		Runs      func(childComplexity int, runID *string, limit *int) int
+		Templates func(childComplexity int) int
+		UpdatedAt func(childComplexity int) int
 	}
 
 	ProviderID struct {
@@ -253,11 +239,11 @@ type ComplexityRoot struct {
 		Error       func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Name        func(childComplexity int) int
-		Procedure   func(childComplexity int) int
 		StartAt     func(childComplexity int) int
 		StartedAt   func(childComplexity int) int
 		Status      func(childComplexity int) int
 		Steps       func(childComplexity int) int
+		Template    func(childComplexity int) int
 		UpdatedAt   func(childComplexity int) int
 	}
 
@@ -286,6 +272,20 @@ type ComplexityRoot struct {
 	Subscription struct {
 		Me func(childComplexity int) int
 	}
+
+	Template struct {
+		Adult            func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		Creator          func(childComplexity int) int
+		ID               func(childComplexity int) int
+		InternalCriteria func(childComplexity int) int
+		MturkCriteria    func(childComplexity int) int
+		Name             func(childComplexity int) int
+		ParticipantCount func(childComplexity int) int
+		SelectionType    func(childComplexity int) int
+		Steps            func(childComplexity int) int
+		UpdatedAt        func(childComplexity int) int
+	}
 }
 
 type FilterStepArgsResolver interface {
@@ -301,9 +301,9 @@ type MutationResolver interface {
 	MutateDatum(ctx context.Context, input *model.MutateDatumInput) (*model.Datum, error)
 	Auth(ctx context.Context, input *model.AuthInput) (*model.AuthResp, error)
 	CreateProject(ctx context.Context, input *model.CreateProjectInput) (*ent.Project, error)
-	CreateProcedure(ctx context.Context, input *model.CreateProcedureInput) (*ent.Procedure, error)
-	UpdateProcedure(ctx context.Context, input *model.UpdateProcedureInput) (*ent.Procedure, error)
-	DuplicateProcedure(ctx context.Context, input *model.DuplicateProcedureInput) (*ent.Procedure, error)
+	CreateTemplate(ctx context.Context, input *model.CreateTemplateInput) (*ent.Template, error)
+	UpdateTemplate(ctx context.Context, input *model.UpdateTemplateInput) (*ent.Template, error)
+	DuplicateTemplate(ctx context.Context, input *model.DuplicateTemplateInput) (*ent.Template, error)
 	CreateRun(ctx context.Context, input *model.CreateRunInput) (*ent.Run, error)
 	UpdateRun(ctx context.Context, input *model.UpdateRunInput) (*ent.Run, error)
 	ScheduleRun(ctx context.Context, input *model.ScheduleRunInput) (*ent.Run, error)
@@ -311,18 +311,10 @@ type MutationResolver interface {
 	StartRun(ctx context.Context, input *model.StartRunInput) (*ent.Run, error)
 	CancelRun(ctx context.Context, input *model.CancelRunInput) (*ent.Run, error)
 }
-type ProcedureResolver interface {
-	Creator(ctx context.Context, obj *ent.Procedure) (*ent.Admin, error)
-
-	SelectionType(ctx context.Context, obj *ent.Procedure) (model.SelectionType, error)
-	InternalCriteria(ctx context.Context, obj *ent.Procedure) (*model.InternalCriteria, error)
-	MturkCriteria(ctx context.Context, obj *ent.Procedure) (*model.MTurkCriteria, error)
-	Steps(ctx context.Context, obj *ent.Procedure) ([]*ent.Step, error)
-}
 type ProjectResolver interface {
 	Creator(ctx context.Context, obj *ent.Project) (*ent.Admin, error)
 
-	Procedures(ctx context.Context, obj *ent.Project) ([]*ent.Procedure, error)
+	Templates(ctx context.Context, obj *ent.Project) ([]*ent.Template, error)
 	Runs(ctx context.Context, obj *ent.Project, runID *string, limit *int) ([]*ent.Run, error)
 	Data(ctx context.Context, obj *ent.Project, keys []string) ([]*model.Datum, error)
 }
@@ -338,7 +330,7 @@ type QueryResolver interface {
 type RunResolver interface {
 	Creator(ctx context.Context, obj *ent.Run) (*ent.Admin, error)
 
-	Procedure(ctx context.Context, obj *ent.Run) (*ent.Procedure, error)
+	Template(ctx context.Context, obj *ent.Run) (*ent.Template, error)
 	Status(ctx context.Context, obj *ent.Run) (model.Status, error)
 
 	Steps(ctx context.Context, obj *ent.Run) ([]*ent.StepRun, error)
@@ -364,6 +356,14 @@ type StepRunResolver interface {
 }
 type SubscriptionResolver interface {
 	Me(ctx context.Context) (<-chan model.User, error)
+}
+type TemplateResolver interface {
+	Creator(ctx context.Context, obj *ent.Template) (*ent.Admin, error)
+
+	SelectionType(ctx context.Context, obj *ent.Template) (model.SelectionType, error)
+	InternalCriteria(ctx context.Context, obj *ent.Template) (*model.InternalCriteria, error)
+	MturkCriteria(ctx context.Context, obj *ent.Template) (*model.MTurkCriteria, error)
+	Steps(ctx context.Context, obj *ent.Template) ([]*ent.Step, error)
 }
 
 type executableSchema struct {
@@ -797,18 +797,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CancelRun(childComplexity, args["input"].(*model.CancelRunInput)), true
 
-	case "Mutation.createProcedure":
-		if e.complexity.Mutation.CreateProcedure == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createProcedure_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateProcedure(childComplexity, args["input"].(*model.CreateProcedureInput)), true
-
 	case "Mutation.createProject":
 		if e.complexity.Mutation.CreateProject == nil {
 			break
@@ -833,17 +821,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateRun(childComplexity, args["input"].(*model.CreateRunInput)), true
 
-	case "Mutation.duplicateProcedure":
-		if e.complexity.Mutation.DuplicateProcedure == nil {
+	case "Mutation.createTemplate":
+		if e.complexity.Mutation.CreateTemplate == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_duplicateProcedure_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_createTemplate_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DuplicateProcedure(childComplexity, args["input"].(*model.DuplicateProcedureInput)), true
+		return e.complexity.Mutation.CreateTemplate(childComplexity, args["input"].(*model.CreateTemplateInput)), true
+
+	case "Mutation.duplicateTemplate":
+		if e.complexity.Mutation.DuplicateTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_duplicateTemplate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DuplicateTemplate(childComplexity, args["input"].(*model.DuplicateTemplateInput)), true
 
 	case "Mutation.mutateDatum":
 		if e.complexity.Mutation.MutateDatum == nil {
@@ -905,18 +905,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UnscheduleRun(childComplexity, args["input"].(*model.UnscheduleRunInput)), true
 
-	case "Mutation.updateProcedure":
-		if e.complexity.Mutation.UpdateProcedure == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_updateProcedure_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.UpdateProcedure(childComplexity, args["input"].(*model.UpdateProcedureInput)), true
-
 	case "Mutation.updateRun":
 		if e.complexity.Mutation.UpdateRun == nil {
 			break
@@ -928,6 +916,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateRun(childComplexity, args["input"].(*model.UpdateRunInput)), true
+
+	case "Mutation.updateTemplate":
+		if e.complexity.Mutation.UpdateTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateTemplate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateTemplate(childComplexity, args["input"].(*model.UpdateTemplateInput)), true
 
 	case "Page.content":
 		if e.complexity.Page.Content == nil {
@@ -1074,83 +1074,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ParticipantsEdge.Node(childComplexity), true
 
-	case "Procedure.adult":
-		if e.complexity.Procedure.Adult == nil {
-			break
-		}
-
-		return e.complexity.Procedure.Adult(childComplexity), true
-
-	case "Procedure.createdAt":
-		if e.complexity.Procedure.CreatedAt == nil {
-			break
-		}
-
-		return e.complexity.Procedure.CreatedAt(childComplexity), true
-
-	case "Procedure.creator":
-		if e.complexity.Procedure.Creator == nil {
-			break
-		}
-
-		return e.complexity.Procedure.Creator(childComplexity), true
-
-	case "Procedure.id":
-		if e.complexity.Procedure.ID == nil {
-			break
-		}
-
-		return e.complexity.Procedure.ID(childComplexity), true
-
-	case "Procedure.internalCriteria":
-		if e.complexity.Procedure.InternalCriteria == nil {
-			break
-		}
-
-		return e.complexity.Procedure.InternalCriteria(childComplexity), true
-
-	case "Procedure.mturkCriteria":
-		if e.complexity.Procedure.MturkCriteria == nil {
-			break
-		}
-
-		return e.complexity.Procedure.MturkCriteria(childComplexity), true
-
-	case "Procedure.name":
-		if e.complexity.Procedure.Name == nil {
-			break
-		}
-
-		return e.complexity.Procedure.Name(childComplexity), true
-
-	case "Procedure.participantCount":
-		if e.complexity.Procedure.ParticipantCount == nil {
-			break
-		}
-
-		return e.complexity.Procedure.ParticipantCount(childComplexity), true
-
-	case "Procedure.selectionType":
-		if e.complexity.Procedure.SelectionType == nil {
-			break
-		}
-
-		return e.complexity.Procedure.SelectionType(childComplexity), true
-
-	case "Procedure.steps":
-		if e.complexity.Procedure.Steps == nil {
-			break
-		}
-
-		return e.complexity.Procedure.Steps(childComplexity), true
-
-	case "Procedure.updatedAt":
-		if e.complexity.Procedure.UpdatedAt == nil {
-			break
-		}
-
-		return e.complexity.Procedure.UpdatedAt(childComplexity), true
-
 	case "Project.createdAt":
 		if e.complexity.Project.CreatedAt == nil {
 			break
@@ -1191,13 +1114,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Project.Name(childComplexity), true
 
-	case "Project.procedures":
-		if e.complexity.Project.Procedures == nil {
-			break
-		}
-
-		return e.complexity.Project.Procedures(childComplexity), true
-
 	case "Project.projectID":
 		if e.complexity.Project.ProjectID == nil {
 			break
@@ -1216,6 +1132,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Project.Runs(childComplexity, args["runID"].(*string), args["limit"].(*int)), true
+
+	case "Project.templates":
+		if e.complexity.Project.Templates == nil {
+			break
+		}
+
+		return e.complexity.Project.Templates(childComplexity), true
 
 	case "Project.updatedAt":
 		if e.complexity.Project.UpdatedAt == nil {
@@ -1370,13 +1293,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Run.Name(childComplexity), true
 
-	case "Run.procedure":
-		if e.complexity.Run.Procedure == nil {
-			break
-		}
-
-		return e.complexity.Run.Procedure(childComplexity), true
-
 	case "Run.startAt":
 		if e.complexity.Run.StartAt == nil {
 			break
@@ -1404,6 +1320,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Run.Steps(childComplexity), true
+
+	case "Run.template":
+		if e.complexity.Run.Template == nil {
+			break
+		}
+
+		return e.complexity.Run.Template(childComplexity), true
 
 	case "Run.updatedAt":
 		if e.complexity.Run.UpdatedAt == nil {
@@ -1535,6 +1458,83 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.Me(childComplexity), true
+
+	case "Template.adult":
+		if e.complexity.Template.Adult == nil {
+			break
+		}
+
+		return e.complexity.Template.Adult(childComplexity), true
+
+	case "Template.createdAt":
+		if e.complexity.Template.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Template.CreatedAt(childComplexity), true
+
+	case "Template.creator":
+		if e.complexity.Template.Creator == nil {
+			break
+		}
+
+		return e.complexity.Template.Creator(childComplexity), true
+
+	case "Template.id":
+		if e.complexity.Template.ID == nil {
+			break
+		}
+
+		return e.complexity.Template.ID(childComplexity), true
+
+	case "Template.internalCriteria":
+		if e.complexity.Template.InternalCriteria == nil {
+			break
+		}
+
+		return e.complexity.Template.InternalCriteria(childComplexity), true
+
+	case "Template.mturkCriteria":
+		if e.complexity.Template.MturkCriteria == nil {
+			break
+		}
+
+		return e.complexity.Template.MturkCriteria(childComplexity), true
+
+	case "Template.name":
+		if e.complexity.Template.Name == nil {
+			break
+		}
+
+		return e.complexity.Template.Name(childComplexity), true
+
+	case "Template.participantCount":
+		if e.complexity.Template.ParticipantCount == nil {
+			break
+		}
+
+		return e.complexity.Template.ParticipantCount(childComplexity), true
+
+	case "Template.selectionType":
+		if e.complexity.Template.SelectionType == nil {
+			break
+		}
+
+		return e.complexity.Template.SelectionType(childComplexity), true
+
+	case "Template.steps":
+		if e.complexity.Template.Steps == nil {
+			break
+		}
+
+		return e.complexity.Template.Steps(childComplexity), true
+
+	case "Template.updatedAt":
+		if e.complexity.Template.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Template.UpdatedAt(childComplexity), true
 
 	}
 	return 0, false
@@ -1719,7 +1719,7 @@ enum SelectionType {
 }
 
 """
-A Project is a container to organize Procedures and Runs.
+A Project is a container to organize Templates and Runs.
 """
 type Project {
   id: ID!
@@ -1740,9 +1740,9 @@ type Project {
   name: String!
 
   """
-  Procedures contained in Project
+  Templates contained in Project
   """
-  procedures: [Procedure!]! @goField(forceResolver: true)
+  templates: [Template!]! @goField(forceResolver: true)
 
   """
   Runs contained in Project
@@ -1756,7 +1756,7 @@ type Project {
 }
 
 """
-A Run is an instance of a Procedure. It goes through all Steps in the Procedure,
+A Run is an instance of a Template. It goes through all Steps in the Template,
 managing participants, timing, messages, redirects, filter, and interactions
 with external APIs.
 """
@@ -1773,10 +1773,10 @@ type Run {
 
   """
   Procudure this Run corresponds to. When a Run is started, an immutable
-  copy of the Procedure is made at that point in time so that further changes to
-  the Procedure will not affect the Run.
+  copy of the Template is made at that point in time so that further changes to
+  the Template will not affect the Run.
   """
-  procedure: Procedure! @goField(forceResolver: true)
+  template: Template! @goField(forceResolver: true)
 
   """
   Status of the Run, indicating if the Run has started, is ongoing, finished, or
@@ -1800,7 +1800,7 @@ type Run {
   endedAt: DateTime
 
   """
-  Steps are instanciated Steps, corresponding to the Procedure Steps and
+  Steps are instanciated Steps, corresponding to the Template Steps and
   containing the state of process of each Step.
   """
   steps: [StepRun!]! @goField(forceResolver: true)
@@ -1863,10 +1863,10 @@ type StepRun {
 }
 
 """
-Procedure is a series of Steps to execute in a Procedure Run. A
-procedure starts with the selection of Participants.
+Template is a series of Steps to execute in a Run. A
+Template starts with the selection of Participants.
 """
-type Procedure {
+type Template {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -1893,7 +1893,7 @@ type Procedure {
   mturkCriteria: MTurkCriteria @goField(forceResolver: true)
 
   """
-  Ordered list of Steps in a Procedure.
+  Ordered list of Steps in a Template.
   """
   steps: [Step!]! @goField(forceResolver: true)
 
@@ -2095,7 +2095,7 @@ type MTurkLocale {
 }
 
 """
-Steps are the ordered parts of a Procedure.
+Steps are the ordered parts of a Template.
 """
 type Step {
   id: ID!
@@ -2104,7 +2104,7 @@ type Step {
   creator: Admin!
 
   """
-  Index is the position of the step in the Procedure.
+  Index is the position of the step in the Template.
   """
   index: Int!
 
@@ -2117,7 +2117,7 @@ type Step {
   Duration of Step in seconds. At the end of the duration, the next Step will
   execute.
   If set to 0, the Step executes and immediately moves onto the next Step. This
-  mostly works for PARTICIPANT_FILTER Steps and the last Step in a Procedure.
+  mostly works for PARTICIPANT_FILTER Steps and the last Step in a Template.
   """
   duration: Int!
 
@@ -2162,8 +2162,8 @@ type FilterStepArgs {
   - ` + "`" + `participants` + "`" + `: the participants entering this step
   - ` + "`" + `step` + "`" + `: this step (contains the definition of this step: duration, etc.)
   - ` + "`" + `stepRun` + "`" + `: instance of this step (contains the execution of this step: start time, etc.)
-  - ` + "`" + `procedure` + "`" + `: parent procedure of step (contains the definition of the Procedure)
-  - ` + "`" + `run` + "`" + `: run this step is part of (contains the instance of the Procedure)
+  - ` + "`" + `template` + "`" + `: parent template of step (contains the definition of the Template)
+  - ` + "`" + `run` + "`" + `: run this step is part of (contains the instance of the Template)
   The functions should return an array of participants.
   If the functions returns null or undefined, the participants are not filtered.
   If the function throws an exception, the run will fail.
@@ -2253,8 +2253,8 @@ type MessageStepArgs {
   - ` + "`" + `url` + "`" + `: proxy URL if ` + "`" + `url` + "`" + ` exist on Step.
   - ` + "`" + `step` + "`" + `: this step (contains the definition of this step: duration, etc.)
   - ` + "`" + `stepRun` + "`" + `: instance of this step (contains the execution of this step: start time, etc.)
-  - ` + "`" + `procedure` + "`" + `: parent Procedure of step (contains the definition of the Procedure)
-  - ` + "`" + `run` + "`" + `: run this step is part of (contains the instance of the Procedure)
+  - ` + "`" + `template` + "`" + `: parent Template of step (contains the definition of the Template)
+  - ` + "`" + `run` + "`" + `: run this step is part of (contains the instance of the Template)
   - ` + "`" + `participant` + "`" + `: current participant
   """
   message: String!
@@ -2549,18 +2549,18 @@ input CreateProjectInput {
   name: String!
 }
 
-input CreateProcedureInput {
+input CreateTemplateInput {
   """
-  Project in which to create the Procedure.
+  Project in which to create the Template.
   """
   projectID: ID!
 
-  procedure: ProcedureInput!
+  template: TemplateInput!
 }
 
-input ProcedureInput {
+input TemplateInput {
   """
-  ID of procedure to update, if updating
+  ID of Template to update, if updating
   """
   id: ID
 
@@ -2570,7 +2570,7 @@ input ProcedureInput {
   name: String!
 
   """
-  Ordered list of Steps for Procedure.
+  Ordered list of Steps for Template.
   """
   steps: [StepInput!]!
 
@@ -2602,14 +2602,14 @@ input ProcedureInput {
   adult: Boolean!
 }
 
-input UpdateProcedureInput {
+input UpdateTemplateInput {
   projectID: ID!
   runID: ID!
-  procedure: ProcedureInput!
+  template: TemplateInput!
 }
 
-input DuplicateProcedureInput {
-  procedureID: ID!
+input DuplicateTemplateInput {
+  templateID: ID!
   projectID: ID!
   name: String
 }
@@ -2621,7 +2621,7 @@ input StepInput {
   id: ID
 
   """
-  Index is the position of the step in the Procedure.
+  Index is the position of the step in the Template.
   """
   index: Int!
 
@@ -2634,7 +2634,7 @@ input StepInput {
   Duration of Step in seconds. At the end of the duration, the next Step will
   execute.
   If set to 0, the Step executes and immediately moves onto the next Step. This
-  mostly works for PARTICIPANT_FILTER Steps and the last Step in a Procedure.
+  mostly works for PARTICIPANT_FILTER Steps and the last Step in a Template.
   """
   duration: Int!
 
@@ -2656,7 +2656,7 @@ input StepInput {
 
 input CreateRunInput {
   projectID: ID!
-  procedure: ProcedureInput!
+  template: TemplateInput!
 }
 
 input UpdateRunInput {
@@ -2706,19 +2706,19 @@ type Mutation {
   createProject(input: CreateProjectInput): Project! @hasRole(role: ADMIN)
 
   """
-  Create a new Procedure.
+  Create a new Template.
   """
-  createProcedure(input: CreateProcedureInput): Procedure! @hasRole(role: ADMIN)
+  createTemplate(input: CreateTemplateInput): Template! @hasRole(role: ADMIN)
 
   """
-  Update a Procedure.
+  Update a Template.
   """
-  updateProcedure(input: UpdateProcedureInput): Procedure! @hasRole(role: ADMIN)
+  updateTemplate(input: UpdateTemplateInput): Template! @hasRole(role: ADMIN)
 
   """
-  Duplicate a Procedure to a Project.
+  Duplicate a Template to a Project.
   """
-  duplicateProcedure(input: DuplicateProcedureInput): Procedure! @hasRole(role: ADMIN)
+  duplicateTemplate(input: DuplicateTemplateInput): Template! @hasRole(role: ADMIN)
 
   """
   Create Run.
@@ -2900,8 +2900,8 @@ input FilterStepArgsInput {
   - ` + "`" + `participants` + "`" + `: the participants entering this step
   - ` + "`" + `step` + "`" + `: this step (contains the definition of this step: duration, etc.)
   - ` + "`" + `stepRun` + "`" + `: instance of this step (contains the execution of this step: start time, etc.)
-  - ` + "`" + `procedure` + "`" + `: parent procedure of step (contains the definition of the Procedure)
-  - ` + "`" + `run` + "`" + `: run this step is part of (contains the instance of the Procedure)
+  - ` + "`" + `template` + "`" + `: parent ` + "`" + `template of step (contains the definition of the Template)
+  - ` + "`" + `run` + "`" + `: run this step is part of (contains the instance of the Template)
   The functions should return an array of participants.
   If the functions returns null or undefined, the participants are not filtered.
   If the function throws an exception, the run will fail.
@@ -2996,8 +2996,8 @@ input MessageStepArgsInput {
   - ` + "`" + `url` + "`" + `: proxy URL if ` + "`" + `url` + "`" + ` exist on Step.
   - ` + "`" + `step` + "`" + `: this step (contains the definition of this step: duration, etc.)
   - ` + "`" + `stepRun` + "`" + `: instance of this step (contains the execution of this step: start time, etc.)
-  - ` + "`" + `procedure` + "`" + `: parent Procedure of step (contains the definition of the Procedure)
-  - ` + "`" + `run` + "`" + `: run this step is part of (contains the instance of the Procedure)
+  - ` + "`" + `` + "`" + `template` + "`" + `: parent Template of step (contains the definition of the Template)
+  - ` + "`" + `run` + "`" + `: run this step is part of (contains the instance of the Template)
   - ` + "`" + `participant` + "`" + `: current participant
   """
   message: String
@@ -3190,20 +3190,6 @@ func (ec *executionContext) field_Mutation_cancelRun_args(ctx context.Context, r
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createProcedure_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *model.CreateProcedureInput
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOCreateProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProcedureInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_createProject_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3232,12 +3218,26 @@ func (ec *executionContext) field_Mutation_createRun_args(ctx context.Context, r
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_duplicateProcedure_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_createTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.DuplicateProcedureInput
+	var arg0 *model.CreateTemplateInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalODuplicateProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateProcedureInput(ctx, tmp)
+		arg0, err = ec.unmarshalOCreateTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateTemplateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_duplicateTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.DuplicateTemplateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalODuplicateTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateTemplateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3316,12 +3316,12 @@ func (ec *executionContext) field_Mutation_unscheduleRun_args(ctx context.Contex
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updateProcedure_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_updateRun_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.UpdateProcedureInput
+	var arg0 *model.UpdateRunInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOUpdateProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateProcedureInput(ctx, tmp)
+		arg0, err = ec.unmarshalOUpdateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateRunInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3330,12 +3330,12 @@ func (ec *executionContext) field_Mutation_updateProcedure_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_updateRun_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_updateTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.UpdateRunInput
+	var arg0 *model.UpdateTemplateInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalOUpdateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateRunInput(ctx, tmp)
+		arg0, err = ec.unmarshalOUpdateTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateTemplateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5557,7 +5557,7 @@ func (ec *executionContext) _Mutation_createProject(ctx context.Context, field g
 	return ec.marshalNProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createProcedure(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_createTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5573,7 +5573,7 @@ func (ec *executionContext) _Mutation_createProcedure(ctx context.Context, field
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createProcedure_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_createTemplate_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5582,7 +5582,7 @@ func (ec *executionContext) _Mutation_createProcedure(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateProcedure(rctx, args["input"].(*model.CreateProcedureInput))
+			return ec.resolvers.Mutation().CreateTemplate(rctx, args["input"].(*model.CreateTemplateInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
@@ -5602,10 +5602,10 @@ func (ec *executionContext) _Mutation_createProcedure(ctx context.Context, field
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*ent.Procedure); ok {
+		if data, ok := tmp.(*ent.Template); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Procedure`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Template`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5617,12 +5617,12 @@ func (ec *executionContext) _Mutation_createProcedure(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*ent.Procedure)
+	res := resTmp.(*ent.Template)
 	fc.Result = res
-	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, field.Selections, res)
+	return ec.marshalNTemplate2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐTemplate(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_updateProcedure(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_updateTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5638,7 +5638,7 @@ func (ec *executionContext) _Mutation_updateProcedure(ctx context.Context, field
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_updateProcedure_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_updateTemplate_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5647,7 +5647,7 @@ func (ec *executionContext) _Mutation_updateProcedure(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateProcedure(rctx, args["input"].(*model.UpdateProcedureInput))
+			return ec.resolvers.Mutation().UpdateTemplate(rctx, args["input"].(*model.UpdateTemplateInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
@@ -5667,10 +5667,10 @@ func (ec *executionContext) _Mutation_updateProcedure(ctx context.Context, field
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*ent.Procedure); ok {
+		if data, ok := tmp.(*ent.Template); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Procedure`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Template`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5682,12 +5682,12 @@ func (ec *executionContext) _Mutation_updateProcedure(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*ent.Procedure)
+	res := resTmp.(*ent.Template)
 	fc.Result = res
-	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, field.Selections, res)
+	return ec.marshalNTemplate2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐTemplate(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_duplicateProcedure(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_duplicateTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5703,7 +5703,7 @@ func (ec *executionContext) _Mutation_duplicateProcedure(ctx context.Context, fi
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_duplicateProcedure_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_duplicateTemplate_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5712,7 +5712,7 @@ func (ec *executionContext) _Mutation_duplicateProcedure(ctx context.Context, fi
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DuplicateProcedure(rctx, args["input"].(*model.DuplicateProcedureInput))
+			return ec.resolvers.Mutation().DuplicateTemplate(rctx, args["input"].(*model.DuplicateTemplateInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
@@ -5732,10 +5732,10 @@ func (ec *executionContext) _Mutation_duplicateProcedure(ctx context.Context, fi
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*ent.Procedure); ok {
+		if data, ok := tmp.(*ent.Template); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Procedure`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Template`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5747,9 +5747,9 @@ func (ec *executionContext) _Mutation_duplicateProcedure(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*ent.Procedure)
+	res := resTmp.(*ent.Template)
 	fc.Result = res
-	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, field.Selections, res)
+	return ec.marshalNTemplate2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐTemplate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createRun(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6811,371 +6811,6 @@ func (ec *executionContext) _ParticipantsEdge_node(ctx context.Context, field gr
 	return ec.marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Procedure_id(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Procedure",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Procedure_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Procedure",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Procedure_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Procedure",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UpdatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	fc.Result = res
-	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Procedure_creator(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Procedure",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Procedure().Creator(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Admin)
-	fc.Result = res
-	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐAdmin(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Procedure_name(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Procedure",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Procedure_selectionType(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Procedure",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Procedure().SelectionType(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.SelectionType)
-	fc.Result = res
-	return ec.marshalNSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Procedure_internalCriteria(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Procedure",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Procedure().InternalCriteria(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.InternalCriteria)
-	fc.Result = res
-	return ec.marshalOInternalCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteria(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Procedure_mturkCriteria(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Procedure",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Procedure().MturkCriteria(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.MTurkCriteria)
-	fc.Result = res
-	return ec.marshalOMTurkCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteria(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Procedure_steps(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Procedure",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Procedure().Steps(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.Step)
-	fc.Result = res
-	return ec.marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Procedure_participantCount(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Procedure",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ParticipantCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalOInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Procedure_adult(ctx context.Context, field graphql.CollectedField, obj *ent.Procedure) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Procedure",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Adult, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Project_id(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7380,7 +7015,7 @@ func (ec *executionContext) _Project_name(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Project_procedures(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
+func (ec *executionContext) _Project_templates(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7397,7 +7032,7 @@ func (ec *executionContext) _Project_procedures(ctx context.Context, field graph
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Project().Procedures(rctx, obj)
+		return ec.resolvers.Project().Templates(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7409,9 +7044,9 @@ func (ec *executionContext) _Project_procedures(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*ent.Procedure)
+	res := resTmp.([]*ent.Template)
 	fc.Result = res
-	return ec.marshalNProcedure2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedureᚄ(ctx, field.Selections, res)
+	return ec.marshalNTemplate2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐTemplateᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Project_runs(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
@@ -8159,7 +7794,7 @@ func (ec *executionContext) _Run_name(ctx context.Context, field graphql.Collect
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Run_procedure(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
+func (ec *executionContext) _Run_template(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8176,7 +7811,7 @@ func (ec *executionContext) _Run_procedure(ctx context.Context, field graphql.Co
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Run().Procedure(rctx, obj)
+		return ec.resolvers.Run().Template(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8188,9 +7823,9 @@ func (ec *executionContext) _Run_procedure(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*ent.Procedure)
+	res := resTmp.(*ent.Template)
 	fc.Result = res
-	return ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, field.Selections, res)
+	return ec.marshalNTemplate2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐTemplate(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Run_status(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
@@ -9029,6 +8664,371 @@ func (ec *executionContext) _Subscription_me(ctx context.Context, field graphql.
 			w.Write([]byte{'}'})
 		})
 	}
+}
+
+func (ec *executionContext) _Template_id(ctx context.Context, field graphql.CollectedField, obj *ent.Template) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Template",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Template_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Template) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Template",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Template_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Template) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Template",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Template_creator(ctx context.Context, field graphql.CollectedField, obj *ent.Template) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Template",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Template().Creator(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Admin)
+	fc.Result = res
+	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐAdmin(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Template_name(ctx context.Context, field graphql.CollectedField, obj *ent.Template) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Template",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Template_selectionType(ctx context.Context, field graphql.CollectedField, obj *ent.Template) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Template",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Template().SelectionType(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.SelectionType)
+	fc.Result = res
+	return ec.marshalNSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Template_internalCriteria(ctx context.Context, field graphql.CollectedField, obj *ent.Template) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Template",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Template().InternalCriteria(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.InternalCriteria)
+	fc.Result = res
+	return ec.marshalOInternalCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteria(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Template_mturkCriteria(ctx context.Context, field graphql.CollectedField, obj *ent.Template) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Template",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Template().MturkCriteria(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.MTurkCriteria)
+	fc.Result = res
+	return ec.marshalOMTurkCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteria(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Template_steps(ctx context.Context, field graphql.CollectedField, obj *ent.Template) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Template",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Template().Steps(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Step)
+	fc.Result = res
+	return ec.marshalNStep2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Template_participantCount(ctx context.Context, field graphql.CollectedField, obj *ent.Template) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Template",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ParticipantCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalOInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Template_adult(ctx context.Context, field graphql.CollectedField, obj *ent.Template) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Template",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Adult, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -10206,30 +10206,6 @@ func (ec *executionContext) unmarshalInputConditionInput(ctx context.Context, ob
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCreateProcedureInput(ctx context.Context, obj interface{}) (model.CreateProcedureInput, error) {
-	var it model.CreateProcedureInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "projectID":
-			var err error
-			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "procedure":
-			var err error
-			it.Procedure, err = ec.unmarshalNProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputCreateProjectInput(ctx context.Context, obj interface{}) (model.CreateProjectInput, error) {
 	var it model.CreateProjectInput
 	var asMap = obj.(map[string]interface{})
@@ -10266,9 +10242,9 @@ func (ec *executionContext) unmarshalInputCreateRunInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "procedure":
+		case "template":
 			var err error
-			it.Procedure, err = ec.unmarshalNProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureInput(ctx, v)
+			it.Template, err = ec.unmarshalNTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐTemplateInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10278,15 +10254,39 @@ func (ec *executionContext) unmarshalInputCreateRunInput(ctx context.Context, ob
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputDuplicateProcedureInput(ctx context.Context, obj interface{}) (model.DuplicateProcedureInput, error) {
-	var it model.DuplicateProcedureInput
+func (ec *executionContext) unmarshalInputCreateTemplateInput(ctx context.Context, obj interface{}) (model.CreateTemplateInput, error) {
+	var it model.CreateTemplateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "procedureID":
+		case "projectID":
 			var err error
-			it.ProcedureID, err = ec.unmarshalNID2string(ctx, v)
+			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "template":
+			var err error
+			it.Template, err = ec.unmarshalNTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐTemplateInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputDuplicateTemplateInput(ctx context.Context, obj interface{}) (model.DuplicateTemplateInput, error) {
+	var it model.DuplicateTemplateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "templateID":
+			var err error
+			it.TemplateID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10590,66 +10590,6 @@ func (ec *executionContext) unmarshalInputMutateDatumInput(ctx context.Context, 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputProcedureInput(ctx context.Context, obj interface{}) (model.ProcedureInput, error) {
-	var it model.ProcedureInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
-			var err error
-			it.ID, err = ec.unmarshalOID2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "steps":
-			var err error
-			it.Steps, err = ec.unmarshalNStepInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepInputᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "selectionType":
-			var err error
-			it.SelectionType, err = ec.unmarshalNSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "internalCriteria":
-			var err error
-			it.InternalCriteria, err = ec.unmarshalOInternalCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteriaInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "mturkCriteria":
-			var err error
-			it.MturkCriteria, err = ec.unmarshalOMTurkCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteriaInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "participantCount":
-			var err error
-			it.ParticipantCount, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "adult":
-			var err error
-			it.Adult, err = ec.unmarshalNBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputRegisterParticipantInput(ctx context.Context, obj interface{}) (model.RegisterParticipantInput, error) {
 	var it model.RegisterParticipantInput
 	var asMap = obj.(map[string]interface{})
@@ -10776,15 +10716,57 @@ func (ec *executionContext) unmarshalInputStepInput(ctx context.Context, obj int
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUnscheduleRunInput(ctx context.Context, obj interface{}) (model.UnscheduleRunInput, error) {
-	var it model.UnscheduleRunInput
+func (ec *executionContext) unmarshalInputTemplateInput(ctx context.Context, obj interface{}) (model.TemplateInput, error) {
+	var it model.TemplateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "runID":
+		case "id":
 			var err error
-			it.RunID, err = ec.unmarshalNID2string(ctx, v)
+			it.ID, err = ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "steps":
+			var err error
+			it.Steps, err = ec.unmarshalNStepInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "selectionType":
+			var err error
+			it.SelectionType, err = ec.unmarshalNSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "internalCriteria":
+			var err error
+			it.InternalCriteria, err = ec.unmarshalOInternalCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteriaInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "mturkCriteria":
+			var err error
+			it.MturkCriteria, err = ec.unmarshalOMTurkCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteriaInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "participantCount":
+			var err error
+			it.ParticipantCount, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "adult":
+			var err error
+			it.Adult, err = ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10794,27 +10776,15 @@ func (ec *executionContext) unmarshalInputUnscheduleRunInput(ctx context.Context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUpdateProcedureInput(ctx context.Context, obj interface{}) (model.UpdateProcedureInput, error) {
-	var it model.UpdateProcedureInput
+func (ec *executionContext) unmarshalInputUnscheduleRunInput(ctx context.Context, obj interface{}) (model.UnscheduleRunInput, error) {
+	var it model.UnscheduleRunInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "projectID":
-			var err error
-			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "runID":
 			var err error
 			it.RunID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "procedure":
-			var err error
-			it.Procedure, err = ec.unmarshalNProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10845,6 +10815,36 @@ func (ec *executionContext) unmarshalInputUpdateRunInput(ctx context.Context, ob
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateTemplateInput(ctx context.Context, obj interface{}) (model.UpdateTemplateInput, error) {
+	var it model.UpdateTemplateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "projectID":
+			var err error
+			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "runID":
+			var err error
+			it.RunID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "template":
+			var err error
+			it.Template, err = ec.unmarshalNTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐTemplateInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -11430,18 +11430,18 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "createProcedure":
-			out.Values[i] = ec._Mutation_createProcedure(ctx, field)
+		case "createTemplate":
+			out.Values[i] = ec._Mutation_createTemplate(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "updateProcedure":
-			out.Values[i] = ec._Mutation_updateProcedure(ctx, field)
+		case "updateTemplate":
+			out.Values[i] = ec._Mutation_updateTemplate(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "duplicateProcedure":
-			out.Values[i] = ec._Mutation_duplicateProcedure(ctx, field)
+		case "duplicateTemplate":
+			out.Values[i] = ec._Mutation_duplicateTemplate(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -11678,119 +11678,6 @@ func (ec *executionContext) _ParticipantsEdge(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var procedureImplementors = []string{"Procedure"}
-
-func (ec *executionContext) _Procedure(ctx context.Context, sel ast.SelectionSet, obj *ent.Procedure) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, procedureImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Procedure")
-		case "id":
-			out.Values[i] = ec._Procedure_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "createdAt":
-			out.Values[i] = ec._Procedure_createdAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "updatedAt":
-			out.Values[i] = ec._Procedure_updatedAt(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "creator":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Procedure_creator(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "name":
-			out.Values[i] = ec._Procedure_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "selectionType":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Procedure_selectionType(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "internalCriteria":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Procedure_internalCriteria(ctx, field, obj)
-				return res
-			})
-		case "mturkCriteria":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Procedure_mturkCriteria(ctx, field, obj)
-				return res
-			})
-		case "steps":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Procedure_steps(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "participantCount":
-			out.Values[i] = ec._Procedure_participantCount(ctx, field, obj)
-		case "adult":
-			out.Values[i] = ec._Procedure_adult(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var projectImplementors = []string{"Project"}
 
 func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, obj *ent.Project) graphql.Marshaler {
@@ -11841,7 +11728,7 @@ func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "procedures":
+		case "templates":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -11849,7 +11736,7 @@ func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, 
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Project_procedures(ctx, field, obj)
+				res = ec._Project_templates(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -12095,7 +11982,7 @@ func (ec *executionContext) _Run(ctx context.Context, sel ast.SelectionSet, obj 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "procedure":
+		case "template":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -12103,7 +11990,7 @@ func (ec *executionContext) _Run(ctx context.Context, sel ast.SelectionSet, obj 
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Run_procedure(ctx, field, obj)
+				res = ec._Run_template(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -12386,6 +12273,119 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
+}
+
+var templateImplementors = []string{"Template"}
+
+func (ec *executionContext) _Template(ctx context.Context, sel ast.SelectionSet, obj *ent.Template) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, templateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Template")
+		case "id":
+			out.Values[i] = ec._Template_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "createdAt":
+			out.Values[i] = ec._Template_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._Template_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "creator":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Template_creator(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "name":
+			out.Values[i] = ec._Template_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "selectionType":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Template_selectionType(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "internalCriteria":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Template_internalCriteria(ctx, field, obj)
+				return res
+			})
+		case "mturkCriteria":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Template_mturkCriteria(ctx, field, obj)
+				return res
+			})
+		case "steps":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Template_steps(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "participantCount":
+			out.Values[i] = ec._Template_participantCount(ctx, field, obj)
+		case "adult":
+			out.Values[i] = ec._Template_adult(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -13151,69 +13151,6 @@ func (ec *executionContext) marshalNParticipantsEdge2ᚖgithubᚗcomᚋempirical
 	return ec._ParticipantsEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProcedure2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx context.Context, sel ast.SelectionSet, v ent.Procedure) graphql.Marshaler {
-	return ec._Procedure(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNProcedure2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedureᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Procedure) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNProcedure2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProcedure(ctx context.Context, sel ast.SelectionSet, v *ent.Procedure) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Procedure(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureInput(ctx context.Context, v interface{}) (model.ProcedureInput, error) {
-	return ec.unmarshalInputProcedureInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalNProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureInput(ctx context.Context, v interface{}) (*model.ProcedureInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProcedureInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) marshalNProject2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v ent.Project) graphql.Marshaler {
 	return ec._Project(ctx, sel, &v)
 }
@@ -13558,6 +13495,69 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNTemplate2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐTemplate(ctx context.Context, sel ast.SelectionSet, v ent.Template) graphql.Marshaler {
+	return ec._Template(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTemplate2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐTemplateᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Template) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTemplate2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐTemplate(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNTemplate2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐTemplate(ctx context.Context, sel ast.SelectionSet, v *ent.Template) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Template(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐTemplateInput(ctx context.Context, v interface{}) (model.TemplateInput, error) {
+	return ec.unmarshalInputTemplateInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐTemplateInput(ctx context.Context, v interface{}) (*model.TemplateInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐTemplateInput(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -14035,18 +14035,6 @@ func (ec *executionContext) marshalOContentType2ᚖgithubᚗcomᚋempiricalyᚋr
 	return v
 }
 
-func (ec *executionContext) unmarshalOCreateProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProcedureInput(ctx context.Context, v interface{}) (model.CreateProcedureInput, error) {
-	return ec.unmarshalInputCreateProcedureInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOCreateProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProcedureInput(ctx context.Context, v interface{}) (*model.CreateProcedureInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOCreateProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProcedureInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalOCreateProjectInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProjectInput(ctx context.Context, v interface{}) (model.CreateProjectInput, error) {
 	return ec.unmarshalInputCreateProjectInput(ctx, v)
 }
@@ -14068,6 +14056,18 @@ func (ec *executionContext) unmarshalOCreateRunInput2ᚖgithubᚗcomᚋempirical
 		return nil, nil
 	}
 	res, err := ec.unmarshalOCreateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateRunInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOCreateTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateTemplateInput(ctx context.Context, v interface{}) (model.CreateTemplateInput, error) {
+	return ec.unmarshalInputCreateTemplateInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOCreateTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateTemplateInput(ctx context.Context, v interface{}) (*model.CreateTemplateInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOCreateTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateTemplateInput(ctx, v)
 	return &res, err
 }
 
@@ -14118,15 +14118,15 @@ func (ec *executionContext) marshalODatumOp2ᚖgithubᚗcomᚋempiricalyᚋrecru
 	return v
 }
 
-func (ec *executionContext) unmarshalODuplicateProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateProcedureInput(ctx context.Context, v interface{}) (model.DuplicateProcedureInput, error) {
-	return ec.unmarshalInputDuplicateProcedureInput(ctx, v)
+func (ec *executionContext) unmarshalODuplicateTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateTemplateInput(ctx context.Context, v interface{}) (model.DuplicateTemplateInput, error) {
+	return ec.unmarshalInputDuplicateTemplateInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalODuplicateProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateProcedureInput(ctx context.Context, v interface{}) (*model.DuplicateProcedureInput, error) {
+func (ec *executionContext) unmarshalODuplicateTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateTemplateInput(ctx context.Context, v interface{}) (*model.DuplicateTemplateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalODuplicateProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateProcedureInput(ctx, v)
+	res, err := ec.unmarshalODuplicateTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateTemplateInput(ctx, v)
 	return &res, err
 }
 
@@ -14666,18 +14666,6 @@ func (ec *executionContext) unmarshalOUnscheduleRunInput2ᚖgithubᚗcomᚋempir
 	return &res, err
 }
 
-func (ec *executionContext) unmarshalOUpdateProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateProcedureInput(ctx context.Context, v interface{}) (model.UpdateProcedureInput, error) {
-	return ec.unmarshalInputUpdateProcedureInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOUpdateProcedureInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateProcedureInput(ctx context.Context, v interface{}) (*model.UpdateProcedureInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOUpdateProcedureInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateProcedureInput(ctx, v)
-	return &res, err
-}
-
 func (ec *executionContext) unmarshalOUpdateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateRunInput(ctx context.Context, v interface{}) (model.UpdateRunInput, error) {
 	return ec.unmarshalInputUpdateRunInput(ctx, v)
 }
@@ -14687,6 +14675,18 @@ func (ec *executionContext) unmarshalOUpdateRunInput2ᚖgithubᚗcomᚋempirical
 		return nil, nil
 	}
 	res, err := ec.unmarshalOUpdateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateRunInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalOUpdateTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateTemplateInput(ctx context.Context, v interface{}) (model.UpdateTemplateInput, error) {
+	return ec.unmarshalInputUpdateTemplateInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOUpdateTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateTemplateInput(ctx context.Context, v interface{}) (*model.UpdateTemplateInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOUpdateTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateTemplateInput(ctx, v)
 	return &res, err
 }
 

@@ -6,13 +6,13 @@ import (
 	"github.com/facebook/ent/schema/field"
 )
 
-// Procedure holds the schema definition for the Run entity.
-type Procedure struct {
+// Template holds the schema definition for the Run entity.
+type Template struct {
 	ent.Schema
 }
 
-// Fields of the Procedure.
-func (Procedure) Fields() []ent.Field {
+// Fields of the Template.
+func (Template) Fields() []ent.Field {
 	// TODO field : creator, selectionType, internalCriteria, mturkCriteria, steps
 	return append(
 		append([]ent.Field{}, commonFields...),
@@ -25,18 +25,18 @@ func (Procedure) Fields() []ent.Field {
 	)
 }
 
-// Edges of the Procedure.
-func (Procedure) Edges() []ent.Edge {
+// Edges of the Template.
+func (Template) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("steps", Step.Type),
 		edge.From("project", Project.Type).
-			Ref("procedures").
+			Ref("templates").
 			Unique(),
 		edge.From("creator", Admin.Type).
-			Ref("procedures").
+			Ref("templates").
 			Unique(),
 		edge.From("run", Run.Type).
-			Ref("procedure").
+			Ref("template").
 			Unique(),
 	}
 }

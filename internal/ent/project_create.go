@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
@@ -84,19 +84,19 @@ func (pc *ProjectCreate) AddRuns(r ...*Run) *ProjectCreate {
 	return pc.AddRunIDs(ids...)
 }
 
-// AddProcedureIDs adds the procedures edge to Procedure by ids.
-func (pc *ProjectCreate) AddProcedureIDs(ids ...string) *ProjectCreate {
-	pc.mutation.AddProcedureIDs(ids...)
+// AddTemplateIDs adds the templates edge to Template by ids.
+func (pc *ProjectCreate) AddTemplateIDs(ids ...string) *ProjectCreate {
+	pc.mutation.AddTemplateIDs(ids...)
 	return pc
 }
 
-// AddProcedures adds the procedures edges to Procedure.
-func (pc *ProjectCreate) AddProcedures(p ...*Procedure) *ProjectCreate {
-	ids := make([]string, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddTemplates adds the templates edges to Template.
+func (pc *ProjectCreate) AddTemplates(t ...*Template) *ProjectCreate {
+	ids := make([]string, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return pc.AddProcedureIDs(ids...)
+	return pc.AddTemplateIDs(ids...)
 }
 
 // SetOwnerID sets the owner edge to Admin by id.
@@ -259,17 +259,17 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := pc.mutation.ProceduresIDs(); len(nodes) > 0 {
+	if nodes := pc.mutation.TemplatesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   project.ProceduresTable,
-			Columns: []string{project.ProceduresColumn},
+			Table:   project.TemplatesTable,
+			Columns: []string{project.TemplatesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}

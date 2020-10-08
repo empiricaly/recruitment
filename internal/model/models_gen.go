@@ -82,20 +82,20 @@ type ConditionInput struct {
 	Values     []*CompValueInput `json:"values"`
 }
 
-type CreateProcedureInput struct {
-	// Project in which to create the Procedure.
-	ProjectID string          `json:"projectID"`
-	Procedure *ProcedureInput `json:"procedure"`
-}
-
 type CreateProjectInput struct {
 	ProjectID string `json:"projectID"`
 	Name      string `json:"name"`
 }
 
 type CreateRunInput struct {
-	ProjectID string          `json:"projectID"`
-	Procedure *ProcedureInput `json:"procedure"`
+	ProjectID string         `json:"projectID"`
+	Template  *TemplateInput `json:"template"`
+}
+
+type CreateTemplateInput struct {
+	// Project in which to create the Template.
+	ProjectID string         `json:"projectID"`
+	Template  *TemplateInput `json:"template"`
 }
 
 // Datum is a single piece of custom data.
@@ -124,10 +124,10 @@ type Datum struct {
 	Versions []*Datum `json:"versions"`
 }
 
-type DuplicateProcedureInput struct {
-	ProcedureID string  `json:"procedureID"`
-	ProjectID   string  `json:"projectID"`
-	Name        *string `json:"name"`
+type DuplicateTemplateInput struct {
+	TemplateID string  `json:"templateID"`
+	ProjectID  string  `json:"projectID"`
+	Name       *string `json:"name"`
 }
 
 // FilterStepArgs are arguments passed to a Pariticipant Filter Step.
@@ -146,8 +146,8 @@ type FilterStepArgs struct {
 	// - `participants`: the participants entering this step
 	// - `step`: this step (contains the definition of this step: duration, etc.)
 	// - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
-	// - `procedure`: parent procedure of step (contains the definition of the Procedure)
-	// - `run`: run this step is part of (contains the instance of the Procedure)
+	// - `template`: parent template of step (contains the definition of the Template)
+	// - `run`: run this step is part of (contains the instance of the Template)
 	// The functions should return an array of participants.
 	// If the functions returns null or undefined, the participants are not filtered.
 	// If the function throws an exception, the run will fail.
@@ -170,8 +170,8 @@ type FilterStepArgsInput struct {
 	// - `participants`: the participants entering this step
 	// - `step`: this step (contains the definition of this step: duration, etc.)
 	// - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
-	// - `procedure`: parent procedure of step (contains the definition of the Procedure)
-	// - `run`: run this step is part of (contains the instance of the Procedure)
+	// - `template`: parent `template of step (contains the definition of the Template)
+	// - `run`: run this step is part of (contains the instance of the Template)
 	// The functions should return an array of participants.
 	// If the functions returns null or undefined, the participants are not filtered.
 	// If the function throws an exception, the run will fail.
@@ -410,8 +410,8 @@ type MessageStepArgs struct {
 	// - `url`: proxy URL if `url` exist on Step.
 	// - `step`: this step (contains the definition of this step: duration, etc.)
 	// - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
-	// - `procedure`: parent Procedure of step (contains the definition of the Procedure)
-	// - `run`: run this step is part of (contains the instance of the Procedure)
+	// - `template`: parent Template of step (contains the definition of the Template)
+	// - `run`: run this step is part of (contains the instance of the Template)
 	// - `participant`: current participant
 	Message string `json:"message"`
 	// MessageType indicates the rendering language of the Message.
@@ -442,8 +442,8 @@ type MessageStepArgsInput struct {
 	// - `url`: proxy URL if `url` exist on Step.
 	// - `step`: this step (contains the definition of this step: duration, etc.)
 	// - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
-	// - `procedure`: parent Procedure of step (contains the definition of the Procedure)
-	// - `run`: run this step is part of (contains the instance of the Procedure)
+	// - ``template`: parent Template of step (contains the definition of the Template)
+	// - `run`: run this step is part of (contains the instance of the Template)
 	// - `participant`: current participant
 	Message *string `json:"message"`
 	// MessageType indicates the rendering language of the Message.
@@ -525,27 +525,6 @@ type ParticipantsEdge struct {
 	Node   *Participant `json:"node"`
 }
 
-type ProcedureInput struct {
-	// ID of procedure to update, if updating
-	ID *string `json:"id"`
-	// Friendly name.
-	Name string `json:"name"`
-	// Ordered list of Steps for Procedure.
-	Steps []*StepInput `json:"steps"`
-	// Determines participant selection type.
-	SelectionType SelectionType `json:"selectionType"`
-	// Internal Selection criteria for participants
-	InternalCriteria *InternalCriteriaInput `json:"internalCriteria"`
-	// Mturk Selection criteria for participants
-	MturkCriteria *MTurkCriteriaInput `json:"mturkCriteria"`
-	// Number of participants desired.
-	ParticipantCount int `json:"participantCount"`
-	// Contains adult content.
-	// From MTurk: This project may contain potentially explicit or offensive
-	// content, for example, nudity.
-	Adult bool `json:"adult"`
-}
-
 // ProviderID contains the identifier for a 3rd party provider.
 type ProviderID struct {
 	// createdAt is the time of creation of the record.
@@ -577,14 +556,14 @@ type StartRunInput struct {
 type StepInput struct {
 	// ID of the step to update, if updating
 	ID *string `json:"id"`
-	// Index is the position of the step in the Procedure.
+	// Index is the position of the step in the Template.
 	Index int `json:"index"`
 	// The Type defines what kind of action this step represents.
 	Type StepType `json:"type"`
 	// Duration of Step in seconds. At the end of the duration, the next Step will
 	// execute.
 	// If set to 0, the Step executes and immediately moves onto the next Step. This
-	// mostly works for PARTICIPANT_FILTER Steps and the last Step in a Procedure.
+	// mostly works for PARTICIPANT_FILTER Steps and the last Step in a Template.
 	Duration int `json:"duration"`
 	// Arguments for Message type Step.
 	MsgArgs *MessageStepArgsInput `json:"msgArgs"`
@@ -594,20 +573,41 @@ type StepInput struct {
 	FilterArgs *FilterStepArgsInput `json:"filterArgs"`
 }
 
-type UnscheduleRunInput struct {
-	RunID string `json:"runID"`
+type TemplateInput struct {
+	// ID of Template to update, if updating
+	ID *string `json:"id"`
+	// Friendly name.
+	Name string `json:"name"`
+	// Ordered list of Steps for Template.
+	Steps []*StepInput `json:"steps"`
+	// Determines participant selection type.
+	SelectionType SelectionType `json:"selectionType"`
+	// Internal Selection criteria for participants
+	InternalCriteria *InternalCriteriaInput `json:"internalCriteria"`
+	// Mturk Selection criteria for participants
+	MturkCriteria *MTurkCriteriaInput `json:"mturkCriteria"`
+	// Number of participants desired.
+	ParticipantCount int `json:"participantCount"`
+	// Contains adult content.
+	// From MTurk: This project may contain potentially explicit or offensive
+	// content, for example, nudity.
+	Adult bool `json:"adult"`
 }
 
-type UpdateProcedureInput struct {
-	ProjectID string          `json:"projectID"`
-	RunID     string          `json:"runID"`
-	Procedure *ProcedureInput `json:"procedure"`
+type UnscheduleRunInput struct {
+	RunID string `json:"runID"`
 }
 
 type UpdateRunInput struct {
 	ID        string `json:"ID"`
 	ProjectID string `json:"projectID"`
 	Name      string `json:"name"`
+}
+
+type UpdateTemplateInput struct {
+	ProjectID string         `json:"projectID"`
+	RunID     string         `json:"runID"`
+	Template  *TemplateInput `json:"template"`
 }
 
 // The kind of comparison to make against a value.

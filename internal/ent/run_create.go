@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
@@ -144,15 +144,15 @@ func (rc *RunCreate) SetProject(p *Project) *RunCreate {
 	return rc.SetProjectID(p.ID)
 }
 
-// SetProcedureID sets the procedure edge to Procedure by id.
-func (rc *RunCreate) SetProcedureID(id string) *RunCreate {
-	rc.mutation.SetProcedureID(id)
+// SetTemplateID sets the template edge to Template by id.
+func (rc *RunCreate) SetTemplateID(id string) *RunCreate {
+	rc.mutation.SetTemplateID(id)
 	return rc
 }
 
-// SetProcedure sets the procedure edge to Procedure.
-func (rc *RunCreate) SetProcedure(p *Procedure) *RunCreate {
-	return rc.SetProcedureID(p.ID)
+// SetTemplate sets the template edge to Template.
+func (rc *RunCreate) SetTemplate(t *Template) *RunCreate {
+	return rc.SetTemplateID(t.ID)
 }
 
 // AddStepIDs adds the steps edge to StepRun by ids.
@@ -236,8 +236,8 @@ func (rc *RunCreate) preSave() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
 		}
 	}
-	if _, ok := rc.mutation.ProcedureID(); !ok {
-		return &ValidationError{Name: "procedure", err: errors.New("ent: missing required edge \"procedure\"")}
+	if _, ok := rc.mutation.TemplateID(); !ok {
+		return &ValidationError{Name: "template", err: errors.New("ent: missing required edge \"template\"")}
 	}
 	return nil
 }
@@ -351,17 +351,17 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := rc.mutation.ProcedureIDs(); len(nodes) > 0 {
+	if nodes := rc.mutation.TemplateIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: false,
-			Table:   run.ProcedureTable,
-			Columns: []string{run.ProcedureColumn},
+			Table:   run.TemplateTable,
+			Columns: []string{run.TemplateColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}

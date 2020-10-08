@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 )
 
@@ -44,8 +44,8 @@ type Run struct {
 type RunEdges struct {
 	// Project holds the value of the project edge.
 	Project *Project
-	// Procedure holds the value of the procedure edge.
-	Procedure *Procedure
+	// Template holds the value of the template edge.
+	Template *Template
 	// Steps holds the value of the steps edge.
 	Steps []*StepRun
 	// loadedTypes holds the information for reporting if a
@@ -67,18 +67,18 @@ func (e RunEdges) ProjectOrErr() (*Project, error) {
 	return nil, &NotLoadedError{edge: "project"}
 }
 
-// ProcedureOrErr returns the Procedure value or an error if the edge
+// TemplateOrErr returns the Template value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e RunEdges) ProcedureOrErr() (*Procedure, error) {
+func (e RunEdges) TemplateOrErr() (*Template, error) {
 	if e.loadedTypes[1] {
-		if e.Procedure == nil {
-			// The edge procedure was loaded in eager-loading,
+		if e.Template == nil {
+			// The edge template was loaded in eager-loading,
 			// but was not found.
-			return nil, &NotFoundError{label: procedure.Label}
+			return nil, &NotFoundError{label: template.Label}
 		}
-		return e.Procedure, nil
+		return e.Template, nil
 	}
-	return nil, &NotLoadedError{edge: "procedure"}
+	return nil, &NotLoadedError{edge: "template"}
 }
 
 // StepsOrErr returns the Steps value or an error if the edge
@@ -181,9 +181,9 @@ func (r *Run) QueryProject() *ProjectQuery {
 	return (&RunClient{config: r.config}).QueryProject(r)
 }
 
-// QueryProcedure queries the procedure edge of the Run.
-func (r *Run) QueryProcedure() *ProcedureQuery {
-	return (&RunClient{config: r.config}).QueryProcedure(r)
+// QueryTemplate queries the template edge of the Run.
+func (r *Run) QueryTemplate() *TemplateQuery {
+	return (&RunClient{config: r.config}).QueryTemplate(r)
 }
 
 // QuerySteps queries the steps edge of the Run.

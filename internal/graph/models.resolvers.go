@@ -32,35 +32,11 @@ func (r *messageStepArgsResolver) LobbyType(ctx context.Context, obj *model.Mess
 	return &t, nil
 }
 
-func (r *procedureResolver) Creator(ctx context.Context, obj *ent.Procedure) (*ent.Admin, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *procedureResolver) SelectionType(ctx context.Context, obj *ent.Procedure) (model.SelectionType, error) {
-	return model.SelectionType(obj.SelectionType), nil
-}
-
-func (r *procedureResolver) InternalCriteria(ctx context.Context, obj *ent.Procedure) (*model.InternalCriteria, error) {
-	crit := &model.InternalCriteria{}
-	err := json.Unmarshal(obj.InternalCriteria, crit)
-	return crit, err
-}
-
-func (r *procedureResolver) MturkCriteria(ctx context.Context, obj *ent.Procedure) (*model.MTurkCriteria, error) {
-	crit := &model.MTurkCriteria{}
-	err := json.Unmarshal(obj.MturkCriteria, crit)
-	return crit, err
-}
-
-func (r *procedureResolver) Steps(ctx context.Context, obj *ent.Procedure) ([]*ent.Step, error) {
-	return obj.QuerySteps().Order(ent.Asc(step.FieldIndex)).All(ctx)
-}
-
 func (r *projectResolver) Creator(ctx context.Context, obj *ent.Project) (*ent.Admin, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *projectResolver) Procedures(ctx context.Context, obj *ent.Project) ([]*ent.Procedure, error) {
+func (r *projectResolver) Templates(ctx context.Context, obj *ent.Project) ([]*ent.Template, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -85,8 +61,8 @@ func (r *runResolver) Creator(ctx context.Context, obj *ent.Run) (*ent.Admin, er
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *runResolver) Procedure(ctx context.Context, obj *ent.Run) (*ent.Procedure, error) {
-	return obj.QueryProcedure().First(ctx)
+func (r *runResolver) Template(ctx context.Context, obj *ent.Run) (*ent.Template, error) {
+	return obj.QueryTemplate().First(ctx)
 }
 
 func (r *runResolver) Status(ctx context.Context, obj *ent.Run) (model.Status, error) {
@@ -147,6 +123,30 @@ func (r *stepRunResolver) Participants(ctx context.Context, obj *ent.StepRun, fi
 	panic(fmt.Errorf("not implemented"))
 }
 
+func (r *templateResolver) Creator(ctx context.Context, obj *ent.Template) (*ent.Admin, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *templateResolver) SelectionType(ctx context.Context, obj *ent.Template) (model.SelectionType, error) {
+	return model.SelectionType(obj.SelectionType), nil
+}
+
+func (r *templateResolver) InternalCriteria(ctx context.Context, obj *ent.Template) (*model.InternalCriteria, error) {
+	crit := &model.InternalCriteria{}
+	err := json.Unmarshal(obj.InternalCriteria, crit)
+	return crit, err
+}
+
+func (r *templateResolver) MturkCriteria(ctx context.Context, obj *ent.Template) (*model.MTurkCriteria, error) {
+	crit := &model.MTurkCriteria{}
+	err := json.Unmarshal(obj.MturkCriteria, crit)
+	return crit, err
+}
+
+func (r *templateResolver) Steps(ctx context.Context, obj *ent.Template) ([]*ent.Step, error) {
+	return obj.QuerySteps().Order(ent.Asc(step.FieldIndex)).All(ctx)
+}
+
 // FilterStepArgs returns generated.FilterStepArgsResolver implementation.
 func (r *Resolver) FilterStepArgs() generated.FilterStepArgsResolver {
 	return &filterStepArgsResolver{r}
@@ -156,9 +156,6 @@ func (r *Resolver) FilterStepArgs() generated.FilterStepArgsResolver {
 func (r *Resolver) MessageStepArgs() generated.MessageStepArgsResolver {
 	return &messageStepArgsResolver{r}
 }
-
-// Procedure returns generated.ProcedureResolver implementation.
-func (r *Resolver) Procedure() generated.ProcedureResolver { return &procedureResolver{r} }
 
 // Project returns generated.ProjectResolver implementation.
 func (r *Resolver) Project() generated.ProjectResolver { return &projectResolver{r} }
@@ -172,10 +169,13 @@ func (r *Resolver) Step() generated.StepResolver { return &stepResolver{r} }
 // StepRun returns generated.StepRunResolver implementation.
 func (r *Resolver) StepRun() generated.StepRunResolver { return &stepRunResolver{r} }
 
+// Template returns generated.TemplateResolver implementation.
+func (r *Resolver) Template() generated.TemplateResolver { return &templateResolver{r} }
+
 type filterStepArgsResolver struct{ *Resolver }
 type messageStepArgsResolver struct{ *Resolver }
-type procedureResolver struct{ *Resolver }
 type projectResolver struct{ *Resolver }
 type runResolver struct{ *Resolver }
 type stepResolver struct{ *Resolver }
 type stepRunResolver struct{ *Resolver }
+type templateResolver struct{ *Resolver }

@@ -9,8 +9,8 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -63,19 +63,19 @@ func (au *AdminUpdate) AddProjects(p ...*Project) *AdminUpdate {
 	return au.AddProjectIDs(ids...)
 }
 
-// AddProcedureIDs adds the procedures edge to Procedure by ids.
-func (au *AdminUpdate) AddProcedureIDs(ids ...string) *AdminUpdate {
-	au.mutation.AddProcedureIDs(ids...)
+// AddTemplateIDs adds the templates edge to Template by ids.
+func (au *AdminUpdate) AddTemplateIDs(ids ...string) *AdminUpdate {
+	au.mutation.AddTemplateIDs(ids...)
 	return au
 }
 
-// AddProcedures adds the procedures edges to Procedure.
-func (au *AdminUpdate) AddProcedures(p ...*Procedure) *AdminUpdate {
-	ids := make([]string, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddTemplates adds the templates edges to Template.
+func (au *AdminUpdate) AddTemplates(t ...*Template) *AdminUpdate {
+	ids := make([]string, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return au.AddProcedureIDs(ids...)
+	return au.AddTemplateIDs(ids...)
 }
 
 // Mutation returns the AdminMutation object of the builder.
@@ -98,19 +98,19 @@ func (au *AdminUpdate) RemoveProjects(p ...*Project) *AdminUpdate {
 	return au.RemoveProjectIDs(ids...)
 }
 
-// RemoveProcedureIDs removes the procedures edge to Procedure by ids.
-func (au *AdminUpdate) RemoveProcedureIDs(ids ...string) *AdminUpdate {
-	au.mutation.RemoveProcedureIDs(ids...)
+// RemoveTemplateIDs removes the templates edge to Template by ids.
+func (au *AdminUpdate) RemoveTemplateIDs(ids ...string) *AdminUpdate {
+	au.mutation.RemoveTemplateIDs(ids...)
 	return au
 }
 
-// RemoveProcedures removes procedures edges to Procedure.
-func (au *AdminUpdate) RemoveProcedures(p ...*Procedure) *AdminUpdate {
-	ids := make([]string, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// RemoveTemplates removes templates edges to Template.
+func (au *AdminUpdate) RemoveTemplates(t ...*Template) *AdminUpdate {
+	ids := make([]string, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return au.RemoveProcedureIDs(ids...)
+	return au.RemoveTemplateIDs(ids...)
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
@@ -246,17 +246,17 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := au.mutation.RemovedProceduresIDs(); len(nodes) > 0 {
+	if nodes := au.mutation.RemovedTemplatesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   admin.ProceduresTable,
-			Columns: []string{admin.ProceduresColumn},
+			Table:   admin.TemplatesTable,
+			Columns: []string{admin.TemplatesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}
@@ -265,17 +265,17 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := au.mutation.ProceduresIDs(); len(nodes) > 0 {
+	if nodes := au.mutation.TemplatesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   admin.ProceduresTable,
-			Columns: []string{admin.ProceduresColumn},
+			Table:   admin.TemplatesTable,
+			Columns: []string{admin.TemplatesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}
@@ -335,19 +335,19 @@ func (auo *AdminUpdateOne) AddProjects(p ...*Project) *AdminUpdateOne {
 	return auo.AddProjectIDs(ids...)
 }
 
-// AddProcedureIDs adds the procedures edge to Procedure by ids.
-func (auo *AdminUpdateOne) AddProcedureIDs(ids ...string) *AdminUpdateOne {
-	auo.mutation.AddProcedureIDs(ids...)
+// AddTemplateIDs adds the templates edge to Template by ids.
+func (auo *AdminUpdateOne) AddTemplateIDs(ids ...string) *AdminUpdateOne {
+	auo.mutation.AddTemplateIDs(ids...)
 	return auo
 }
 
-// AddProcedures adds the procedures edges to Procedure.
-func (auo *AdminUpdateOne) AddProcedures(p ...*Procedure) *AdminUpdateOne {
-	ids := make([]string, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddTemplates adds the templates edges to Template.
+func (auo *AdminUpdateOne) AddTemplates(t ...*Template) *AdminUpdateOne {
+	ids := make([]string, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return auo.AddProcedureIDs(ids...)
+	return auo.AddTemplateIDs(ids...)
 }
 
 // Mutation returns the AdminMutation object of the builder.
@@ -370,19 +370,19 @@ func (auo *AdminUpdateOne) RemoveProjects(p ...*Project) *AdminUpdateOne {
 	return auo.RemoveProjectIDs(ids...)
 }
 
-// RemoveProcedureIDs removes the procedures edge to Procedure by ids.
-func (auo *AdminUpdateOne) RemoveProcedureIDs(ids ...string) *AdminUpdateOne {
-	auo.mutation.RemoveProcedureIDs(ids...)
+// RemoveTemplateIDs removes the templates edge to Template by ids.
+func (auo *AdminUpdateOne) RemoveTemplateIDs(ids ...string) *AdminUpdateOne {
+	auo.mutation.RemoveTemplateIDs(ids...)
 	return auo
 }
 
-// RemoveProcedures removes procedures edges to Procedure.
-func (auo *AdminUpdateOne) RemoveProcedures(p ...*Procedure) *AdminUpdateOne {
-	ids := make([]string, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// RemoveTemplates removes templates edges to Template.
+func (auo *AdminUpdateOne) RemoveTemplates(t ...*Template) *AdminUpdateOne {
+	ids := make([]string, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return auo.RemoveProcedureIDs(ids...)
+	return auo.RemoveTemplateIDs(ids...)
 }
 
 // Save executes the query and returns the updated entity.
@@ -516,17 +516,17 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (a *Admin, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := auo.mutation.RemovedProceduresIDs(); len(nodes) > 0 {
+	if nodes := auo.mutation.RemovedTemplatesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   admin.ProceduresTable,
-			Columns: []string{admin.ProceduresColumn},
+			Table:   admin.TemplatesTable,
+			Columns: []string{admin.TemplatesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}
@@ -535,17 +535,17 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (a *Admin, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := auo.mutation.ProceduresIDs(); len(nodes) > 0 {
+	if nodes := auo.mutation.TemplatesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   admin.ProceduresTable,
-			Columns: []string{admin.ProceduresColumn},
+			Table:   admin.TemplatesTable,
+			Columns: []string{admin.TemplatesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}

@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
@@ -83,19 +83,19 @@ func (ac *AdminCreate) AddProjects(p ...*Project) *AdminCreate {
 	return ac.AddProjectIDs(ids...)
 }
 
-// AddProcedureIDs adds the procedures edge to Procedure by ids.
-func (ac *AdminCreate) AddProcedureIDs(ids ...string) *AdminCreate {
-	ac.mutation.AddProcedureIDs(ids...)
+// AddTemplateIDs adds the templates edge to Template by ids.
+func (ac *AdminCreate) AddTemplateIDs(ids ...string) *AdminCreate {
+	ac.mutation.AddTemplateIDs(ids...)
 	return ac
 }
 
-// AddProcedures adds the procedures edges to Procedure.
-func (ac *AdminCreate) AddProcedures(p ...*Procedure) *AdminCreate {
-	ids := make([]string, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddTemplates adds the templates edges to Template.
+func (ac *AdminCreate) AddTemplates(t ...*Template) *AdminCreate {
+	ids := make([]string, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return ac.AddProcedureIDs(ids...)
+	return ac.AddTemplateIDs(ids...)
 }
 
 // Mutation returns the AdminMutation object of the builder.
@@ -239,17 +239,17 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := ac.mutation.ProceduresIDs(); len(nodes) > 0 {
+	if nodes := ac.mutation.TemplatesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   admin.ProceduresTable,
-			Columns: []string{admin.ProceduresColumn},
+			Table:   admin.TemplatesTable,
+			Columns: []string{admin.TemplatesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}

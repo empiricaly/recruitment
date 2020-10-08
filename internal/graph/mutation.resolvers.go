@@ -57,16 +57,16 @@ func (r *mutationResolver) CreateProject(ctx context.Context, input *model.Creat
 		Save(ctx)
 }
 
-func (r *mutationResolver) CreateProcedure(ctx context.Context, input *model.CreateProcedureInput) (*ent.Procedure, error) {
+func (r *mutationResolver) CreateTemplate(ctx context.Context, input *model.CreateTemplateInput) (*ent.Template, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) UpdateProcedure(ctx context.Context, input *model.UpdateProcedureInput) (*ent.Procedure, error) {
-	internalCriteria, err := json.Marshal(input.Procedure.InternalCriteria)
+func (r *mutationResolver) UpdateTemplate(ctx context.Context, input *model.UpdateTemplateInput) (*ent.Template, error) {
+	internalCriteria, err := json.Marshal(input.Template.InternalCriteria)
 	if err != nil {
 		return nil, errs.Wrap(err, "encode internal criteria")
 	}
-	mturkCriteria, err := json.Marshal(input.Procedure.MturkCriteria)
+	mturkCriteria, err := json.Marshal(input.Template.MturkCriteria)
 	if err != nil {
 		return nil, errs.Wrap(err, "encode mturk criteria")
 	}
@@ -76,20 +76,20 @@ func (r *mutationResolver) UpdateProcedure(ctx context.Context, input *model.Upd
 		return nil, errs.Wrap(err, "starting a transaction")
 	}
 
-	procedure, err := tx.Procedure.UpdateOneID(*input.Procedure.ID).
-		SetName(input.Procedure.Name).
-		SetSelectionType(input.Procedure.SelectionType.String()).
-		SetParticipantCount(input.Procedure.ParticipantCount).
+	template, err := tx.Template.UpdateOneID(*input.Template.ID).
+		SetName(input.Template.Name).
+		SetSelectionType(input.Template.SelectionType.String()).
+		SetParticipantCount(input.Template.ParticipantCount).
 		SetInternalCriteria(internalCriteria).
 		SetMturkCriteria(mturkCriteria).
 		Save(ctx)
 	if err != nil {
-		return nil, errs.Wrap(err, "create procedure")
+		return nil, errs.Wrap(err, "create template")
 	}
 
-	steps, err := procedure.QuerySteps().All(ctx)
-	newSteps := make([]string, len(input.Procedure.Steps))
-	for _, step := range input.Procedure.Steps {
+	steps, err := template.QuerySteps().All(ctx)
+	newSteps := make([]string, len(input.Template.Steps))
+	for _, step := range input.Template.Steps {
 		filterArgs, err := json.Marshal(step.FilterArgs)
 		if err != nil {
 			return nil, errs.Wrap(err, "encode filter args")
@@ -140,7 +140,7 @@ func (r *mutationResolver) UpdateProcedure(ctx context.Context, input *model.Upd
 			SetFilterArgs(filterArgs).
 			SetHitArgs(hitArgs).
 			SetMsgArgs(msgArgs).
-			SetProcedure(procedure).
+			SetTemplate(template).
 			Save(ctx)
 		if err != nil {
 			return nil, errs.Wrap(err, "create step")
@@ -168,44 +168,44 @@ LOOP:
 		return nil, errs.Wrap(err, "commit transaction")
 	}
 
-	return procedure, err
+	return template, err
 }
 
-func (r *mutationResolver) DuplicateProcedure(ctx context.Context, input *model.DuplicateProcedureInput) (*ent.Procedure, error) {
+func (r *mutationResolver) DuplicateTemplate(ctx context.Context, input *model.DuplicateTemplateInput) (*ent.Template, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *mutationResolver) CreateRun(ctx context.Context, input *model.CreateRunInput) (*ent.Run, error) {
 	creator := adminU.ForContext(ctx)
 
-	internalCriteria, err := json.Marshal(input.Procedure.InternalCriteria)
+	internalCriteria, err := json.Marshal(input.Template.InternalCriteria)
 	if err != nil {
 		return nil, errs.Wrap(err, "encode internal criteria")
 	}
-	mturkCriteria, err := json.Marshal(input.Procedure.MturkCriteria)
+	mturkCriteria, err := json.Marshal(input.Template.MturkCriteria)
 	if err != nil {
 		return nil, errs.Wrap(err, "encode mturk criteria")
 	}
 
-	procedure, err := r.Store.Procedure.Create().
+	template, err := r.Store.Template.Create().
 		SetID(xid.New().String()).
-		SetName(input.Procedure.Name).
-		SetSelectionType(input.Procedure.SelectionType.String()).
-		SetParticipantCount(input.Procedure.ParticipantCount).
+		SetName(input.Template.Name).
+		SetSelectionType(input.Template.SelectionType.String()).
+		SetParticipantCount(input.Template.ParticipantCount).
 		SetInternalCriteria(internalCriteria).
 		SetMturkCriteria(mturkCriteria).
 		SetCreator(creator).
 		SetProjectID(input.ProjectID).
 		Save(ctx)
 	if err != nil {
-		return nil, errs.Wrap(err, "create procedure")
+		return nil, errs.Wrap(err, "create template")
 	}
 
 	run, err := r.Store.Run.Create().
 		SetID(xid.New().String()).
 		SetStatus(run.StatusCREATED).
-		SetProcedure(procedure).
-		SetName(input.Procedure.Name).
+		SetTemplate(template).
+		SetName(input.Template.Name).
 		SetProjectID(input.ProjectID).
 		Save(ctx)
 

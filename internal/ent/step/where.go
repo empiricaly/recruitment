@@ -764,25 +764,25 @@ func FilterArgsNotNil() predicate.Step {
 	})
 }
 
-// HasProcedure applies the HasEdge predicate on the "procedure" edge.
-func HasProcedure() predicate.Step {
+// HasTemplate applies the HasEdge predicate on the "template" edge.
+func HasTemplate() predicate.Step {
 	return predicate.Step(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ProcedureTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ProcedureTable, ProcedureColumn),
+			sqlgraph.To(TemplateTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, TemplateTable, TemplateColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasProcedureWith applies the HasEdge predicate on the "procedure" edge with a given conditions (other predicates).
-func HasProcedureWith(preds ...predicate.Procedure) predicate.Step {
+// HasTemplateWith applies the HasEdge predicate on the "template" edge with a given conditions (other predicates).
+func HasTemplateWith(preds ...predicate.Template) predicate.Step {
 	return predicate.Step(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ProcedureInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, ProcedureTable, ProcedureColumn),
+			sqlgraph.To(TemplateInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, TemplateTable, TemplateColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

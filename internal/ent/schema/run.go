@@ -13,7 +13,6 @@ type Run struct {
 
 // Fields of the Run.
 func (Run) Fields() []ent.Field {
-	// TODO field : creator, procedure, status, steps, data, currentStep
 	return append(
 		append([]ent.Field{}, commonFields...),
 		field.String("name"),
@@ -31,7 +30,7 @@ func (Run) Edges() []ent.Edge {
 		edge.From("project", Project.Type).
 			Ref("runs").
 			Unique(),
-		edge.To("procedure", Procedure.Type).
+		edge.To("template", Template.Type).
 			Unique().
 			Required(),
 		edge.To("steps", StepRun.Type),

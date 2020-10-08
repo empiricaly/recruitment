@@ -24,6 +24,6 @@ func (Admin) Fields() []ent.Field {
 func (Admin) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("projects", Project.Type),
-		edge.To("procedures", Procedure.Type),
+		edge.To("templates", Template.Type),
 	}
 }

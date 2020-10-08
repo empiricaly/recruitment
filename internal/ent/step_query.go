@@ -9,8 +9,8 @@ import (
 	"math"
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/step"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -25,8 +25,8 @@ type StepQuery struct {
 	unique     []string
 	predicates []predicate.Step
 	// eager-loading edges.
-	withProcedure *ProcedureQuery
-	withFKs       bool
+	withTemplate *TemplateQuery
+	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -56,17 +56,17 @@ func (sq *StepQuery) Order(o ...OrderFunc) *StepQuery {
 	return sq
 }
 
-// QueryProcedure chains the current query on the procedure edge.
-func (sq *StepQuery) QueryProcedure() *ProcedureQuery {
-	query := &ProcedureQuery{config: sq.config}
+// QueryTemplate chains the current query on the template edge.
+func (sq *StepQuery) QueryTemplate() *TemplateQuery {
+	query := &TemplateQuery{config: sq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := sq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(step.Table, step.FieldID, sq.sqlQuery()),
-			sqlgraph.To(procedure.Table, procedure.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, step.ProcedureTable, step.ProcedureColumn),
+			sqlgraph.To(template.Table, template.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, step.TemplateTable, step.TemplateColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
 		return fromU, nil
@@ -253,14 +253,14 @@ func (sq *StepQuery) Clone() *StepQuery {
 	}
 }
 
-//  WithProcedure tells the query-builder to eager-loads the nodes that are connected to
-// the "procedure" edge. The optional arguments used to configure the query builder of the edge.
-func (sq *StepQuery) WithProcedure(opts ...func(*ProcedureQuery)) *StepQuery {
-	query := &ProcedureQuery{config: sq.config}
+//  WithTemplate tells the query-builder to eager-loads the nodes that are connected to
+// the "template" edge. The optional arguments used to configure the query builder of the edge.
+func (sq *StepQuery) WithTemplate(opts ...func(*TemplateQuery)) *StepQuery {
+	query := &TemplateQuery{config: sq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	sq.withProcedure = query
+	sq.withTemplate = query
 	return sq
 }
 
@@ -332,10 +332,10 @@ func (sq *StepQuery) sqlAll(ctx context.Context) ([]*Step, error) {
 		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
 		loadedTypes = [1]bool{
-			sq.withProcedure != nil,
+			sq.withTemplate != nil,
 		}
 	)
-	if sq.withProcedure != nil {
+	if sq.withTemplate != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -365,16 +365,16 @@ func (sq *StepQuery) sqlAll(ctx context.Context) ([]*Step, error) {
 		return nodes, nil
 	}
 
-	if query := sq.withProcedure; query != nil {
+	if query := sq.withTemplate; query != nil {
 		ids := make([]string, 0, len(nodes))
 		nodeids := make(map[string][]*Step)
 		for i := range nodes {
-			if fk := nodes[i].procedure_steps; fk != nil {
+			if fk := nodes[i].template_steps; fk != nil {
 				ids = append(ids, *fk)
 				nodeids[*fk] = append(nodeids[*fk], nodes[i])
 			}
 		}
-		query.Where(procedure.IDIn(ids...))
+		query.Where(template.IDIn(ids...))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
@@ -382,10 +382,10 @@ func (sq *StepQuery) sqlAll(ctx context.Context) ([]*Step, error) {
 		for _, n := range neighbors {
 			nodes, ok := nodeids[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "procedure_steps" returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "template_steps" returned %v`, n.ID)
 			}
 			for i := range nodes {
-				nodes[i].Edges.Procedure = n
+				nodes[i].Edges.Template = n
 			}
 		}
 	}

@@ -75,18 +75,18 @@ input CreateProjectInput {
   name: String!
 }
 
-input CreateProcedureInput {
+input CreateTemplateInput {
   """
-  Project in which to create the Procedure.
+  Project in which to create the Template.
   """
   projectID: ID!
 
-  procedure: ProcedureInput!
+  template: TemplateInput!
 }
 
-input ProcedureInput {
+input TemplateInput {
   """
-  ID of procedure to update, if updating
+  ID of Template to update, if updating
   """
   id: ID
 
@@ -96,7 +96,7 @@ input ProcedureInput {
   name: String!
 
   """
-  Ordered list of Steps for Procedure.
+  Ordered list of Steps for Template.
   """
   steps: [StepInput!]!
 
@@ -128,14 +128,14 @@ input ProcedureInput {
   adult: Boolean!
 }
 
-input UpdateProcedureInput {
+input UpdateTemplateInput {
   projectID: ID!
   runID: ID!
-  procedure: ProcedureInput!
+  template: TemplateInput!
 }
 
-input DuplicateProcedureInput {
-  procedureID: ID!
+input DuplicateTemplateInput {
+  templateID: ID!
   projectID: ID!
   name: String
 }
@@ -147,7 +147,7 @@ input StepInput {
   id: ID
 
   """
-  Index is the position of the step in the Procedure.
+  Index is the position of the step in the Template.
   """
   index: Int!
 
@@ -160,7 +160,7 @@ input StepInput {
   Duration of Step in seconds. At the end of the duration, the next Step will
   execute.
   If set to 0, the Step executes and immediately moves onto the next Step. This
-  mostly works for PARTICIPANT_FILTER Steps and the last Step in a Procedure.
+  mostly works for PARTICIPANT_FILTER Steps and the last Step in a Template.
   """
   duration: Int!
 
@@ -182,7 +182,7 @@ input StepInput {
 
 input CreateRunInput {
   projectID: ID!
-  procedure: ProcedureInput!
+  template: TemplateInput!
 }
 
 input UpdateRunInput {
@@ -232,19 +232,19 @@ type Mutation {
   createProject(input: CreateProjectInput): Project! @hasRole(role: ADMIN)
 
   """
-  Create a new Procedure.
+  Create a new Template.
   """
-  createProcedure(input: CreateProcedureInput): Procedure! @hasRole(role: ADMIN)
+  createTemplate(input: CreateTemplateInput): Template! @hasRole(role: ADMIN)
 
   """
-  Update a Procedure.
+  Update a Template.
   """
-  updateProcedure(input: UpdateProcedureInput): Procedure! @hasRole(role: ADMIN)
+  updateTemplate(input: UpdateTemplateInput): Template! @hasRole(role: ADMIN)
 
   """
-  Duplicate a Procedure to a Project.
+  Duplicate a Template to a Project.
   """
-  duplicateProcedure(input: DuplicateProcedureInput): Procedure! @hasRole(role: ADMIN)
+  duplicateTemplate(input: DuplicateTemplateInput): Template! @hasRole(role: ADMIN)
 
   """
   Create Run.

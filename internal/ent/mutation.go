@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 
 	"github.com/facebook/ent"
 )
@@ -27,32 +27,32 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAdmin     = "Admin"
-	TypeProcedure = "Procedure"
-	TypeProject   = "Project"
-	TypeRun       = "Run"
-	TypeStep      = "Step"
-	TypeStepRun   = "StepRun"
+	TypeAdmin    = "Admin"
+	TypeProject  = "Project"
+	TypeRun      = "Run"
+	TypeStep     = "Step"
+	TypeStepRun  = "StepRun"
+	TypeTemplate = "Template"
 )
 
 // AdminMutation represents an operation that mutate the Admins
 // nodes in the graph.
 type AdminMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *string
-	createdAt         *time.Time
-	updatedAt         *time.Time
-	name              *string
-	username          *string
-	clearedFields     map[string]struct{}
-	projects          map[string]struct{}
-	removedprojects   map[string]struct{}
-	procedures        map[string]struct{}
-	removedprocedures map[string]struct{}
-	done              bool
-	oldValue          func(context.Context) (*Admin, error)
+	op               Op
+	typ              string
+	id               *string
+	createdAt        *time.Time
+	updatedAt        *time.Time
+	name             *string
+	username         *string
+	clearedFields    map[string]struct{}
+	projects         map[string]struct{}
+	removedprojects  map[string]struct{}
+	templates        map[string]struct{}
+	removedtemplates map[string]struct{}
+	done             bool
+	oldValue         func(context.Context) (*Admin, error)
 }
 
 var _ ent.Mutation = (*AdminMutation)(nil)
@@ -330,46 +330,46 @@ func (m *AdminMutation) ResetProjects() {
 	m.removedprojects = nil
 }
 
-// AddProcedureIDs adds the procedures edge to Procedure by ids.
-func (m *AdminMutation) AddProcedureIDs(ids ...string) {
-	if m.procedures == nil {
-		m.procedures = make(map[string]struct{})
+// AddTemplateIDs adds the templates edge to Template by ids.
+func (m *AdminMutation) AddTemplateIDs(ids ...string) {
+	if m.templates == nil {
+		m.templates = make(map[string]struct{})
 	}
 	for i := range ids {
-		m.procedures[ids[i]] = struct{}{}
+		m.templates[ids[i]] = struct{}{}
 	}
 }
 
-// RemoveProcedureIDs removes the procedures edge to Procedure by ids.
-func (m *AdminMutation) RemoveProcedureIDs(ids ...string) {
-	if m.removedprocedures == nil {
-		m.removedprocedures = make(map[string]struct{})
+// RemoveTemplateIDs removes the templates edge to Template by ids.
+func (m *AdminMutation) RemoveTemplateIDs(ids ...string) {
+	if m.removedtemplates == nil {
+		m.removedtemplates = make(map[string]struct{})
 	}
 	for i := range ids {
-		m.removedprocedures[ids[i]] = struct{}{}
+		m.removedtemplates[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedProcedures returns the removed ids of procedures.
-func (m *AdminMutation) RemovedProceduresIDs() (ids []string) {
-	for id := range m.removedprocedures {
+// RemovedTemplates returns the removed ids of templates.
+func (m *AdminMutation) RemovedTemplatesIDs() (ids []string) {
+	for id := range m.removedtemplates {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ProceduresIDs returns the procedures ids in the mutation.
-func (m *AdminMutation) ProceduresIDs() (ids []string) {
-	for id := range m.procedures {
+// TemplatesIDs returns the templates ids in the mutation.
+func (m *AdminMutation) TemplatesIDs() (ids []string) {
+	for id := range m.templates {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetProcedures reset all changes of the "procedures" edge.
-func (m *AdminMutation) ResetProcedures() {
-	m.procedures = nil
-	m.removedprocedures = nil
+// ResetTemplates reset all changes of the "templates" edge.
+func (m *AdminMutation) ResetTemplates() {
+	m.templates = nil
+	m.removedtemplates = nil
 }
 
 // Op returns the operation name.
@@ -542,8 +542,8 @@ func (m *AdminMutation) AddedEdges() []string {
 	if m.projects != nil {
 		edges = append(edges, admin.EdgeProjects)
 	}
-	if m.procedures != nil {
-		edges = append(edges, admin.EdgeProcedures)
+	if m.templates != nil {
+		edges = append(edges, admin.EdgeTemplates)
 	}
 	return edges
 }
@@ -558,9 +558,9 @@ func (m *AdminMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case admin.EdgeProcedures:
-		ids := make([]ent.Value, 0, len(m.procedures))
-		for id := range m.procedures {
+	case admin.EdgeTemplates:
+		ids := make([]ent.Value, 0, len(m.templates))
+		for id := range m.templates {
 			ids = append(ids, id)
 		}
 		return ids
@@ -575,8 +575,8 @@ func (m *AdminMutation) RemovedEdges() []string {
 	if m.removedprojects != nil {
 		edges = append(edges, admin.EdgeProjects)
 	}
-	if m.removedprocedures != nil {
-		edges = append(edges, admin.EdgeProcedures)
+	if m.removedtemplates != nil {
+		edges = append(edges, admin.EdgeTemplates)
 	}
 	return edges
 }
@@ -591,9 +591,9 @@ func (m *AdminMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case admin.EdgeProcedures:
-		ids := make([]ent.Value, 0, len(m.removedprocedures))
-		for id := range m.removedprocedures {
+	case admin.EdgeTemplates:
+		ids := make([]ent.Value, 0, len(m.removedtemplates))
+		for id := range m.removedtemplates {
 			ids = append(ids, id)
 		}
 		return ids
@@ -632,1005 +632,33 @@ func (m *AdminMutation) ResetEdge(name string) error {
 	case admin.EdgeProjects:
 		m.ResetProjects()
 		return nil
-	case admin.EdgeProcedures:
-		m.ResetProcedures()
+	case admin.EdgeTemplates:
+		m.ResetTemplates()
 		return nil
 	}
 	return fmt.Errorf("unknown Admin edge %s", name)
-}
-
-// ProcedureMutation represents an operation that mutate the Procedures
-// nodes in the graph.
-type ProcedureMutation struct {
-	config
-	op                  Op
-	typ                 string
-	id                  *string
-	createdAt           *time.Time
-	updatedAt           *time.Time
-	name                *string
-	selectionType       *string
-	participantCount    *int
-	addparticipantCount *int
-	internalCriteria    *[]byte
-	mturkCriteria       *[]byte
-	adult               *bool
-	clearedFields       map[string]struct{}
-	steps               map[string]struct{}
-	removedsteps        map[string]struct{}
-	project             *string
-	clearedproject      bool
-	creator             *string
-	clearedcreator      bool
-	run                 *string
-	clearedrun          bool
-	done                bool
-	oldValue            func(context.Context) (*Procedure, error)
-}
-
-var _ ent.Mutation = (*ProcedureMutation)(nil)
-
-// procedureOption allows to manage the mutation configuration using functional options.
-type procedureOption func(*ProcedureMutation)
-
-// newProcedureMutation creates new mutation for $n.Name.
-func newProcedureMutation(c config, op Op, opts ...procedureOption) *ProcedureMutation {
-	m := &ProcedureMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeProcedure,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withProcedureID sets the id field of the mutation.
-func withProcedureID(id string) procedureOption {
-	return func(m *ProcedureMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *Procedure
-		)
-		m.oldValue = func(ctx context.Context) (*Procedure, error) {
-			once.Do(func() {
-				if m.done {
-					err = fmt.Errorf("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().Procedure.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withProcedure sets the old Procedure of the mutation.
-func withProcedure(node *Procedure) procedureOption {
-	return func(m *ProcedureMutation) {
-		m.oldValue = func(context.Context) (*Procedure, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m ProcedureMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m ProcedureMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// SetID sets the value of the id field. Note that, this
-// operation is accepted only on Procedure creation.
-func (m *ProcedureMutation) SetID(id string) {
-	m.id = &id
-}
-
-// ID returns the id value in the mutation. Note that, the id
-// is available only if it was provided to the builder.
-func (m *ProcedureMutation) ID() (id string, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// SetCreatedAt sets the createdAt field.
-func (m *ProcedureMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
-}
-
-// CreatedAt returns the createdAt value in the mutation.
-func (m *ProcedureMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old createdAt value of the Procedure.
-// If the Procedure object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *ProcedureMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldCreatedAt is allowed only on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt reset all changes of the "createdAt" field.
-func (m *ProcedureMutation) ResetCreatedAt() {
-	m.createdAt = nil
-}
-
-// SetUpdatedAt sets the updatedAt field.
-func (m *ProcedureMutation) SetUpdatedAt(t time.Time) {
-	m.updatedAt = &t
-}
-
-// UpdatedAt returns the updatedAt value in the mutation.
-func (m *ProcedureMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updatedAt
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUpdatedAt returns the old updatedAt value of the Procedure.
-// If the Procedure object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *ProcedureMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldUpdatedAt is allowed only on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldUpdatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
-	}
-	return oldValue.UpdatedAt, nil
-}
-
-// ResetUpdatedAt reset all changes of the "updatedAt" field.
-func (m *ProcedureMutation) ResetUpdatedAt() {
-	m.updatedAt = nil
-}
-
-// SetName sets the name field.
-func (m *ProcedureMutation) SetName(s string) {
-	m.name = &s
-}
-
-// Name returns the name value in the mutation.
-func (m *ProcedureMutation) Name() (r string, exists bool) {
-	v := m.name
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldName returns the old name value of the Procedure.
-// If the Procedure object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *ProcedureMutation) OldName(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldName is allowed only on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldName requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldName: %w", err)
-	}
-	return oldValue.Name, nil
-}
-
-// ResetName reset all changes of the "name" field.
-func (m *ProcedureMutation) ResetName() {
-	m.name = nil
-}
-
-// SetSelectionType sets the selectionType field.
-func (m *ProcedureMutation) SetSelectionType(s string) {
-	m.selectionType = &s
-}
-
-// SelectionType returns the selectionType value in the mutation.
-func (m *ProcedureMutation) SelectionType() (r string, exists bool) {
-	v := m.selectionType
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSelectionType returns the old selectionType value of the Procedure.
-// If the Procedure object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *ProcedureMutation) OldSelectionType(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldSelectionType is allowed only on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldSelectionType requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSelectionType: %w", err)
-	}
-	return oldValue.SelectionType, nil
-}
-
-// ResetSelectionType reset all changes of the "selectionType" field.
-func (m *ProcedureMutation) ResetSelectionType() {
-	m.selectionType = nil
-}
-
-// SetParticipantCount sets the participantCount field.
-func (m *ProcedureMutation) SetParticipantCount(i int) {
-	m.participantCount = &i
-	m.addparticipantCount = nil
-}
-
-// ParticipantCount returns the participantCount value in the mutation.
-func (m *ProcedureMutation) ParticipantCount() (r int, exists bool) {
-	v := m.participantCount
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldParticipantCount returns the old participantCount value of the Procedure.
-// If the Procedure object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *ProcedureMutation) OldParticipantCount(ctx context.Context) (v int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldParticipantCount is allowed only on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldParticipantCount requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldParticipantCount: %w", err)
-	}
-	return oldValue.ParticipantCount, nil
-}
-
-// AddParticipantCount adds i to participantCount.
-func (m *ProcedureMutation) AddParticipantCount(i int) {
-	if m.addparticipantCount != nil {
-		*m.addparticipantCount += i
-	} else {
-		m.addparticipantCount = &i
-	}
-}
-
-// AddedParticipantCount returns the value that was added to the participantCount field in this mutation.
-func (m *ProcedureMutation) AddedParticipantCount() (r int, exists bool) {
-	v := m.addparticipantCount
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetParticipantCount reset all changes of the "participantCount" field.
-func (m *ProcedureMutation) ResetParticipantCount() {
-	m.participantCount = nil
-	m.addparticipantCount = nil
-}
-
-// SetInternalCriteria sets the internalCriteria field.
-func (m *ProcedureMutation) SetInternalCriteria(b []byte) {
-	m.internalCriteria = &b
-}
-
-// InternalCriteria returns the internalCriteria value in the mutation.
-func (m *ProcedureMutation) InternalCriteria() (r []byte, exists bool) {
-	v := m.internalCriteria
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldInternalCriteria returns the old internalCriteria value of the Procedure.
-// If the Procedure object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *ProcedureMutation) OldInternalCriteria(ctx context.Context) (v []byte, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldInternalCriteria is allowed only on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldInternalCriteria requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldInternalCriteria: %w", err)
-	}
-	return oldValue.InternalCriteria, nil
-}
-
-// ResetInternalCriteria reset all changes of the "internalCriteria" field.
-func (m *ProcedureMutation) ResetInternalCriteria() {
-	m.internalCriteria = nil
-}
-
-// SetMturkCriteria sets the mturkCriteria field.
-func (m *ProcedureMutation) SetMturkCriteria(b []byte) {
-	m.mturkCriteria = &b
-}
-
-// MturkCriteria returns the mturkCriteria value in the mutation.
-func (m *ProcedureMutation) MturkCriteria() (r []byte, exists bool) {
-	v := m.mturkCriteria
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldMturkCriteria returns the old mturkCriteria value of the Procedure.
-// If the Procedure object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *ProcedureMutation) OldMturkCriteria(ctx context.Context) (v []byte, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldMturkCriteria is allowed only on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldMturkCriteria requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMturkCriteria: %w", err)
-	}
-	return oldValue.MturkCriteria, nil
-}
-
-// ResetMturkCriteria reset all changes of the "mturkCriteria" field.
-func (m *ProcedureMutation) ResetMturkCriteria() {
-	m.mturkCriteria = nil
-}
-
-// SetAdult sets the adult field.
-func (m *ProcedureMutation) SetAdult(b bool) {
-	m.adult = &b
-}
-
-// Adult returns the adult value in the mutation.
-func (m *ProcedureMutation) Adult() (r bool, exists bool) {
-	v := m.adult
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAdult returns the old adult value of the Procedure.
-// If the Procedure object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *ProcedureMutation) OldAdult(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldAdult is allowed only on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldAdult requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAdult: %w", err)
-	}
-	return oldValue.Adult, nil
-}
-
-// ResetAdult reset all changes of the "adult" field.
-func (m *ProcedureMutation) ResetAdult() {
-	m.adult = nil
-}
-
-// AddStepIDs adds the steps edge to Step by ids.
-func (m *ProcedureMutation) AddStepIDs(ids ...string) {
-	if m.steps == nil {
-		m.steps = make(map[string]struct{})
-	}
-	for i := range ids {
-		m.steps[ids[i]] = struct{}{}
-	}
-}
-
-// RemoveStepIDs removes the steps edge to Step by ids.
-func (m *ProcedureMutation) RemoveStepIDs(ids ...string) {
-	if m.removedsteps == nil {
-		m.removedsteps = make(map[string]struct{})
-	}
-	for i := range ids {
-		m.removedsteps[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedSteps returns the removed ids of steps.
-func (m *ProcedureMutation) RemovedStepsIDs() (ids []string) {
-	for id := range m.removedsteps {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// StepsIDs returns the steps ids in the mutation.
-func (m *ProcedureMutation) StepsIDs() (ids []string) {
-	for id := range m.steps {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetSteps reset all changes of the "steps" edge.
-func (m *ProcedureMutation) ResetSteps() {
-	m.steps = nil
-	m.removedsteps = nil
-}
-
-// SetProjectID sets the project edge to Project by id.
-func (m *ProcedureMutation) SetProjectID(id string) {
-	m.project = &id
-}
-
-// ClearProject clears the project edge to Project.
-func (m *ProcedureMutation) ClearProject() {
-	m.clearedproject = true
-}
-
-// ProjectCleared returns if the edge project was cleared.
-func (m *ProcedureMutation) ProjectCleared() bool {
-	return m.clearedproject
-}
-
-// ProjectID returns the project id in the mutation.
-func (m *ProcedureMutation) ProjectID() (id string, exists bool) {
-	if m.project != nil {
-		return *m.project, true
-	}
-	return
-}
-
-// ProjectIDs returns the project ids in the mutation.
-// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
-// ProjectID instead. It exists only for internal usage by the builders.
-func (m *ProcedureMutation) ProjectIDs() (ids []string) {
-	if id := m.project; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetProject reset all changes of the "project" edge.
-func (m *ProcedureMutation) ResetProject() {
-	m.project = nil
-	m.clearedproject = false
-}
-
-// SetCreatorID sets the creator edge to Admin by id.
-func (m *ProcedureMutation) SetCreatorID(id string) {
-	m.creator = &id
-}
-
-// ClearCreator clears the creator edge to Admin.
-func (m *ProcedureMutation) ClearCreator() {
-	m.clearedcreator = true
-}
-
-// CreatorCleared returns if the edge creator was cleared.
-func (m *ProcedureMutation) CreatorCleared() bool {
-	return m.clearedcreator
-}
-
-// CreatorID returns the creator id in the mutation.
-func (m *ProcedureMutation) CreatorID() (id string, exists bool) {
-	if m.creator != nil {
-		return *m.creator, true
-	}
-	return
-}
-
-// CreatorIDs returns the creator ids in the mutation.
-// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
-// CreatorID instead. It exists only for internal usage by the builders.
-func (m *ProcedureMutation) CreatorIDs() (ids []string) {
-	if id := m.creator; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetCreator reset all changes of the "creator" edge.
-func (m *ProcedureMutation) ResetCreator() {
-	m.creator = nil
-	m.clearedcreator = false
-}
-
-// SetRunID sets the run edge to Run by id.
-func (m *ProcedureMutation) SetRunID(id string) {
-	m.run = &id
-}
-
-// ClearRun clears the run edge to Run.
-func (m *ProcedureMutation) ClearRun() {
-	m.clearedrun = true
-}
-
-// RunCleared returns if the edge run was cleared.
-func (m *ProcedureMutation) RunCleared() bool {
-	return m.clearedrun
-}
-
-// RunID returns the run id in the mutation.
-func (m *ProcedureMutation) RunID() (id string, exists bool) {
-	if m.run != nil {
-		return *m.run, true
-	}
-	return
-}
-
-// RunIDs returns the run ids in the mutation.
-// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
-// RunID instead. It exists only for internal usage by the builders.
-func (m *ProcedureMutation) RunIDs() (ids []string) {
-	if id := m.run; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetRun reset all changes of the "run" edge.
-func (m *ProcedureMutation) ResetRun() {
-	m.run = nil
-	m.clearedrun = false
-}
-
-// Op returns the operation name.
-func (m *ProcedureMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (Procedure).
-func (m *ProcedureMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during
-// this mutation. Note that, in order to get all numeric
-// fields that were in/decremented, call AddedFields().
-func (m *ProcedureMutation) Fields() []string {
-	fields := make([]string, 0, 8)
-	if m.createdAt != nil {
-		fields = append(fields, procedure.FieldCreatedAt)
-	}
-	if m.updatedAt != nil {
-		fields = append(fields, procedure.FieldUpdatedAt)
-	}
-	if m.name != nil {
-		fields = append(fields, procedure.FieldName)
-	}
-	if m.selectionType != nil {
-		fields = append(fields, procedure.FieldSelectionType)
-	}
-	if m.participantCount != nil {
-		fields = append(fields, procedure.FieldParticipantCount)
-	}
-	if m.internalCriteria != nil {
-		fields = append(fields, procedure.FieldInternalCriteria)
-	}
-	if m.mturkCriteria != nil {
-		fields = append(fields, procedure.FieldMturkCriteria)
-	}
-	if m.adult != nil {
-		fields = append(fields, procedure.FieldAdult)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name.
-// The second boolean value indicates that this field was
-// not set, or was not define in the schema.
-func (m *ProcedureMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case procedure.FieldCreatedAt:
-		return m.CreatedAt()
-	case procedure.FieldUpdatedAt:
-		return m.UpdatedAt()
-	case procedure.FieldName:
-		return m.Name()
-	case procedure.FieldSelectionType:
-		return m.SelectionType()
-	case procedure.FieldParticipantCount:
-		return m.ParticipantCount()
-	case procedure.FieldInternalCriteria:
-		return m.InternalCriteria()
-	case procedure.FieldMturkCriteria:
-		return m.MturkCriteria()
-	case procedure.FieldAdult:
-		return m.Adult()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database.
-// An error is returned if the mutation operation is not UpdateOne,
-// or the query to the database was failed.
-func (m *ProcedureMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case procedure.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case procedure.FieldUpdatedAt:
-		return m.OldUpdatedAt(ctx)
-	case procedure.FieldName:
-		return m.OldName(ctx)
-	case procedure.FieldSelectionType:
-		return m.OldSelectionType(ctx)
-	case procedure.FieldParticipantCount:
-		return m.OldParticipantCount(ctx)
-	case procedure.FieldInternalCriteria:
-		return m.OldInternalCriteria(ctx)
-	case procedure.FieldMturkCriteria:
-		return m.OldMturkCriteria(ctx)
-	case procedure.FieldAdult:
-		return m.OldAdult(ctx)
-	}
-	return nil, fmt.Errorf("unknown Procedure field %s", name)
-}
-
-// SetField sets the value for the given name. It returns an
-// error if the field is not defined in the schema, or if the
-// type mismatch the field type.
-func (m *ProcedureMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case procedure.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case procedure.FieldUpdatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUpdatedAt(v)
-		return nil
-	case procedure.FieldName:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetName(v)
-		return nil
-	case procedure.FieldSelectionType:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSelectionType(v)
-		return nil
-	case procedure.FieldParticipantCount:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetParticipantCount(v)
-		return nil
-	case procedure.FieldInternalCriteria:
-		v, ok := value.([]byte)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetInternalCriteria(v)
-		return nil
-	case procedure.FieldMturkCriteria:
-		v, ok := value.([]byte)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetMturkCriteria(v)
-		return nil
-	case procedure.FieldAdult:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAdult(v)
-		return nil
-	}
-	return fmt.Errorf("unknown Procedure field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented
-// or decremented during this mutation.
-func (m *ProcedureMutation) AddedFields() []string {
-	var fields []string
-	if m.addparticipantCount != nil {
-		fields = append(fields, procedure.FieldParticipantCount)
-	}
-	return fields
-}
-
-// AddedField returns the numeric value that was in/decremented
-// from a field with the given name. The second value indicates
-// that this field was not set, or was not define in the schema.
-func (m *ProcedureMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case procedure.FieldParticipantCount:
-		return m.AddedParticipantCount()
-	}
-	return nil, false
-}
-
-// AddField adds the value for the given name. It returns an
-// error if the field is not defined in the schema, or if the
-// type mismatch the field type.
-func (m *ProcedureMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	case procedure.FieldParticipantCount:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddParticipantCount(v)
-		return nil
-	}
-	return fmt.Errorf("unknown Procedure numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared
-// during this mutation.
-func (m *ProcedureMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicates if this field was
-// cleared in this mutation.
-func (m *ProcedureMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value for the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *ProcedureMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown Procedure nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation regarding the
-// given field name. It returns an error if the field is not
-// defined in the schema.
-func (m *ProcedureMutation) ResetField(name string) error {
-	switch name {
-	case procedure.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case procedure.FieldUpdatedAt:
-		m.ResetUpdatedAt()
-		return nil
-	case procedure.FieldName:
-		m.ResetName()
-		return nil
-	case procedure.FieldSelectionType:
-		m.ResetSelectionType()
-		return nil
-	case procedure.FieldParticipantCount:
-		m.ResetParticipantCount()
-		return nil
-	case procedure.FieldInternalCriteria:
-		m.ResetInternalCriteria()
-		return nil
-	case procedure.FieldMturkCriteria:
-		m.ResetMturkCriteria()
-		return nil
-	case procedure.FieldAdult:
-		m.ResetAdult()
-		return nil
-	}
-	return fmt.Errorf("unknown Procedure field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this
-// mutation.
-func (m *ProcedureMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
-	if m.steps != nil {
-		edges = append(edges, procedure.EdgeSteps)
-	}
-	if m.project != nil {
-		edges = append(edges, procedure.EdgeProject)
-	}
-	if m.creator != nil {
-		edges = append(edges, procedure.EdgeCreator)
-	}
-	if m.run != nil {
-		edges = append(edges, procedure.EdgeRun)
-	}
-	return edges
-}
-
-// AddedIDs returns all ids (to other nodes) that were added for
-// the given edge name.
-func (m *ProcedureMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case procedure.EdgeSteps:
-		ids := make([]ent.Value, 0, len(m.steps))
-		for id := range m.steps {
-			ids = append(ids, id)
-		}
-		return ids
-	case procedure.EdgeProject:
-		if id := m.project; id != nil {
-			return []ent.Value{*id}
-		}
-	case procedure.EdgeCreator:
-		if id := m.creator; id != nil {
-			return []ent.Value{*id}
-		}
-	case procedure.EdgeRun:
-		if id := m.run; id != nil {
-			return []ent.Value{*id}
-		}
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this
-// mutation.
-func (m *ProcedureMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
-	if m.removedsteps != nil {
-		edges = append(edges, procedure.EdgeSteps)
-	}
-	return edges
-}
-
-// RemovedIDs returns all ids (to other nodes) that were removed for
-// the given edge name.
-func (m *ProcedureMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case procedure.EdgeSteps:
-		ids := make([]ent.Value, 0, len(m.removedsteps))
-		for id := range m.removedsteps {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this
-// mutation.
-func (m *ProcedureMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
-	if m.clearedproject {
-		edges = append(edges, procedure.EdgeProject)
-	}
-	if m.clearedcreator {
-		edges = append(edges, procedure.EdgeCreator)
-	}
-	if m.clearedrun {
-		edges = append(edges, procedure.EdgeRun)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean indicates if this edge was
-// cleared in this mutation.
-func (m *ProcedureMutation) EdgeCleared(name string) bool {
-	switch name {
-	case procedure.EdgeProject:
-		return m.clearedproject
-	case procedure.EdgeCreator:
-		return m.clearedcreator
-	case procedure.EdgeRun:
-		return m.clearedrun
-	}
-	return false
-}
-
-// ClearEdge clears the value for the given name. It returns an
-// error if the edge name is not defined in the schema.
-func (m *ProcedureMutation) ClearEdge(name string) error {
-	switch name {
-	case procedure.EdgeProject:
-		m.ClearProject()
-		return nil
-	case procedure.EdgeCreator:
-		m.ClearCreator()
-		return nil
-	case procedure.EdgeRun:
-		m.ClearRun()
-		return nil
-	}
-	return fmt.Errorf("unknown Procedure unique edge %s", name)
-}
-
-// ResetEdge resets all changes in the mutation regarding the
-// given edge name. It returns an error if the edge is not
-// defined in the schema.
-func (m *ProcedureMutation) ResetEdge(name string) error {
-	switch name {
-	case procedure.EdgeSteps:
-		m.ResetSteps()
-		return nil
-	case procedure.EdgeProject:
-		m.ResetProject()
-		return nil
-	case procedure.EdgeCreator:
-		m.ResetCreator()
-		return nil
-	case procedure.EdgeRun:
-		m.ResetRun()
-		return nil
-	}
-	return fmt.Errorf("unknown Procedure edge %s", name)
 }
 
 // ProjectMutation represents an operation that mutate the Projects
 // nodes in the graph.
 type ProjectMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *string
-	createdAt         *time.Time
-	updatedAt         *time.Time
-	projectID         *string
-	name              *string
-	clearedFields     map[string]struct{}
-	runs              map[string]struct{}
-	removedruns       map[string]struct{}
-	procedures        map[string]struct{}
-	removedprocedures map[string]struct{}
-	owner             *string
-	clearedowner      bool
-	done              bool
-	oldValue          func(context.Context) (*Project, error)
+	op               Op
+	typ              string
+	id               *string
+	createdAt        *time.Time
+	updatedAt        *time.Time
+	projectID        *string
+	name             *string
+	clearedFields    map[string]struct{}
+	runs             map[string]struct{}
+	removedruns      map[string]struct{}
+	templates        map[string]struct{}
+	removedtemplates map[string]struct{}
+	owner            *string
+	clearedowner     bool
+	done             bool
+	oldValue         func(context.Context) (*Project, error)
 }
 
 var _ ent.Mutation = (*ProjectMutation)(nil)
@@ -1908,46 +936,46 @@ func (m *ProjectMutation) ResetRuns() {
 	m.removedruns = nil
 }
 
-// AddProcedureIDs adds the procedures edge to Procedure by ids.
-func (m *ProjectMutation) AddProcedureIDs(ids ...string) {
-	if m.procedures == nil {
-		m.procedures = make(map[string]struct{})
+// AddTemplateIDs adds the templates edge to Template by ids.
+func (m *ProjectMutation) AddTemplateIDs(ids ...string) {
+	if m.templates == nil {
+		m.templates = make(map[string]struct{})
 	}
 	for i := range ids {
-		m.procedures[ids[i]] = struct{}{}
+		m.templates[ids[i]] = struct{}{}
 	}
 }
 
-// RemoveProcedureIDs removes the procedures edge to Procedure by ids.
-func (m *ProjectMutation) RemoveProcedureIDs(ids ...string) {
-	if m.removedprocedures == nil {
-		m.removedprocedures = make(map[string]struct{})
+// RemoveTemplateIDs removes the templates edge to Template by ids.
+func (m *ProjectMutation) RemoveTemplateIDs(ids ...string) {
+	if m.removedtemplates == nil {
+		m.removedtemplates = make(map[string]struct{})
 	}
 	for i := range ids {
-		m.removedprocedures[ids[i]] = struct{}{}
+		m.removedtemplates[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedProcedures returns the removed ids of procedures.
-func (m *ProjectMutation) RemovedProceduresIDs() (ids []string) {
-	for id := range m.removedprocedures {
+// RemovedTemplates returns the removed ids of templates.
+func (m *ProjectMutation) RemovedTemplatesIDs() (ids []string) {
+	for id := range m.removedtemplates {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ProceduresIDs returns the procedures ids in the mutation.
-func (m *ProjectMutation) ProceduresIDs() (ids []string) {
-	for id := range m.procedures {
+// TemplatesIDs returns the templates ids in the mutation.
+func (m *ProjectMutation) TemplatesIDs() (ids []string) {
+	for id := range m.templates {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetProcedures reset all changes of the "procedures" edge.
-func (m *ProjectMutation) ResetProcedures() {
-	m.procedures = nil
-	m.removedprocedures = nil
+// ResetTemplates reset all changes of the "templates" edge.
+func (m *ProjectMutation) ResetTemplates() {
+	m.templates = nil
+	m.removedtemplates = nil
 }
 
 // SetOwnerID sets the owner edge to Admin by id.
@@ -2159,8 +1187,8 @@ func (m *ProjectMutation) AddedEdges() []string {
 	if m.runs != nil {
 		edges = append(edges, project.EdgeRuns)
 	}
-	if m.procedures != nil {
-		edges = append(edges, project.EdgeProcedures)
+	if m.templates != nil {
+		edges = append(edges, project.EdgeTemplates)
 	}
 	if m.owner != nil {
 		edges = append(edges, project.EdgeOwner)
@@ -2178,9 +1206,9 @@ func (m *ProjectMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case project.EdgeProcedures:
-		ids := make([]ent.Value, 0, len(m.procedures))
-		for id := range m.procedures {
+	case project.EdgeTemplates:
+		ids := make([]ent.Value, 0, len(m.templates))
+		for id := range m.templates {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2199,8 +1227,8 @@ func (m *ProjectMutation) RemovedEdges() []string {
 	if m.removedruns != nil {
 		edges = append(edges, project.EdgeRuns)
 	}
-	if m.removedprocedures != nil {
-		edges = append(edges, project.EdgeProcedures)
+	if m.removedtemplates != nil {
+		edges = append(edges, project.EdgeTemplates)
 	}
 	return edges
 }
@@ -2215,9 +1243,9 @@ func (m *ProjectMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case project.EdgeProcedures:
-		ids := make([]ent.Value, 0, len(m.removedprocedures))
-		for id := range m.removedprocedures {
+	case project.EdgeTemplates:
+		ids := make([]ent.Value, 0, len(m.removedtemplates))
+		for id := range m.removedtemplates {
 			ids = append(ids, id)
 		}
 		return ids
@@ -2264,8 +1292,8 @@ func (m *ProjectMutation) ResetEdge(name string) error {
 	case project.EdgeRuns:
 		m.ResetRuns()
 		return nil
-	case project.EdgeProcedures:
-		m.ResetProcedures()
+	case project.EdgeTemplates:
+		m.ResetTemplates()
 		return nil
 	case project.EdgeOwner:
 		m.ResetOwner()
@@ -2278,26 +1306,26 @@ func (m *ProjectMutation) ResetEdge(name string) error {
 // nodes in the graph.
 type RunMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *string
-	createdAt        *time.Time
-	updatedAt        *time.Time
-	name             *string
-	status           *run.Status
-	startAt          *time.Time
-	startedAt        *time.Time
-	endedAt          *time.Time
-	error            *string
-	clearedFields    map[string]struct{}
-	project          *string
-	clearedproject   bool
-	procedure        *string
-	clearedprocedure bool
-	steps            map[string]struct{}
-	removedsteps     map[string]struct{}
-	done             bool
-	oldValue         func(context.Context) (*Run, error)
+	op              Op
+	typ             string
+	id              *string
+	createdAt       *time.Time
+	updatedAt       *time.Time
+	name            *string
+	status          *run.Status
+	startAt         *time.Time
+	startedAt       *time.Time
+	endedAt         *time.Time
+	error           *string
+	clearedFields   map[string]struct{}
+	project         *string
+	clearedproject  bool
+	template        *string
+	clearedtemplate bool
+	steps           map[string]struct{}
+	removedsteps    map[string]struct{}
+	done            bool
+	oldValue        func(context.Context) (*Run, error)
 }
 
 var _ ent.Mutation = (*RunMutation)(nil)
@@ -2772,43 +1800,43 @@ func (m *RunMutation) ResetProject() {
 	m.clearedproject = false
 }
 
-// SetProcedureID sets the procedure edge to Procedure by id.
-func (m *RunMutation) SetProcedureID(id string) {
-	m.procedure = &id
+// SetTemplateID sets the template edge to Template by id.
+func (m *RunMutation) SetTemplateID(id string) {
+	m.template = &id
 }
 
-// ClearProcedure clears the procedure edge to Procedure.
-func (m *RunMutation) ClearProcedure() {
-	m.clearedprocedure = true
+// ClearTemplate clears the template edge to Template.
+func (m *RunMutation) ClearTemplate() {
+	m.clearedtemplate = true
 }
 
-// ProcedureCleared returns if the edge procedure was cleared.
-func (m *RunMutation) ProcedureCleared() bool {
-	return m.clearedprocedure
+// TemplateCleared returns if the edge template was cleared.
+func (m *RunMutation) TemplateCleared() bool {
+	return m.clearedtemplate
 }
 
-// ProcedureID returns the procedure id in the mutation.
-func (m *RunMutation) ProcedureID() (id string, exists bool) {
-	if m.procedure != nil {
-		return *m.procedure, true
+// TemplateID returns the template id in the mutation.
+func (m *RunMutation) TemplateID() (id string, exists bool) {
+	if m.template != nil {
+		return *m.template, true
 	}
 	return
 }
 
-// ProcedureIDs returns the procedure ids in the mutation.
+// TemplateIDs returns the template ids in the mutation.
 // Note that ids always returns len(ids) <= 1 for unique edges, and you should use
-// ProcedureID instead. It exists only for internal usage by the builders.
-func (m *RunMutation) ProcedureIDs() (ids []string) {
-	if id := m.procedure; id != nil {
+// TemplateID instead. It exists only for internal usage by the builders.
+func (m *RunMutation) TemplateIDs() (ids []string) {
+	if id := m.template; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetProcedure reset all changes of the "procedure" edge.
-func (m *RunMutation) ResetProcedure() {
-	m.procedure = nil
-	m.clearedprocedure = false
+// ResetTemplate reset all changes of the "template" edge.
+func (m *RunMutation) ResetTemplate() {
+	m.template = nil
+	m.clearedtemplate = false
 }
 
 // AddStepIDs adds the steps edge to StepRun by ids.
@@ -3118,8 +2146,8 @@ func (m *RunMutation) AddedEdges() []string {
 	if m.project != nil {
 		edges = append(edges, run.EdgeProject)
 	}
-	if m.procedure != nil {
-		edges = append(edges, run.EdgeProcedure)
+	if m.template != nil {
+		edges = append(edges, run.EdgeTemplate)
 	}
 	if m.steps != nil {
 		edges = append(edges, run.EdgeSteps)
@@ -3135,8 +2163,8 @@ func (m *RunMutation) AddedIDs(name string) []ent.Value {
 		if id := m.project; id != nil {
 			return []ent.Value{*id}
 		}
-	case run.EdgeProcedure:
-		if id := m.procedure; id != nil {
+	case run.EdgeTemplate:
+		if id := m.template; id != nil {
 			return []ent.Value{*id}
 		}
 	case run.EdgeSteps:
@@ -3180,8 +2208,8 @@ func (m *RunMutation) ClearedEdges() []string {
 	if m.clearedproject {
 		edges = append(edges, run.EdgeProject)
 	}
-	if m.clearedprocedure {
-		edges = append(edges, run.EdgeProcedure)
+	if m.clearedtemplate {
+		edges = append(edges, run.EdgeTemplate)
 	}
 	return edges
 }
@@ -3192,8 +2220,8 @@ func (m *RunMutation) EdgeCleared(name string) bool {
 	switch name {
 	case run.EdgeProject:
 		return m.clearedproject
-	case run.EdgeProcedure:
-		return m.clearedprocedure
+	case run.EdgeTemplate:
+		return m.clearedtemplate
 	}
 	return false
 }
@@ -3205,8 +2233,8 @@ func (m *RunMutation) ClearEdge(name string) error {
 	case run.EdgeProject:
 		m.ClearProject()
 		return nil
-	case run.EdgeProcedure:
-		m.ClearProcedure()
+	case run.EdgeTemplate:
+		m.ClearTemplate()
 		return nil
 	}
 	return fmt.Errorf("unknown Run unique edge %s", name)
@@ -3220,8 +2248,8 @@ func (m *RunMutation) ResetEdge(name string) error {
 	case run.EdgeProject:
 		m.ResetProject()
 		return nil
-	case run.EdgeProcedure:
-		m.ResetProcedure()
+	case run.EdgeTemplate:
+		m.ResetTemplate()
 		return nil
 	case run.EdgeSteps:
 		m.ResetSteps()
@@ -3234,24 +2262,24 @@ func (m *RunMutation) ResetEdge(name string) error {
 // nodes in the graph.
 type StepMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *string
-	createdAt        *time.Time
-	updatedAt        *time.Time
-	_type            *step.Type
-	index            *int
-	addindex         *int
-	duration         *int
-	addduration      *int
-	msgArgs          *[]byte
-	hitArgs          *[]byte
-	filterArgs       *[]byte
-	clearedFields    map[string]struct{}
-	procedure        *string
-	clearedprocedure bool
-	done             bool
-	oldValue         func(context.Context) (*Step, error)
+	op              Op
+	typ             string
+	id              *string
+	createdAt       *time.Time
+	updatedAt       *time.Time
+	_type           *step.Type
+	index           *int
+	addindex        *int
+	duration        *int
+	addduration     *int
+	msgArgs         *[]byte
+	hitArgs         *[]byte
+	filterArgs      *[]byte
+	clearedFields   map[string]struct{}
+	template        *string
+	clearedtemplate bool
+	done            bool
+	oldValue        func(context.Context) (*Step, error)
 }
 
 var _ ent.Mutation = (*StepMutation)(nil)
@@ -3714,43 +2742,43 @@ func (m *StepMutation) ResetFilterArgs() {
 	delete(m.clearedFields, step.FieldFilterArgs)
 }
 
-// SetProcedureID sets the procedure edge to Procedure by id.
-func (m *StepMutation) SetProcedureID(id string) {
-	m.procedure = &id
+// SetTemplateID sets the template edge to Template by id.
+func (m *StepMutation) SetTemplateID(id string) {
+	m.template = &id
 }
 
-// ClearProcedure clears the procedure edge to Procedure.
-func (m *StepMutation) ClearProcedure() {
-	m.clearedprocedure = true
+// ClearTemplate clears the template edge to Template.
+func (m *StepMutation) ClearTemplate() {
+	m.clearedtemplate = true
 }
 
-// ProcedureCleared returns if the edge procedure was cleared.
-func (m *StepMutation) ProcedureCleared() bool {
-	return m.clearedprocedure
+// TemplateCleared returns if the edge template was cleared.
+func (m *StepMutation) TemplateCleared() bool {
+	return m.clearedtemplate
 }
 
-// ProcedureID returns the procedure id in the mutation.
-func (m *StepMutation) ProcedureID() (id string, exists bool) {
-	if m.procedure != nil {
-		return *m.procedure, true
+// TemplateID returns the template id in the mutation.
+func (m *StepMutation) TemplateID() (id string, exists bool) {
+	if m.template != nil {
+		return *m.template, true
 	}
 	return
 }
 
-// ProcedureIDs returns the procedure ids in the mutation.
+// TemplateIDs returns the template ids in the mutation.
 // Note that ids always returns len(ids) <= 1 for unique edges, and you should use
-// ProcedureID instead. It exists only for internal usage by the builders.
-func (m *StepMutation) ProcedureIDs() (ids []string) {
-	if id := m.procedure; id != nil {
+// TemplateID instead. It exists only for internal usage by the builders.
+func (m *StepMutation) TemplateIDs() (ids []string) {
+	if id := m.template; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetProcedure reset all changes of the "procedure" edge.
-func (m *StepMutation) ResetProcedure() {
-	m.procedure = nil
-	m.clearedprocedure = false
+// ResetTemplate reset all changes of the "template" edge.
+func (m *StepMutation) ResetTemplate() {
+	m.template = nil
+	m.clearedtemplate = false
 }
 
 // Op returns the operation name.
@@ -4036,8 +3064,8 @@ func (m *StepMutation) ResetField(name string) error {
 // mutation.
 func (m *StepMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.procedure != nil {
-		edges = append(edges, step.EdgeProcedure)
+	if m.template != nil {
+		edges = append(edges, step.EdgeTemplate)
 	}
 	return edges
 }
@@ -4046,8 +3074,8 @@ func (m *StepMutation) AddedEdges() []string {
 // the given edge name.
 func (m *StepMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case step.EdgeProcedure:
-		if id := m.procedure; id != nil {
+	case step.EdgeTemplate:
+		if id := m.template; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -4073,8 +3101,8 @@ func (m *StepMutation) RemovedIDs(name string) []ent.Value {
 // mutation.
 func (m *StepMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.clearedprocedure {
-		edges = append(edges, step.EdgeProcedure)
+	if m.clearedtemplate {
+		edges = append(edges, step.EdgeTemplate)
 	}
 	return edges
 }
@@ -4083,8 +3111,8 @@ func (m *StepMutation) ClearedEdges() []string {
 // cleared in this mutation.
 func (m *StepMutation) EdgeCleared(name string) bool {
 	switch name {
-	case step.EdgeProcedure:
-		return m.clearedprocedure
+	case step.EdgeTemplate:
+		return m.clearedtemplate
 	}
 	return false
 }
@@ -4093,8 +3121,8 @@ func (m *StepMutation) EdgeCleared(name string) bool {
 // error if the edge name is not defined in the schema.
 func (m *StepMutation) ClearEdge(name string) error {
 	switch name {
-	case step.EdgeProcedure:
-		m.ClearProcedure()
+	case step.EdgeTemplate:
+		m.ClearTemplate()
 		return nil
 	}
 	return fmt.Errorf("unknown Step unique edge %s", name)
@@ -4105,8 +3133,8 @@ func (m *StepMutation) ClearEdge(name string) error {
 // defined in the schema.
 func (m *StepMutation) ResetEdge(name string) error {
 	switch name {
-	case step.EdgeProcedure:
-		m.ResetProcedure()
+	case step.EdgeTemplate:
+		m.ResetTemplate()
 		return nil
 	}
 	return fmt.Errorf("unknown Step edge %s", name)
@@ -4734,4 +3762,976 @@ func (m *StepRunMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown StepRun edge %s", name)
+}
+
+// TemplateMutation represents an operation that mutate the Templates
+// nodes in the graph.
+type TemplateMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *string
+	createdAt           *time.Time
+	updatedAt           *time.Time
+	name                *string
+	selectionType       *string
+	participantCount    *int
+	addparticipantCount *int
+	internalCriteria    *[]byte
+	mturkCriteria       *[]byte
+	adult               *bool
+	clearedFields       map[string]struct{}
+	steps               map[string]struct{}
+	removedsteps        map[string]struct{}
+	project             *string
+	clearedproject      bool
+	creator             *string
+	clearedcreator      bool
+	run                 *string
+	clearedrun          bool
+	done                bool
+	oldValue            func(context.Context) (*Template, error)
+}
+
+var _ ent.Mutation = (*TemplateMutation)(nil)
+
+// templateOption allows to manage the mutation configuration using functional options.
+type templateOption func(*TemplateMutation)
+
+// newTemplateMutation creates new mutation for $n.Name.
+func newTemplateMutation(c config, op Op, opts ...templateOption) *TemplateMutation {
+	m := &TemplateMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTemplate,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTemplateID sets the id field of the mutation.
+func withTemplateID(id string) templateOption {
+	return func(m *TemplateMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Template
+		)
+		m.oldValue = func(ctx context.Context) (*Template, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Template.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTemplate sets the old Template of the mutation.
+func withTemplate(node *Template) templateOption {
+	return func(m *TemplateMutation) {
+		m.oldValue = func(context.Context) (*Template, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TemplateMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TemplateMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that, this
+// operation is accepted only on Template creation.
+func (m *TemplateMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the id value in the mutation. Note that, the id
+// is available only if it was provided to the builder.
+func (m *TemplateMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetCreatedAt sets the createdAt field.
+func (m *TemplateMutation) SetCreatedAt(t time.Time) {
+	m.createdAt = &t
+}
+
+// CreatedAt returns the createdAt value in the mutation.
+func (m *TemplateMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.createdAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old createdAt value of the Template.
+// If the Template object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *TemplateMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt reset all changes of the "createdAt" field.
+func (m *TemplateMutation) ResetCreatedAt() {
+	m.createdAt = nil
+}
+
+// SetUpdatedAt sets the updatedAt field.
+func (m *TemplateMutation) SetUpdatedAt(t time.Time) {
+	m.updatedAt = &t
+}
+
+// UpdatedAt returns the updatedAt value in the mutation.
+func (m *TemplateMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updatedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old updatedAt value of the Template.
+// If the Template object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *TemplateMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt reset all changes of the "updatedAt" field.
+func (m *TemplateMutation) ResetUpdatedAt() {
+	m.updatedAt = nil
+}
+
+// SetName sets the name field.
+func (m *TemplateMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the name value in the mutation.
+func (m *TemplateMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old name value of the Template.
+// If the Template object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *TemplateMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldName is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName reset all changes of the "name" field.
+func (m *TemplateMutation) ResetName() {
+	m.name = nil
+}
+
+// SetSelectionType sets the selectionType field.
+func (m *TemplateMutation) SetSelectionType(s string) {
+	m.selectionType = &s
+}
+
+// SelectionType returns the selectionType value in the mutation.
+func (m *TemplateMutation) SelectionType() (r string, exists bool) {
+	v := m.selectionType
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSelectionType returns the old selectionType value of the Template.
+// If the Template object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *TemplateMutation) OldSelectionType(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldSelectionType is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldSelectionType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSelectionType: %w", err)
+	}
+	return oldValue.SelectionType, nil
+}
+
+// ResetSelectionType reset all changes of the "selectionType" field.
+func (m *TemplateMutation) ResetSelectionType() {
+	m.selectionType = nil
+}
+
+// SetParticipantCount sets the participantCount field.
+func (m *TemplateMutation) SetParticipantCount(i int) {
+	m.participantCount = &i
+	m.addparticipantCount = nil
+}
+
+// ParticipantCount returns the participantCount value in the mutation.
+func (m *TemplateMutation) ParticipantCount() (r int, exists bool) {
+	v := m.participantCount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParticipantCount returns the old participantCount value of the Template.
+// If the Template object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *TemplateMutation) OldParticipantCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldParticipantCount is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldParticipantCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParticipantCount: %w", err)
+	}
+	return oldValue.ParticipantCount, nil
+}
+
+// AddParticipantCount adds i to participantCount.
+func (m *TemplateMutation) AddParticipantCount(i int) {
+	if m.addparticipantCount != nil {
+		*m.addparticipantCount += i
+	} else {
+		m.addparticipantCount = &i
+	}
+}
+
+// AddedParticipantCount returns the value that was added to the participantCount field in this mutation.
+func (m *TemplateMutation) AddedParticipantCount() (r int, exists bool) {
+	v := m.addparticipantCount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetParticipantCount reset all changes of the "participantCount" field.
+func (m *TemplateMutation) ResetParticipantCount() {
+	m.participantCount = nil
+	m.addparticipantCount = nil
+}
+
+// SetInternalCriteria sets the internalCriteria field.
+func (m *TemplateMutation) SetInternalCriteria(b []byte) {
+	m.internalCriteria = &b
+}
+
+// InternalCriteria returns the internalCriteria value in the mutation.
+func (m *TemplateMutation) InternalCriteria() (r []byte, exists bool) {
+	v := m.internalCriteria
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInternalCriteria returns the old internalCriteria value of the Template.
+// If the Template object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *TemplateMutation) OldInternalCriteria(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldInternalCriteria is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldInternalCriteria requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInternalCriteria: %w", err)
+	}
+	return oldValue.InternalCriteria, nil
+}
+
+// ResetInternalCriteria reset all changes of the "internalCriteria" field.
+func (m *TemplateMutation) ResetInternalCriteria() {
+	m.internalCriteria = nil
+}
+
+// SetMturkCriteria sets the mturkCriteria field.
+func (m *TemplateMutation) SetMturkCriteria(b []byte) {
+	m.mturkCriteria = &b
+}
+
+// MturkCriteria returns the mturkCriteria value in the mutation.
+func (m *TemplateMutation) MturkCriteria() (r []byte, exists bool) {
+	v := m.mturkCriteria
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMturkCriteria returns the old mturkCriteria value of the Template.
+// If the Template object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *TemplateMutation) OldMturkCriteria(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMturkCriteria is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMturkCriteria requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMturkCriteria: %w", err)
+	}
+	return oldValue.MturkCriteria, nil
+}
+
+// ResetMturkCriteria reset all changes of the "mturkCriteria" field.
+func (m *TemplateMutation) ResetMturkCriteria() {
+	m.mturkCriteria = nil
+}
+
+// SetAdult sets the adult field.
+func (m *TemplateMutation) SetAdult(b bool) {
+	m.adult = &b
+}
+
+// Adult returns the adult value in the mutation.
+func (m *TemplateMutation) Adult() (r bool, exists bool) {
+	v := m.adult
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdult returns the old adult value of the Template.
+// If the Template object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *TemplateMutation) OldAdult(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldAdult is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldAdult requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdult: %w", err)
+	}
+	return oldValue.Adult, nil
+}
+
+// ResetAdult reset all changes of the "adult" field.
+func (m *TemplateMutation) ResetAdult() {
+	m.adult = nil
+}
+
+// AddStepIDs adds the steps edge to Step by ids.
+func (m *TemplateMutation) AddStepIDs(ids ...string) {
+	if m.steps == nil {
+		m.steps = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.steps[ids[i]] = struct{}{}
+	}
+}
+
+// RemoveStepIDs removes the steps edge to Step by ids.
+func (m *TemplateMutation) RemoveStepIDs(ids ...string) {
+	if m.removedsteps == nil {
+		m.removedsteps = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedsteps[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSteps returns the removed ids of steps.
+func (m *TemplateMutation) RemovedStepsIDs() (ids []string) {
+	for id := range m.removedsteps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// StepsIDs returns the steps ids in the mutation.
+func (m *TemplateMutation) StepsIDs() (ids []string) {
+	for id := range m.steps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSteps reset all changes of the "steps" edge.
+func (m *TemplateMutation) ResetSteps() {
+	m.steps = nil
+	m.removedsteps = nil
+}
+
+// SetProjectID sets the project edge to Project by id.
+func (m *TemplateMutation) SetProjectID(id string) {
+	m.project = &id
+}
+
+// ClearProject clears the project edge to Project.
+func (m *TemplateMutation) ClearProject() {
+	m.clearedproject = true
+}
+
+// ProjectCleared returns if the edge project was cleared.
+func (m *TemplateMutation) ProjectCleared() bool {
+	return m.clearedproject
+}
+
+// ProjectID returns the project id in the mutation.
+func (m *TemplateMutation) ProjectID() (id string, exists bool) {
+	if m.project != nil {
+		return *m.project, true
+	}
+	return
+}
+
+// ProjectIDs returns the project ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// ProjectID instead. It exists only for internal usage by the builders.
+func (m *TemplateMutation) ProjectIDs() (ids []string) {
+	if id := m.project; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProject reset all changes of the "project" edge.
+func (m *TemplateMutation) ResetProject() {
+	m.project = nil
+	m.clearedproject = false
+}
+
+// SetCreatorID sets the creator edge to Admin by id.
+func (m *TemplateMutation) SetCreatorID(id string) {
+	m.creator = &id
+}
+
+// ClearCreator clears the creator edge to Admin.
+func (m *TemplateMutation) ClearCreator() {
+	m.clearedcreator = true
+}
+
+// CreatorCleared returns if the edge creator was cleared.
+func (m *TemplateMutation) CreatorCleared() bool {
+	return m.clearedcreator
+}
+
+// CreatorID returns the creator id in the mutation.
+func (m *TemplateMutation) CreatorID() (id string, exists bool) {
+	if m.creator != nil {
+		return *m.creator, true
+	}
+	return
+}
+
+// CreatorIDs returns the creator ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// CreatorID instead. It exists only for internal usage by the builders.
+func (m *TemplateMutation) CreatorIDs() (ids []string) {
+	if id := m.creator; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCreator reset all changes of the "creator" edge.
+func (m *TemplateMutation) ResetCreator() {
+	m.creator = nil
+	m.clearedcreator = false
+}
+
+// SetRunID sets the run edge to Run by id.
+func (m *TemplateMutation) SetRunID(id string) {
+	m.run = &id
+}
+
+// ClearRun clears the run edge to Run.
+func (m *TemplateMutation) ClearRun() {
+	m.clearedrun = true
+}
+
+// RunCleared returns if the edge run was cleared.
+func (m *TemplateMutation) RunCleared() bool {
+	return m.clearedrun
+}
+
+// RunID returns the run id in the mutation.
+func (m *TemplateMutation) RunID() (id string, exists bool) {
+	if m.run != nil {
+		return *m.run, true
+	}
+	return
+}
+
+// RunIDs returns the run ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// RunID instead. It exists only for internal usage by the builders.
+func (m *TemplateMutation) RunIDs() (ids []string) {
+	if id := m.run; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRun reset all changes of the "run" edge.
+func (m *TemplateMutation) ResetRun() {
+	m.run = nil
+	m.clearedrun = false
+}
+
+// Op returns the operation name.
+func (m *TemplateMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Template).
+func (m *TemplateMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during
+// this mutation. Note that, in order to get all numeric
+// fields that were in/decremented, call AddedFields().
+func (m *TemplateMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.createdAt != nil {
+		fields = append(fields, template.FieldCreatedAt)
+	}
+	if m.updatedAt != nil {
+		fields = append(fields, template.FieldUpdatedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, template.FieldName)
+	}
+	if m.selectionType != nil {
+		fields = append(fields, template.FieldSelectionType)
+	}
+	if m.participantCount != nil {
+		fields = append(fields, template.FieldParticipantCount)
+	}
+	if m.internalCriteria != nil {
+		fields = append(fields, template.FieldInternalCriteria)
+	}
+	if m.mturkCriteria != nil {
+		fields = append(fields, template.FieldMturkCriteria)
+	}
+	if m.adult != nil {
+		fields = append(fields, template.FieldAdult)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name.
+// The second boolean value indicates that this field was
+// not set, or was not define in the schema.
+func (m *TemplateMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case template.FieldCreatedAt:
+		return m.CreatedAt()
+	case template.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case template.FieldName:
+		return m.Name()
+	case template.FieldSelectionType:
+		return m.SelectionType()
+	case template.FieldParticipantCount:
+		return m.ParticipantCount()
+	case template.FieldInternalCriteria:
+		return m.InternalCriteria()
+	case template.FieldMturkCriteria:
+		return m.MturkCriteria()
+	case template.FieldAdult:
+		return m.Adult()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database.
+// An error is returned if the mutation operation is not UpdateOne,
+// or the query to the database was failed.
+func (m *TemplateMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case template.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case template.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case template.FieldName:
+		return m.OldName(ctx)
+	case template.FieldSelectionType:
+		return m.OldSelectionType(ctx)
+	case template.FieldParticipantCount:
+		return m.OldParticipantCount(ctx)
+	case template.FieldInternalCriteria:
+		return m.OldInternalCriteria(ctx)
+	case template.FieldMturkCriteria:
+		return m.OldMturkCriteria(ctx)
+	case template.FieldAdult:
+		return m.OldAdult(ctx)
+	}
+	return nil, fmt.Errorf("unknown Template field %s", name)
+}
+
+// SetField sets the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *TemplateMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case template.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case template.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case template.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case template.FieldSelectionType:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSelectionType(v)
+		return nil
+	case template.FieldParticipantCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParticipantCount(v)
+		return nil
+	case template.FieldInternalCriteria:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInternalCriteria(v)
+		return nil
+	case template.FieldMturkCriteria:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMturkCriteria(v)
+		return nil
+	case template.FieldAdult:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdult(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Template field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented
+// or decremented during this mutation.
+func (m *TemplateMutation) AddedFields() []string {
+	var fields []string
+	if m.addparticipantCount != nil {
+		fields = append(fields, template.FieldParticipantCount)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was in/decremented
+// from a field with the given name. The second value indicates
+// that this field was not set, or was not define in the schema.
+func (m *TemplateMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case template.FieldParticipantCount:
+		return m.AddedParticipantCount()
+	}
+	return nil, false
+}
+
+// AddField adds the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *TemplateMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case template.FieldParticipantCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddParticipantCount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Template numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared
+// during this mutation.
+func (m *TemplateMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicates if this field was
+// cleared in this mutation.
+func (m *TemplateMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value for the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TemplateMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Template nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation regarding the
+// given field name. It returns an error if the field is not
+// defined in the schema.
+func (m *TemplateMutation) ResetField(name string) error {
+	switch name {
+	case template.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case template.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case template.FieldName:
+		m.ResetName()
+		return nil
+	case template.FieldSelectionType:
+		m.ResetSelectionType()
+		return nil
+	case template.FieldParticipantCount:
+		m.ResetParticipantCount()
+		return nil
+	case template.FieldInternalCriteria:
+		m.ResetInternalCriteria()
+		return nil
+	case template.FieldMturkCriteria:
+		m.ResetMturkCriteria()
+		return nil
+	case template.FieldAdult:
+		m.ResetAdult()
+		return nil
+	}
+	return fmt.Errorf("unknown Template field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this
+// mutation.
+func (m *TemplateMutation) AddedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.steps != nil {
+		edges = append(edges, template.EdgeSteps)
+	}
+	if m.project != nil {
+		edges = append(edges, template.EdgeProject)
+	}
+	if m.creator != nil {
+		edges = append(edges, template.EdgeCreator)
+	}
+	if m.run != nil {
+		edges = append(edges, template.EdgeRun)
+	}
+	return edges
+}
+
+// AddedIDs returns all ids (to other nodes) that were added for
+// the given edge name.
+func (m *TemplateMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case template.EdgeSteps:
+		ids := make([]ent.Value, 0, len(m.steps))
+		for id := range m.steps {
+			ids = append(ids, id)
+		}
+		return ids
+	case template.EdgeProject:
+		if id := m.project; id != nil {
+			return []ent.Value{*id}
+		}
+	case template.EdgeCreator:
+		if id := m.creator; id != nil {
+			return []ent.Value{*id}
+		}
+	case template.EdgeRun:
+		if id := m.run; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this
+// mutation.
+func (m *TemplateMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.removedsteps != nil {
+		edges = append(edges, template.EdgeSteps)
+	}
+	return edges
+}
+
+// RemovedIDs returns all ids (to other nodes) that were removed for
+// the given edge name.
+func (m *TemplateMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case template.EdgeSteps:
+		ids := make([]ent.Value, 0, len(m.removedsteps))
+		for id := range m.removedsteps {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this
+// mutation.
+func (m *TemplateMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.clearedproject {
+		edges = append(edges, template.EdgeProject)
+	}
+	if m.clearedcreator {
+		edges = append(edges, template.EdgeCreator)
+	}
+	if m.clearedrun {
+		edges = append(edges, template.EdgeRun)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean indicates if this edge was
+// cleared in this mutation.
+func (m *TemplateMutation) EdgeCleared(name string) bool {
+	switch name {
+	case template.EdgeProject:
+		return m.clearedproject
+	case template.EdgeCreator:
+		return m.clearedcreator
+	case template.EdgeRun:
+		return m.clearedrun
+	}
+	return false
+}
+
+// ClearEdge clears the value for the given name. It returns an
+// error if the edge name is not defined in the schema.
+func (m *TemplateMutation) ClearEdge(name string) error {
+	switch name {
+	case template.EdgeProject:
+		m.ClearProject()
+		return nil
+	case template.EdgeCreator:
+		m.ClearCreator()
+		return nil
+	case template.EdgeRun:
+		m.ClearRun()
+		return nil
+	}
+	return fmt.Errorf("unknown Template unique edge %s", name)
+}
+
+// ResetEdge resets all changes in the mutation regarding the
+// given edge name. It returns an error if the edge is not
+// defined in the schema.
+func (m *TemplateMutation) ResetEdge(name string) error {
+	switch name {
+	case template.EdgeSteps:
+		m.ResetSteps()
+		return nil
+	case template.EdgeProject:
+		m.ResetProject()
+		return nil
+	case template.EdgeCreator:
+		m.ResetCreator()
+		return nil
+	case template.EdgeRun:
+		m.ResetRun()
+		return nil
+	}
+	return fmt.Errorf("unknown Template edge %s", name)
 }

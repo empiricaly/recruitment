@@ -33,8 +33,8 @@ type Admin struct {
 type AdminEdges struct {
 	// Projects holds the value of the projects edge.
 	Projects []*Project
-	// Procedures holds the value of the procedures edge.
-	Procedures []*Procedure
+	// Templates holds the value of the templates edge.
+	Templates []*Template
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
@@ -49,13 +49,13 @@ func (e AdminEdges) ProjectsOrErr() ([]*Project, error) {
 	return nil, &NotLoadedError{edge: "projects"}
 }
 
-// ProceduresOrErr returns the Procedures value or an error if the edge
+// TemplatesOrErr returns the Templates value or an error if the edge
 // was not loaded in eager-loading.
-func (e AdminEdges) ProceduresOrErr() ([]*Procedure, error) {
+func (e AdminEdges) TemplatesOrErr() ([]*Template, error) {
 	if e.loadedTypes[1] {
-		return e.Procedures, nil
+		return e.Templates, nil
 	}
-	return nil, &NotLoadedError{edge: "procedures"}
+	return nil, &NotLoadedError{edge: "templates"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -109,9 +109,9 @@ func (a *Admin) QueryProjects() *ProjectQuery {
 	return (&AdminClient{config: a.config}).QueryProjects(a)
 }
 
-// QueryProcedures queries the procedures edge of the Admin.
-func (a *Admin) QueryProcedures() *ProcedureQuery {
-	return (&AdminClient{config: a.config}).QueryProcedures(a)
+// QueryTemplates queries the templates edge of the Admin.
+func (a *Admin) QueryTemplates() *TemplateQuery {
+	return (&AdminClient{config: a.config}).QueryTemplates(a)
 }
 
 // Update returns a builder for updating this Admin.

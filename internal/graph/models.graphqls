@@ -83,7 +83,7 @@ enum SelectionType {
 }
 
 """
-A Project is a container to organize Procedures and Runs.
+A Project is a container to organize Templates and Runs.
 """
 type Project {
   id: ID!
@@ -104,9 +104,9 @@ type Project {
   name: String!
 
   """
-  Procedures contained in Project
+  Templates contained in Project
   """
-  procedures: [Procedure!]! @goField(forceResolver: true)
+  templates: [Template!]! @goField(forceResolver: true)
 
   """
   Runs contained in Project
@@ -120,7 +120,7 @@ type Project {
 }
 
 """
-A Run is an instance of a Procedure. It goes through all Steps in the Procedure,
+A Run is an instance of a Template. It goes through all Steps in the Template,
 managing participants, timing, messages, redirects, filter, and interactions
 with external APIs.
 """
@@ -137,10 +137,10 @@ type Run {
 
   """
   Procudure this Run corresponds to. When a Run is started, an immutable
-  copy of the Procedure is made at that point in time so that further changes to
-  the Procedure will not affect the Run.
+  copy of the Template is made at that point in time so that further changes to
+  the Template will not affect the Run.
   """
-  procedure: Procedure! @goField(forceResolver: true)
+  template: Template! @goField(forceResolver: true)
 
   """
   Status of the Run, indicating if the Run has started, is ongoing, finished, or
@@ -164,7 +164,7 @@ type Run {
   endedAt: DateTime
 
   """
-  Steps are instanciated Steps, corresponding to the Procedure Steps and
+  Steps are instanciated Steps, corresponding to the Template Steps and
   containing the state of process of each Step.
   """
   steps: [StepRun!]! @goField(forceResolver: true)
@@ -227,10 +227,10 @@ type StepRun {
 }
 
 """
-Procedure is a series of Steps to execute in a Procedure Run. A
-procedure starts with the selection of Participants.
+Template is a series of Steps to execute in a Run. A
+Template starts with the selection of Participants.
 """
-type Procedure {
+type Template {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -257,7 +257,7 @@ type Procedure {
   mturkCriteria: MTurkCriteria @goField(forceResolver: true)
 
   """
-  Ordered list of Steps in a Procedure.
+  Ordered list of Steps in a Template.
   """
   steps: [Step!]! @goField(forceResolver: true)
 
@@ -459,7 +459,7 @@ type MTurkLocale {
 }
 
 """
-Steps are the ordered parts of a Procedure.
+Steps are the ordered parts of a Template.
 """
 type Step {
   id: ID!
@@ -468,7 +468,7 @@ type Step {
   creator: Admin!
 
   """
-  Index is the position of the step in the Procedure.
+  Index is the position of the step in the Template.
   """
   index: Int!
 
@@ -481,7 +481,7 @@ type Step {
   Duration of Step in seconds. At the end of the duration, the next Step will
   execute.
   If set to 0, the Step executes and immediately moves onto the next Step. This
-  mostly works for PARTICIPANT_FILTER Steps and the last Step in a Procedure.
+  mostly works for PARTICIPANT_FILTER Steps and the last Step in a Template.
   """
   duration: Int!
 
@@ -526,8 +526,8 @@ type FilterStepArgs {
   - `participants`: the participants entering this step
   - `step`: this step (contains the definition of this step: duration, etc.)
   - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
-  - `procedure`: parent procedure of step (contains the definition of the Procedure)
-  - `run`: run this step is part of (contains the instance of the Procedure)
+  - `template`: parent template of step (contains the definition of the Template)
+  - `run`: run this step is part of (contains the instance of the Template)
   The functions should return an array of participants.
   If the functions returns null or undefined, the participants are not filtered.
   If the function throws an exception, the run will fail.
@@ -617,8 +617,8 @@ type MessageStepArgs {
   - `url`: proxy URL if `url` exist on Step.
   - `step`: this step (contains the definition of this step: duration, etc.)
   - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
-  - `procedure`: parent Procedure of step (contains the definition of the Procedure)
-  - `run`: run this step is part of (contains the instance of the Procedure)
+  - `template`: parent Template of step (contains the definition of the Template)
+  - `run`: run this step is part of (contains the instance of the Template)
   - `participant`: current participant
   """
   message: String!

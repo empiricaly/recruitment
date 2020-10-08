@@ -9,217 +9,217 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/step"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
 
-// ProcedureUpdate is the builder for updating Procedure entities.
-type ProcedureUpdate struct {
+// TemplateUpdate is the builder for updating Template entities.
+type TemplateUpdate struct {
 	config
 	hooks      []Hook
-	mutation   *ProcedureMutation
-	predicates []predicate.Procedure
+	mutation   *TemplateMutation
+	predicates []predicate.Template
 }
 
 // Where adds a new predicate for the builder.
-func (pu *ProcedureUpdate) Where(ps ...predicate.Procedure) *ProcedureUpdate {
-	pu.predicates = append(pu.predicates, ps...)
-	return pu
+func (tu *TemplateUpdate) Where(ps ...predicate.Template) *TemplateUpdate {
+	tu.predicates = append(tu.predicates, ps...)
+	return tu
 }
 
 // SetUpdatedAt sets the updatedAt field.
-func (pu *ProcedureUpdate) SetUpdatedAt(t time.Time) *ProcedureUpdate {
-	pu.mutation.SetUpdatedAt(t)
-	return pu
+func (tu *TemplateUpdate) SetUpdatedAt(t time.Time) *TemplateUpdate {
+	tu.mutation.SetUpdatedAt(t)
+	return tu
 }
 
 // SetName sets the name field.
-func (pu *ProcedureUpdate) SetName(s string) *ProcedureUpdate {
-	pu.mutation.SetName(s)
-	return pu
+func (tu *TemplateUpdate) SetName(s string) *TemplateUpdate {
+	tu.mutation.SetName(s)
+	return tu
 }
 
 // SetSelectionType sets the selectionType field.
-func (pu *ProcedureUpdate) SetSelectionType(s string) *ProcedureUpdate {
-	pu.mutation.SetSelectionType(s)
-	return pu
+func (tu *TemplateUpdate) SetSelectionType(s string) *TemplateUpdate {
+	tu.mutation.SetSelectionType(s)
+	return tu
 }
 
 // SetParticipantCount sets the participantCount field.
-func (pu *ProcedureUpdate) SetParticipantCount(i int) *ProcedureUpdate {
-	pu.mutation.ResetParticipantCount()
-	pu.mutation.SetParticipantCount(i)
-	return pu
+func (tu *TemplateUpdate) SetParticipantCount(i int) *TemplateUpdate {
+	tu.mutation.ResetParticipantCount()
+	tu.mutation.SetParticipantCount(i)
+	return tu
 }
 
 // SetNillableParticipantCount sets the participantCount field if the given value is not nil.
-func (pu *ProcedureUpdate) SetNillableParticipantCount(i *int) *ProcedureUpdate {
+func (tu *TemplateUpdate) SetNillableParticipantCount(i *int) *TemplateUpdate {
 	if i != nil {
-		pu.SetParticipantCount(*i)
+		tu.SetParticipantCount(*i)
 	}
-	return pu
+	return tu
 }
 
 // AddParticipantCount adds i to participantCount.
-func (pu *ProcedureUpdate) AddParticipantCount(i int) *ProcedureUpdate {
-	pu.mutation.AddParticipantCount(i)
-	return pu
+func (tu *TemplateUpdate) AddParticipantCount(i int) *TemplateUpdate {
+	tu.mutation.AddParticipantCount(i)
+	return tu
 }
 
 // SetInternalCriteria sets the internalCriteria field.
-func (pu *ProcedureUpdate) SetInternalCriteria(b []byte) *ProcedureUpdate {
-	pu.mutation.SetInternalCriteria(b)
-	return pu
+func (tu *TemplateUpdate) SetInternalCriteria(b []byte) *TemplateUpdate {
+	tu.mutation.SetInternalCriteria(b)
+	return tu
 }
 
 // SetMturkCriteria sets the mturkCriteria field.
-func (pu *ProcedureUpdate) SetMturkCriteria(b []byte) *ProcedureUpdate {
-	pu.mutation.SetMturkCriteria(b)
-	return pu
+func (tu *TemplateUpdate) SetMturkCriteria(b []byte) *TemplateUpdate {
+	tu.mutation.SetMturkCriteria(b)
+	return tu
 }
 
 // SetAdult sets the adult field.
-func (pu *ProcedureUpdate) SetAdult(b bool) *ProcedureUpdate {
-	pu.mutation.SetAdult(b)
-	return pu
+func (tu *TemplateUpdate) SetAdult(b bool) *TemplateUpdate {
+	tu.mutation.SetAdult(b)
+	return tu
 }
 
 // SetNillableAdult sets the adult field if the given value is not nil.
-func (pu *ProcedureUpdate) SetNillableAdult(b *bool) *ProcedureUpdate {
+func (tu *TemplateUpdate) SetNillableAdult(b *bool) *TemplateUpdate {
 	if b != nil {
-		pu.SetAdult(*b)
+		tu.SetAdult(*b)
 	}
-	return pu
+	return tu
 }
 
 // AddStepIDs adds the steps edge to Step by ids.
-func (pu *ProcedureUpdate) AddStepIDs(ids ...string) *ProcedureUpdate {
-	pu.mutation.AddStepIDs(ids...)
-	return pu
+func (tu *TemplateUpdate) AddStepIDs(ids ...string) *TemplateUpdate {
+	tu.mutation.AddStepIDs(ids...)
+	return tu
 }
 
 // AddSteps adds the steps edges to Step.
-func (pu *ProcedureUpdate) AddSteps(s ...*Step) *ProcedureUpdate {
+func (tu *TemplateUpdate) AddSteps(s ...*Step) *TemplateUpdate {
 	ids := make([]string, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return pu.AddStepIDs(ids...)
+	return tu.AddStepIDs(ids...)
 }
 
 // SetProjectID sets the project edge to Project by id.
-func (pu *ProcedureUpdate) SetProjectID(id string) *ProcedureUpdate {
-	pu.mutation.SetProjectID(id)
-	return pu
+func (tu *TemplateUpdate) SetProjectID(id string) *TemplateUpdate {
+	tu.mutation.SetProjectID(id)
+	return tu
 }
 
 // SetNillableProjectID sets the project edge to Project by id if the given value is not nil.
-func (pu *ProcedureUpdate) SetNillableProjectID(id *string) *ProcedureUpdate {
+func (tu *TemplateUpdate) SetNillableProjectID(id *string) *TemplateUpdate {
 	if id != nil {
-		pu = pu.SetProjectID(*id)
+		tu = tu.SetProjectID(*id)
 	}
-	return pu
+	return tu
 }
 
 // SetProject sets the project edge to Project.
-func (pu *ProcedureUpdate) SetProject(p *Project) *ProcedureUpdate {
-	return pu.SetProjectID(p.ID)
+func (tu *TemplateUpdate) SetProject(p *Project) *TemplateUpdate {
+	return tu.SetProjectID(p.ID)
 }
 
 // SetCreatorID sets the creator edge to Admin by id.
-func (pu *ProcedureUpdate) SetCreatorID(id string) *ProcedureUpdate {
-	pu.mutation.SetCreatorID(id)
-	return pu
+func (tu *TemplateUpdate) SetCreatorID(id string) *TemplateUpdate {
+	tu.mutation.SetCreatorID(id)
+	return tu
 }
 
 // SetNillableCreatorID sets the creator edge to Admin by id if the given value is not nil.
-func (pu *ProcedureUpdate) SetNillableCreatorID(id *string) *ProcedureUpdate {
+func (tu *TemplateUpdate) SetNillableCreatorID(id *string) *TemplateUpdate {
 	if id != nil {
-		pu = pu.SetCreatorID(*id)
+		tu = tu.SetCreatorID(*id)
 	}
-	return pu
+	return tu
 }
 
 // SetCreator sets the creator edge to Admin.
-func (pu *ProcedureUpdate) SetCreator(a *Admin) *ProcedureUpdate {
-	return pu.SetCreatorID(a.ID)
+func (tu *TemplateUpdate) SetCreator(a *Admin) *TemplateUpdate {
+	return tu.SetCreatorID(a.ID)
 }
 
 // SetRunID sets the run edge to Run by id.
-func (pu *ProcedureUpdate) SetRunID(id string) *ProcedureUpdate {
-	pu.mutation.SetRunID(id)
-	return pu
+func (tu *TemplateUpdate) SetRunID(id string) *TemplateUpdate {
+	tu.mutation.SetRunID(id)
+	return tu
 }
 
 // SetNillableRunID sets the run edge to Run by id if the given value is not nil.
-func (pu *ProcedureUpdate) SetNillableRunID(id *string) *ProcedureUpdate {
+func (tu *TemplateUpdate) SetNillableRunID(id *string) *TemplateUpdate {
 	if id != nil {
-		pu = pu.SetRunID(*id)
+		tu = tu.SetRunID(*id)
 	}
-	return pu
+	return tu
 }
 
 // SetRun sets the run edge to Run.
-func (pu *ProcedureUpdate) SetRun(r *Run) *ProcedureUpdate {
-	return pu.SetRunID(r.ID)
+func (tu *TemplateUpdate) SetRun(r *Run) *TemplateUpdate {
+	return tu.SetRunID(r.ID)
 }
 
-// Mutation returns the ProcedureMutation object of the builder.
-func (pu *ProcedureUpdate) Mutation() *ProcedureMutation {
-	return pu.mutation
+// Mutation returns the TemplateMutation object of the builder.
+func (tu *TemplateUpdate) Mutation() *TemplateMutation {
+	return tu.mutation
 }
 
 // RemoveStepIDs removes the steps edge to Step by ids.
-func (pu *ProcedureUpdate) RemoveStepIDs(ids ...string) *ProcedureUpdate {
-	pu.mutation.RemoveStepIDs(ids...)
-	return pu
+func (tu *TemplateUpdate) RemoveStepIDs(ids ...string) *TemplateUpdate {
+	tu.mutation.RemoveStepIDs(ids...)
+	return tu
 }
 
 // RemoveSteps removes steps edges to Step.
-func (pu *ProcedureUpdate) RemoveSteps(s ...*Step) *ProcedureUpdate {
+func (tu *TemplateUpdate) RemoveSteps(s ...*Step) *TemplateUpdate {
 	ids := make([]string, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return pu.RemoveStepIDs(ids...)
+	return tu.RemoveStepIDs(ids...)
 }
 
 // ClearProject clears the project edge to Project.
-func (pu *ProcedureUpdate) ClearProject() *ProcedureUpdate {
-	pu.mutation.ClearProject()
-	return pu
+func (tu *TemplateUpdate) ClearProject() *TemplateUpdate {
+	tu.mutation.ClearProject()
+	return tu
 }
 
 // ClearCreator clears the creator edge to Admin.
-func (pu *ProcedureUpdate) ClearCreator() *ProcedureUpdate {
-	pu.mutation.ClearCreator()
-	return pu
+func (tu *TemplateUpdate) ClearCreator() *TemplateUpdate {
+	tu.mutation.ClearCreator()
+	return tu
 }
 
 // ClearRun clears the run edge to Run.
-func (pu *ProcedureUpdate) ClearRun() *ProcedureUpdate {
-	pu.mutation.ClearRun()
-	return pu
+func (tu *TemplateUpdate) ClearRun() *TemplateUpdate {
+	tu.mutation.ClearRun()
+	return tu
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
-func (pu *ProcedureUpdate) Save(ctx context.Context) (int, error) {
-	if _, ok := pu.mutation.UpdatedAt(); !ok {
-		v := procedure.UpdateDefaultUpdatedAt()
-		pu.mutation.SetUpdatedAt(v)
+func (tu *TemplateUpdate) Save(ctx context.Context) (int, error) {
+	if _, ok := tu.mutation.UpdatedAt(); !ok {
+		v := template.UpdateDefaultUpdatedAt()
+		tu.mutation.SetUpdatedAt(v)
 	}
-	if v, ok := pu.mutation.Name(); ok {
-		if err := procedure.NameValidator(v); err != nil {
+	if v, ok := tu.mutation.Name(); ok {
+		if err := template.NameValidator(v); err != nil {
 			return 0, &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
 		}
 	}
-	if v, ok := pu.mutation.ParticipantCount(); ok {
-		if err := procedure.ParticipantCountValidator(v); err != nil {
+	if v, ok := tu.mutation.ParticipantCount(); ok {
+		if err := template.ParticipantCountValidator(v); err != nil {
 			return 0, &ValidationError{Name: "participantCount", err: fmt.Errorf("ent: validator failed for field \"participantCount\": %w", err)}
 		}
 	}
@@ -228,23 +228,23 @@ func (pu *ProcedureUpdate) Save(ctx context.Context) (int, error) {
 		err      error
 		affected int
 	)
-	if len(pu.hooks) == 0 {
-		affected, err = pu.sqlSave(ctx)
+	if len(tu.hooks) == 0 {
+		affected, err = tu.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ProcedureMutation)
+			mutation, ok := m.(*TemplateMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
 			}
-			pu.mutation = mutation
-			affected, err = pu.sqlSave(ctx)
+			tu.mutation = mutation
+			affected, err = tu.sqlSave(ctx)
 			mutation.done = true
 			return affected, err
 		})
-		for i := len(pu.hooks) - 1; i >= 0; i-- {
-			mut = pu.hooks[i](mut)
+		for i := len(tu.hooks) - 1; i >= 0; i-- {
+			mut = tu.hooks[i](mut)
 		}
-		if _, err := mut.Mutate(ctx, pu.mutation); err != nil {
+		if _, err := mut.Mutate(ctx, tu.mutation); err != nil {
 			return 0, err
 		}
 	}
@@ -252,8 +252,8 @@ func (pu *ProcedureUpdate) Save(ctx context.Context) (int, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (pu *ProcedureUpdate) SaveX(ctx context.Context) int {
-	affected, err := pu.Save(ctx)
+func (tu *TemplateUpdate) SaveX(ctx context.Context) int {
+	affected, err := tu.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -261,98 +261,98 @@ func (pu *ProcedureUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (pu *ProcedureUpdate) Exec(ctx context.Context) error {
-	_, err := pu.Save(ctx)
+func (tu *TemplateUpdate) Exec(ctx context.Context) error {
+	_, err := tu.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (pu *ProcedureUpdate) ExecX(ctx context.Context) {
-	if err := pu.Exec(ctx); err != nil {
+func (tu *TemplateUpdate) ExecX(ctx context.Context) {
+	if err := tu.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
-func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
+func (tu *TemplateUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
-			Table:   procedure.Table,
-			Columns: procedure.Columns,
+			Table:   template.Table,
+			Columns: template.Columns,
 			ID: &sqlgraph.FieldSpec{
 				Type:   field.TypeString,
-				Column: procedure.FieldID,
+				Column: template.FieldID,
 			},
 		},
 	}
-	if ps := pu.predicates; len(ps) > 0 {
+	if ps := tu.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := pu.mutation.UpdatedAt(); ok {
+	if value, ok := tu.mutation.UpdatedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
-			Column: procedure.FieldUpdatedAt,
+			Column: template.FieldUpdatedAt,
 		})
 	}
-	if value, ok := pu.mutation.Name(); ok {
+	if value, ok := tu.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: procedure.FieldName,
+			Column: template.FieldName,
 		})
 	}
-	if value, ok := pu.mutation.SelectionType(); ok {
+	if value, ok := tu.mutation.SelectionType(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: procedure.FieldSelectionType,
+			Column: template.FieldSelectionType,
 		})
 	}
-	if value, ok := pu.mutation.ParticipantCount(); ok {
+	if value, ok := tu.mutation.ParticipantCount(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeInt,
 			Value:  value,
-			Column: procedure.FieldParticipantCount,
+			Column: template.FieldParticipantCount,
 		})
 	}
-	if value, ok := pu.mutation.AddedParticipantCount(); ok {
+	if value, ok := tu.mutation.AddedParticipantCount(); ok {
 		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
 			Type:   field.TypeInt,
 			Value:  value,
-			Column: procedure.FieldParticipantCount,
+			Column: template.FieldParticipantCount,
 		})
 	}
-	if value, ok := pu.mutation.InternalCriteria(); ok {
+	if value, ok := tu.mutation.InternalCriteria(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeBytes,
 			Value:  value,
-			Column: procedure.FieldInternalCriteria,
+			Column: template.FieldInternalCriteria,
 		})
 	}
-	if value, ok := pu.mutation.MturkCriteria(); ok {
+	if value, ok := tu.mutation.MturkCriteria(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeBytes,
 			Value:  value,
-			Column: procedure.FieldMturkCriteria,
+			Column: template.FieldMturkCriteria,
 		})
 	}
-	if value, ok := pu.mutation.Adult(); ok {
+	if value, ok := tu.mutation.Adult(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeBool,
 			Value:  value,
-			Column: procedure.FieldAdult,
+			Column: template.FieldAdult,
 		})
 	}
-	if nodes := pu.mutation.RemovedStepsIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.RemovedStepsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   procedure.StepsTable,
-			Columns: []string{procedure.StepsColumn},
+			Table:   template.StepsTable,
+			Columns: []string{template.StepsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -366,12 +366,12 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.StepsIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.StepsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   procedure.StepsTable,
-			Columns: []string{procedure.StepsColumn},
+			Table:   template.StepsTable,
+			Columns: []string{template.StepsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -385,12 +385,12 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if pu.mutation.ProjectCleared() {
+	if tu.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.ProjectTable,
-			Columns: []string{procedure.ProjectColumn},
+			Table:   template.ProjectTable,
+			Columns: []string{template.ProjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -401,12 +401,12 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.ProjectTable,
-			Columns: []string{procedure.ProjectColumn},
+			Table:   template.ProjectTable,
+			Columns: []string{template.ProjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -420,12 +420,12 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if pu.mutation.CreatorCleared() {
+	if tu.mutation.CreatorCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.CreatorTable,
-			Columns: []string{procedure.CreatorColumn},
+			Table:   template.CreatorTable,
+			Columns: []string{template.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -436,12 +436,12 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.CreatorIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.CreatorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.CreatorTable,
-			Columns: []string{procedure.CreatorColumn},
+			Table:   template.CreatorTable,
+			Columns: []string{template.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -455,12 +455,12 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if pu.mutation.RunCleared() {
+	if tu.mutation.RunCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   procedure.RunTable,
-			Columns: []string{procedure.RunColumn},
+			Table:   template.RunTable,
+			Columns: []string{template.RunColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -471,12 +471,12 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.RunIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.RunIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   procedure.RunTable,
-			Columns: []string{procedure.RunColumn},
+			Table:   template.RunTable,
+			Columns: []string{template.RunColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -490,9 +490,9 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
+	if n, err = sqlgraph.UpdateNodes(ctx, tu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{procedure.Label}
+			err = &NotFoundError{template.Label}
 		} else if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
 		}
@@ -501,226 +501,226 @@ func (pu *ProcedureUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	return n, nil
 }
 
-// ProcedureUpdateOne is the builder for updating a single Procedure entity.
-type ProcedureUpdateOne struct {
+// TemplateUpdateOne is the builder for updating a single Template entity.
+type TemplateUpdateOne struct {
 	config
 	hooks    []Hook
-	mutation *ProcedureMutation
+	mutation *TemplateMutation
 }
 
 // SetUpdatedAt sets the updatedAt field.
-func (puo *ProcedureUpdateOne) SetUpdatedAt(t time.Time) *ProcedureUpdateOne {
-	puo.mutation.SetUpdatedAt(t)
-	return puo
+func (tuo *TemplateUpdateOne) SetUpdatedAt(t time.Time) *TemplateUpdateOne {
+	tuo.mutation.SetUpdatedAt(t)
+	return tuo
 }
 
 // SetName sets the name field.
-func (puo *ProcedureUpdateOne) SetName(s string) *ProcedureUpdateOne {
-	puo.mutation.SetName(s)
-	return puo
+func (tuo *TemplateUpdateOne) SetName(s string) *TemplateUpdateOne {
+	tuo.mutation.SetName(s)
+	return tuo
 }
 
 // SetSelectionType sets the selectionType field.
-func (puo *ProcedureUpdateOne) SetSelectionType(s string) *ProcedureUpdateOne {
-	puo.mutation.SetSelectionType(s)
-	return puo
+func (tuo *TemplateUpdateOne) SetSelectionType(s string) *TemplateUpdateOne {
+	tuo.mutation.SetSelectionType(s)
+	return tuo
 }
 
 // SetParticipantCount sets the participantCount field.
-func (puo *ProcedureUpdateOne) SetParticipantCount(i int) *ProcedureUpdateOne {
-	puo.mutation.ResetParticipantCount()
-	puo.mutation.SetParticipantCount(i)
-	return puo
+func (tuo *TemplateUpdateOne) SetParticipantCount(i int) *TemplateUpdateOne {
+	tuo.mutation.ResetParticipantCount()
+	tuo.mutation.SetParticipantCount(i)
+	return tuo
 }
 
 // SetNillableParticipantCount sets the participantCount field if the given value is not nil.
-func (puo *ProcedureUpdateOne) SetNillableParticipantCount(i *int) *ProcedureUpdateOne {
+func (tuo *TemplateUpdateOne) SetNillableParticipantCount(i *int) *TemplateUpdateOne {
 	if i != nil {
-		puo.SetParticipantCount(*i)
+		tuo.SetParticipantCount(*i)
 	}
-	return puo
+	return tuo
 }
 
 // AddParticipantCount adds i to participantCount.
-func (puo *ProcedureUpdateOne) AddParticipantCount(i int) *ProcedureUpdateOne {
-	puo.mutation.AddParticipantCount(i)
-	return puo
+func (tuo *TemplateUpdateOne) AddParticipantCount(i int) *TemplateUpdateOne {
+	tuo.mutation.AddParticipantCount(i)
+	return tuo
 }
 
 // SetInternalCriteria sets the internalCriteria field.
-func (puo *ProcedureUpdateOne) SetInternalCriteria(b []byte) *ProcedureUpdateOne {
-	puo.mutation.SetInternalCriteria(b)
-	return puo
+func (tuo *TemplateUpdateOne) SetInternalCriteria(b []byte) *TemplateUpdateOne {
+	tuo.mutation.SetInternalCriteria(b)
+	return tuo
 }
 
 // SetMturkCriteria sets the mturkCriteria field.
-func (puo *ProcedureUpdateOne) SetMturkCriteria(b []byte) *ProcedureUpdateOne {
-	puo.mutation.SetMturkCriteria(b)
-	return puo
+func (tuo *TemplateUpdateOne) SetMturkCriteria(b []byte) *TemplateUpdateOne {
+	tuo.mutation.SetMturkCriteria(b)
+	return tuo
 }
 
 // SetAdult sets the adult field.
-func (puo *ProcedureUpdateOne) SetAdult(b bool) *ProcedureUpdateOne {
-	puo.mutation.SetAdult(b)
-	return puo
+func (tuo *TemplateUpdateOne) SetAdult(b bool) *TemplateUpdateOne {
+	tuo.mutation.SetAdult(b)
+	return tuo
 }
 
 // SetNillableAdult sets the adult field if the given value is not nil.
-func (puo *ProcedureUpdateOne) SetNillableAdult(b *bool) *ProcedureUpdateOne {
+func (tuo *TemplateUpdateOne) SetNillableAdult(b *bool) *TemplateUpdateOne {
 	if b != nil {
-		puo.SetAdult(*b)
+		tuo.SetAdult(*b)
 	}
-	return puo
+	return tuo
 }
 
 // AddStepIDs adds the steps edge to Step by ids.
-func (puo *ProcedureUpdateOne) AddStepIDs(ids ...string) *ProcedureUpdateOne {
-	puo.mutation.AddStepIDs(ids...)
-	return puo
+func (tuo *TemplateUpdateOne) AddStepIDs(ids ...string) *TemplateUpdateOne {
+	tuo.mutation.AddStepIDs(ids...)
+	return tuo
 }
 
 // AddSteps adds the steps edges to Step.
-func (puo *ProcedureUpdateOne) AddSteps(s ...*Step) *ProcedureUpdateOne {
+func (tuo *TemplateUpdateOne) AddSteps(s ...*Step) *TemplateUpdateOne {
 	ids := make([]string, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return puo.AddStepIDs(ids...)
+	return tuo.AddStepIDs(ids...)
 }
 
 // SetProjectID sets the project edge to Project by id.
-func (puo *ProcedureUpdateOne) SetProjectID(id string) *ProcedureUpdateOne {
-	puo.mutation.SetProjectID(id)
-	return puo
+func (tuo *TemplateUpdateOne) SetProjectID(id string) *TemplateUpdateOne {
+	tuo.mutation.SetProjectID(id)
+	return tuo
 }
 
 // SetNillableProjectID sets the project edge to Project by id if the given value is not nil.
-func (puo *ProcedureUpdateOne) SetNillableProjectID(id *string) *ProcedureUpdateOne {
+func (tuo *TemplateUpdateOne) SetNillableProjectID(id *string) *TemplateUpdateOne {
 	if id != nil {
-		puo = puo.SetProjectID(*id)
+		tuo = tuo.SetProjectID(*id)
 	}
-	return puo
+	return tuo
 }
 
 // SetProject sets the project edge to Project.
-func (puo *ProcedureUpdateOne) SetProject(p *Project) *ProcedureUpdateOne {
-	return puo.SetProjectID(p.ID)
+func (tuo *TemplateUpdateOne) SetProject(p *Project) *TemplateUpdateOne {
+	return tuo.SetProjectID(p.ID)
 }
 
 // SetCreatorID sets the creator edge to Admin by id.
-func (puo *ProcedureUpdateOne) SetCreatorID(id string) *ProcedureUpdateOne {
-	puo.mutation.SetCreatorID(id)
-	return puo
+func (tuo *TemplateUpdateOne) SetCreatorID(id string) *TemplateUpdateOne {
+	tuo.mutation.SetCreatorID(id)
+	return tuo
 }
 
 // SetNillableCreatorID sets the creator edge to Admin by id if the given value is not nil.
-func (puo *ProcedureUpdateOne) SetNillableCreatorID(id *string) *ProcedureUpdateOne {
+func (tuo *TemplateUpdateOne) SetNillableCreatorID(id *string) *TemplateUpdateOne {
 	if id != nil {
-		puo = puo.SetCreatorID(*id)
+		tuo = tuo.SetCreatorID(*id)
 	}
-	return puo
+	return tuo
 }
 
 // SetCreator sets the creator edge to Admin.
-func (puo *ProcedureUpdateOne) SetCreator(a *Admin) *ProcedureUpdateOne {
-	return puo.SetCreatorID(a.ID)
+func (tuo *TemplateUpdateOne) SetCreator(a *Admin) *TemplateUpdateOne {
+	return tuo.SetCreatorID(a.ID)
 }
 
 // SetRunID sets the run edge to Run by id.
-func (puo *ProcedureUpdateOne) SetRunID(id string) *ProcedureUpdateOne {
-	puo.mutation.SetRunID(id)
-	return puo
+func (tuo *TemplateUpdateOne) SetRunID(id string) *TemplateUpdateOne {
+	tuo.mutation.SetRunID(id)
+	return tuo
 }
 
 // SetNillableRunID sets the run edge to Run by id if the given value is not nil.
-func (puo *ProcedureUpdateOne) SetNillableRunID(id *string) *ProcedureUpdateOne {
+func (tuo *TemplateUpdateOne) SetNillableRunID(id *string) *TemplateUpdateOne {
 	if id != nil {
-		puo = puo.SetRunID(*id)
+		tuo = tuo.SetRunID(*id)
 	}
-	return puo
+	return tuo
 }
 
 // SetRun sets the run edge to Run.
-func (puo *ProcedureUpdateOne) SetRun(r *Run) *ProcedureUpdateOne {
-	return puo.SetRunID(r.ID)
+func (tuo *TemplateUpdateOne) SetRun(r *Run) *TemplateUpdateOne {
+	return tuo.SetRunID(r.ID)
 }
 
-// Mutation returns the ProcedureMutation object of the builder.
-func (puo *ProcedureUpdateOne) Mutation() *ProcedureMutation {
-	return puo.mutation
+// Mutation returns the TemplateMutation object of the builder.
+func (tuo *TemplateUpdateOne) Mutation() *TemplateMutation {
+	return tuo.mutation
 }
 
 // RemoveStepIDs removes the steps edge to Step by ids.
-func (puo *ProcedureUpdateOne) RemoveStepIDs(ids ...string) *ProcedureUpdateOne {
-	puo.mutation.RemoveStepIDs(ids...)
-	return puo
+func (tuo *TemplateUpdateOne) RemoveStepIDs(ids ...string) *TemplateUpdateOne {
+	tuo.mutation.RemoveStepIDs(ids...)
+	return tuo
 }
 
 // RemoveSteps removes steps edges to Step.
-func (puo *ProcedureUpdateOne) RemoveSteps(s ...*Step) *ProcedureUpdateOne {
+func (tuo *TemplateUpdateOne) RemoveSteps(s ...*Step) *TemplateUpdateOne {
 	ids := make([]string, len(s))
 	for i := range s {
 		ids[i] = s[i].ID
 	}
-	return puo.RemoveStepIDs(ids...)
+	return tuo.RemoveStepIDs(ids...)
 }
 
 // ClearProject clears the project edge to Project.
-func (puo *ProcedureUpdateOne) ClearProject() *ProcedureUpdateOne {
-	puo.mutation.ClearProject()
-	return puo
+func (tuo *TemplateUpdateOne) ClearProject() *TemplateUpdateOne {
+	tuo.mutation.ClearProject()
+	return tuo
 }
 
 // ClearCreator clears the creator edge to Admin.
-func (puo *ProcedureUpdateOne) ClearCreator() *ProcedureUpdateOne {
-	puo.mutation.ClearCreator()
-	return puo
+func (tuo *TemplateUpdateOne) ClearCreator() *TemplateUpdateOne {
+	tuo.mutation.ClearCreator()
+	return tuo
 }
 
 // ClearRun clears the run edge to Run.
-func (puo *ProcedureUpdateOne) ClearRun() *ProcedureUpdateOne {
-	puo.mutation.ClearRun()
-	return puo
+func (tuo *TemplateUpdateOne) ClearRun() *TemplateUpdateOne {
+	tuo.mutation.ClearRun()
+	return tuo
 }
 
 // Save executes the query and returns the updated entity.
-func (puo *ProcedureUpdateOne) Save(ctx context.Context) (*Procedure, error) {
-	if _, ok := puo.mutation.UpdatedAt(); !ok {
-		v := procedure.UpdateDefaultUpdatedAt()
-		puo.mutation.SetUpdatedAt(v)
+func (tuo *TemplateUpdateOne) Save(ctx context.Context) (*Template, error) {
+	if _, ok := tuo.mutation.UpdatedAt(); !ok {
+		v := template.UpdateDefaultUpdatedAt()
+		tuo.mutation.SetUpdatedAt(v)
 	}
-	if v, ok := puo.mutation.Name(); ok {
-		if err := procedure.NameValidator(v); err != nil {
+	if v, ok := tuo.mutation.Name(); ok {
+		if err := template.NameValidator(v); err != nil {
 			return nil, &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
 		}
 	}
-	if v, ok := puo.mutation.ParticipantCount(); ok {
-		if err := procedure.ParticipantCountValidator(v); err != nil {
+	if v, ok := tuo.mutation.ParticipantCount(); ok {
+		if err := template.ParticipantCountValidator(v); err != nil {
 			return nil, &ValidationError{Name: "participantCount", err: fmt.Errorf("ent: validator failed for field \"participantCount\": %w", err)}
 		}
 	}
 
 	var (
 		err  error
-		node *Procedure
+		node *Template
 	)
-	if len(puo.hooks) == 0 {
-		node, err = puo.sqlSave(ctx)
+	if len(tuo.hooks) == 0 {
+		node, err = tuo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*ProcedureMutation)
+			mutation, ok := m.(*TemplateMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
 			}
-			puo.mutation = mutation
-			node, err = puo.sqlSave(ctx)
+			tuo.mutation = mutation
+			node, err = tuo.sqlSave(ctx)
 			mutation.done = true
 			return node, err
 		})
-		for i := len(puo.hooks) - 1; i >= 0; i-- {
-			mut = puo.hooks[i](mut)
+		for i := len(tuo.hooks) - 1; i >= 0; i-- {
+			mut = tuo.hooks[i](mut)
 		}
-		if _, err := mut.Mutate(ctx, puo.mutation); err != nil {
+		if _, err := mut.Mutate(ctx, tuo.mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -728,105 +728,105 @@ func (puo *ProcedureUpdateOne) Save(ctx context.Context) (*Procedure, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (puo *ProcedureUpdateOne) SaveX(ctx context.Context) *Procedure {
-	pr, err := puo.Save(ctx)
+func (tuo *TemplateUpdateOne) SaveX(ctx context.Context) *Template {
+	t, err := tuo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pr
+	return t
 }
 
 // Exec executes the query on the entity.
-func (puo *ProcedureUpdateOne) Exec(ctx context.Context) error {
-	_, err := puo.Save(ctx)
+func (tuo *TemplateUpdateOne) Exec(ctx context.Context) error {
+	_, err := tuo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (puo *ProcedureUpdateOne) ExecX(ctx context.Context) {
-	if err := puo.Exec(ctx); err != nil {
+func (tuo *TemplateUpdateOne) ExecX(ctx context.Context) {
+	if err := tuo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
-func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err error) {
+func (tuo *TemplateUpdateOne) sqlSave(ctx context.Context) (t *Template, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
-			Table:   procedure.Table,
-			Columns: procedure.Columns,
+			Table:   template.Table,
+			Columns: template.Columns,
 			ID: &sqlgraph.FieldSpec{
 				Type:   field.TypeString,
-				Column: procedure.FieldID,
+				Column: template.FieldID,
 			},
 		},
 	}
-	id, ok := puo.mutation.ID()
+	id, ok := tuo.mutation.ID()
 	if !ok {
-		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Procedure.ID for update")}
+		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Template.ID for update")}
 	}
 	_spec.Node.ID.Value = id
-	if value, ok := puo.mutation.UpdatedAt(); ok {
+	if value, ok := tuo.mutation.UpdatedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
-			Column: procedure.FieldUpdatedAt,
+			Column: template.FieldUpdatedAt,
 		})
 	}
-	if value, ok := puo.mutation.Name(); ok {
+	if value, ok := tuo.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: procedure.FieldName,
+			Column: template.FieldName,
 		})
 	}
-	if value, ok := puo.mutation.SelectionType(); ok {
+	if value, ok := tuo.mutation.SelectionType(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: procedure.FieldSelectionType,
+			Column: template.FieldSelectionType,
 		})
 	}
-	if value, ok := puo.mutation.ParticipantCount(); ok {
+	if value, ok := tuo.mutation.ParticipantCount(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeInt,
 			Value:  value,
-			Column: procedure.FieldParticipantCount,
+			Column: template.FieldParticipantCount,
 		})
 	}
-	if value, ok := puo.mutation.AddedParticipantCount(); ok {
+	if value, ok := tuo.mutation.AddedParticipantCount(); ok {
 		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
 			Type:   field.TypeInt,
 			Value:  value,
-			Column: procedure.FieldParticipantCount,
+			Column: template.FieldParticipantCount,
 		})
 	}
-	if value, ok := puo.mutation.InternalCriteria(); ok {
+	if value, ok := tuo.mutation.InternalCriteria(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeBytes,
 			Value:  value,
-			Column: procedure.FieldInternalCriteria,
+			Column: template.FieldInternalCriteria,
 		})
 	}
-	if value, ok := puo.mutation.MturkCriteria(); ok {
+	if value, ok := tuo.mutation.MturkCriteria(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeBytes,
 			Value:  value,
-			Column: procedure.FieldMturkCriteria,
+			Column: template.FieldMturkCriteria,
 		})
 	}
-	if value, ok := puo.mutation.Adult(); ok {
+	if value, ok := tuo.mutation.Adult(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeBool,
 			Value:  value,
-			Column: procedure.FieldAdult,
+			Column: template.FieldAdult,
 		})
 	}
-	if nodes := puo.mutation.RemovedStepsIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.RemovedStepsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   procedure.StepsTable,
-			Columns: []string{procedure.StepsColumn},
+			Table:   template.StepsTable,
+			Columns: []string{template.StepsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -840,12 +840,12 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.StepsIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.StepsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   procedure.StepsTable,
-			Columns: []string{procedure.StepsColumn},
+			Table:   template.StepsTable,
+			Columns: []string{template.StepsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -859,12 +859,12 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if puo.mutation.ProjectCleared() {
+	if tuo.mutation.ProjectCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.ProjectTable,
-			Columns: []string{procedure.ProjectColumn},
+			Table:   template.ProjectTable,
+			Columns: []string{template.ProjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -875,12 +875,12 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.ProjectIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.ProjectTable,
-			Columns: []string{procedure.ProjectColumn},
+			Table:   template.ProjectTable,
+			Columns: []string{template.ProjectColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -894,12 +894,12 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if puo.mutation.CreatorCleared() {
+	if tuo.mutation.CreatorCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.CreatorTable,
-			Columns: []string{procedure.CreatorColumn},
+			Table:   template.CreatorTable,
+			Columns: []string{template.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -910,12 +910,12 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.CreatorIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.CreatorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   procedure.CreatorTable,
-			Columns: []string{procedure.CreatorColumn},
+			Table:   template.CreatorTable,
+			Columns: []string{template.CreatorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -929,12 +929,12 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if puo.mutation.RunCleared() {
+	if tuo.mutation.RunCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   procedure.RunTable,
-			Columns: []string{procedure.RunColumn},
+			Table:   template.RunTable,
+			Columns: []string{template.RunColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -945,12 +945,12 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.RunIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.RunIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   procedure.RunTable,
-			Columns: []string{procedure.RunColumn},
+			Table:   template.RunTable,
+			Columns: []string{template.RunColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -964,16 +964,16 @@ func (puo *ProcedureUpdateOne) sqlSave(ctx context.Context) (pr *Procedure, err 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	pr = &Procedure{config: puo.config}
-	_spec.Assign = pr.assignValues
-	_spec.ScanValues = pr.scanValues()
-	if err = sqlgraph.UpdateNode(ctx, puo.driver, _spec); err != nil {
+	t = &Template{config: tuo.config}
+	_spec.Assign = t.assignValues
+	_spec.ScanValues = t.scanValues()
+	if err = sqlgraph.UpdateNode(ctx, tuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{procedure.Label}
+			err = &NotFoundError{template.Label}
 		} else if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
 		}
 		return nil, err
 	}
-	return pr, nil
+	return t, nil
 }

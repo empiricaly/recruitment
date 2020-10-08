@@ -20,7 +20,9 @@
   <div class="w-64">
     {#if result.data.project.runs.length === 0}
       <Callout color="yellow">
-        You have no runs yet. <br /> Create one now!
+        You have no runs yet.
+        <br />
+        Create one now!
       </Callout>
     {/if}
   </div>
@@ -36,11 +38,12 @@
           endedAt={run.endedAt}
           name={run.name}
           {index}
-          stepCount={run.procedure.steps.length}
+          stepCount={run.template.steps.length}
           status={run.status} />
       {/each}
     </ul>
   </div>
 {:catch error}
-  Error loading Runs: {error}
+  Error loading Runs:
+  {error}
 {/await}

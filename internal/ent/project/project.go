@@ -22,8 +22,8 @@ const (
 
 	// EdgeRuns holds the string denoting the runs edge name in mutations.
 	EdgeRuns = "runs"
-	// EdgeProcedures holds the string denoting the procedures edge name in mutations.
-	EdgeProcedures = "procedures"
+	// EdgeTemplates holds the string denoting the templates edge name in mutations.
+	EdgeTemplates = "templates"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
 	EdgeOwner = "owner"
 
@@ -36,13 +36,13 @@ const (
 	RunsInverseTable = "runs"
 	// RunsColumn is the table column denoting the runs relation/edge.
 	RunsColumn = "project_runs"
-	// ProceduresTable is the table the holds the procedures relation/edge.
-	ProceduresTable = "procedures"
-	// ProceduresInverseTable is the table name for the Procedure entity.
-	// It exists in this package in order to avoid circular dependency with the "procedure" package.
-	ProceduresInverseTable = "procedures"
-	// ProceduresColumn is the table column denoting the procedures relation/edge.
-	ProceduresColumn = "project_procedures"
+	// TemplatesTable is the table the holds the templates relation/edge.
+	TemplatesTable = "templates"
+	// TemplatesInverseTable is the table name for the Template entity.
+	// It exists in this package in order to avoid circular dependency with the "template" package.
+	TemplatesInverseTable = "templates"
+	// TemplatesColumn is the table column denoting the templates relation/edge.
+	TemplatesColumn = "project_templates"
 	// OwnerTable is the table the holds the owner relation/edge.
 	OwnerTable = "projects"
 	// OwnerInverseTable is the table name for the Admin entity.

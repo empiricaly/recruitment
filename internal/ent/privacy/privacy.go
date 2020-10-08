@@ -234,30 +234,6 @@ func (f AdminMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation)
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AdminMutation", m)
 }
 
-// The ProcedureQueryRuleFunc type is an adapter to allow the use of ordinary
-// functions as a query rule.
-type ProcedureQueryRuleFunc func(context.Context, *ent.ProcedureQuery) error
-
-// EvalQuery return f(ctx, q).
-func (f ProcedureQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
-	if q, ok := q.(*ent.ProcedureQuery); ok {
-		return f(ctx, q)
-	}
-	return Denyf("ent/privacy: unexpected query type %T, expect *ent.ProcedureQuery", q)
-}
-
-// The ProcedureMutationRuleFunc type is an adapter to allow the use of ordinary
-// functions as a mutation rule.
-type ProcedureMutationRuleFunc func(context.Context, *ent.ProcedureMutation) error
-
-// EvalMutation calls f(ctx, m).
-func (f ProcedureMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
-	if m, ok := m.(*ent.ProcedureMutation); ok {
-		return f(ctx, m)
-	}
-	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.ProcedureMutation", m)
-}
-
 // The ProjectQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type ProjectQueryRuleFunc func(context.Context, *ent.ProjectQuery) error
@@ -352,4 +328,28 @@ func (f StepRunMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutatio
 		return f(ctx, m)
 	}
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.StepRunMutation", m)
+}
+
+// The TemplateQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type TemplateQueryRuleFunc func(context.Context, *ent.TemplateQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f TemplateQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.TemplateQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.TemplateQuery", q)
+}
+
+// The TemplateMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type TemplateMutationRuleFunc func(context.Context, *ent.TemplateMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f TemplateMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.TemplateMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.TemplateMutation", m)
 }

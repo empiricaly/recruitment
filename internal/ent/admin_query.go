@@ -11,8 +11,8 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -27,8 +27,8 @@ type AdminQuery struct {
 	unique     []string
 	predicates []predicate.Admin
 	// eager-loading edges.
-	withProjects   *ProjectQuery
-	withProcedures *ProcedureQuery
+	withProjects  *ProjectQuery
+	withTemplates *TemplateQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -76,17 +76,17 @@ func (aq *AdminQuery) QueryProjects() *ProjectQuery {
 	return query
 }
 
-// QueryProcedures chains the current query on the procedures edge.
-func (aq *AdminQuery) QueryProcedures() *ProcedureQuery {
-	query := &ProcedureQuery{config: aq.config}
+// QueryTemplates chains the current query on the templates edge.
+func (aq *AdminQuery) QueryTemplates() *TemplateQuery {
+	query := &TemplateQuery{config: aq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(admin.Table, admin.FieldID, aq.sqlQuery()),
-			sqlgraph.To(procedure.Table, procedure.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, admin.ProceduresTable, admin.ProceduresColumn),
+			sqlgraph.To(template.Table, template.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, admin.TemplatesTable, admin.TemplatesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -284,14 +284,14 @@ func (aq *AdminQuery) WithProjects(opts ...func(*ProjectQuery)) *AdminQuery {
 	return aq
 }
 
-//  WithProcedures tells the query-builder to eager-loads the nodes that are connected to
-// the "procedures" edge. The optional arguments used to configure the query builder of the edge.
-func (aq *AdminQuery) WithProcedures(opts ...func(*ProcedureQuery)) *AdminQuery {
-	query := &ProcedureQuery{config: aq.config}
+//  WithTemplates tells the query-builder to eager-loads the nodes that are connected to
+// the "templates" edge. The optional arguments used to configure the query builder of the edge.
+func (aq *AdminQuery) WithTemplates(opts ...func(*TemplateQuery)) *AdminQuery {
+	query := &TemplateQuery{config: aq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	aq.withProcedures = query
+	aq.withTemplates = query
 	return aq
 }
 
@@ -363,7 +363,7 @@ func (aq *AdminQuery) sqlAll(ctx context.Context) ([]*Admin, error) {
 		_spec       = aq.querySpec()
 		loadedTypes = [2]bool{
 			aq.withProjects != nil,
-			aq.withProcedures != nil,
+			aq.withTemplates != nil,
 		}
 	)
 	_spec.ScanValues = func() []interface{} {
@@ -415,7 +415,7 @@ func (aq *AdminQuery) sqlAll(ctx context.Context) ([]*Admin, error) {
 		}
 	}
 
-	if query := aq.withProcedures; query != nil {
+	if query := aq.withTemplates; query != nil {
 		fks := make([]driver.Value, 0, len(nodes))
 		nodeids := make(map[string]*Admin)
 		for i := range nodes {
@@ -423,23 +423,23 @@ func (aq *AdminQuery) sqlAll(ctx context.Context) ([]*Admin, error) {
 			nodeids[nodes[i].ID] = nodes[i]
 		}
 		query.withFKs = true
-		query.Where(predicate.Procedure(func(s *sql.Selector) {
-			s.Where(sql.InValues(admin.ProceduresColumn, fks...))
+		query.Where(predicate.Template(func(s *sql.Selector) {
+			s.Where(sql.InValues(admin.TemplatesColumn, fks...))
 		}))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			fk := n.admin_procedures
+			fk := n.admin_templates
 			if fk == nil {
-				return nil, fmt.Errorf(`foreign-key "admin_procedures" is nil for node %v`, n.ID)
+				return nil, fmt.Errorf(`foreign-key "admin_templates" is nil for node %v`, n.ID)
 			}
 			node, ok := nodeids[*fk]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "admin_procedures" returned %v for node %v`, *fk, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "admin_templates" returned %v for node %v`, *fk, n.ID)
 			}
-			node.Edges.Procedures = append(node.Edges.Procedures, n)
+			node.Edges.Templates = append(node.Edges.Templates, n)
 		}
 	}
 

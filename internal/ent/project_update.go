@@ -9,9 +9,9 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -64,19 +64,19 @@ func (pu *ProjectUpdate) AddRuns(r ...*Run) *ProjectUpdate {
 	return pu.AddRunIDs(ids...)
 }
 
-// AddProcedureIDs adds the procedures edge to Procedure by ids.
-func (pu *ProjectUpdate) AddProcedureIDs(ids ...string) *ProjectUpdate {
-	pu.mutation.AddProcedureIDs(ids...)
+// AddTemplateIDs adds the templates edge to Template by ids.
+func (pu *ProjectUpdate) AddTemplateIDs(ids ...string) *ProjectUpdate {
+	pu.mutation.AddTemplateIDs(ids...)
 	return pu
 }
 
-// AddProcedures adds the procedures edges to Procedure.
-func (pu *ProjectUpdate) AddProcedures(p ...*Procedure) *ProjectUpdate {
-	ids := make([]string, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddTemplates adds the templates edges to Template.
+func (pu *ProjectUpdate) AddTemplates(t ...*Template) *ProjectUpdate {
+	ids := make([]string, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return pu.AddProcedureIDs(ids...)
+	return pu.AddTemplateIDs(ids...)
 }
 
 // SetOwnerID sets the owner edge to Admin by id.
@@ -118,19 +118,19 @@ func (pu *ProjectUpdate) RemoveRuns(r ...*Run) *ProjectUpdate {
 	return pu.RemoveRunIDs(ids...)
 }
 
-// RemoveProcedureIDs removes the procedures edge to Procedure by ids.
-func (pu *ProjectUpdate) RemoveProcedureIDs(ids ...string) *ProjectUpdate {
-	pu.mutation.RemoveProcedureIDs(ids...)
+// RemoveTemplateIDs removes the templates edge to Template by ids.
+func (pu *ProjectUpdate) RemoveTemplateIDs(ids ...string) *ProjectUpdate {
+	pu.mutation.RemoveTemplateIDs(ids...)
 	return pu
 }
 
-// RemoveProcedures removes procedures edges to Procedure.
-func (pu *ProjectUpdate) RemoveProcedures(p ...*Procedure) *ProjectUpdate {
-	ids := make([]string, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// RemoveTemplates removes templates edges to Template.
+func (pu *ProjectUpdate) RemoveTemplates(t ...*Template) *ProjectUpdate {
+	ids := make([]string, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return pu.RemoveProcedureIDs(ids...)
+	return pu.RemoveTemplateIDs(ids...)
 }
 
 // ClearOwner clears the owner edge to Admin.
@@ -272,17 +272,17 @@ func (pu *ProjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := pu.mutation.RemovedProceduresIDs(); len(nodes) > 0 {
+	if nodes := pu.mutation.RemovedTemplatesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   project.ProceduresTable,
-			Columns: []string{project.ProceduresColumn},
+			Table:   project.TemplatesTable,
+			Columns: []string{project.TemplatesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}
@@ -291,17 +291,17 @@ func (pu *ProjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.ProceduresIDs(); len(nodes) > 0 {
+	if nodes := pu.mutation.TemplatesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   project.ProceduresTable,
-			Columns: []string{project.ProceduresColumn},
+			Table:   project.TemplatesTable,
+			Columns: []string{project.TemplatesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}
@@ -396,19 +396,19 @@ func (puo *ProjectUpdateOne) AddRuns(r ...*Run) *ProjectUpdateOne {
 	return puo.AddRunIDs(ids...)
 }
 
-// AddProcedureIDs adds the procedures edge to Procedure by ids.
-func (puo *ProjectUpdateOne) AddProcedureIDs(ids ...string) *ProjectUpdateOne {
-	puo.mutation.AddProcedureIDs(ids...)
+// AddTemplateIDs adds the templates edge to Template by ids.
+func (puo *ProjectUpdateOne) AddTemplateIDs(ids ...string) *ProjectUpdateOne {
+	puo.mutation.AddTemplateIDs(ids...)
 	return puo
 }
 
-// AddProcedures adds the procedures edges to Procedure.
-func (puo *ProjectUpdateOne) AddProcedures(p ...*Procedure) *ProjectUpdateOne {
-	ids := make([]string, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddTemplates adds the templates edges to Template.
+func (puo *ProjectUpdateOne) AddTemplates(t ...*Template) *ProjectUpdateOne {
+	ids := make([]string, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return puo.AddProcedureIDs(ids...)
+	return puo.AddTemplateIDs(ids...)
 }
 
 // SetOwnerID sets the owner edge to Admin by id.
@@ -450,19 +450,19 @@ func (puo *ProjectUpdateOne) RemoveRuns(r ...*Run) *ProjectUpdateOne {
 	return puo.RemoveRunIDs(ids...)
 }
 
-// RemoveProcedureIDs removes the procedures edge to Procedure by ids.
-func (puo *ProjectUpdateOne) RemoveProcedureIDs(ids ...string) *ProjectUpdateOne {
-	puo.mutation.RemoveProcedureIDs(ids...)
+// RemoveTemplateIDs removes the templates edge to Template by ids.
+func (puo *ProjectUpdateOne) RemoveTemplateIDs(ids ...string) *ProjectUpdateOne {
+	puo.mutation.RemoveTemplateIDs(ids...)
 	return puo
 }
 
-// RemoveProcedures removes procedures edges to Procedure.
-func (puo *ProjectUpdateOne) RemoveProcedures(p ...*Procedure) *ProjectUpdateOne {
-	ids := make([]string, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// RemoveTemplates removes templates edges to Template.
+func (puo *ProjectUpdateOne) RemoveTemplates(t ...*Template) *ProjectUpdateOne {
+	ids := make([]string, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return puo.RemoveProcedureIDs(ids...)
+	return puo.RemoveTemplateIDs(ids...)
 }
 
 // ClearOwner clears the owner edge to Admin.
@@ -602,17 +602,17 @@ func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (pr *Project, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := puo.mutation.RemovedProceduresIDs(); len(nodes) > 0 {
+	if nodes := puo.mutation.RemovedTemplatesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   project.ProceduresTable,
-			Columns: []string{project.ProceduresColumn},
+			Table:   project.TemplatesTable,
+			Columns: []string{project.TemplatesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}
@@ -621,17 +621,17 @@ func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (pr *Project, err erro
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.ProceduresIDs(); len(nodes) > 0 {
+	if nodes := puo.mutation.TemplatesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   project.ProceduresTable,
-			Columns: []string{project.ProceduresColumn},
+			Table:   project.TemplatesTable,
+			Columns: []string{project.TemplatesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}

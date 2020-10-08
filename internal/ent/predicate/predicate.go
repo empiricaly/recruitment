@@ -9,9 +9,6 @@ import (
 // Admin is the predicate function for admin builders.
 type Admin func(*sql.Selector)
 
-// Procedure is the predicate function for procedure builders.
-type Procedure func(*sql.Selector)
-
 // Project is the predicate function for project builders.
 type Project func(*sql.Selector)
 
@@ -23,3 +20,6 @@ type Step func(*sql.Selector)
 
 // StepRun is the predicate function for steprun builders.
 type StepRun func(*sql.Selector)
+
+// Template is the predicate function for template builders.
+type Template func(*sql.Selector)

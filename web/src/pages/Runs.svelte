@@ -18,7 +18,7 @@
     try {
       const input = {
         projectID: project.id,
-        procedure: {
+        template: {
           name: "New Run",
           selectionType: "INTERNAL_DB",
           participantCount: 100,

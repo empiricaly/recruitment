@@ -13,7 +13,6 @@ type Project struct {
 
 // Fields of the Project.
 func (Project) Fields() []ent.Field {
-	// TODO field : creator, procedure, status, steps, data
 	return append(
 		append([]ent.Field{}, commonFields...),
 		field.String("projectID"),
@@ -25,7 +24,7 @@ func (Project) Fields() []ent.Field {
 func (Project) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("runs", Run.Type),
-		edge.To("procedures", Procedure.Type),
+		edge.To("templates", Template.Type),
 		edge.From("owner", Admin.Type).
 			Ref("projects").
 			Unique(),

@@ -22,8 +22,8 @@ const (
 
 	// EdgeProjects holds the string denoting the projects edge name in mutations.
 	EdgeProjects = "projects"
-	// EdgeProcedures holds the string denoting the procedures edge name in mutations.
-	EdgeProcedures = "procedures"
+	// EdgeTemplates holds the string denoting the templates edge name in mutations.
+	EdgeTemplates = "templates"
 
 	// Table holds the table name of the admin in the database.
 	Table = "admins"
@@ -34,13 +34,13 @@ const (
 	ProjectsInverseTable = "projects"
 	// ProjectsColumn is the table column denoting the projects relation/edge.
 	ProjectsColumn = "admin_projects"
-	// ProceduresTable is the table the holds the procedures relation/edge.
-	ProceduresTable = "procedures"
-	// ProceduresInverseTable is the table name for the Procedure entity.
-	// It exists in this package in order to avoid circular dependency with the "procedure" package.
-	ProceduresInverseTable = "procedures"
-	// ProceduresColumn is the table column denoting the procedures relation/edge.
-	ProceduresColumn = "admin_procedures"
+	// TemplatesTable is the table the holds the templates relation/edge.
+	TemplatesTable = "templates"
+	// TemplatesInverseTable is the table name for the Template entity.
+	// It exists in this package in order to avoid circular dependency with the "template" package.
+	TemplatesInverseTable = "templates"
+	// TemplatesColumn is the table column denoting the templates relation/edge.
+	TemplatesColumn = "admin_templates"
 )
 
 // Columns holds all SQL columns for admin fields.

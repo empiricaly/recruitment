@@ -18,8 +18,8 @@ input FilterStepArgsInput {
   - `participants`: the participants entering this step
   - `step`: this step (contains the definition of this step: duration, etc.)
   - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
-  - `procedure`: parent procedure of step (contains the definition of the Procedure)
-  - `run`: run this step is part of (contains the instance of the Procedure)
+  - `template`: parent `template of step (contains the definition of the Template)
+  - `run`: run this step is part of (contains the instance of the Template)
   The functions should return an array of participants.
   If the functions returns null or undefined, the participants are not filtered.
   If the function throws an exception, the run will fail.
@@ -114,8 +114,8 @@ input MessageStepArgsInput {
   - `url`: proxy URL if `url` exist on Step.
   - `step`: this step (contains the definition of this step: duration, etc.)
   - `stepRun`: instance of this step (contains the execution of this step: start time, etc.)
-  - `procedure`: parent Procedure of step (contains the definition of the Procedure)
-  - `run`: run this step is part of (contains the instance of the Procedure)
+  - ``template`: parent Template of step (contains the definition of the Template)
+  - `run`: run this step is part of (contains the instance of the Template)
   - `participant`: current participant
   """
   message: String

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/step"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 )
 
@@ -35,31 +35,31 @@ type Step struct {
 	FilterArgs []byte `json:"filterArgs,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StepQuery when eager-loading is set.
-	Edges           StepEdges `json:"edges"`
-	procedure_steps *string
+	Edges          StepEdges `json:"edges"`
+	template_steps *string
 }
 
 // StepEdges holds the relations/edges for other nodes in the graph.
 type StepEdges struct {
-	// Procedure holds the value of the procedure edge.
-	Procedure *Procedure
+	// Template holds the value of the template edge.
+	Template *Template
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// ProcedureOrErr returns the Procedure value or an error if the edge
+// TemplateOrErr returns the Template value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e StepEdges) ProcedureOrErr() (*Procedure, error) {
+func (e StepEdges) TemplateOrErr() (*Template, error) {
 	if e.loadedTypes[0] {
-		if e.Procedure == nil {
-			// The edge procedure was loaded in eager-loading,
+		if e.Template == nil {
+			// The edge template was loaded in eager-loading,
 			// but was not found.
-			return nil, &NotFoundError{label: procedure.Label}
+			return nil, &NotFoundError{label: template.Label}
 		}
-		return e.Procedure, nil
+		return e.Template, nil
 	}
-	return nil, &NotLoadedError{edge: "procedure"}
+	return nil, &NotLoadedError{edge: "template"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -80,7 +80,7 @@ func (*Step) scanValues() []interface{} {
 // fkValues returns the types for scanning foreign-keys values from sql.Rows.
 func (*Step) fkValues() []interface{} {
 	return []interface{}{
-		&sql.NullString{}, // procedure_steps
+		&sql.NullString{}, // template_steps
 	}
 }
 
@@ -139,18 +139,18 @@ func (s *Step) assignValues(values ...interface{}) error {
 	values = values[8:]
 	if len(values) == len(step.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullString); !ok {
-			return fmt.Errorf("unexpected type %T for field procedure_steps", values[0])
+			return fmt.Errorf("unexpected type %T for field template_steps", values[0])
 		} else if value.Valid {
-			s.procedure_steps = new(string)
-			*s.procedure_steps = value.String
+			s.template_steps = new(string)
+			*s.template_steps = value.String
 		}
 	}
 	return nil
 }
 
-// QueryProcedure queries the procedure edge of the Step.
-func (s *Step) QueryProcedure() *ProcedureQuery {
-	return (&StepClient{config: s.config}).QueryProcedure(s)
+// QueryTemplate queries the template edge of the Step.
+func (s *Step) QueryTemplate() *TemplateQuery {
+	return (&StepClient{config: s.config}).QueryTemplate(s)
 }
 
 // Update returns a builder for updating this Step.

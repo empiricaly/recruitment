@@ -35,8 +35,8 @@ type Project struct {
 type ProjectEdges struct {
 	// Runs holds the value of the runs edge.
 	Runs []*Run
-	// Procedures holds the value of the procedures edge.
-	Procedures []*Procedure
+	// Templates holds the value of the templates edge.
+	Templates []*Template
 	// Owner holds the value of the owner edge.
 	Owner *Admin
 	// loadedTypes holds the information for reporting if a
@@ -53,13 +53,13 @@ func (e ProjectEdges) RunsOrErr() ([]*Run, error) {
 	return nil, &NotLoadedError{edge: "runs"}
 }
 
-// ProceduresOrErr returns the Procedures value or an error if the edge
+// TemplatesOrErr returns the Templates value or an error if the edge
 // was not loaded in eager-loading.
-func (e ProjectEdges) ProceduresOrErr() ([]*Procedure, error) {
+func (e ProjectEdges) TemplatesOrErr() ([]*Template, error) {
 	if e.loadedTypes[1] {
-		return e.Procedures, nil
+		return e.Templates, nil
 	}
-	return nil, &NotLoadedError{edge: "procedures"}
+	return nil, &NotLoadedError{edge: "templates"}
 }
 
 // OwnerOrErr returns the Owner value or an error if the edge
@@ -143,9 +143,9 @@ func (pr *Project) QueryRuns() *RunQuery {
 	return (&ProjectClient{config: pr.config}).QueryRuns(pr)
 }
 
-// QueryProcedures queries the procedures edge of the Project.
-func (pr *Project) QueryProcedures() *ProcedureQuery {
-	return (&ProjectClient{config: pr.config}).QueryProcedures(pr)
+// QueryTemplates queries the templates edge of the Project.
+func (pr *Project) QueryTemplates() *TemplateQuery {
+	return (&ProjectClient{config: pr.config}).QueryTemplates(pr)
 }
 
 // QueryOwner queries the owner edge of the Project.

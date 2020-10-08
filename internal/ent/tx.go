@@ -14,8 +14,6 @@ type Tx struct {
 	config
 	// Admin is the client for interacting with the Admin builders.
 	Admin *AdminClient
-	// Procedure is the client for interacting with the Procedure builders.
-	Procedure *ProcedureClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
 	// Run is the client for interacting with the Run builders.
@@ -24,6 +22,8 @@ type Tx struct {
 	Step *StepClient
 	// StepRun is the client for interacting with the StepRun builders.
 	StepRun *StepRunClient
+	// Template is the client for interacting with the Template builders.
+	Template *TemplateClient
 
 	// lazily loaded.
 	client     *Client
@@ -160,11 +160,11 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Admin = NewAdminClient(tx.config)
-	tx.Procedure = NewProcedureClient(tx.config)
 	tx.Project = NewProjectClient(tx.config)
 	tx.Run = NewRunClient(tx.config)
 	tx.Step = NewStepClient(tx.config)
 	tx.StepRun = NewStepRunClient(tx.config)
+	tx.Template = NewTemplateClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

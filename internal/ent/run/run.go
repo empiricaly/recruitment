@@ -31,8 +31,8 @@ const (
 
 	// EdgeProject holds the string denoting the project edge name in mutations.
 	EdgeProject = "project"
-	// EdgeProcedure holds the string denoting the procedure edge name in mutations.
-	EdgeProcedure = "procedure"
+	// EdgeTemplate holds the string denoting the template edge name in mutations.
+	EdgeTemplate = "template"
 	// EdgeSteps holds the string denoting the steps edge name in mutations.
 	EdgeSteps = "steps"
 
@@ -45,13 +45,13 @@ const (
 	ProjectInverseTable = "projects"
 	// ProjectColumn is the table column denoting the project relation/edge.
 	ProjectColumn = "project_runs"
-	// ProcedureTable is the table the holds the procedure relation/edge.
-	ProcedureTable = "procedures"
-	// ProcedureInverseTable is the table name for the Procedure entity.
-	// It exists in this package in order to avoid circular dependency with the "procedure" package.
-	ProcedureInverseTable = "procedures"
-	// ProcedureColumn is the table column denoting the procedure relation/edge.
-	ProcedureColumn = "run_procedure"
+	// TemplateTable is the table the holds the template relation/edge.
+	TemplateTable = "templates"
+	// TemplateInverseTable is the table name for the Template entity.
+	// It exists in this package in order to avoid circular dependency with the "template" package.
+	TemplateInverseTable = "templates"
+	// TemplateColumn is the table column denoting the template relation/edge.
+	TemplateColumn = "run_template"
 	// StepsTable is the table the holds the steps relation/edge.
 	StepsTable = "step_runs"
 	// StepsInverseTable is the table name for the StepRun entity.

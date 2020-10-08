@@ -23,50 +23,6 @@ var (
 		PrimaryKey:  []*schema.Column{AdminsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{},
 	}
-	// ProceduresColumns holds the columns for the "procedures" table.
-	ProceduresColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString, Size: 255},
-		{Name: "selection_type", Type: field.TypeString},
-		{Name: "participant_count", Type: field.TypeInt},
-		{Name: "internal_criteria", Type: field.TypeBytes},
-		{Name: "mturk_criteria", Type: field.TypeBytes},
-		{Name: "adult", Type: field.TypeBool},
-		{Name: "admin_procedures", Type: field.TypeString, Nullable: true},
-		{Name: "project_procedures", Type: field.TypeString, Nullable: true},
-		{Name: "run_procedure", Type: field.TypeString, Unique: true, Nullable: true},
-	}
-	// ProceduresTable holds the schema information for the "procedures" table.
-	ProceduresTable = &schema.Table{
-		Name:       "procedures",
-		Columns:    ProceduresColumns,
-		PrimaryKey: []*schema.Column{ProceduresColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:  "procedures_admins_procedures",
-				Columns: []*schema.Column{ProceduresColumns[9]},
-
-				RefColumns: []*schema.Column{AdminsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:  "procedures_projects_procedures",
-				Columns: []*schema.Column{ProceduresColumns[10]},
-
-				RefColumns: []*schema.Column{ProjectsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:  "procedures_runs_procedure",
-				Columns: []*schema.Column{ProceduresColumns[11]},
-
-				RefColumns: []*schema.Column{RunsColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-		},
-	}
 	// ProjectsColumns holds the columns for the "projects" table.
 	ProjectsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString},
@@ -130,7 +86,7 @@ var (
 		{Name: "msg_args", Type: field.TypeBytes, Nullable: true},
 		{Name: "hit_args", Type: field.TypeBytes, Nullable: true},
 		{Name: "filter_args", Type: field.TypeBytes, Nullable: true},
-		{Name: "procedure_steps", Type: field.TypeString, Nullable: true},
+		{Name: "template_steps", Type: field.TypeString, Nullable: true},
 	}
 	// StepsTable holds the schema information for the "steps" table.
 	StepsTable = &schema.Table{
@@ -139,10 +95,10 @@ var (
 		PrimaryKey: []*schema.Column{StepsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:  "steps_procedures_steps",
+				Symbol:  "steps_templates_steps",
 				Columns: []*schema.Column{StepsColumns[9]},
 
-				RefColumns: []*schema.Column{ProceduresColumns[0]},
+				RefColumns: []*schema.Column{TemplatesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -172,23 +128,67 @@ var (
 			},
 		},
 	}
+	// TemplatesColumns holds the columns for the "templates" table.
+	TemplatesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Size: 255},
+		{Name: "selection_type", Type: field.TypeString},
+		{Name: "participant_count", Type: field.TypeInt},
+		{Name: "internal_criteria", Type: field.TypeBytes},
+		{Name: "mturk_criteria", Type: field.TypeBytes},
+		{Name: "adult", Type: field.TypeBool},
+		{Name: "admin_templates", Type: field.TypeString, Nullable: true},
+		{Name: "project_templates", Type: field.TypeString, Nullable: true},
+		{Name: "run_template", Type: field.TypeString, Unique: true, Nullable: true},
+	}
+	// TemplatesTable holds the schema information for the "templates" table.
+	TemplatesTable = &schema.Table{
+		Name:       "templates",
+		Columns:    TemplatesColumns,
+		PrimaryKey: []*schema.Column{TemplatesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "templates_admins_templates",
+				Columns: []*schema.Column{TemplatesColumns[9]},
+
+				RefColumns: []*schema.Column{AdminsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:  "templates_projects_templates",
+				Columns: []*schema.Column{TemplatesColumns[10]},
+
+				RefColumns: []*schema.Column{ProjectsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:  "templates_runs_template",
+				Columns: []*schema.Column{TemplatesColumns[11]},
+
+				RefColumns: []*schema.Column{RunsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AdminsTable,
-		ProceduresTable,
 		ProjectsTable,
 		RunsTable,
 		StepsTable,
 		StepRunsTable,
+		TemplatesTable,
 	}
 )
 
 func init() {
-	ProceduresTable.ForeignKeys[0].RefTable = AdminsTable
-	ProceduresTable.ForeignKeys[1].RefTable = ProjectsTable
-	ProceduresTable.ForeignKeys[2].RefTable = RunsTable
 	ProjectsTable.ForeignKeys[0].RefTable = AdminsTable
 	RunsTable.ForeignKeys[0].RefTable = ProjectsTable
-	StepsTable.ForeignKeys[0].RefTable = ProceduresTable
+	StepsTable.ForeignKeys[0].RefTable = TemplatesTable
 	StepRunsTable.ForeignKeys[0].RefTable = RunsTable
+	TemplatesTable.ForeignKeys[0].RefTable = AdminsTable
+	TemplatesTable.ForeignKeys[1].RefTable = ProjectsTable
+	TemplatesTable.ForeignKeys[2].RefTable = RunsTable
 }

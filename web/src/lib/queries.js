@@ -20,17 +20,17 @@ export const MTURK_LOCALES = gql`
   }
 `;
 
-export const CREATE_PROCEDURE = gql`
-  mutation createProcedure($input: CreateProcedureInput!) {
-    createProcedure(input: $input) {
+export const CREATE_TEMPLATE = gql`
+  mutation createTemplate($input: CreateTemplateInput!) {
+    createTemplate(input: $input) {
       id
     }
   }
 `;
 
-export const UPDATE_PROCEDURE = gql`
-  mutation updateProcedure($input: UpdateProcedureInput!) {
-    updateProcedure(input: $input) {
+export const UPDATE_TEMPLATE = gql`
+  mutation updateTemplate($input: UpdateTemplateInput!) {
+    updateTemplate(input: $input) {
       id
     }
   }
@@ -63,7 +63,7 @@ export const GET_RUNS = gql`
         startedAt
         endedAt
 
-        procedure {
+        template {
           steps {
             id
           }
@@ -85,7 +85,7 @@ export const GET_RUN = gql`
         startedAt
         endedAt
 
-        procedure {
+        template {
           id
           name
           selectionType

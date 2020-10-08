@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/step"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -103,23 +103,23 @@ func (su *StepUpdate) ClearFilterArgs() *StepUpdate {
 	return su
 }
 
-// SetProcedureID sets the procedure edge to Procedure by id.
-func (su *StepUpdate) SetProcedureID(id string) *StepUpdate {
-	su.mutation.SetProcedureID(id)
+// SetTemplateID sets the template edge to Template by id.
+func (su *StepUpdate) SetTemplateID(id string) *StepUpdate {
+	su.mutation.SetTemplateID(id)
 	return su
 }
 
-// SetNillableProcedureID sets the procedure edge to Procedure by id if the given value is not nil.
-func (su *StepUpdate) SetNillableProcedureID(id *string) *StepUpdate {
+// SetNillableTemplateID sets the template edge to Template by id if the given value is not nil.
+func (su *StepUpdate) SetNillableTemplateID(id *string) *StepUpdate {
 	if id != nil {
-		su = su.SetProcedureID(*id)
+		su = su.SetTemplateID(*id)
 	}
 	return su
 }
 
-// SetProcedure sets the procedure edge to Procedure.
-func (su *StepUpdate) SetProcedure(p *Procedure) *StepUpdate {
-	return su.SetProcedureID(p.ID)
+// SetTemplate sets the template edge to Template.
+func (su *StepUpdate) SetTemplate(t *Template) *StepUpdate {
+	return su.SetTemplateID(t.ID)
 }
 
 // Mutation returns the StepMutation object of the builder.
@@ -127,9 +127,9 @@ func (su *StepUpdate) Mutation() *StepMutation {
 	return su.mutation
 }
 
-// ClearProcedure clears the procedure edge to Procedure.
-func (su *StepUpdate) ClearProcedure() *StepUpdate {
-	su.mutation.ClearProcedure()
+// ClearTemplate clears the template edge to Template.
+func (su *StepUpdate) ClearTemplate() *StepUpdate {
+	su.mutation.ClearTemplate()
 	return su
 }
 
@@ -293,33 +293,33 @@ func (su *StepUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: step.FieldFilterArgs,
 		})
 	}
-	if su.mutation.ProcedureCleared() {
+	if su.mutation.TemplateCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   step.ProcedureTable,
-			Columns: []string{step.ProcedureColumn},
+			Table:   step.TemplateTable,
+			Columns: []string{step.TemplateColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := su.mutation.ProcedureIDs(); len(nodes) > 0 {
+	if nodes := su.mutation.TemplateIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   step.ProcedureTable,
-			Columns: []string{step.ProcedureColumn},
+			Table:   step.TemplateTable,
+			Columns: []string{step.TemplateColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}
@@ -420,23 +420,23 @@ func (suo *StepUpdateOne) ClearFilterArgs() *StepUpdateOne {
 	return suo
 }
 
-// SetProcedureID sets the procedure edge to Procedure by id.
-func (suo *StepUpdateOne) SetProcedureID(id string) *StepUpdateOne {
-	suo.mutation.SetProcedureID(id)
+// SetTemplateID sets the template edge to Template by id.
+func (suo *StepUpdateOne) SetTemplateID(id string) *StepUpdateOne {
+	suo.mutation.SetTemplateID(id)
 	return suo
 }
 
-// SetNillableProcedureID sets the procedure edge to Procedure by id if the given value is not nil.
-func (suo *StepUpdateOne) SetNillableProcedureID(id *string) *StepUpdateOne {
+// SetNillableTemplateID sets the template edge to Template by id if the given value is not nil.
+func (suo *StepUpdateOne) SetNillableTemplateID(id *string) *StepUpdateOne {
 	if id != nil {
-		suo = suo.SetProcedureID(*id)
+		suo = suo.SetTemplateID(*id)
 	}
 	return suo
 }
 
-// SetProcedure sets the procedure edge to Procedure.
-func (suo *StepUpdateOne) SetProcedure(p *Procedure) *StepUpdateOne {
-	return suo.SetProcedureID(p.ID)
+// SetTemplate sets the template edge to Template.
+func (suo *StepUpdateOne) SetTemplate(t *Template) *StepUpdateOne {
+	return suo.SetTemplateID(t.ID)
 }
 
 // Mutation returns the StepMutation object of the builder.
@@ -444,9 +444,9 @@ func (suo *StepUpdateOne) Mutation() *StepMutation {
 	return suo.mutation
 }
 
-// ClearProcedure clears the procedure edge to Procedure.
-func (suo *StepUpdateOne) ClearProcedure() *StepUpdateOne {
-	suo.mutation.ClearProcedure()
+// ClearTemplate clears the template edge to Template.
+func (suo *StepUpdateOne) ClearTemplate() *StepUpdateOne {
+	suo.mutation.ClearTemplate()
 	return suo
 }
 
@@ -608,33 +608,33 @@ func (suo *StepUpdateOne) sqlSave(ctx context.Context) (s *Step, err error) {
 			Column: step.FieldFilterArgs,
 		})
 	}
-	if suo.mutation.ProcedureCleared() {
+	if suo.mutation.TemplateCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   step.ProcedureTable,
-			Columns: []string{step.ProcedureColumn},
+			Table:   step.TemplateTable,
+			Columns: []string{step.TemplateColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := suo.mutation.ProcedureIDs(); len(nodes) > 0 {
+	if nodes := suo.mutation.TemplateIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   step.ProcedureTable,
-			Columns: []string{step.ProcedureColumn},
+			Table:   step.TemplateTable,
+			Columns: []string{step.TemplateColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}

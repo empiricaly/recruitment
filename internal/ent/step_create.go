@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/step"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
@@ -91,23 +91,23 @@ func (sc *StepCreate) SetID(s string) *StepCreate {
 	return sc
 }
 
-// SetProcedureID sets the procedure edge to Procedure by id.
-func (sc *StepCreate) SetProcedureID(id string) *StepCreate {
-	sc.mutation.SetProcedureID(id)
+// SetTemplateID sets the template edge to Template by id.
+func (sc *StepCreate) SetTemplateID(id string) *StepCreate {
+	sc.mutation.SetTemplateID(id)
 	return sc
 }
 
-// SetNillableProcedureID sets the procedure edge to Procedure by id if the given value is not nil.
-func (sc *StepCreate) SetNillableProcedureID(id *string) *StepCreate {
+// SetNillableTemplateID sets the template edge to Template by id if the given value is not nil.
+func (sc *StepCreate) SetNillableTemplateID(id *string) *StepCreate {
 	if id != nil {
-		sc = sc.SetProcedureID(*id)
+		sc = sc.SetTemplateID(*id)
 	}
 	return sc
 }
 
-// SetProcedure sets the procedure edge to Procedure.
-func (sc *StepCreate) SetProcedure(p *Procedure) *StepCreate {
-	return sc.SetProcedureID(p.ID)
+// SetTemplate sets the template edge to Template.
+func (sc *StepCreate) SetTemplate(t *Template) *StepCreate {
+	return sc.SetTemplateID(t.ID)
 }
 
 // Mutation returns the StepMutation object of the builder.
@@ -272,17 +272,17 @@ func (sc *StepCreate) createSpec() (*Step, *sqlgraph.CreateSpec) {
 		})
 		s.FilterArgs = value
 	}
-	if nodes := sc.mutation.ProcedureIDs(); len(nodes) > 0 {
+	if nodes := sc.mutation.TemplateIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   step.ProcedureTable,
-			Columns: []string{step.ProcedureColumn},
+			Table:   step.TemplateTable,
+			Columns: []string{step.TemplateColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
-					Column: procedure.FieldID,
+					Column: template.FieldID,
 				},
 			},
 		}

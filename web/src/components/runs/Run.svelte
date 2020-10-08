@@ -63,7 +63,7 @@
     10000
   );
 
-  const procedure = deepCopy(run.procedure);
+  const template = deepCopy(run.template);
 
   function handleClick(event) {
     console.log(event.detail);
@@ -196,29 +196,6 @@
       <StatusBadge large status={run.status} />
     </div>
 
-    <Template {project} {run} template={procedure} />
-
-    <!-- We've used 3xl here, but feel free to try other max-widths based on your
-    needs
-    <div class="mt-8 max-w-3xl mx-auto">
-      <div class="bg-gray-200 overflow-hidden rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-          {#if run.procedure.selectionType === 'INTERNAL_DB'}
-            <div>
-              Selecting <strong>{run.procedure.participantCount}</strong> participant{run.procedure.participantCount === 1 ? '' : 's'}
-              from the <strong>internal database</strong> with the following criteria:
-              where {#if run.procedure.internalCriteria.condition}
-                <RunCriteriaText
-                  first
-                  condition={run.procedure.internalCriteria.condition} />
-                .
-              {/if}
-            </div>
-          {:else}
-            <div>TBD</div>
-          {/if}
-        </div>
-      </div>
-    </div> -->
+    <Template {project} {run} {template} />
   </Layout>
 {/if}

@@ -10,11 +10,11 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/migrate"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
-	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 
 	"github.com/facebook/ent/dialect"
 	"github.com/facebook/ent/dialect/sql"
@@ -28,8 +28,6 @@ type Client struct {
 	Schema *migrate.Schema
 	// Admin is the client for interacting with the Admin builders.
 	Admin *AdminClient
-	// Procedure is the client for interacting with the Procedure builders.
-	Procedure *ProcedureClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
 	// Run is the client for interacting with the Run builders.
@@ -38,6 +36,8 @@ type Client struct {
 	Step *StepClient
 	// StepRun is the client for interacting with the StepRun builders.
 	StepRun *StepRunClient
+	// Template is the client for interacting with the Template builders.
+	Template *TemplateClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -52,11 +52,11 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Admin = NewAdminClient(c.config)
-	c.Procedure = NewProcedureClient(c.config)
 	c.Project = NewProjectClient(c.config)
 	c.Run = NewRunClient(c.config)
 	c.Step = NewStepClient(c.config)
 	c.StepRun = NewStepRunClient(c.config)
+	c.Template = NewTemplateClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -87,14 +87,14 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	}
 	cfg := config{driver: tx, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		ctx:       ctx,
-		config:    cfg,
-		Admin:     NewAdminClient(cfg),
-		Procedure: NewProcedureClient(cfg),
-		Project:   NewProjectClient(cfg),
-		Run:       NewRunClient(cfg),
-		Step:      NewStepClient(cfg),
-		StepRun:   NewStepRunClient(cfg),
+		ctx:      ctx,
+		config:   cfg,
+		Admin:    NewAdminClient(cfg),
+		Project:  NewProjectClient(cfg),
+		Run:      NewRunClient(cfg),
+		Step:     NewStepClient(cfg),
+		StepRun:  NewStepRunClient(cfg),
+		Template: NewTemplateClient(cfg),
 	}, nil
 }
 
@@ -109,13 +109,13 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	}
 	cfg := config{driver: &txDriver{tx: tx, drv: c.driver}, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		config:    cfg,
-		Admin:     NewAdminClient(cfg),
-		Procedure: NewProcedureClient(cfg),
-		Project:   NewProjectClient(cfg),
-		Run:       NewRunClient(cfg),
-		Step:      NewStepClient(cfg),
-		StepRun:   NewStepRunClient(cfg),
+		config:   cfg,
+		Admin:    NewAdminClient(cfg),
+		Project:  NewProjectClient(cfg),
+		Run:      NewRunClient(cfg),
+		Step:     NewStepClient(cfg),
+		StepRun:  NewStepRunClient(cfg),
+		Template: NewTemplateClient(cfg),
 	}, nil
 }
 
@@ -145,11 +145,11 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Admin.Use(hooks...)
-	c.Procedure.Use(hooks...)
 	c.Project.Use(hooks...)
 	c.Run.Use(hooks...)
 	c.Step.Use(hooks...)
 	c.StepRun.Use(hooks...)
+	c.Template.Use(hooks...)
 }
 
 // AdminClient is a client for the Admin schema.
@@ -251,15 +251,15 @@ func (c *AdminClient) QueryProjects(a *Admin) *ProjectQuery {
 	return query
 }
 
-// QueryProcedures queries the procedures edge of a Admin.
-func (c *AdminClient) QueryProcedures(a *Admin) *ProcedureQuery {
-	query := &ProcedureQuery{config: c.config}
+// QueryTemplates queries the templates edge of a Admin.
+func (c *AdminClient) QueryTemplates(a *Admin) *TemplateQuery {
+	query := &TemplateQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := a.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(admin.Table, admin.FieldID, id),
-			sqlgraph.To(procedure.Table, procedure.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, admin.ProceduresTable, admin.ProceduresColumn),
+			sqlgraph.To(template.Table, template.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, admin.TemplatesTable, admin.TemplatesColumn),
 		)
 		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
 		return fromV, nil
@@ -270,158 +270,6 @@ func (c *AdminClient) QueryProcedures(a *Admin) *ProcedureQuery {
 // Hooks returns the client hooks.
 func (c *AdminClient) Hooks() []Hook {
 	return c.hooks.Admin
-}
-
-// ProcedureClient is a client for the Procedure schema.
-type ProcedureClient struct {
-	config
-}
-
-// NewProcedureClient returns a client for the Procedure from the given config.
-func NewProcedureClient(c config) *ProcedureClient {
-	return &ProcedureClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `procedure.Hooks(f(g(h())))`.
-func (c *ProcedureClient) Use(hooks ...Hook) {
-	c.hooks.Procedure = append(c.hooks.Procedure, hooks...)
-}
-
-// Create returns a create builder for Procedure.
-func (c *ProcedureClient) Create() *ProcedureCreate {
-	mutation := newProcedureMutation(c.config, OpCreate)
-	return &ProcedureCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// BulkCreate returns a builder for creating a bulk of Procedure entities.
-func (c *ProcedureClient) CreateBulk(builders ...*ProcedureCreate) *ProcedureCreateBulk {
-	return &ProcedureCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Procedure.
-func (c *ProcedureClient) Update() *ProcedureUpdate {
-	mutation := newProcedureMutation(c.config, OpUpdate)
-	return &ProcedureUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ProcedureClient) UpdateOne(pr *Procedure) *ProcedureUpdateOne {
-	mutation := newProcedureMutation(c.config, OpUpdateOne, withProcedure(pr))
-	return &ProcedureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ProcedureClient) UpdateOneID(id string) *ProcedureUpdateOne {
-	mutation := newProcedureMutation(c.config, OpUpdateOne, withProcedureID(id))
-	return &ProcedureUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Procedure.
-func (c *ProcedureClient) Delete() *ProcedureDelete {
-	mutation := newProcedureMutation(c.config, OpDelete)
-	return &ProcedureDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a delete builder for the given entity.
-func (c *ProcedureClient) DeleteOne(pr *Procedure) *ProcedureDeleteOne {
-	return c.DeleteOneID(pr.ID)
-}
-
-// DeleteOneID returns a delete builder for the given id.
-func (c *ProcedureClient) DeleteOneID(id string) *ProcedureDeleteOne {
-	builder := c.Delete().Where(procedure.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ProcedureDeleteOne{builder}
-}
-
-// Query returns a query builder for Procedure.
-func (c *ProcedureClient) Query() *ProcedureQuery {
-	return &ProcedureQuery{config: c.config}
-}
-
-// Get returns a Procedure entity by its id.
-func (c *ProcedureClient) Get(ctx context.Context, id string) (*Procedure, error) {
-	return c.Query().Where(procedure.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ProcedureClient) GetX(ctx context.Context, id string) *Procedure {
-	pr, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return pr
-}
-
-// QuerySteps queries the steps edge of a Procedure.
-func (c *ProcedureClient) QuerySteps(pr *Procedure) *StepQuery {
-	query := &StepQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := pr.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(procedure.Table, procedure.FieldID, id),
-			sqlgraph.To(step.Table, step.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, procedure.StepsTable, procedure.StepsColumn),
-		)
-		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryProject queries the project edge of a Procedure.
-func (c *ProcedureClient) QueryProject(pr *Procedure) *ProjectQuery {
-	query := &ProjectQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := pr.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(procedure.Table, procedure.FieldID, id),
-			sqlgraph.To(project.Table, project.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, procedure.ProjectTable, procedure.ProjectColumn),
-		)
-		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryCreator queries the creator edge of a Procedure.
-func (c *ProcedureClient) QueryCreator(pr *Procedure) *AdminQuery {
-	query := &AdminQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := pr.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(procedure.Table, procedure.FieldID, id),
-			sqlgraph.To(admin.Table, admin.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, procedure.CreatorTable, procedure.CreatorColumn),
-		)
-		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryRun queries the run edge of a Procedure.
-func (c *ProcedureClient) QueryRun(pr *Procedure) *RunQuery {
-	query := &RunQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := pr.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(procedure.Table, procedure.FieldID, id),
-			sqlgraph.To(run.Table, run.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, procedure.RunTable, procedure.RunColumn),
-		)
-		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *ProcedureClient) Hooks() []Hook {
-	return c.hooks.Procedure
 }
 
 // ProjectClient is a client for the Project schema.
@@ -523,15 +371,15 @@ func (c *ProjectClient) QueryRuns(pr *Project) *RunQuery {
 	return query
 }
 
-// QueryProcedures queries the procedures edge of a Project.
-func (c *ProjectClient) QueryProcedures(pr *Project) *ProcedureQuery {
-	query := &ProcedureQuery{config: c.config}
+// QueryTemplates queries the templates edge of a Project.
+func (c *ProjectClient) QueryTemplates(pr *Project) *TemplateQuery {
+	query := &TemplateQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := pr.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(project.Table, project.FieldID, id),
-			sqlgraph.To(procedure.Table, procedure.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, project.ProceduresTable, project.ProceduresColumn),
+			sqlgraph.To(template.Table, template.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, project.TemplatesTable, project.TemplatesColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil
@@ -659,15 +507,15 @@ func (c *RunClient) QueryProject(r *Run) *ProjectQuery {
 	return query
 }
 
-// QueryProcedure queries the procedure edge of a Run.
-func (c *RunClient) QueryProcedure(r *Run) *ProcedureQuery {
-	query := &ProcedureQuery{config: c.config}
+// QueryTemplate queries the template edge of a Run.
+func (c *RunClient) QueryTemplate(r *Run) *TemplateQuery {
+	query := &TemplateQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := r.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(run.Table, run.FieldID, id),
-			sqlgraph.To(procedure.Table, procedure.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, run.ProcedureTable, run.ProcedureColumn),
+			sqlgraph.To(template.Table, template.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, run.TemplateTable, run.TemplateColumn),
 		)
 		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
 		return fromV, nil
@@ -779,15 +627,15 @@ func (c *StepClient) GetX(ctx context.Context, id string) *Step {
 	return s
 }
 
-// QueryProcedure queries the procedure edge of a Step.
-func (c *StepClient) QueryProcedure(s *Step) *ProcedureQuery {
-	query := &ProcedureQuery{config: c.config}
+// QueryTemplate queries the template edge of a Step.
+func (c *StepClient) QueryTemplate(s *Step) *TemplateQuery {
+	query := &TemplateQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := s.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(step.Table, step.FieldID, id),
-			sqlgraph.To(procedure.Table, procedure.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, step.ProcedureTable, step.ProcedureColumn),
+			sqlgraph.To(template.Table, template.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, step.TemplateTable, step.TemplateColumn),
 		)
 		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
 		return fromV, nil
@@ -902,4 +750,156 @@ func (c *StepRunClient) QueryRun(sr *StepRun) *RunQuery {
 // Hooks returns the client hooks.
 func (c *StepRunClient) Hooks() []Hook {
 	return c.hooks.StepRun
+}
+
+// TemplateClient is a client for the Template schema.
+type TemplateClient struct {
+	config
+}
+
+// NewTemplateClient returns a client for the Template from the given config.
+func NewTemplateClient(c config) *TemplateClient {
+	return &TemplateClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `template.Hooks(f(g(h())))`.
+func (c *TemplateClient) Use(hooks ...Hook) {
+	c.hooks.Template = append(c.hooks.Template, hooks...)
+}
+
+// Create returns a create builder for Template.
+func (c *TemplateClient) Create() *TemplateCreate {
+	mutation := newTemplateMutation(c.config, OpCreate)
+	return &TemplateCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// BulkCreate returns a builder for creating a bulk of Template entities.
+func (c *TemplateClient) CreateBulk(builders ...*TemplateCreate) *TemplateCreateBulk {
+	return &TemplateCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Template.
+func (c *TemplateClient) Update() *TemplateUpdate {
+	mutation := newTemplateMutation(c.config, OpUpdate)
+	return &TemplateUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TemplateClient) UpdateOne(t *Template) *TemplateUpdateOne {
+	mutation := newTemplateMutation(c.config, OpUpdateOne, withTemplate(t))
+	return &TemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TemplateClient) UpdateOneID(id string) *TemplateUpdateOne {
+	mutation := newTemplateMutation(c.config, OpUpdateOne, withTemplateID(id))
+	return &TemplateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Template.
+func (c *TemplateClient) Delete() *TemplateDelete {
+	mutation := newTemplateMutation(c.config, OpDelete)
+	return &TemplateDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *TemplateClient) DeleteOne(t *Template) *TemplateDeleteOne {
+	return c.DeleteOneID(t.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *TemplateClient) DeleteOneID(id string) *TemplateDeleteOne {
+	builder := c.Delete().Where(template.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TemplateDeleteOne{builder}
+}
+
+// Query returns a query builder for Template.
+func (c *TemplateClient) Query() *TemplateQuery {
+	return &TemplateQuery{config: c.config}
+}
+
+// Get returns a Template entity by its id.
+func (c *TemplateClient) Get(ctx context.Context, id string) (*Template, error) {
+	return c.Query().Where(template.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TemplateClient) GetX(ctx context.Context, id string) *Template {
+	t, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+// QuerySteps queries the steps edge of a Template.
+func (c *TemplateClient) QuerySteps(t *Template) *StepQuery {
+	query := &StepQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(template.Table, template.FieldID, id),
+			sqlgraph.To(step.Table, step.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, template.StepsTable, template.StepsColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProject queries the project edge of a Template.
+func (c *TemplateClient) QueryProject(t *Template) *ProjectQuery {
+	query := &ProjectQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(template.Table, template.FieldID, id),
+			sqlgraph.To(project.Table, project.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, template.ProjectTable, template.ProjectColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCreator queries the creator edge of a Template.
+func (c *TemplateClient) QueryCreator(t *Template) *AdminQuery {
+	query := &AdminQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(template.Table, template.FieldID, id),
+			sqlgraph.To(admin.Table, admin.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, template.CreatorTable, template.CreatorColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRun queries the run edge of a Template.
+func (c *TemplateClient) QueryRun(t *Template) *RunQuery {
+	query := &RunQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(template.Table, template.FieldID, id),
+			sqlgraph.To(run.Table, run.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, template.RunTable, template.RunColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TemplateClient) Hooks() []Hook {
+	return c.hooks.Template
 }
