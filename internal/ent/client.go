@@ -627,6 +627,22 @@ func (c *StepClient) GetX(ctx context.Context, id string) *Step {
 	return s
 }
 
+// QueryStepRun queries the stepRun edge of a Step.
+func (c *StepClient) QueryStepRun(s *Step) *StepRunQuery {
+	query := &StepRunQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(step.Table, step.FieldID, id),
+			sqlgraph.To(steprun.Table, steprun.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, step.StepRunTable, step.StepRunColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryTemplate queries the template edge of a Step.
 func (c *StepClient) QueryTemplate(s *Step) *TemplateQuery {
 	query := &TemplateQuery{config: c.config}
@@ -729,6 +745,22 @@ func (c *StepRunClient) GetX(ctx context.Context, id string) *StepRun {
 		panic(err)
 	}
 	return sr
+}
+
+// QueryStep queries the step edge of a StepRun.
+func (c *StepRunClient) QueryStep(sr *StepRun) *StepQuery {
+	query := &StepQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := sr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(steprun.Table, steprun.FieldID, id),
+			sqlgraph.To(step.Table, step.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, steprun.StepTable, steprun.StepColumn),
+		)
+		fromV = sqlgraph.Neighbors(sr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryRun queries the run edge of a StepRun.

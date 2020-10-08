@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/step"
+	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 )
@@ -36,22 +37,39 @@ type Step struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StepQuery when eager-loading is set.
 	Edges          StepEdges `json:"edges"`
+	step_run_step  *string
 	template_steps *string
 }
 
 // StepEdges holds the relations/edges for other nodes in the graph.
 type StepEdges struct {
+	// StepRun holds the value of the stepRun edge.
+	StepRun *StepRun
 	// Template holds the value of the template edge.
 	Template *Template
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
+}
+
+// StepRunOrErr returns the StepRun value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e StepEdges) StepRunOrErr() (*StepRun, error) {
+	if e.loadedTypes[0] {
+		if e.StepRun == nil {
+			// The edge stepRun was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: steprun.Label}
+		}
+		return e.StepRun, nil
+	}
+	return nil, &NotLoadedError{edge: "stepRun"}
 }
 
 // TemplateOrErr returns the Template value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e StepEdges) TemplateOrErr() (*Template, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		if e.Template == nil {
 			// The edge template was loaded in eager-loading,
 			// but was not found.
@@ -80,6 +98,7 @@ func (*Step) scanValues() []interface{} {
 // fkValues returns the types for scanning foreign-keys values from sql.Rows.
 func (*Step) fkValues() []interface{} {
 	return []interface{}{
+		&sql.NullString{}, // step_run_step
 		&sql.NullString{}, // template_steps
 	}
 }
@@ -139,13 +158,24 @@ func (s *Step) assignValues(values ...interface{}) error {
 	values = values[8:]
 	if len(values) == len(step.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullString); !ok {
-			return fmt.Errorf("unexpected type %T for field template_steps", values[0])
+			return fmt.Errorf("unexpected type %T for field step_run_step", values[0])
+		} else if value.Valid {
+			s.step_run_step = new(string)
+			*s.step_run_step = value.String
+		}
+		if value, ok := values[1].(*sql.NullString); !ok {
+			return fmt.Errorf("unexpected type %T for field template_steps", values[1])
 		} else if value.Valid {
 			s.template_steps = new(string)
 			*s.template_steps = value.String
 		}
 	}
 	return nil
+}
+
+// QueryStepRun queries the stepRun edge of the Step.
+func (s *Step) QueryStepRun() *StepRunQuery {
+	return (&StepClient{config: s.config}).QueryStepRun(s)
 }
 
 // QueryTemplate queries the template edge of the Step.

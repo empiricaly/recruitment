@@ -9,6 +9,7 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/step"
+	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -103,6 +104,25 @@ func (su *StepUpdate) ClearFilterArgs() *StepUpdate {
 	return su
 }
 
+// SetStepRunID sets the stepRun edge to StepRun by id.
+func (su *StepUpdate) SetStepRunID(id string) *StepUpdate {
+	su.mutation.SetStepRunID(id)
+	return su
+}
+
+// SetNillableStepRunID sets the stepRun edge to StepRun by id if the given value is not nil.
+func (su *StepUpdate) SetNillableStepRunID(id *string) *StepUpdate {
+	if id != nil {
+		su = su.SetStepRunID(*id)
+	}
+	return su
+}
+
+// SetStepRun sets the stepRun edge to StepRun.
+func (su *StepUpdate) SetStepRun(s *StepRun) *StepUpdate {
+	return su.SetStepRunID(s.ID)
+}
+
 // SetTemplateID sets the template edge to Template by id.
 func (su *StepUpdate) SetTemplateID(id string) *StepUpdate {
 	su.mutation.SetTemplateID(id)
@@ -125,6 +145,12 @@ func (su *StepUpdate) SetTemplate(t *Template) *StepUpdate {
 // Mutation returns the StepMutation object of the builder.
 func (su *StepUpdate) Mutation() *StepMutation {
 	return su.mutation
+}
+
+// ClearStepRun clears the stepRun edge to StepRun.
+func (su *StepUpdate) ClearStepRun() *StepUpdate {
+	su.mutation.ClearStepRun()
+	return su
 }
 
 // ClearTemplate clears the template edge to Template.
@@ -293,6 +319,41 @@ func (su *StepUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: step.FieldFilterArgs,
 		})
 	}
+	if su.mutation.StepRunCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   step.StepRunTable,
+			Columns: []string{step.StepRunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.StepRunIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   step.StepRunTable,
+			Columns: []string{step.StepRunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if su.mutation.TemplateCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -420,6 +481,25 @@ func (suo *StepUpdateOne) ClearFilterArgs() *StepUpdateOne {
 	return suo
 }
 
+// SetStepRunID sets the stepRun edge to StepRun by id.
+func (suo *StepUpdateOne) SetStepRunID(id string) *StepUpdateOne {
+	suo.mutation.SetStepRunID(id)
+	return suo
+}
+
+// SetNillableStepRunID sets the stepRun edge to StepRun by id if the given value is not nil.
+func (suo *StepUpdateOne) SetNillableStepRunID(id *string) *StepUpdateOne {
+	if id != nil {
+		suo = suo.SetStepRunID(*id)
+	}
+	return suo
+}
+
+// SetStepRun sets the stepRun edge to StepRun.
+func (suo *StepUpdateOne) SetStepRun(s *StepRun) *StepUpdateOne {
+	return suo.SetStepRunID(s.ID)
+}
+
 // SetTemplateID sets the template edge to Template by id.
 func (suo *StepUpdateOne) SetTemplateID(id string) *StepUpdateOne {
 	suo.mutation.SetTemplateID(id)
@@ -442,6 +522,12 @@ func (suo *StepUpdateOne) SetTemplate(t *Template) *StepUpdateOne {
 // Mutation returns the StepMutation object of the builder.
 func (suo *StepUpdateOne) Mutation() *StepMutation {
 	return suo.mutation
+}
+
+// ClearStepRun clears the stepRun edge to StepRun.
+func (suo *StepUpdateOne) ClearStepRun() *StepUpdateOne {
+	suo.mutation.ClearStepRun()
+	return suo
 }
 
 // ClearTemplate clears the template edge to Template.
@@ -607,6 +693,41 @@ func (suo *StepUpdateOne) sqlSave(ctx context.Context) (s *Step, err error) {
 			Type:   field.TypeBytes,
 			Column: step.FieldFilterArgs,
 		})
+	}
+	if suo.mutation.StepRunCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   step.StepRunTable,
+			Columns: []string{step.StepRunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.StepRunIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   step.StepRunTable,
+			Columns: []string{step.StepRunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if suo.mutation.TemplateCleared() {
 		edge := &sqlgraph.EdgeSpec{

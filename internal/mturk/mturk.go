@@ -1,14 +1,17 @@
 package mturk
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/mturk"
 	"github.com/empiricaly/recruitment/internal/ent"
+	templateModel "github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -110,34 +113,126 @@ func (s *Session) GetQuals() ([]*model.MTurkQulificationType, error) {
 }
 
 // RunStep to run step based on stepType
-func (s *Session) RunStep(run *ent.Run, step *ent.Step) error {
+func (s *Session) RunStep(run *ent.Run, stepRun *ent.StepRun) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var err error
+	var step *ent.Step
+	if stepRun.Edges.Step != nil {
+		step = stepRun.Edges.Step
+	} else {
+		step, err = stepRun.QueryStep().Only(ctx)
+		if err != nil {
+			return errors.Wrap(err, "query step for stepRun")
+		}
+	}
+
+	var template *ent.Template
+	if run.Edges.Template != nil {
+		template = run.Edges.Template
+	} else {
+		template, err = run.QueryTemplate().Only(ctx)
+		if err != nil {
+			return errors.Wrap(err, "query template for stepRun")
+		}
+	}
 
 	switch step.Type {
 	case "MTURK_HIT":
-		hit := &model.HITStepArgs{}
-		err := json.Unmarshal(step.HitArgs, hit)
-		if err != nil {
-			return errors.Wrap(err, "unmarshal Step Hit args")
-		}
-		params := &mturk.CreateHITInput{
-			AssignmentDurationInSeconds: aws.Int64(int64(hit.Duration)),
-			LifetimeInSeconds:           aws.Int64(int64(hit.Duration)),
-			MaxAssignments:              aws.Int64(int64(run.Edges.Template.ParticipantCount)),
-			Title:                       aws.String(hit.Title),
-			Description:                 aws.String(hit.Description),
-			Keywords:                    aws.String(hit.Keywords),
-			Reward:                      aws.String(fmt.Sprintf("%f", hit.Reward)),
-		}
-		s.MTurk.CreateHIT(params)
-
+		return s.runMTurkHITStep(ctx, run, stepRun, template, step)
 	case "MTURK_MESSAGE":
-		// var notif *model.MessageStepArgsInput = step.MsgArgs
-		// params := &mturk.NotifyWorkersInput{MessageText: notif.Message}
-		// s.MTurk.NotifyWorkers(params)
-	// case "PARTICIPANT_FILTER":
-	// 	params := &mturk.CreateHITInput{}
+		return s.runMTurkMessageStep(ctx, run, stepRun, template, step)
 	default:
 		return errors.Errorf("unknown step type for MTurk: %s", step.Type.String())
+	}
+}
+
+func (s *Session) runMTurkMessageStep(ctx context.Context, run *ent.Run, stepRun *ent.StepRun, template *ent.Template, step *ent.Step) error {
+	if template.SelectionType == templateModel.SelectionTypeMTURK_QUALIFICATIONS {
+
+	}
+
+	hit := &model.HITStepArgs{}
+	err := json.Unmarshal(step.HitArgs, hit)
+	if err != nil {
+		return errors.Wrap(err, "unmarshal Step Hit args")
+	}
+	// var notif *model.MessageStepArgsInput = step.MsgArgs
+	// params := &mturk.NotifyWorkersInput{MessageText: notif.Message}
+	// s.MTurk.NotifyWorkers(params)
+	// case "PARTICIPANT_FILTER":
+	// 	params := &mturk.CreateHITInput{}
+
+	return nil
+}
+
+func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *ent.StepRun, template *ent.Template, step *ent.Step) error {
+	hitArgs := &model.HITStepArgs{}
+	err := json.Unmarshal(step.HitArgs, hitArgs)
+	if err != nil {
+		return errors.Wrap(err, "unmarshal Step Hit args")
+	}
+
+	isFirstStep := step.Index == 0
+	isInternalDB := template.SelectionType == templateModel.SelectionTypeINTERNAL_DB
+
+	if isFirstStep && isInternalDB {
+		// Go crazzy
+	}
+
+	var quals []*mturk.QualificationRequirement
+	if !isFirstStep {
+		// Go a little less crazy
+		// Create a special new qual to allows participants to go to this step
+		// and add it to quals
+	} else {
+		crit := &model.MTurkCriteria{}
+		err := json.Unmarshal(template.MturkCriteria, crit)
+		if err != nil {
+			return errors.Wrap(err, "unmarshal MturkCriteria")
+		}
+		for _, q := range crit.Qualifications {
+			ints := make([]*int64, len(q.Values))
+			for i, val := range q.Values {
+				ints[i] = aws.Int64(int64(val))
+			}
+
+			locales := make([]*mturk.Locale, len(q.Locales))
+			for i, val := range q.Locales {
+				locales[i] = &mturk.Locale{
+					Country:     aws.String(val.Country),
+					Subdivision: val.Subdivision,
+				}
+			}
+
+			quals = append(quals, &mturk.QualificationRequirement{
+				QualificationTypeId: aws.String(q.ID),
+				Comparator:          aws.String(q.Comparator.String()),
+				IntegerValues:       ints,
+				LocaleValues:        locales,
+			})
+		}
+	}
+
+	params := &mturk.CreateHITInput{
+		AssignmentDurationInSeconds: aws.Int64(int64(hitArgs.Duration)),
+		LifetimeInSeconds:           aws.Int64(int64(hitArgs.Duration)),
+		MaxAssignments:              aws.Int64(int64(template.ParticipantCount)),
+		Title:                       aws.String(hitArgs.Title),
+		Description:                 aws.String(hitArgs.Description),
+		Keywords:                    aws.String(hitArgs.Keywords),
+		Reward:                      aws.String(fmt.Sprintf("%f", hitArgs.Reward)),
+		QualificationRequirements:   quals,
+	}
+	hit, err := s.MTurk.CreateHIT(params)
+	if err != nil {
+		return errors.Wrap(err, "create hit")
+	}
+
+	_, err = stepRun.Update().SetHitID(*hit.HIT.HITId).Save(ctx)
+	if err != nil {
+		return errors.Wrap(err, "save hit ID in StepRun")
 	}
 
 	return nil

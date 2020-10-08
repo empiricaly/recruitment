@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/step"
+	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -89,6 +90,25 @@ func (sc *StepCreate) SetFilterArgs(b []byte) *StepCreate {
 func (sc *StepCreate) SetID(s string) *StepCreate {
 	sc.mutation.SetID(s)
 	return sc
+}
+
+// SetStepRunID sets the stepRun edge to StepRun by id.
+func (sc *StepCreate) SetStepRunID(id string) *StepCreate {
+	sc.mutation.SetStepRunID(id)
+	return sc
+}
+
+// SetNillableStepRunID sets the stepRun edge to StepRun by id if the given value is not nil.
+func (sc *StepCreate) SetNillableStepRunID(id *string) *StepCreate {
+	if id != nil {
+		sc = sc.SetStepRunID(*id)
+	}
+	return sc
+}
+
+// SetStepRun sets the stepRun edge to StepRun.
+func (sc *StepCreate) SetStepRun(s *StepRun) *StepCreate {
+	return sc.SetStepRunID(s.ID)
 }
 
 // SetTemplateID sets the template edge to Template by id.
@@ -271,6 +291,25 @@ func (sc *StepCreate) createSpec() (*Step, *sqlgraph.CreateSpec) {
 			Column: step.FieldFilterArgs,
 		})
 		s.FilterArgs = value
+	}
+	if nodes := sc.mutation.StepRunIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   step.StepRunTable,
+			Columns: []string{step.StepRunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := sc.mutation.TemplateIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -4,12 +4,14 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -25,8 +27,9 @@ type StepRunQuery struct {
 	unique     []string
 	predicates []predicate.StepRun
 	// eager-loading edges.
-	withRun *RunQuery
-	withFKs bool
+	withStep *StepQuery
+	withRun  *RunQuery
+	withFKs  bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -54,6 +57,24 @@ func (srq *StepRunQuery) Offset(offset int) *StepRunQuery {
 func (srq *StepRunQuery) Order(o ...OrderFunc) *StepRunQuery {
 	srq.order = append(srq.order, o...)
 	return srq
+}
+
+// QueryStep chains the current query on the step edge.
+func (srq *StepRunQuery) QueryStep() *StepQuery {
+	query := &StepQuery{config: srq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := srq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(steprun.Table, steprun.FieldID, srq.sqlQuery()),
+			sqlgraph.To(step.Table, step.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, steprun.StepTable, steprun.StepColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(srq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryRun chains the current query on the run edge.
@@ -253,6 +274,17 @@ func (srq *StepRunQuery) Clone() *StepRunQuery {
 	}
 }
 
+//  WithStep tells the query-builder to eager-loads the nodes that are connected to
+// the "step" edge. The optional arguments used to configure the query builder of the edge.
+func (srq *StepRunQuery) WithStep(opts ...func(*StepQuery)) *StepRunQuery {
+	query := &StepQuery{config: srq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	srq.withStep = query
+	return srq
+}
+
 //  WithRun tells the query-builder to eager-loads the nodes that are connected to
 // the "run" edge. The optional arguments used to configure the query builder of the edge.
 func (srq *StepRunQuery) WithRun(opts ...func(*RunQuery)) *StepRunQuery {
@@ -331,7 +363,8 @@ func (srq *StepRunQuery) sqlAll(ctx context.Context) ([]*StepRun, error) {
 		nodes       = []*StepRun{}
 		withFKs     = srq.withFKs
 		_spec       = srq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
+			srq.withStep != nil,
 			srq.withRun != nil,
 		}
 	)
@@ -363,6 +396,34 @@ func (srq *StepRunQuery) sqlAll(ctx context.Context) ([]*StepRun, error) {
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+
+	if query := srq.withStep; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[string]*StepRun)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.Step(func(s *sql.Selector) {
+			s.Where(sql.InValues(steprun.StepColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.step_run_step
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "step_run_step" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "step_run_step" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Step = n
+		}
 	}
 
 	if query := srq.withRun; query != nil {

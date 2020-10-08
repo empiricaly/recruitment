@@ -13,6 +13,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	stepy "github.com/empiricaly/recruitment/internal/ent/step"
+	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
 	errs "github.com/pkg/errors"
@@ -78,7 +79,7 @@ func (r *mutationResolver) UpdateTemplate(ctx context.Context, input *model.Upda
 
 	template, err := tx.Template.UpdateOneID(*input.Template.ID).
 		SetName(input.Template.Name).
-		SetSelectionType(input.Template.SelectionType.String()).
+		SetSelectionType(template.SelectionType(input.Template.SelectionType.String())).
 		SetParticipantCount(input.Template.ParticipantCount).
 		SetInternalCriteria(internalCriteria).
 		SetMturkCriteria(mturkCriteria).
@@ -190,7 +191,7 @@ func (r *mutationResolver) CreateRun(ctx context.Context, input *model.CreateRun
 	template, err := r.Store.Template.Create().
 		SetID(xid.New().String()).
 		SetName(input.Template.Name).
-		SetSelectionType(input.Template.SelectionType.String()).
+		SetSelectionType(template.SelectionType(input.Template.SelectionType.String())).
 		SetParticipantCount(input.Template.ParticipantCount).
 		SetInternalCriteria(internalCriteria).
 		SetMturkCriteria(mturkCriteria).

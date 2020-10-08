@@ -26,7 +26,7 @@ type Template struct {
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// SelectionType holds the value of the "selectionType" field.
-	SelectionType string `json:"selectionType,omitempty"`
+	SelectionType template.SelectionType `json:"selectionType,omitempty"`
 	// ParticipantCount holds the value of the "participantCount" field.
 	ParticipantCount int `json:"participantCount,omitempty"`
 	// InternalCriteria holds the value of the "internalCriteria" field.
@@ -163,7 +163,7 @@ func (t *Template) assignValues(values ...interface{}) error {
 	if value, ok := values[3].(*sql.NullString); !ok {
 		return fmt.Errorf("unexpected type %T for field selectionType", values[3])
 	} else if value.Valid {
-		t.SelectionType = value.String
+		t.SelectionType = template.SelectionType(value.String)
 	}
 	if value, ok := values[4].(*sql.NullInt64); !ok {
 		return fmt.Errorf("unexpected type %T for field participantCount", values[4])
@@ -259,7 +259,7 @@ func (t *Template) String() string {
 	builder.WriteString(", name=")
 	builder.WriteString(t.Name)
 	builder.WriteString(", selectionType=")
-	builder.WriteString(t.SelectionType)
+	builder.WriteString(fmt.Sprintf("%v", t.SelectionType))
 	builder.WriteString(", participantCount=")
 	builder.WriteString(fmt.Sprintf("%v", t.ParticipantCount))
 	builder.WriteString(", internalCriteria=")

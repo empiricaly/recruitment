@@ -18,12 +18,16 @@ func (StepRun) Fields() []ent.Field {
 		field.Time("startAt"),
 		field.Time("endedAt"),
 		field.Int("participantsCount"),
+		field.String("hitID").Optional(),
 	)
 }
 
 // Edges of the StepRun.
 func (StepRun) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.To("step", Step.Type).
+			Unique().
+			Required(),
 		edge.From("run", Run.Type).
 			Ref("steps").
 			Unique(),

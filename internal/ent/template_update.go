@@ -45,8 +45,8 @@ func (tu *TemplateUpdate) SetName(s string) *TemplateUpdate {
 }
 
 // SetSelectionType sets the selectionType field.
-func (tu *TemplateUpdate) SetSelectionType(s string) *TemplateUpdate {
-	tu.mutation.SetSelectionType(s)
+func (tu *TemplateUpdate) SetSelectionType(tt template.SelectionType) *TemplateUpdate {
+	tu.mutation.SetSelectionType(tt)
 	return tu
 }
 
@@ -218,6 +218,11 @@ func (tu *TemplateUpdate) Save(ctx context.Context) (int, error) {
 			return 0, &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
 		}
 	}
+	if v, ok := tu.mutation.SelectionType(); ok {
+		if err := template.SelectionTypeValidator(v); err != nil {
+			return 0, &ValidationError{Name: "selectionType", err: fmt.Errorf("ent: validator failed for field \"selectionType\": %w", err)}
+		}
+	}
 	if v, ok := tu.mutation.ParticipantCount(); ok {
 		if err := template.ParticipantCountValidator(v); err != nil {
 			return 0, &ValidationError{Name: "participantCount", err: fmt.Errorf("ent: validator failed for field \"participantCount\": %w", err)}
@@ -307,7 +312,7 @@ func (tu *TemplateUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tu.mutation.SelectionType(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
+			Type:   field.TypeEnum,
 			Value:  value,
 			Column: template.FieldSelectionType,
 		})
@@ -521,8 +526,8 @@ func (tuo *TemplateUpdateOne) SetName(s string) *TemplateUpdateOne {
 }
 
 // SetSelectionType sets the selectionType field.
-func (tuo *TemplateUpdateOne) SetSelectionType(s string) *TemplateUpdateOne {
-	tuo.mutation.SetSelectionType(s)
+func (tuo *TemplateUpdateOne) SetSelectionType(tt template.SelectionType) *TemplateUpdateOne {
+	tuo.mutation.SetSelectionType(tt)
 	return tuo
 }
 
@@ -694,6 +699,11 @@ func (tuo *TemplateUpdateOne) Save(ctx context.Context) (*Template, error) {
 			return nil, &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
 		}
 	}
+	if v, ok := tuo.mutation.SelectionType(); ok {
+		if err := template.SelectionTypeValidator(v); err != nil {
+			return nil, &ValidationError{Name: "selectionType", err: fmt.Errorf("ent: validator failed for field \"selectionType\": %w", err)}
+		}
+	}
 	if v, ok := tuo.mutation.ParticipantCount(); ok {
 		if err := template.ParticipantCountValidator(v); err != nil {
 			return nil, &ValidationError{Name: "participantCount", err: fmt.Errorf("ent: validator failed for field \"participantCount\": %w", err)}
@@ -781,7 +791,7 @@ func (tuo *TemplateUpdateOne) sqlSave(ctx context.Context) (t *Template, err err
 	}
 	if value, ok := tuo.mutation.SelectionType(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
+			Type:   field.TypeEnum,
 			Value:  value,
 			Column: template.FieldSelectionType,
 		})

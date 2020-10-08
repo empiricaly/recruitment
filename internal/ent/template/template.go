@@ -3,6 +3,7 @@
 package template
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -105,3 +106,26 @@ var (
 	// DefaultAdult holds the default value on creation for the adult field.
 	DefaultAdult bool
 )
+
+// SelectionType defines the type for the selectionType enum field.
+type SelectionType string
+
+// SelectionType values.
+const (
+	SelectionTypeINTERNAL_DB          SelectionType = "INTERNAL_DB"
+	SelectionTypeMTURK_QUALIFICATIONS SelectionType = "MTURK_QUALIFICATIONS"
+)
+
+func (st SelectionType) String() string {
+	return string(st)
+}
+
+// SelectionTypeValidator is a validator for the "selectionType" field enum values. It is called by the builders before save.
+func SelectionTypeValidator(st SelectionType) error {
+	switch st {
+	case SelectionTypeINTERNAL_DB, SelectionTypeMTURK_QUALIFICATIONS:
+		return nil
+	default:
+		return fmt.Errorf("template: invalid enum value for selectionType field: %q", st)
+	}
+}

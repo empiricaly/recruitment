@@ -128,6 +128,13 @@ func ParticipantsCount(v int) predicate.StepRun {
 	})
 }
 
+// HitID applies equality check predicate on the "hitID" field. It's identical to HitIDEQ.
+func HitID(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldHitID), v))
+	})
+}
+
 // CreatedAtEQ applies the EQ predicate on the "createdAt" field.
 func CreatedAtEQ(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
@@ -505,6 +512,159 @@ func ParticipantsCountLT(v int) predicate.StepRun {
 func ParticipantsCountLTE(v int) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldParticipantsCount), v))
+	})
+}
+
+// HitIDEQ applies the EQ predicate on the "hitID" field.
+func HitIDEQ(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldHitID), v))
+	})
+}
+
+// HitIDNEQ applies the NEQ predicate on the "hitID" field.
+func HitIDNEQ(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldHitID), v))
+	})
+}
+
+// HitIDIn applies the In predicate on the "hitID" field.
+func HitIDIn(vs ...string) predicate.StepRun {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.StepRun(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldHitID), v...))
+	})
+}
+
+// HitIDNotIn applies the NotIn predicate on the "hitID" field.
+func HitIDNotIn(vs ...string) predicate.StepRun {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.StepRun(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldHitID), v...))
+	})
+}
+
+// HitIDGT applies the GT predicate on the "hitID" field.
+func HitIDGT(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldHitID), v))
+	})
+}
+
+// HitIDGTE applies the GTE predicate on the "hitID" field.
+func HitIDGTE(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldHitID), v))
+	})
+}
+
+// HitIDLT applies the LT predicate on the "hitID" field.
+func HitIDLT(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldHitID), v))
+	})
+}
+
+// HitIDLTE applies the LTE predicate on the "hitID" field.
+func HitIDLTE(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldHitID), v))
+	})
+}
+
+// HitIDContains applies the Contains predicate on the "hitID" field.
+func HitIDContains(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldHitID), v))
+	})
+}
+
+// HitIDHasPrefix applies the HasPrefix predicate on the "hitID" field.
+func HitIDHasPrefix(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldHitID), v))
+	})
+}
+
+// HitIDHasSuffix applies the HasSuffix predicate on the "hitID" field.
+func HitIDHasSuffix(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldHitID), v))
+	})
+}
+
+// HitIDIsNil applies the IsNil predicate on the "hitID" field.
+func HitIDIsNil() predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldHitID)))
+	})
+}
+
+// HitIDNotNil applies the NotNil predicate on the "hitID" field.
+func HitIDNotNil() predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldHitID)))
+	})
+}
+
+// HitIDEqualFold applies the EqualFold predicate on the "hitID" field.
+func HitIDEqualFold(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldHitID), v))
+	})
+}
+
+// HitIDContainsFold applies the ContainsFold predicate on the "hitID" field.
+func HitIDContainsFold(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldHitID), v))
+	})
+}
+
+// HasStep applies the HasEdge predicate on the "step" edge.
+func HasStep() predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StepTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, StepTable, StepColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStepWith applies the HasEdge predicate on the "step" edge with a given conditions (other predicates).
+func HasStepWith(preds ...predicate.Step) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StepInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, StepTable, StepColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

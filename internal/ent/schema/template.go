@@ -17,7 +17,7 @@ func (Template) Fields() []ent.Field {
 	return append(
 		append([]ent.Field{}, commonFields...),
 		field.String("name").MaxLen(255).MinLen(1),
-		field.String("selectionType"),
+		field.Enum("selectionType").Values("INTERNAL_DB", "MTURK_QUALIFICATIONS"),
 		field.Int("participantCount").NonNegative().Default(0),
 		field.Bytes("internalCriteria"),
 		field.Bytes("mturkCriteria"),

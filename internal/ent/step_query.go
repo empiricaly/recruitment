@@ -10,6 +10,7 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/step"
+	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -25,6 +26,7 @@ type StepQuery struct {
 	unique     []string
 	predicates []predicate.Step
 	// eager-loading edges.
+	withStepRun  *StepRunQuery
 	withTemplate *TemplateQuery
 	withFKs      bool
 	// intermediate query (i.e. traversal path).
@@ -54,6 +56,24 @@ func (sq *StepQuery) Offset(offset int) *StepQuery {
 func (sq *StepQuery) Order(o ...OrderFunc) *StepQuery {
 	sq.order = append(sq.order, o...)
 	return sq
+}
+
+// QueryStepRun chains the current query on the stepRun edge.
+func (sq *StepQuery) QueryStepRun() *StepRunQuery {
+	query := &StepRunQuery{config: sq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := sq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(step.Table, step.FieldID, sq.sqlQuery()),
+			sqlgraph.To(steprun.Table, steprun.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, step.StepRunTable, step.StepRunColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(sq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryTemplate chains the current query on the template edge.
@@ -253,6 +273,17 @@ func (sq *StepQuery) Clone() *StepQuery {
 	}
 }
 
+//  WithStepRun tells the query-builder to eager-loads the nodes that are connected to
+// the "stepRun" edge. The optional arguments used to configure the query builder of the edge.
+func (sq *StepQuery) WithStepRun(opts ...func(*StepRunQuery)) *StepQuery {
+	query := &StepRunQuery{config: sq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	sq.withStepRun = query
+	return sq
+}
+
 //  WithTemplate tells the query-builder to eager-loads the nodes that are connected to
 // the "template" edge. The optional arguments used to configure the query builder of the edge.
 func (sq *StepQuery) WithTemplate(opts ...func(*TemplateQuery)) *StepQuery {
@@ -331,11 +362,12 @@ func (sq *StepQuery) sqlAll(ctx context.Context) ([]*Step, error) {
 		nodes       = []*Step{}
 		withFKs     = sq.withFKs
 		_spec       = sq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
+			sq.withStepRun != nil,
 			sq.withTemplate != nil,
 		}
 	)
-	if sq.withTemplate != nil {
+	if sq.withStepRun != nil || sq.withTemplate != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -363,6 +395,31 @@ func (sq *StepQuery) sqlAll(ctx context.Context) ([]*Step, error) {
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+
+	if query := sq.withStepRun; query != nil {
+		ids := make([]string, 0, len(nodes))
+		nodeids := make(map[string][]*Step)
+		for i := range nodes {
+			if fk := nodes[i].step_run_step; fk != nil {
+				ids = append(ids, *fk)
+				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			}
+		}
+		query.Where(steprun.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "step_run_step" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.StepRun = n
+			}
+		}
 	}
 
 	if query := sq.withTemplate; query != nil {

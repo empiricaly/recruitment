@@ -21,12 +21,23 @@ const (
 	FieldEndedAt = "ended_at"
 	// FieldParticipantsCount holds the string denoting the participantscount field in the database.
 	FieldParticipantsCount = "participants_count"
+	// FieldHitID holds the string denoting the hitid field in the database.
+	FieldHitID = "hit_id"
 
+	// EdgeStep holds the string denoting the step edge name in mutations.
+	EdgeStep = "step"
 	// EdgeRun holds the string denoting the run edge name in mutations.
 	EdgeRun = "run"
 
 	// Table holds the table name of the steprun in the database.
 	Table = "step_runs"
+	// StepTable is the table the holds the step relation/edge.
+	StepTable = "steps"
+	// StepInverseTable is the table name for the Step entity.
+	// It exists in this package in order to avoid circular dependency with the "step" package.
+	StepInverseTable = "steps"
+	// StepColumn is the table column denoting the step relation/edge.
+	StepColumn = "step_run_step"
 	// RunTable is the table the holds the run relation/edge.
 	RunTable = "step_runs"
 	// RunInverseTable is the table name for the Run entity.
@@ -44,6 +55,7 @@ var Columns = []string{
 	FieldStartAt,
 	FieldEndedAt,
 	FieldParticipantsCount,
+	FieldHitID,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the StepRun type.

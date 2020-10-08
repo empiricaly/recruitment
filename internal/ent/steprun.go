@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/facebook/ent/dialect/sql"
 )
@@ -27,6 +28,8 @@ type StepRun struct {
 	EndedAt time.Time `json:"endedAt,omitempty"`
 	// ParticipantsCount holds the value of the "participantsCount" field.
 	ParticipantsCount int `json:"participantsCount,omitempty"`
+	// HitID holds the value of the "hitID" field.
+	HitID string `json:"hitID,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StepRunQuery when eager-loading is set.
 	Edges     StepRunEdges `json:"edges"`
@@ -35,17 +38,33 @@ type StepRun struct {
 
 // StepRunEdges holds the relations/edges for other nodes in the graph.
 type StepRunEdges struct {
+	// Step holds the value of the step edge.
+	Step *Step
 	// Run holds the value of the run edge.
 	Run *Run
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
+}
+
+// StepOrErr returns the Step value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e StepRunEdges) StepOrErr() (*Step, error) {
+	if e.loadedTypes[0] {
+		if e.Step == nil {
+			// The edge step was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: step.Label}
+		}
+		return e.Step, nil
+	}
+	return nil, &NotLoadedError{edge: "step"}
 }
 
 // RunOrErr returns the Run value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e StepRunEdges) RunOrErr() (*Run, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		if e.Run == nil {
 			// The edge run was loaded in eager-loading,
 			// but was not found.
@@ -65,6 +84,7 @@ func (*StepRun) scanValues() []interface{} {
 		&sql.NullTime{},   // startAt
 		&sql.NullTime{},   // endedAt
 		&sql.NullInt64{},  // participantsCount
+		&sql.NullString{}, // hitID
 	}
 }
 
@@ -112,7 +132,12 @@ func (sr *StepRun) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		sr.ParticipantsCount = int(value.Int64)
 	}
-	values = values[5:]
+	if value, ok := values[5].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field hitID", values[5])
+	} else if value.Valid {
+		sr.HitID = value.String
+	}
+	values = values[6:]
 	if len(values) == len(steprun.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullString); !ok {
 			return fmt.Errorf("unexpected type %T for field run_steps", values[0])
@@ -122,6 +147,11 @@ func (sr *StepRun) assignValues(values ...interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryStep queries the step edge of the StepRun.
+func (sr *StepRun) QueryStep() *StepQuery {
+	return (&StepRunClient{config: sr.config}).QueryStep(sr)
 }
 
 // QueryRun queries the run edge of the StepRun.
@@ -162,6 +192,8 @@ func (sr *StepRun) String() string {
 	builder.WriteString(sr.EndedAt.Format(time.ANSIC))
 	builder.WriteString(", participantsCount=")
 	builder.WriteString(fmt.Sprintf("%v", sr.ParticipantsCount))
+	builder.WriteString(", hitID=")
+	builder.WriteString(sr.HitID)
 	builder.WriteByte(')')
 	return builder.String()
 }

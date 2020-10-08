@@ -4,11 +4,13 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -60,6 +62,37 @@ func (sru *StepRunUpdate) AddParticipantsCount(i int) *StepRunUpdate {
 	return sru
 }
 
+// SetHitID sets the hitID field.
+func (sru *StepRunUpdate) SetHitID(s string) *StepRunUpdate {
+	sru.mutation.SetHitID(s)
+	return sru
+}
+
+// SetNillableHitID sets the hitID field if the given value is not nil.
+func (sru *StepRunUpdate) SetNillableHitID(s *string) *StepRunUpdate {
+	if s != nil {
+		sru.SetHitID(*s)
+	}
+	return sru
+}
+
+// ClearHitID clears the value of hitID.
+func (sru *StepRunUpdate) ClearHitID() *StepRunUpdate {
+	sru.mutation.ClearHitID()
+	return sru
+}
+
+// SetStepID sets the step edge to Step by id.
+func (sru *StepRunUpdate) SetStepID(id string) *StepRunUpdate {
+	sru.mutation.SetStepID(id)
+	return sru
+}
+
+// SetStep sets the step edge to Step.
+func (sru *StepRunUpdate) SetStep(s *Step) *StepRunUpdate {
+	return sru.SetStepID(s.ID)
+}
+
 // SetRunID sets the run edge to Run by id.
 func (sru *StepRunUpdate) SetRunID(id string) *StepRunUpdate {
 	sru.mutation.SetRunID(id)
@@ -84,6 +117,12 @@ func (sru *StepRunUpdate) Mutation() *StepRunMutation {
 	return sru.mutation
 }
 
+// ClearStep clears the step edge to Step.
+func (sru *StepRunUpdate) ClearStep() *StepRunUpdate {
+	sru.mutation.ClearStep()
+	return sru
+}
+
 // ClearRun clears the run edge to Run.
 func (sru *StepRunUpdate) ClearRun() *StepRunUpdate {
 	sru.mutation.ClearRun()
@@ -95,6 +134,10 @@ func (sru *StepRunUpdate) Save(ctx context.Context) (int, error) {
 	if _, ok := sru.mutation.UpdatedAt(); !ok {
 		v := steprun.UpdateDefaultUpdatedAt()
 		sru.mutation.SetUpdatedAt(v)
+	}
+
+	if _, ok := sru.mutation.StepID(); sru.mutation.StepCleared() && !ok {
+		return 0, errors.New("ent: clearing a unique edge \"step\"")
 	}
 
 	var (
@@ -199,6 +242,54 @@ func (sru *StepRunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: steprun.FieldParticipantsCount,
 		})
 	}
+	if value, ok := sru.mutation.HitID(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: steprun.FieldHitID,
+		})
+	}
+	if sru.mutation.HitIDCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: steprun.FieldHitID,
+		})
+	}
+	if sru.mutation.StepCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   steprun.StepTable,
+			Columns: []string{steprun.StepColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: step.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sru.mutation.StepIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   steprun.StepTable,
+			Columns: []string{steprun.StepColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: step.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if sru.mutation.RunCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -283,6 +374,37 @@ func (sruo *StepRunUpdateOne) AddParticipantsCount(i int) *StepRunUpdateOne {
 	return sruo
 }
 
+// SetHitID sets the hitID field.
+func (sruo *StepRunUpdateOne) SetHitID(s string) *StepRunUpdateOne {
+	sruo.mutation.SetHitID(s)
+	return sruo
+}
+
+// SetNillableHitID sets the hitID field if the given value is not nil.
+func (sruo *StepRunUpdateOne) SetNillableHitID(s *string) *StepRunUpdateOne {
+	if s != nil {
+		sruo.SetHitID(*s)
+	}
+	return sruo
+}
+
+// ClearHitID clears the value of hitID.
+func (sruo *StepRunUpdateOne) ClearHitID() *StepRunUpdateOne {
+	sruo.mutation.ClearHitID()
+	return sruo
+}
+
+// SetStepID sets the step edge to Step by id.
+func (sruo *StepRunUpdateOne) SetStepID(id string) *StepRunUpdateOne {
+	sruo.mutation.SetStepID(id)
+	return sruo
+}
+
+// SetStep sets the step edge to Step.
+func (sruo *StepRunUpdateOne) SetStep(s *Step) *StepRunUpdateOne {
+	return sruo.SetStepID(s.ID)
+}
+
 // SetRunID sets the run edge to Run by id.
 func (sruo *StepRunUpdateOne) SetRunID(id string) *StepRunUpdateOne {
 	sruo.mutation.SetRunID(id)
@@ -307,6 +429,12 @@ func (sruo *StepRunUpdateOne) Mutation() *StepRunMutation {
 	return sruo.mutation
 }
 
+// ClearStep clears the step edge to Step.
+func (sruo *StepRunUpdateOne) ClearStep() *StepRunUpdateOne {
+	sruo.mutation.ClearStep()
+	return sruo
+}
+
 // ClearRun clears the run edge to Run.
 func (sruo *StepRunUpdateOne) ClearRun() *StepRunUpdateOne {
 	sruo.mutation.ClearRun()
@@ -318,6 +446,10 @@ func (sruo *StepRunUpdateOne) Save(ctx context.Context) (*StepRun, error) {
 	if _, ok := sruo.mutation.UpdatedAt(); !ok {
 		v := steprun.UpdateDefaultUpdatedAt()
 		sruo.mutation.SetUpdatedAt(v)
+	}
+
+	if _, ok := sruo.mutation.StepID(); sruo.mutation.StepCleared() && !ok {
+		return nil, errors.New("ent: clearing a unique edge \"step\"")
 	}
 
 	var (
@@ -419,6 +551,54 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 			Value:  value,
 			Column: steprun.FieldParticipantsCount,
 		})
+	}
+	if value, ok := sruo.mutation.HitID(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: steprun.FieldHitID,
+		})
+	}
+	if sruo.mutation.HitIDCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: steprun.FieldHitID,
+		})
+	}
+	if sruo.mutation.StepCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   steprun.StepTable,
+			Columns: []string{steprun.StepColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: step.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sruo.mutation.StepIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   steprun.StepTable,
+			Columns: []string{steprun.StepColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: step.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if sruo.mutation.RunCleared() {
 		edge := &sqlgraph.EdgeSpec{

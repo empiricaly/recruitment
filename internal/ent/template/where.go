@@ -114,13 +114,6 @@ func Name(v string) predicate.Template {
 	})
 }
 
-// SelectionType applies equality check predicate on the "selectionType" field. It's identical to SelectionTypeEQ.
-func SelectionType(v string) predicate.Template {
-	return predicate.Template(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldSelectionType), v))
-	})
-}
-
 // ParticipantCount applies equality check predicate on the "participantCount" field. It's identical to ParticipantCountEQ.
 func ParticipantCount(v int) predicate.Template {
 	return predicate.Template(func(s *sql.Selector) {
@@ -413,21 +406,21 @@ func NameContainsFold(v string) predicate.Template {
 }
 
 // SelectionTypeEQ applies the EQ predicate on the "selectionType" field.
-func SelectionTypeEQ(v string) predicate.Template {
+func SelectionTypeEQ(v SelectionType) predicate.Template {
 	return predicate.Template(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldSelectionType), v))
 	})
 }
 
 // SelectionTypeNEQ applies the NEQ predicate on the "selectionType" field.
-func SelectionTypeNEQ(v string) predicate.Template {
+func SelectionTypeNEQ(v SelectionType) predicate.Template {
 	return predicate.Template(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldSelectionType), v))
 	})
 }
 
 // SelectionTypeIn applies the In predicate on the "selectionType" field.
-func SelectionTypeIn(vs ...string) predicate.Template {
+func SelectionTypeIn(vs ...SelectionType) predicate.Template {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -444,7 +437,7 @@ func SelectionTypeIn(vs ...string) predicate.Template {
 }
 
 // SelectionTypeNotIn applies the NotIn predicate on the "selectionType" field.
-func SelectionTypeNotIn(vs ...string) predicate.Template {
+func SelectionTypeNotIn(vs ...SelectionType) predicate.Template {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -457,69 +450,6 @@ func SelectionTypeNotIn(vs ...string) predicate.Template {
 			return
 		}
 		s.Where(sql.NotIn(s.C(FieldSelectionType), v...))
-	})
-}
-
-// SelectionTypeGT applies the GT predicate on the "selectionType" field.
-func SelectionTypeGT(v string) predicate.Template {
-	return predicate.Template(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldSelectionType), v))
-	})
-}
-
-// SelectionTypeGTE applies the GTE predicate on the "selectionType" field.
-func SelectionTypeGTE(v string) predicate.Template {
-	return predicate.Template(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldSelectionType), v))
-	})
-}
-
-// SelectionTypeLT applies the LT predicate on the "selectionType" field.
-func SelectionTypeLT(v string) predicate.Template {
-	return predicate.Template(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldSelectionType), v))
-	})
-}
-
-// SelectionTypeLTE applies the LTE predicate on the "selectionType" field.
-func SelectionTypeLTE(v string) predicate.Template {
-	return predicate.Template(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldSelectionType), v))
-	})
-}
-
-// SelectionTypeContains applies the Contains predicate on the "selectionType" field.
-func SelectionTypeContains(v string) predicate.Template {
-	return predicate.Template(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldSelectionType), v))
-	})
-}
-
-// SelectionTypeHasPrefix applies the HasPrefix predicate on the "selectionType" field.
-func SelectionTypeHasPrefix(v string) predicate.Template {
-	return predicate.Template(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldSelectionType), v))
-	})
-}
-
-// SelectionTypeHasSuffix applies the HasSuffix predicate on the "selectionType" field.
-func SelectionTypeHasSuffix(v string) predicate.Template {
-	return predicate.Template(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldSelectionType), v))
-	})
-}
-
-// SelectionTypeEqualFold applies the EqualFold predicate on the "selectionType" field.
-func SelectionTypeEqualFold(v string) predicate.Template {
-	return predicate.Template(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldSelectionType), v))
-	})
-}
-
-// SelectionTypeContainsFold applies the ContainsFold predicate on the "selectionType" field.
-func SelectionTypeContainsFold(v string) predicate.Template {
-	return predicate.Template(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldSelectionType), v))
 	})
 }
 

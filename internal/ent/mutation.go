@@ -2276,6 +2276,8 @@ type StepMutation struct {
 	hitArgs         *[]byte
 	filterArgs      *[]byte
 	clearedFields   map[string]struct{}
+	stepRun         *string
+	clearedstepRun  bool
 	template        *string
 	clearedtemplate bool
 	done            bool
@@ -2742,6 +2744,45 @@ func (m *StepMutation) ResetFilterArgs() {
 	delete(m.clearedFields, step.FieldFilterArgs)
 }
 
+// SetStepRunID sets the stepRun edge to StepRun by id.
+func (m *StepMutation) SetStepRunID(id string) {
+	m.stepRun = &id
+}
+
+// ClearStepRun clears the stepRun edge to StepRun.
+func (m *StepMutation) ClearStepRun() {
+	m.clearedstepRun = true
+}
+
+// StepRunCleared returns if the edge stepRun was cleared.
+func (m *StepMutation) StepRunCleared() bool {
+	return m.clearedstepRun
+}
+
+// StepRunID returns the stepRun id in the mutation.
+func (m *StepMutation) StepRunID() (id string, exists bool) {
+	if m.stepRun != nil {
+		return *m.stepRun, true
+	}
+	return
+}
+
+// StepRunIDs returns the stepRun ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// StepRunID instead. It exists only for internal usage by the builders.
+func (m *StepMutation) StepRunIDs() (ids []string) {
+	if id := m.stepRun; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetStepRun reset all changes of the "stepRun" edge.
+func (m *StepMutation) ResetStepRun() {
+	m.stepRun = nil
+	m.clearedstepRun = false
+}
+
 // SetTemplateID sets the template edge to Template by id.
 func (m *StepMutation) SetTemplateID(id string) {
 	m.template = &id
@@ -3063,7 +3104,10 @@ func (m *StepMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *StepMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.stepRun != nil {
+		edges = append(edges, step.EdgeStepRun)
+	}
 	if m.template != nil {
 		edges = append(edges, step.EdgeTemplate)
 	}
@@ -3074,6 +3118,10 @@ func (m *StepMutation) AddedEdges() []string {
 // the given edge name.
 func (m *StepMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case step.EdgeStepRun:
+		if id := m.stepRun; id != nil {
+			return []ent.Value{*id}
+		}
 	case step.EdgeTemplate:
 		if id := m.template; id != nil {
 			return []ent.Value{*id}
@@ -3085,7 +3133,7 @@ func (m *StepMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *StepMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -3100,7 +3148,10 @@ func (m *StepMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *StepMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.clearedstepRun {
+		edges = append(edges, step.EdgeStepRun)
+	}
 	if m.clearedtemplate {
 		edges = append(edges, step.EdgeTemplate)
 	}
@@ -3111,6 +3162,8 @@ func (m *StepMutation) ClearedEdges() []string {
 // cleared in this mutation.
 func (m *StepMutation) EdgeCleared(name string) bool {
 	switch name {
+	case step.EdgeStepRun:
+		return m.clearedstepRun
 	case step.EdgeTemplate:
 		return m.clearedtemplate
 	}
@@ -3121,6 +3174,9 @@ func (m *StepMutation) EdgeCleared(name string) bool {
 // error if the edge name is not defined in the schema.
 func (m *StepMutation) ClearEdge(name string) error {
 	switch name {
+	case step.EdgeStepRun:
+		m.ClearStepRun()
+		return nil
 	case step.EdgeTemplate:
 		m.ClearTemplate()
 		return nil
@@ -3133,6 +3189,9 @@ func (m *StepMutation) ClearEdge(name string) error {
 // defined in the schema.
 func (m *StepMutation) ResetEdge(name string) error {
 	switch name {
+	case step.EdgeStepRun:
+		m.ResetStepRun()
+		return nil
 	case step.EdgeTemplate:
 		m.ResetTemplate()
 		return nil
@@ -3153,7 +3212,10 @@ type StepRunMutation struct {
 	endedAt              *time.Time
 	participantsCount    *int
 	addparticipantsCount *int
+	hitID                *string
 	clearedFields        map[string]struct{}
+	step                 *string
+	clearedstep          bool
 	run                  *string
 	clearedrun           bool
 	done                 bool
@@ -3450,6 +3512,95 @@ func (m *StepRunMutation) ResetParticipantsCount() {
 	m.addparticipantsCount = nil
 }
 
+// SetHitID sets the hitID field.
+func (m *StepRunMutation) SetHitID(s string) {
+	m.hitID = &s
+}
+
+// HitID returns the hitID value in the mutation.
+func (m *StepRunMutation) HitID() (r string, exists bool) {
+	v := m.hitID
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHitID returns the old hitID value of the StepRun.
+// If the StepRun object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepRunMutation) OldHitID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldHitID is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldHitID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHitID: %w", err)
+	}
+	return oldValue.HitID, nil
+}
+
+// ClearHitID clears the value of hitID.
+func (m *StepRunMutation) ClearHitID() {
+	m.hitID = nil
+	m.clearedFields[steprun.FieldHitID] = struct{}{}
+}
+
+// HitIDCleared returns if the field hitID was cleared in this mutation.
+func (m *StepRunMutation) HitIDCleared() bool {
+	_, ok := m.clearedFields[steprun.FieldHitID]
+	return ok
+}
+
+// ResetHitID reset all changes of the "hitID" field.
+func (m *StepRunMutation) ResetHitID() {
+	m.hitID = nil
+	delete(m.clearedFields, steprun.FieldHitID)
+}
+
+// SetStepID sets the step edge to Step by id.
+func (m *StepRunMutation) SetStepID(id string) {
+	m.step = &id
+}
+
+// ClearStep clears the step edge to Step.
+func (m *StepRunMutation) ClearStep() {
+	m.clearedstep = true
+}
+
+// StepCleared returns if the edge step was cleared.
+func (m *StepRunMutation) StepCleared() bool {
+	return m.clearedstep
+}
+
+// StepID returns the step id in the mutation.
+func (m *StepRunMutation) StepID() (id string, exists bool) {
+	if m.step != nil {
+		return *m.step, true
+	}
+	return
+}
+
+// StepIDs returns the step ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// StepID instead. It exists only for internal usage by the builders.
+func (m *StepRunMutation) StepIDs() (ids []string) {
+	if id := m.step; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetStep reset all changes of the "step" edge.
+func (m *StepRunMutation) ResetStep() {
+	m.step = nil
+	m.clearedstep = false
+}
+
 // SetRunID sets the run edge to Run by id.
 func (m *StepRunMutation) SetRunID(id string) {
 	m.run = &id
@@ -3503,7 +3654,7 @@ func (m *StepRunMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *StepRunMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
 	if m.createdAt != nil {
 		fields = append(fields, steprun.FieldCreatedAt)
 	}
@@ -3518,6 +3669,9 @@ func (m *StepRunMutation) Fields() []string {
 	}
 	if m.participantsCount != nil {
 		fields = append(fields, steprun.FieldParticipantsCount)
+	}
+	if m.hitID != nil {
+		fields = append(fields, steprun.FieldHitID)
 	}
 	return fields
 }
@@ -3537,6 +3691,8 @@ func (m *StepRunMutation) Field(name string) (ent.Value, bool) {
 		return m.EndedAt()
 	case steprun.FieldParticipantsCount:
 		return m.ParticipantsCount()
+	case steprun.FieldHitID:
+		return m.HitID()
 	}
 	return nil, false
 }
@@ -3556,6 +3712,8 @@ func (m *StepRunMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldEndedAt(ctx)
 	case steprun.FieldParticipantsCount:
 		return m.OldParticipantsCount(ctx)
+	case steprun.FieldHitID:
+		return m.OldHitID(ctx)
 	}
 	return nil, fmt.Errorf("unknown StepRun field %s", name)
 }
@@ -3599,6 +3757,13 @@ func (m *StepRunMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetParticipantsCount(v)
+		return nil
+	case steprun.FieldHitID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHitID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown StepRun field %s", name)
@@ -3644,7 +3809,11 @@ func (m *StepRunMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared
 // during this mutation.
 func (m *StepRunMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(steprun.FieldHitID) {
+		fields = append(fields, steprun.FieldHitID)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicates if this field was
@@ -3657,6 +3826,11 @@ func (m *StepRunMutation) FieldCleared(name string) bool {
 // ClearField clears the value for the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *StepRunMutation) ClearField(name string) error {
+	switch name {
+	case steprun.FieldHitID:
+		m.ClearHitID()
+		return nil
+	}
 	return fmt.Errorf("unknown StepRun nullable field %s", name)
 }
 
@@ -3680,6 +3854,9 @@ func (m *StepRunMutation) ResetField(name string) error {
 	case steprun.FieldParticipantsCount:
 		m.ResetParticipantsCount()
 		return nil
+	case steprun.FieldHitID:
+		m.ResetHitID()
+		return nil
 	}
 	return fmt.Errorf("unknown StepRun field %s", name)
 }
@@ -3687,7 +3864,10 @@ func (m *StepRunMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *StepRunMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.step != nil {
+		edges = append(edges, steprun.EdgeStep)
+	}
 	if m.run != nil {
 		edges = append(edges, steprun.EdgeRun)
 	}
@@ -3698,6 +3878,10 @@ func (m *StepRunMutation) AddedEdges() []string {
 // the given edge name.
 func (m *StepRunMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case steprun.EdgeStep:
+		if id := m.step; id != nil {
+			return []ent.Value{*id}
+		}
 	case steprun.EdgeRun:
 		if id := m.run; id != nil {
 			return []ent.Value{*id}
@@ -3709,7 +3893,7 @@ func (m *StepRunMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *StepRunMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -3724,7 +3908,10 @@ func (m *StepRunMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *StepRunMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.clearedstep {
+		edges = append(edges, steprun.EdgeStep)
+	}
 	if m.clearedrun {
 		edges = append(edges, steprun.EdgeRun)
 	}
@@ -3735,6 +3922,8 @@ func (m *StepRunMutation) ClearedEdges() []string {
 // cleared in this mutation.
 func (m *StepRunMutation) EdgeCleared(name string) bool {
 	switch name {
+	case steprun.EdgeStep:
+		return m.clearedstep
 	case steprun.EdgeRun:
 		return m.clearedrun
 	}
@@ -3745,6 +3934,9 @@ func (m *StepRunMutation) EdgeCleared(name string) bool {
 // error if the edge name is not defined in the schema.
 func (m *StepRunMutation) ClearEdge(name string) error {
 	switch name {
+	case steprun.EdgeStep:
+		m.ClearStep()
+		return nil
 	case steprun.EdgeRun:
 		m.ClearRun()
 		return nil
@@ -3757,6 +3949,9 @@ func (m *StepRunMutation) ClearEdge(name string) error {
 // defined in the schema.
 func (m *StepRunMutation) ResetEdge(name string) error {
 	switch name {
+	case steprun.EdgeStep:
+		m.ResetStep()
+		return nil
 	case steprun.EdgeRun:
 		m.ResetRun()
 		return nil
@@ -3774,7 +3969,7 @@ type TemplateMutation struct {
 	createdAt           *time.Time
 	updatedAt           *time.Time
 	name                *string
-	selectionType       *string
+	selectionType       *template.SelectionType
 	participantCount    *int
 	addparticipantCount *int
 	internalCriteria    *[]byte
@@ -3990,12 +4185,12 @@ func (m *TemplateMutation) ResetName() {
 }
 
 // SetSelectionType sets the selectionType field.
-func (m *TemplateMutation) SetSelectionType(s string) {
-	m.selectionType = &s
+func (m *TemplateMutation) SetSelectionType(tt template.SelectionType) {
+	m.selectionType = &tt
 }
 
 // SelectionType returns the selectionType value in the mutation.
-func (m *TemplateMutation) SelectionType() (r string, exists bool) {
+func (m *TemplateMutation) SelectionType() (r template.SelectionType, exists bool) {
 	v := m.selectionType
 	if v == nil {
 		return
@@ -4007,7 +4202,7 @@ func (m *TemplateMutation) SelectionType() (r string, exists bool) {
 // If the Template object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *TemplateMutation) OldSelectionType(ctx context.Context) (v string, err error) {
+func (m *TemplateMutation) OldSelectionType(ctx context.Context) (v template.SelectionType, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldSelectionType is allowed only on UpdateOne operations")
 	}
@@ -4472,7 +4667,7 @@ func (m *TemplateMutation) SetField(name string, value ent.Value) error {
 		m.SetName(v)
 		return nil
 	case template.FieldSelectionType:
-		v, ok := value.(string)
+		v, ok := value.(template.SelectionType)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

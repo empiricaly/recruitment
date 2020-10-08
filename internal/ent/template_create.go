@@ -59,8 +59,8 @@ func (tc *TemplateCreate) SetName(s string) *TemplateCreate {
 }
 
 // SetSelectionType sets the selectionType field.
-func (tc *TemplateCreate) SetSelectionType(s string) *TemplateCreate {
-	tc.mutation.SetSelectionType(s)
+func (tc *TemplateCreate) SetSelectionType(tt template.SelectionType) *TemplateCreate {
+	tc.mutation.SetSelectionType(tt)
 	return tc
 }
 
@@ -248,6 +248,11 @@ func (tc *TemplateCreate) preSave() error {
 	if _, ok := tc.mutation.SelectionType(); !ok {
 		return &ValidationError{Name: "selectionType", err: errors.New("ent: missing required field \"selectionType\"")}
 	}
+	if v, ok := tc.mutation.SelectionType(); ok {
+		if err := template.SelectionTypeValidator(v); err != nil {
+			return &ValidationError{Name: "selectionType", err: fmt.Errorf("ent: validator failed for field \"selectionType\": %w", err)}
+		}
+	}
 	if _, ok := tc.mutation.ParticipantCount(); !ok {
 		v := template.DefaultParticipantCount
 		tc.mutation.SetParticipantCount(v)
@@ -322,7 +327,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := tc.mutation.SelectionType(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
+			Type:   field.TypeEnum,
 			Value:  value,
 			Column: template.FieldSelectionType,
 		})

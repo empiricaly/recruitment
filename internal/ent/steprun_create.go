@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -67,10 +68,35 @@ func (src *StepRunCreate) SetParticipantsCount(i int) *StepRunCreate {
 	return src
 }
 
+// SetHitID sets the hitID field.
+func (src *StepRunCreate) SetHitID(s string) *StepRunCreate {
+	src.mutation.SetHitID(s)
+	return src
+}
+
+// SetNillableHitID sets the hitID field if the given value is not nil.
+func (src *StepRunCreate) SetNillableHitID(s *string) *StepRunCreate {
+	if s != nil {
+		src.SetHitID(*s)
+	}
+	return src
+}
+
 // SetID sets the id field.
 func (src *StepRunCreate) SetID(s string) *StepRunCreate {
 	src.mutation.SetID(s)
 	return src
+}
+
+// SetStepID sets the step edge to Step by id.
+func (src *StepRunCreate) SetStepID(id string) *StepRunCreate {
+	src.mutation.SetStepID(id)
+	return src
+}
+
+// SetStep sets the step edge to Step.
+func (src *StepRunCreate) SetStep(s *Step) *StepRunCreate {
+	return src.SetStepID(s.ID)
 }
 
 // SetRunID sets the run edge to Run by id.
@@ -156,6 +182,9 @@ func (src *StepRunCreate) preSave() error {
 	if _, ok := src.mutation.ParticipantsCount(); !ok {
 		return &ValidationError{Name: "participantsCount", err: errors.New("ent: missing required field \"participantsCount\"")}
 	}
+	if _, ok := src.mutation.StepID(); !ok {
+		return &ValidationError{Name: "step", err: errors.New("ent: missing required edge \"step\"")}
+	}
 	return nil
 }
 
@@ -224,6 +253,33 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Column: steprun.FieldParticipantsCount,
 		})
 		sr.ParticipantsCount = value
+	}
+	if value, ok := src.mutation.HitID(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: steprun.FieldHitID,
+		})
+		sr.HitID = value
+	}
+	if nodes := src.mutation.StepIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   steprun.StepTable,
+			Columns: []string{steprun.StepColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: step.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := src.mutation.RunIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

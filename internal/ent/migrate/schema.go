@@ -86,6 +86,7 @@ var (
 		{Name: "msg_args", Type: field.TypeBytes, Nullable: true},
 		{Name: "hit_args", Type: field.TypeBytes, Nullable: true},
 		{Name: "filter_args", Type: field.TypeBytes, Nullable: true},
+		{Name: "step_run_step", Type: field.TypeString, Unique: true, Nullable: true},
 		{Name: "template_steps", Type: field.TypeString, Nullable: true},
 	}
 	// StepsTable holds the schema information for the "steps" table.
@@ -95,8 +96,15 @@ var (
 		PrimaryKey: []*schema.Column{StepsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:  "steps_templates_steps",
+				Symbol:  "steps_step_runs_step",
 				Columns: []*schema.Column{StepsColumns[9]},
+
+				RefColumns: []*schema.Column{StepRunsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:  "steps_templates_steps",
+				Columns: []*schema.Column{StepsColumns[10]},
 
 				RefColumns: []*schema.Column{TemplatesColumns[0]},
 				OnDelete:   schema.SetNull,
@@ -111,6 +119,7 @@ var (
 		{Name: "start_at", Type: field.TypeTime},
 		{Name: "ended_at", Type: field.TypeTime},
 		{Name: "participants_count", Type: field.TypeInt},
+		{Name: "hit_id", Type: field.TypeString, Nullable: true},
 		{Name: "run_steps", Type: field.TypeString, Nullable: true},
 	}
 	// StepRunsTable holds the schema information for the "step_runs" table.
@@ -121,7 +130,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "step_runs_runs_steps",
-				Columns: []*schema.Column{StepRunsColumns[6]},
+				Columns: []*schema.Column{StepRunsColumns[7]},
 
 				RefColumns: []*schema.Column{RunsColumns[0]},
 				OnDelete:   schema.SetNull,
@@ -134,7 +143,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Size: 255},
-		{Name: "selection_type", Type: field.TypeString},
+		{Name: "selection_type", Type: field.TypeEnum, Enums: []string{"INTERNAL_DB", "MTURK_QUALIFICATIONS"}},
 		{Name: "participant_count", Type: field.TypeInt},
 		{Name: "internal_criteria", Type: field.TypeBytes},
 		{Name: "mturk_criteria", Type: field.TypeBytes},
@@ -186,7 +195,8 @@ var (
 func init() {
 	ProjectsTable.ForeignKeys[0].RefTable = AdminsTable
 	RunsTable.ForeignKeys[0].RefTable = ProjectsTable
-	StepsTable.ForeignKeys[0].RefTable = TemplatesTable
+	StepsTable.ForeignKeys[0].RefTable = StepRunsTable
+	StepsTable.ForeignKeys[1].RefTable = TemplatesTable
 	StepRunsTable.ForeignKeys[0].RefTable = RunsTable
 	TemplatesTable.ForeignKeys[0].RefTable = AdminsTable
 	TemplatesTable.ForeignKeys[1].RefTable = ProjectsTable

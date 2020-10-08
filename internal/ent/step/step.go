@@ -29,11 +29,20 @@ const (
 	// FieldFilterArgs holds the string denoting the filterargs field in the database.
 	FieldFilterArgs = "filter_args"
 
+	// EdgeStepRun holds the string denoting the steprun edge name in mutations.
+	EdgeStepRun = "stepRun"
 	// EdgeTemplate holds the string denoting the template edge name in mutations.
 	EdgeTemplate = "template"
 
 	// Table holds the table name of the step in the database.
 	Table = "steps"
+	// StepRunTable is the table the holds the stepRun relation/edge.
+	StepRunTable = "steps"
+	// StepRunInverseTable is the table name for the StepRun entity.
+	// It exists in this package in order to avoid circular dependency with the "steprun" package.
+	StepRunInverseTable = "step_runs"
+	// StepRunColumn is the table column denoting the stepRun relation/edge.
+	StepRunColumn = "step_run_step"
 	// TemplateTable is the table the holds the template relation/edge.
 	TemplateTable = "steps"
 	// TemplateInverseTable is the table name for the Template entity.
@@ -58,6 +67,7 @@ var Columns = []string{
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the Step type.
 var ForeignKeys = []string{
+	"step_run_step",
 	"template_steps",
 }
 

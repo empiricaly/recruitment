@@ -764,6 +764,34 @@ func FilterArgsNotNil() predicate.Step {
 	})
 }
 
+// HasStepRun applies the HasEdge predicate on the "stepRun" edge.
+func HasStepRun() predicate.Step {
+	return predicate.Step(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StepRunTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, StepRunTable, StepRunColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStepRunWith applies the HasEdge predicate on the "stepRun" edge with a given conditions (other predicates).
+func HasStepRunWith(preds ...predicate.StepRun) predicate.Step {
+	return predicate.Step(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StepRunInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, StepRunTable, StepRunColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasTemplate applies the HasEdge predicate on the "template" edge.
 func HasTemplate() predicate.Step {
 	return predicate.Step(func(s *sql.Selector) {
