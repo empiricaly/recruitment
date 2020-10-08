@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
+	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -59,9 +60,34 @@ func (sru *StepRunUpdate) AddParticipantsCount(i int) *StepRunUpdate {
 	return sru
 }
 
+// SetRunID sets the run edge to Run by id.
+func (sru *StepRunUpdate) SetRunID(id string) *StepRunUpdate {
+	sru.mutation.SetRunID(id)
+	return sru
+}
+
+// SetNillableRunID sets the run edge to Run by id if the given value is not nil.
+func (sru *StepRunUpdate) SetNillableRunID(id *string) *StepRunUpdate {
+	if id != nil {
+		sru = sru.SetRunID(*id)
+	}
+	return sru
+}
+
+// SetRun sets the run edge to Run.
+func (sru *StepRunUpdate) SetRun(r *Run) *StepRunUpdate {
+	return sru.SetRunID(r.ID)
+}
+
 // Mutation returns the StepRunMutation object of the builder.
 func (sru *StepRunUpdate) Mutation() *StepRunMutation {
 	return sru.mutation
+}
+
+// ClearRun clears the run edge to Run.
+func (sru *StepRunUpdate) ClearRun() *StepRunUpdate {
+	sru.mutation.ClearRun()
+	return sru
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
@@ -70,6 +96,7 @@ func (sru *StepRunUpdate) Save(ctx context.Context) (int, error) {
 		v := steprun.UpdateDefaultUpdatedAt()
 		sru.mutation.SetUpdatedAt(v)
 	}
+
 	var (
 		err      error
 		affected int
@@ -172,6 +199,41 @@ func (sru *StepRunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: steprun.FieldParticipantsCount,
 		})
 	}
+	if sru.mutation.RunCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   steprun.RunTable,
+			Columns: []string{steprun.RunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sru.mutation.RunIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   steprun.RunTable,
+			Columns: []string{steprun.RunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, sru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{steprun.Label}
@@ -221,9 +283,34 @@ func (sruo *StepRunUpdateOne) AddParticipantsCount(i int) *StepRunUpdateOne {
 	return sruo
 }
 
+// SetRunID sets the run edge to Run by id.
+func (sruo *StepRunUpdateOne) SetRunID(id string) *StepRunUpdateOne {
+	sruo.mutation.SetRunID(id)
+	return sruo
+}
+
+// SetNillableRunID sets the run edge to Run by id if the given value is not nil.
+func (sruo *StepRunUpdateOne) SetNillableRunID(id *string) *StepRunUpdateOne {
+	if id != nil {
+		sruo = sruo.SetRunID(*id)
+	}
+	return sruo
+}
+
+// SetRun sets the run edge to Run.
+func (sruo *StepRunUpdateOne) SetRun(r *Run) *StepRunUpdateOne {
+	return sruo.SetRunID(r.ID)
+}
+
 // Mutation returns the StepRunMutation object of the builder.
 func (sruo *StepRunUpdateOne) Mutation() *StepRunMutation {
 	return sruo.mutation
+}
+
+// ClearRun clears the run edge to Run.
+func (sruo *StepRunUpdateOne) ClearRun() *StepRunUpdateOne {
+	sruo.mutation.ClearRun()
+	return sruo
 }
 
 // Save executes the query and returns the updated entity.
@@ -232,6 +319,7 @@ func (sruo *StepRunUpdateOne) Save(ctx context.Context) (*StepRun, error) {
 		v := steprun.UpdateDefaultUpdatedAt()
 		sruo.mutation.SetUpdatedAt(v)
 	}
+
 	var (
 		err  error
 		node *StepRun
@@ -331,6 +419,41 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 			Value:  value,
 			Column: steprun.FieldParticipantsCount,
 		})
+	}
+	if sruo.mutation.RunCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   steprun.RunTable,
+			Columns: []string{steprun.RunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sruo.mutation.RunIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   steprun.RunTable,
+			Columns: []string{steprun.RunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	sr = &StepRun{config: sruo.config}
 	_spec.Assign = sr.assignValues

@@ -12,6 +12,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -159,6 +160,21 @@ func (ru *RunUpdate) SetProcedure(p *Procedure) *RunUpdate {
 	return ru.SetProcedureID(p.ID)
 }
 
+// AddStepIDs adds the steps edge to StepRun by ids.
+func (ru *RunUpdate) AddStepIDs(ids ...string) *RunUpdate {
+	ru.mutation.AddStepIDs(ids...)
+	return ru
+}
+
+// AddSteps adds the steps edges to StepRun.
+func (ru *RunUpdate) AddSteps(s ...*StepRun) *RunUpdate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ru.AddStepIDs(ids...)
+}
+
 // Mutation returns the RunMutation object of the builder.
 func (ru *RunUpdate) Mutation() *RunMutation {
 	return ru.mutation
@@ -176,6 +192,21 @@ func (ru *RunUpdate) ClearProcedure() *RunUpdate {
 	return ru
 }
 
+// RemoveStepIDs removes the steps edge to StepRun by ids.
+func (ru *RunUpdate) RemoveStepIDs(ids ...string) *RunUpdate {
+	ru.mutation.RemoveStepIDs(ids...)
+	return ru
+}
+
+// RemoveSteps removes steps edges to StepRun.
+func (ru *RunUpdate) RemoveSteps(s ...*StepRun) *RunUpdate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ru.RemoveStepIDs(ids...)
+}
+
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (ru *RunUpdate) Save(ctx context.Context) (int, error) {
 	if _, ok := ru.mutation.UpdatedAt(); !ok {
@@ -191,6 +222,7 @@ func (ru *RunUpdate) Save(ctx context.Context) (int, error) {
 	if _, ok := ru.mutation.ProcedureID(); ru.mutation.ProcedureCleared() && !ok {
 		return 0, errors.New("ent: clearing a unique edge \"procedure\"")
 	}
+
 	var (
 		err      error
 		affected int
@@ -401,6 +433,44 @@ func (ru *RunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if nodes := ru.mutation.RemovedStepsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   run.StepsTable,
+			Columns: []string{run.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.StepsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   run.StepsTable,
+			Columns: []string{run.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{run.Label}
@@ -547,6 +617,21 @@ func (ruo *RunUpdateOne) SetProcedure(p *Procedure) *RunUpdateOne {
 	return ruo.SetProcedureID(p.ID)
 }
 
+// AddStepIDs adds the steps edge to StepRun by ids.
+func (ruo *RunUpdateOne) AddStepIDs(ids ...string) *RunUpdateOne {
+	ruo.mutation.AddStepIDs(ids...)
+	return ruo
+}
+
+// AddSteps adds the steps edges to StepRun.
+func (ruo *RunUpdateOne) AddSteps(s ...*StepRun) *RunUpdateOne {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ruo.AddStepIDs(ids...)
+}
+
 // Mutation returns the RunMutation object of the builder.
 func (ruo *RunUpdateOne) Mutation() *RunMutation {
 	return ruo.mutation
@@ -564,6 +649,21 @@ func (ruo *RunUpdateOne) ClearProcedure() *RunUpdateOne {
 	return ruo
 }
 
+// RemoveStepIDs removes the steps edge to StepRun by ids.
+func (ruo *RunUpdateOne) RemoveStepIDs(ids ...string) *RunUpdateOne {
+	ruo.mutation.RemoveStepIDs(ids...)
+	return ruo
+}
+
+// RemoveSteps removes steps edges to StepRun.
+func (ruo *RunUpdateOne) RemoveSteps(s ...*StepRun) *RunUpdateOne {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return ruo.RemoveStepIDs(ids...)
+}
+
 // Save executes the query and returns the updated entity.
 func (ruo *RunUpdateOne) Save(ctx context.Context) (*Run, error) {
 	if _, ok := ruo.mutation.UpdatedAt(); !ok {
@@ -579,6 +679,7 @@ func (ruo *RunUpdateOne) Save(ctx context.Context) (*Run, error) {
 	if _, ok := ruo.mutation.ProcedureID(); ruo.mutation.ProcedureCleared() && !ok {
 		return nil, errors.New("ent: clearing a unique edge \"procedure\"")
 	}
+
 	var (
 		err  error
 		node *Run
@@ -779,6 +880,44 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: procedure.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if nodes := ruo.mutation.RemovedStepsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   run.StepsTable,
+			Columns: []string{run.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.StepsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   run.StepsTable,
+			Columns: []string{run.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
 				},
 			},
 		}

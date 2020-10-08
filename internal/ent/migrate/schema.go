@@ -155,13 +155,22 @@ var (
 		{Name: "start_at", Type: field.TypeTime},
 		{Name: "ended_at", Type: field.TypeTime},
 		{Name: "participants_count", Type: field.TypeInt},
+		{Name: "run_steps", Type: field.TypeString, Nullable: true},
 	}
 	// StepRunsTable holds the schema information for the "step_runs" table.
 	StepRunsTable = &schema.Table{
-		Name:        "step_runs",
-		Columns:     StepRunsColumns,
-		PrimaryKey:  []*schema.Column{StepRunsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
+		Name:       "step_runs",
+		Columns:    StepRunsColumns,
+		PrimaryKey: []*schema.Column{StepRunsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "step_runs_runs_steps",
+				Columns: []*schema.Column{StepRunsColumns[6]},
+
+				RefColumns: []*schema.Column{RunsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
@@ -181,4 +190,5 @@ func init() {
 	ProjectsTable.ForeignKeys[0].RefTable = AdminsTable
 	RunsTable.ForeignKeys[0].RefTable = ProjectsTable
 	StepsTable.ForeignKeys[0].RefTable = ProceduresTable
+	StepRunsTable.ForeignKeys[0].RefTable = RunsTable
 }

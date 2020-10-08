@@ -11,6 +11,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
@@ -152,6 +153,21 @@ func (rc *RunCreate) SetProcedureID(id string) *RunCreate {
 // SetProcedure sets the procedure edge to Procedure.
 func (rc *RunCreate) SetProcedure(p *Procedure) *RunCreate {
 	return rc.SetProcedureID(p.ID)
+}
+
+// AddStepIDs adds the steps edge to StepRun by ids.
+func (rc *RunCreate) AddStepIDs(ids ...string) *RunCreate {
+	rc.mutation.AddStepIDs(ids...)
+	return rc
+}
+
+// AddSteps adds the steps edges to StepRun.
+func (rc *RunCreate) AddSteps(s ...*StepRun) *RunCreate {
+	ids := make([]string, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return rc.AddStepIDs(ids...)
 }
 
 // Mutation returns the RunMutation object of the builder.
@@ -346,6 +362,25 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: procedure.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rc.mutation.StepsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   run.StepsTable,
+			Columns: []string{run.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
 				},
 			},
 		}

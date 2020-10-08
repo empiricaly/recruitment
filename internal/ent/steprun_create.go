@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -70,6 +71,25 @@ func (src *StepRunCreate) SetParticipantsCount(i int) *StepRunCreate {
 func (src *StepRunCreate) SetID(s string) *StepRunCreate {
 	src.mutation.SetID(s)
 	return src
+}
+
+// SetRunID sets the run edge to Run by id.
+func (src *StepRunCreate) SetRunID(id string) *StepRunCreate {
+	src.mutation.SetRunID(id)
+	return src
+}
+
+// SetNillableRunID sets the run edge to Run by id if the given value is not nil.
+func (src *StepRunCreate) SetNillableRunID(id *string) *StepRunCreate {
+	if id != nil {
+		src = src.SetRunID(*id)
+	}
+	return src
+}
+
+// SetRun sets the run edge to Run.
+func (src *StepRunCreate) SetRun(r *Run) *StepRunCreate {
+	return src.SetRunID(r.ID)
 }
 
 // Mutation returns the StepRunMutation object of the builder.
@@ -204,6 +224,25 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Column: steprun.FieldParticipantsCount,
 		})
 		sr.ParticipantsCount = value
+	}
+	if nodes := src.mutation.RunIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   steprun.RunTable,
+			Columns: []string{steprun.RunColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return sr, _spec
 }

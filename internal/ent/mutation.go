@@ -2294,6 +2294,8 @@ type RunMutation struct {
 	clearedproject   bool
 	procedure        *string
 	clearedprocedure bool
+	steps            map[string]struct{}
+	removedsteps     map[string]struct{}
 	done             bool
 	oldValue         func(context.Context) (*Run, error)
 }
@@ -2809,6 +2811,48 @@ func (m *RunMutation) ResetProcedure() {
 	m.clearedprocedure = false
 }
 
+// AddStepIDs adds the steps edge to StepRun by ids.
+func (m *RunMutation) AddStepIDs(ids ...string) {
+	if m.steps == nil {
+		m.steps = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.steps[ids[i]] = struct{}{}
+	}
+}
+
+// RemoveStepIDs removes the steps edge to StepRun by ids.
+func (m *RunMutation) RemoveStepIDs(ids ...string) {
+	if m.removedsteps == nil {
+		m.removedsteps = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedsteps[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSteps returns the removed ids of steps.
+func (m *RunMutation) RemovedStepsIDs() (ids []string) {
+	for id := range m.removedsteps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// StepsIDs returns the steps ids in the mutation.
+func (m *RunMutation) StepsIDs() (ids []string) {
+	for id := range m.steps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSteps reset all changes of the "steps" edge.
+func (m *RunMutation) ResetSteps() {
+	m.steps = nil
+	m.removedsteps = nil
+}
+
 // Op returns the operation name.
 func (m *RunMutation) Op() Op {
 	return m.op
@@ -3070,12 +3114,15 @@ func (m *RunMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *RunMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.project != nil {
 		edges = append(edges, run.EdgeProject)
 	}
 	if m.procedure != nil {
 		edges = append(edges, run.EdgeProcedure)
+	}
+	if m.steps != nil {
+		edges = append(edges, run.EdgeSteps)
 	}
 	return edges
 }
@@ -3092,6 +3139,12 @@ func (m *RunMutation) AddedIDs(name string) []ent.Value {
 		if id := m.procedure; id != nil {
 			return []ent.Value{*id}
 		}
+	case run.EdgeSteps:
+		ids := make([]ent.Value, 0, len(m.steps))
+		for id := range m.steps {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -3099,7 +3152,10 @@ func (m *RunMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *RunMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
+	if m.removedsteps != nil {
+		edges = append(edges, run.EdgeSteps)
+	}
 	return edges
 }
 
@@ -3107,6 +3163,12 @@ func (m *RunMutation) RemovedEdges() []string {
 // the given edge name.
 func (m *RunMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case run.EdgeSteps:
+		ids := make([]ent.Value, 0, len(m.removedsteps))
+		for id := range m.removedsteps {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -3114,7 +3176,7 @@ func (m *RunMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *RunMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedproject {
 		edges = append(edges, run.EdgeProject)
 	}
@@ -3160,6 +3222,9 @@ func (m *RunMutation) ResetEdge(name string) error {
 		return nil
 	case run.EdgeProcedure:
 		m.ResetProcedure()
+		return nil
+	case run.EdgeSteps:
+		m.ResetSteps()
 		return nil
 	}
 	return fmt.Errorf("unknown Run edge %s", name)
@@ -4061,6 +4126,8 @@ type StepRunMutation struct {
 	participantsCount    *int
 	addparticipantsCount *int
 	clearedFields        map[string]struct{}
+	run                  *string
+	clearedrun           bool
 	done                 bool
 	oldValue             func(context.Context) (*StepRun, error)
 }
@@ -4355,6 +4422,45 @@ func (m *StepRunMutation) ResetParticipantsCount() {
 	m.addparticipantsCount = nil
 }
 
+// SetRunID sets the run edge to Run by id.
+func (m *StepRunMutation) SetRunID(id string) {
+	m.run = &id
+}
+
+// ClearRun clears the run edge to Run.
+func (m *StepRunMutation) ClearRun() {
+	m.clearedrun = true
+}
+
+// RunCleared returns if the edge run was cleared.
+func (m *StepRunMutation) RunCleared() bool {
+	return m.clearedrun
+}
+
+// RunID returns the run id in the mutation.
+func (m *StepRunMutation) RunID() (id string, exists bool) {
+	if m.run != nil {
+		return *m.run, true
+	}
+	return
+}
+
+// RunIDs returns the run ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// RunID instead. It exists only for internal usage by the builders.
+func (m *StepRunMutation) RunIDs() (ids []string) {
+	if id := m.run; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRun reset all changes of the "run" edge.
+func (m *StepRunMutation) ResetRun() {
+	m.run = nil
+	m.clearedrun = false
+}
+
 // Op returns the operation name.
 func (m *StepRunMutation) Op() Op {
 	return m.op
@@ -4553,45 +4659,68 @@ func (m *StepRunMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *StepRunMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.run != nil {
+		edges = append(edges, steprun.EdgeRun)
+	}
 	return edges
 }
 
 // AddedIDs returns all ids (to other nodes) that were added for
 // the given edge name.
 func (m *StepRunMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case steprun.EdgeRun:
+		if id := m.run; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *StepRunMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
 // RemovedIDs returns all ids (to other nodes) that were removed for
 // the given edge name.
 func (m *StepRunMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *StepRunMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedrun {
+		edges = append(edges, steprun.EdgeRun)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean indicates if this edge was
 // cleared in this mutation.
 func (m *StepRunMutation) EdgeCleared(name string) bool {
+	switch name {
+	case steprun.EdgeRun:
+		return m.clearedrun
+	}
 	return false
 }
 
 // ClearEdge clears the value for the given name. It returns an
 // error if the edge name is not defined in the schema.
 func (m *StepRunMutation) ClearEdge(name string) error {
+	switch name {
+	case steprun.EdgeRun:
+		m.ClearRun()
+		return nil
+	}
 	return fmt.Errorf("unknown StepRun unique edge %s", name)
 }
 
@@ -4599,5 +4728,10 @@ func (m *StepRunMutation) ClearEdge(name string) error {
 // given edge name. It returns an error if the edge is not
 // defined in the schema.
 func (m *StepRunMutation) ResetEdge(name string) error {
+	switch name {
+	case steprun.EdgeRun:
+		m.ResetRun()
+		return nil
+	}
 	return fmt.Errorf("unknown StepRun edge %s", name)
 }

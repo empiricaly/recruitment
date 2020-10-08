@@ -9,6 +9,7 @@ import (
 	"math"
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
+	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -23,6 +24,9 @@ type StepRunQuery struct {
 	order      []OrderFunc
 	unique     []string
 	predicates []predicate.StepRun
+	// eager-loading edges.
+	withRun *RunQuery
+	withFKs bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -50,6 +54,24 @@ func (srq *StepRunQuery) Offset(offset int) *StepRunQuery {
 func (srq *StepRunQuery) Order(o ...OrderFunc) *StepRunQuery {
 	srq.order = append(srq.order, o...)
 	return srq
+}
+
+// QueryRun chains the current query on the run edge.
+func (srq *StepRunQuery) QueryRun() *RunQuery {
+	query := &RunQuery{config: srq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := srq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(steprun.Table, steprun.FieldID, srq.sqlQuery()),
+			sqlgraph.To(run.Table, run.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, steprun.RunTable, steprun.RunColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(srq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first StepRun entity in the query. Returns *NotFoundError when no steprun was found.
@@ -231,6 +253,17 @@ func (srq *StepRunQuery) Clone() *StepRunQuery {
 	}
 }
 
+//  WithRun tells the query-builder to eager-loads the nodes that are connected to
+// the "run" edge. The optional arguments used to configure the query builder of the edge.
+func (srq *StepRunQuery) WithRun(opts ...func(*RunQuery)) *StepRunQuery {
+	query := &RunQuery{config: srq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	srq.withRun = query
+	return srq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -295,13 +328,26 @@ func (srq *StepRunQuery) prepareQuery(ctx context.Context) error {
 
 func (srq *StepRunQuery) sqlAll(ctx context.Context) ([]*StepRun, error) {
 	var (
-		nodes = []*StepRun{}
-		_spec = srq.querySpec()
+		nodes       = []*StepRun{}
+		withFKs     = srq.withFKs
+		_spec       = srq.querySpec()
+		loadedTypes = [1]bool{
+			srq.withRun != nil,
+		}
 	)
+	if srq.withRun != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, steprun.ForeignKeys...)
+	}
 	_spec.ScanValues = func() []interface{} {
 		node := &StepRun{config: srq.config}
 		nodes = append(nodes, node)
 		values := node.scanValues()
+		if withFKs {
+			values = append(values, node.fkValues()...)
+		}
 		return values
 	}
 	_spec.Assign = func(values ...interface{}) error {
@@ -309,6 +355,7 @@ func (srq *StepRunQuery) sqlAll(ctx context.Context) ([]*StepRun, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(values...)
 	}
 	if err := sqlgraph.QueryNodes(ctx, srq.driver, _spec); err != nil {
@@ -317,6 +364,32 @@ func (srq *StepRunQuery) sqlAll(ctx context.Context) ([]*StepRun, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := srq.withRun; query != nil {
+		ids := make([]string, 0, len(nodes))
+		nodeids := make(map[string][]*StepRun)
+		for i := range nodes {
+			if fk := nodes[i].run_steps; fk != nil {
+				ids = append(ids, *fk)
+				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			}
+		}
+		query.Where(run.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "run_steps" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Run = n
+			}
+		}
+	}
+
 	return nodes, nil
 }
 

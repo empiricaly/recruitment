@@ -904,6 +904,34 @@ func HasProcedureWith(preds ...predicate.Procedure) predicate.Run {
 	})
 }
 
+// HasSteps applies the HasEdge predicate on the "steps" edge.
+func HasSteps() predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StepsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, StepsTable, StepsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStepsWith applies the HasEdge predicate on the "steps" edge with a given conditions (other predicates).
+func HasStepsWith(preds ...predicate.StepRun) predicate.Run {
+	return predicate.Run(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(StepsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, StepsTable, StepsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups list of predicates with the AND operator between them.
 func And(predicates ...predicate.Run) predicate.Run {
 	return predicate.Run(func(s *sql.Selector) {

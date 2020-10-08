@@ -7,6 +7,7 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/facebook/ent/dialect/sql"
+	"github.com/facebook/ent/dialect/sql/sqlgraph"
 )
 
 // ID filters vertices based on their identifier.
@@ -504,6 +505,34 @@ func ParticipantsCountLT(v int) predicate.StepRun {
 func ParticipantsCountLTE(v int) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldParticipantsCount), v))
+	})
+}
+
+// HasRun applies the HasEdge predicate on the "run" edge.
+func HasRun() predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RunTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, RunTable, RunColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRunWith applies the HasEdge predicate on the "run" edge with a given conditions (other predicates).
+func HasRunWith(preds ...predicate.Run) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RunInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, RunTable, RunColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

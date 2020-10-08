@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/facebook/ent/dialect/sql"
 )
@@ -26,6 +27,33 @@ type StepRun struct {
 	EndedAt time.Time `json:"endedAt,omitempty"`
 	// ParticipantsCount holds the value of the "participantsCount" field.
 	ParticipantsCount int `json:"participantsCount,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the StepRunQuery when eager-loading is set.
+	Edges     StepRunEdges `json:"edges"`
+	run_steps *string
+}
+
+// StepRunEdges holds the relations/edges for other nodes in the graph.
+type StepRunEdges struct {
+	// Run holds the value of the run edge.
+	Run *Run
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// RunOrErr returns the Run value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e StepRunEdges) RunOrErr() (*Run, error) {
+	if e.loadedTypes[0] {
+		if e.Run == nil {
+			// The edge run was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: run.Label}
+		}
+		return e.Run, nil
+	}
+	return nil, &NotLoadedError{edge: "run"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -37,6 +65,13 @@ func (*StepRun) scanValues() []interface{} {
 		&sql.NullTime{},   // startAt
 		&sql.NullTime{},   // endedAt
 		&sql.NullInt64{},  // participantsCount
+	}
+}
+
+// fkValues returns the types for scanning foreign-keys values from sql.Rows.
+func (*StepRun) fkValues() []interface{} {
+	return []interface{}{
+		&sql.NullString{}, // run_steps
 	}
 }
 
@@ -77,7 +112,21 @@ func (sr *StepRun) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		sr.ParticipantsCount = int(value.Int64)
 	}
+	values = values[5:]
+	if len(values) == len(steprun.ForeignKeys) {
+		if value, ok := values[0].(*sql.NullString); !ok {
+			return fmt.Errorf("unexpected type %T for field run_steps", values[0])
+		} else if value.Valid {
+			sr.run_steps = new(string)
+			*sr.run_steps = value.String
+		}
+	}
 	return nil
+}
+
+// QueryRun queries the run edge of the StepRun.
+func (sr *StepRun) QueryRun() *RunQuery {
+	return (&StepRunClient{config: sr.config}).QueryRun(sr)
 }
 
 // Update returns a builder for updating this StepRun.

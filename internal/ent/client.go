@@ -675,6 +675,22 @@ func (c *RunClient) QueryProcedure(r *Run) *ProcedureQuery {
 	return query
 }
 
+// QuerySteps queries the steps edge of a Run.
+func (c *RunClient) QuerySteps(r *Run) *StepRunQuery {
+	query := &StepRunQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(run.Table, run.FieldID, id),
+			sqlgraph.To(steprun.Table, steprun.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, run.StepsTable, run.StepsColumn),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *RunClient) Hooks() []Hook {
 	return c.hooks.Run
@@ -865,6 +881,22 @@ func (c *StepRunClient) GetX(ctx context.Context, id string) *StepRun {
 		panic(err)
 	}
 	return sr
+}
+
+// QueryRun queries the run edge of a StepRun.
+func (c *StepRunClient) QueryRun(sr *StepRun) *RunQuery {
+	query := &RunQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := sr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(steprun.Table, steprun.FieldID, id),
+			sqlgraph.To(run.Table, run.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, steprun.RunTable, steprun.RunColumn),
+		)
+		fromV = sqlgraph.Neighbors(sr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

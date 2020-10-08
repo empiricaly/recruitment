@@ -33,6 +33,8 @@ const (
 	EdgeProject = "project"
 	// EdgeProcedure holds the string denoting the procedure edge name in mutations.
 	EdgeProcedure = "procedure"
+	// EdgeSteps holds the string denoting the steps edge name in mutations.
+	EdgeSteps = "steps"
 
 	// Table holds the table name of the run in the database.
 	Table = "runs"
@@ -50,6 +52,13 @@ const (
 	ProcedureInverseTable = "procedures"
 	// ProcedureColumn is the table column denoting the procedure relation/edge.
 	ProcedureColumn = "run_procedure"
+	// StepsTable is the table the holds the steps relation/edge.
+	StepsTable = "step_runs"
+	// StepsInverseTable is the table name for the StepRun entity.
+	// It exists in this package in order to avoid circular dependency with the "steprun" package.
+	StepsInverseTable = "step_runs"
+	// StepsColumn is the table column denoting the steps relation/edge.
+	StepsColumn = "run_steps"
 )
 
 // Columns holds all SQL columns for run fields.

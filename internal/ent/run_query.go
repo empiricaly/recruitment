@@ -13,6 +13,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/procedure"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -29,6 +30,7 @@ type RunQuery struct {
 	// eager-loading edges.
 	withProject   *ProjectQuery
 	withProcedure *ProcedureQuery
+	withSteps     *StepRunQuery
 	withFKs       bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -88,6 +90,24 @@ func (rq *RunQuery) QueryProcedure() *ProcedureQuery {
 			sqlgraph.From(run.Table, run.FieldID, rq.sqlQuery()),
 			sqlgraph.To(procedure.Table, procedure.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, run.ProcedureTable, run.ProcedureColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySteps chains the current query on the steps edge.
+func (rq *RunQuery) QuerySteps() *StepRunQuery {
+	query := &StepRunQuery{config: rq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(run.Table, run.FieldID, rq.sqlQuery()),
+			sqlgraph.To(steprun.Table, steprun.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, run.StepsTable, run.StepsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil
@@ -296,6 +316,17 @@ func (rq *RunQuery) WithProcedure(opts ...func(*ProcedureQuery)) *RunQuery {
 	return rq
 }
 
+//  WithSteps tells the query-builder to eager-loads the nodes that are connected to
+// the "steps" edge. The optional arguments used to configure the query builder of the edge.
+func (rq *RunQuery) WithSteps(opts ...func(*StepRunQuery)) *RunQuery {
+	query := &StepRunQuery{config: rq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withSteps = query
+	return rq
+}
+
 // GroupBy used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -363,9 +394,10 @@ func (rq *RunQuery) sqlAll(ctx context.Context) ([]*Run, error) {
 		nodes       = []*Run{}
 		withFKs     = rq.withFKs
 		_spec       = rq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			rq.withProject != nil,
 			rq.withProcedure != nil,
+			rq.withSteps != nil,
 		}
 	)
 	if rq.withProject != nil {
@@ -448,6 +480,34 @@ func (rq *RunQuery) sqlAll(ctx context.Context) ([]*Run, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "run_procedure" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Procedure = n
+		}
+	}
+
+	if query := rq.withSteps; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[string]*Run)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.StepRun(func(s *sql.Selector) {
+			s.Where(sql.InValues(run.StepsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.run_steps
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "run_steps" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "run_steps" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Steps = append(node.Edges.Steps, n)
 		}
 	}
 

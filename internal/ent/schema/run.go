@@ -34,5 +34,6 @@ func (Run) Edges() []ent.Edge {
 		edge.To("procedure", Procedure.Type).
 			Unique().
 			Required(),
+		edge.To("steps", StepRun.Type),
 	}
 }

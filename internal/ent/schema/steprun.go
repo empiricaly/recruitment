@@ -2,6 +2,7 @@ package schema
 
 import (
 	"github.com/facebook/ent"
+	"github.com/facebook/ent/schema/edge"
 	"github.com/facebook/ent/schema/field"
 )
 
@@ -22,5 +23,9 @@ func (StepRun) Fields() []ent.Field {
 
 // Edges of the StepRun.
 func (StepRun) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.From("run", Run.Type).
+			Ref("steps").
+			Unique(),
+	}
 }
