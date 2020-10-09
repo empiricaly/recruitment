@@ -3,6 +3,7 @@
 package steprun
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -11,12 +12,14 @@ const (
 	Label = "step_run"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldCreatedAt holds the string denoting the createdat field in the database.
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
-	// FieldUpdatedAt holds the string denoting the updatedat field in the database.
+	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// FieldStartAt holds the string denoting the startat field in the database.
-	FieldStartAt = "start_at"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
+	// FieldStartedAt holds the string denoting the startedat field in the database.
+	FieldStartedAt = "started_at"
 	// FieldEndedAt holds the string denoting the endedat field in the database.
 	FieldEndedAt = "ended_at"
 	// FieldParticipantsCount holds the string denoting the participantscount field in the database.
@@ -52,7 +55,8 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-	FieldStartAt,
+	FieldStatus,
+	FieldStartedAt,
 	FieldEndedAt,
 	FieldParticipantsCount,
 	FieldHitID,
@@ -64,10 +68,39 @@ var ForeignKeys = []string{
 }
 
 var (
-	// DefaultCreatedAt holds the default value on creation for the createdAt field.
+	// DefaultCreatedAt holds the default value on creation for the created_at field.
 	DefaultCreatedAt func() time.Time
-	// DefaultUpdatedAt holds the default value on creation for the updatedAt field.
+	// DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	DefaultUpdatedAt func() time.Time
-	// UpdateDefaultUpdatedAt holds the default value on update for the updatedAt field.
+	// UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// IDValidator is a validator for the "id" field. It is called by the builders before save.
+	IDValidator func(string) error
 )
+
+// Status defines the type for the status enum field.
+type Status string
+
+// Status values.
+const (
+	StatusCREATED    Status = "CREATED"
+	StatusRUNNING    Status = "RUNNING"
+	StatusPAUSED     Status = "PAUSED"
+	StatusDONE       Status = "DONE"
+	StatusTERMINATED Status = "TERMINATED"
+	StatusFAILED     Status = "FAILED"
+)
+
+func (s Status) String() string {
+	return string(s)
+}
+
+// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
+func StatusValidator(s Status) error {
+	switch s {
+	case StatusCREATED, StatusRUNNING, StatusPAUSED, StatusDONE, StatusTERMINATED, StatusFAILED:
+		return nil
+	default:
+		return fmt.Errorf("steprun: invalid enum value for status field: %q", s)
+	}
+}

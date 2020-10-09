@@ -19,10 +19,10 @@ type Template struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID string `json:"id,omitempty"`
-	// CreatedAt holds the value of the "createdAt" field.
-	CreatedAt time.Time `json:"createdAt,omitempty"`
-	// UpdatedAt holds the value of the "updatedAt" field.
-	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// SelectionType holds the value of the "selectionType" field.
@@ -113,8 +113,8 @@ func (e TemplateEdges) RunOrErr() (*Run, error) {
 func (*Template) scanValues() []interface{} {
 	return []interface{}{
 		&sql.NullString{}, // id
-		&sql.NullTime{},   // createdAt
-		&sql.NullTime{},   // updatedAt
+		&sql.NullTime{},   // created_at
+		&sql.NullTime{},   // updated_at
 		&sql.NullString{}, // name
 		&sql.NullString{}, // selectionType
 		&sql.NullInt64{},  // participantCount
@@ -146,12 +146,12 @@ func (t *Template) assignValues(values ...interface{}) error {
 	}
 	values = values[1:]
 	if value, ok := values[0].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field createdAt", values[0])
+		return fmt.Errorf("unexpected type %T for field created_at", values[0])
 	} else if value.Valid {
 		t.CreatedAt = value.Time
 	}
 	if value, ok := values[1].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field updatedAt", values[1])
+		return fmt.Errorf("unexpected type %T for field updated_at", values[1])
 	} else if value.Valid {
 		t.UpdatedAt = value.Time
 	}
@@ -252,9 +252,9 @@ func (t *Template) String() string {
 	var builder strings.Builder
 	builder.WriteString("Template(")
 	builder.WriteString(fmt.Sprintf("id=%v", t.ID))
-	builder.WriteString(", createdAt=")
+	builder.WriteString(", created_at=")
 	builder.WriteString(t.CreatedAt.Format(time.ANSIC))
-	builder.WriteString(", updatedAt=")
+	builder.WriteString(", updated_at=")
 	builder.WriteString(t.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", name=")
 	builder.WriteString(t.Name)

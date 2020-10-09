@@ -10,7 +10,7 @@ import (
 var (
 	// AdminsColumns holds the columns for the "admins" table.
 	AdminsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
+		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString},
@@ -25,12 +25,12 @@ var (
 	}
 	// ProjectsColumns holds the columns for the "projects" table.
 	ProjectsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
+		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "project_id", Type: field.TypeString},
 		{Name: "name", Type: field.TypeString},
-		{Name: "admin_projects", Type: field.TypeString, Nullable: true},
+		{Name: "admin_projects", Type: field.TypeString, Nullable: true, Size: 20},
 	}
 	// ProjectsTable holds the schema information for the "projects" table.
 	ProjectsTable = &schema.Table{
@@ -49,16 +49,17 @@ var (
 	}
 	// RunsColumns holds the columns for the "runs" table.
 	RunsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
+		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"CREATED", "RUNNING", "PAUSED", "DONE", "TERMINATED", "FAILED"}},
-		{Name: "start_at", Type: field.TypeTime, Nullable: true},
 		{Name: "started_at", Type: field.TypeTime, Nullable: true},
 		{Name: "ended_at", Type: field.TypeTime, Nullable: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "start_at", Type: field.TypeTime, Nullable: true},
 		{Name: "error", Type: field.TypeString, Nullable: true},
-		{Name: "project_runs", Type: field.TypeString, Nullable: true},
+		{Name: "project_runs", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "run_current_step", Type: field.TypeString, Nullable: true, Size: 20},
 	}
 	// RunsTable holds the schema information for the "runs" table.
 	RunsTable = &schema.Table{
@@ -73,11 +74,18 @@ var (
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
+			{
+				Symbol:  "runs_step_runs_currentStep",
+				Columns: []*schema.Column{RunsColumns[10]},
+
+				RefColumns: []*schema.Column{StepRunsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
 		},
 	}
 	// StepsColumns holds the columns for the "steps" table.
 	StepsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
+		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"MTURK_HIT", "MTURK_MESSAGE", "PARTICIPANT_FILTER"}},
@@ -86,8 +94,8 @@ var (
 		{Name: "msg_args", Type: field.TypeBytes, Nullable: true},
 		{Name: "hit_args", Type: field.TypeBytes, Nullable: true},
 		{Name: "filter_args", Type: field.TypeBytes, Nullable: true},
-		{Name: "step_run_step", Type: field.TypeString, Unique: true, Nullable: true},
-		{Name: "template_steps", Type: field.TypeString, Nullable: true},
+		{Name: "step_run_step", Type: field.TypeString, Unique: true, Nullable: true, Size: 20},
+		{Name: "template_steps", Type: field.TypeString, Nullable: true, Size: 20},
 	}
 	// StepsTable holds the schema information for the "steps" table.
 	StepsTable = &schema.Table{
@@ -113,14 +121,15 @@ var (
 	}
 	// StepRunsColumns holds the columns for the "step_runs" table.
 	StepRunsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
+		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "start_at", Type: field.TypeTime},
-		{Name: "ended_at", Type: field.TypeTime},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"CREATED", "RUNNING", "PAUSED", "DONE", "TERMINATED", "FAILED"}},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true},
+		{Name: "ended_at", Type: field.TypeTime, Nullable: true},
 		{Name: "participants_count", Type: field.TypeInt},
 		{Name: "hit_id", Type: field.TypeString, Nullable: true},
-		{Name: "run_steps", Type: field.TypeString, Nullable: true},
+		{Name: "run_steps", Type: field.TypeString, Nullable: true, Size: 20},
 	}
 	// StepRunsTable holds the schema information for the "step_runs" table.
 	StepRunsTable = &schema.Table{
@@ -130,7 +139,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "step_runs_runs_steps",
-				Columns: []*schema.Column{StepRunsColumns[7]},
+				Columns: []*schema.Column{StepRunsColumns[8]},
 
 				RefColumns: []*schema.Column{RunsColumns[0]},
 				OnDelete:   schema.SetNull,
@@ -139,7 +148,7 @@ var (
 	}
 	// TemplatesColumns holds the columns for the "templates" table.
 	TemplatesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeString},
+		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "name", Type: field.TypeString, Size: 255},
@@ -148,9 +157,9 @@ var (
 		{Name: "internal_criteria", Type: field.TypeBytes},
 		{Name: "mturk_criteria", Type: field.TypeBytes},
 		{Name: "adult", Type: field.TypeBool},
-		{Name: "admin_templates", Type: field.TypeString, Nullable: true},
-		{Name: "project_templates", Type: field.TypeString, Nullable: true},
-		{Name: "run_template", Type: field.TypeString, Unique: true, Nullable: true},
+		{Name: "admin_templates", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "project_templates", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "run_template", Type: field.TypeString, Unique: true, Nullable: true, Size: 20},
 	}
 	// TemplatesTable holds the schema information for the "templates" table.
 	TemplatesTable = &schema.Table{
@@ -195,6 +204,7 @@ var (
 func init() {
 	ProjectsTable.ForeignKeys[0].RefTable = AdminsTable
 	RunsTable.ForeignKeys[0].RefTable = ProjectsTable
+	RunsTable.ForeignKeys[1].RefTable = StepRunsTable
 	StepsTable.ForeignKeys[0].RefTable = StepRunsTable
 	StepsTable.ForeignKeys[1].RefTable = TemplatesTable
 	StepRunsTable.ForeignKeys[0].RefTable = RunsTable

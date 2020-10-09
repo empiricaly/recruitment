@@ -67,8 +67,19 @@ func (r *Runtime) addRun(run *ent.Run) {
 	}
 
 	if run.Status == runModel.StatusCREATED {
-
+		if run.StartAt != nil {
+			// Schedule first even
+		}
+		return
 	}
+
+	if run.Status != runModel.StatusRUNNING {
+		log.Warn().Msgf("runtime: tried to add run with wrong status: %s", run.ID)
+		return
+	}
+
+	// Look for next event
+
 }
 
 func (r *Runtime) removeRun(run *ent.Run) {
@@ -148,7 +159,7 @@ func (r *Runtime) registerExistingSteps() error {
 		return errors.Wrap(err, "initialize exisitng runs")
 	}
 
-	log.Debug().Interface("runIDs", runIDs).Msg("got runs")
+	// log.Debug().Interface("runIDs", runIDs).Msg("got runs")
 
 	for _, runID := range runIDs {
 		r.updates <- runID

@@ -23,13 +23,13 @@ type ProjectCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the createdAt field.
+// SetCreatedAt sets the created_at field.
 func (pc *ProjectCreate) SetCreatedAt(t time.Time) *ProjectCreate {
 	pc.mutation.SetCreatedAt(t)
 	return pc
 }
 
-// SetNillableCreatedAt sets the createdAt field if the given value is not nil.
+// SetNillableCreatedAt sets the created_at field if the given value is not nil.
 func (pc *ProjectCreate) SetNillableCreatedAt(t *time.Time) *ProjectCreate {
 	if t != nil {
 		pc.SetCreatedAt(*t)
@@ -37,13 +37,13 @@ func (pc *ProjectCreate) SetNillableCreatedAt(t *time.Time) *ProjectCreate {
 	return pc
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (pc *ProjectCreate) SetUpdatedAt(t time.Time) *ProjectCreate {
 	pc.mutation.SetUpdatedAt(t)
 	return pc
 }
 
-// SetNillableUpdatedAt sets the updatedAt field if the given value is not nil.
+// SetNillableUpdatedAt sets the updated_at field if the given value is not nil.
 func (pc *ProjectCreate) SetNillableUpdatedAt(t *time.Time) *ProjectCreate {
 	if t != nil {
 		pc.SetUpdatedAt(*t)
@@ -178,6 +178,11 @@ func (pc *ProjectCreate) preSave() error {
 	}
 	if _, ok := pc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
+	}
+	if v, ok := pc.mutation.ID(); ok {
+		if err := project.IDValidator(v); err != nil {
+			return &ValidationError{Name: "id", err: fmt.Errorf("ent: validator failed for field \"id\": %w", err)}
+		}
 	}
 	return nil
 }

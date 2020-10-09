@@ -30,7 +30,7 @@ func (su *StepUpdate) Where(ps ...predicate.Step) *StepUpdate {
 	return su
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (su *StepUpdate) SetUpdatedAt(t time.Time) *StepUpdate {
 	su.mutation.SetUpdatedAt(t)
 	return su
@@ -407,7 +407,7 @@ type StepUpdateOne struct {
 	mutation *StepMutation
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (suo *StepUpdateOne) SetUpdatedAt(t time.Time) *StepUpdateOne {
 	suo.mutation.SetUpdatedAt(t)
 	return suo

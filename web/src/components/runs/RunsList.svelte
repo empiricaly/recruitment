@@ -17,7 +17,7 @@
 {#await $runs}
   Loading...
 {:then result}
-  <div class="w-64">
+  <div>
     {#if result.data.project.runs.length === 0}
       <Callout color="yellow">
         You have no runs yet.

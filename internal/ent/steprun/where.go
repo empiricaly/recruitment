@@ -93,24 +93,24 @@ func IDLTE(id string) predicate.StepRun {
 	})
 }
 
-// CreatedAt applies equality check predicate on the "createdAt" field. It's identical to CreatedAtEQ.
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
 	})
 }
 
-// UpdatedAt applies equality check predicate on the "updatedAt" field. It's identical to UpdatedAtEQ.
+// UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
 	})
 }
 
-// StartAt applies equality check predicate on the "startAt" field. It's identical to StartAtEQ.
-func StartAt(v time.Time) predicate.StepRun {
+// StartedAt applies equality check predicate on the "startedAt" field. It's identical to StartedAtEQ.
+func StartedAt(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldStartAt), v))
+		s.Where(sql.EQ(s.C(FieldStartedAt), v))
 	})
 }
 
@@ -135,21 +135,21 @@ func HitID(v string) predicate.StepRun {
 	})
 }
 
-// CreatedAtEQ applies the EQ predicate on the "createdAt" field.
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
 	})
 }
 
-// CreatedAtNEQ applies the NEQ predicate on the "createdAt" field.
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
 func CreatedAtNEQ(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
 	})
 }
 
-// CreatedAtIn applies the In predicate on the "createdAt" field.
+// CreatedAtIn applies the In predicate on the "created_at" field.
 func CreatedAtIn(vs ...time.Time) predicate.StepRun {
 	v := make([]interface{}, len(vs))
 	for i := range v {
@@ -166,7 +166,7 @@ func CreatedAtIn(vs ...time.Time) predicate.StepRun {
 	})
 }
 
-// CreatedAtNotIn applies the NotIn predicate on the "createdAt" field.
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
 func CreatedAtNotIn(vs ...time.Time) predicate.StepRun {
 	v := make([]interface{}, len(vs))
 	for i := range v {
@@ -183,49 +183,49 @@ func CreatedAtNotIn(vs ...time.Time) predicate.StepRun {
 	})
 }
 
-// CreatedAtGT applies the GT predicate on the "createdAt" field.
+// CreatedAtGT applies the GT predicate on the "created_at" field.
 func CreatedAtGT(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.GT(s.C(FieldCreatedAt), v))
 	})
 }
 
-// CreatedAtGTE applies the GTE predicate on the "createdAt" field.
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
 func CreatedAtGTE(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
 	})
 }
 
-// CreatedAtLT applies the LT predicate on the "createdAt" field.
+// CreatedAtLT applies the LT predicate on the "created_at" field.
 func CreatedAtLT(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.LT(s.C(FieldCreatedAt), v))
 	})
 }
 
-// CreatedAtLTE applies the LTE predicate on the "createdAt" field.
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
 	})
 }
 
-// UpdatedAtEQ applies the EQ predicate on the "updatedAt" field.
+// UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
 func UpdatedAtEQ(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
 	})
 }
 
-// UpdatedAtNEQ applies the NEQ predicate on the "updatedAt" field.
+// UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
 func UpdatedAtNEQ(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldUpdatedAt), v))
 	})
 }
 
-// UpdatedAtIn applies the In predicate on the "updatedAt" field.
+// UpdatedAtIn applies the In predicate on the "updated_at" field.
 func UpdatedAtIn(vs ...time.Time) predicate.StepRun {
 	v := make([]interface{}, len(vs))
 	for i := range v {
@@ -242,7 +242,7 @@ func UpdatedAtIn(vs ...time.Time) predicate.StepRun {
 	})
 }
 
-// UpdatedAtNotIn applies the NotIn predicate on the "updatedAt" field.
+// UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
 func UpdatedAtNotIn(vs ...time.Time) predicate.StepRun {
 	v := make([]interface{}, len(vs))
 	for i := range v {
@@ -259,50 +259,50 @@ func UpdatedAtNotIn(vs ...time.Time) predicate.StepRun {
 	})
 }
 
-// UpdatedAtGT applies the GT predicate on the "updatedAt" field.
+// UpdatedAtGT applies the GT predicate on the "updated_at" field.
 func UpdatedAtGT(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.GT(s.C(FieldUpdatedAt), v))
 	})
 }
 
-// UpdatedAtGTE applies the GTE predicate on the "updatedAt" field.
+// UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
 func UpdatedAtGTE(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.GTE(s.C(FieldUpdatedAt), v))
 	})
 }
 
-// UpdatedAtLT applies the LT predicate on the "updatedAt" field.
+// UpdatedAtLT applies the LT predicate on the "updated_at" field.
 func UpdatedAtLT(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.LT(s.C(FieldUpdatedAt), v))
 	})
 }
 
-// UpdatedAtLTE applies the LTE predicate on the "updatedAt" field.
+// UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldUpdatedAt), v))
 	})
 }
 
-// StartAtEQ applies the EQ predicate on the "startAt" field.
-func StartAtEQ(v time.Time) predicate.StepRun {
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v Status) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldStartAt), v))
+		s.Where(sql.EQ(s.C(FieldStatus), v))
 	})
 }
 
-// StartAtNEQ applies the NEQ predicate on the "startAt" field.
-func StartAtNEQ(v time.Time) predicate.StepRun {
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v Status) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldStartAt), v))
+		s.Where(sql.NEQ(s.C(FieldStatus), v))
 	})
 }
 
-// StartAtIn applies the In predicate on the "startAt" field.
-func StartAtIn(vs ...time.Time) predicate.StepRun {
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...Status) predicate.StepRun {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -314,12 +314,12 @@ func StartAtIn(vs ...time.Time) predicate.StepRun {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.In(s.C(FieldStartAt), v...))
+		s.Where(sql.In(s.C(FieldStatus), v...))
 	})
 }
 
-// StartAtNotIn applies the NotIn predicate on the "startAt" field.
-func StartAtNotIn(vs ...time.Time) predicate.StepRun {
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...Status) predicate.StepRun {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -331,35 +331,97 @@ func StartAtNotIn(vs ...time.Time) predicate.StepRun {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.NotIn(s.C(FieldStartAt), v...))
+		s.Where(sql.NotIn(s.C(FieldStatus), v...))
 	})
 }
 
-// StartAtGT applies the GT predicate on the "startAt" field.
-func StartAtGT(v time.Time) predicate.StepRun {
+// StartedAtEQ applies the EQ predicate on the "startedAt" field.
+func StartedAtEQ(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldStartAt), v))
+		s.Where(sql.EQ(s.C(FieldStartedAt), v))
 	})
 }
 
-// StartAtGTE applies the GTE predicate on the "startAt" field.
-func StartAtGTE(v time.Time) predicate.StepRun {
+// StartedAtNEQ applies the NEQ predicate on the "startedAt" field.
+func StartedAtNEQ(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldStartAt), v))
+		s.Where(sql.NEQ(s.C(FieldStartedAt), v))
 	})
 }
 
-// StartAtLT applies the LT predicate on the "startAt" field.
-func StartAtLT(v time.Time) predicate.StepRun {
+// StartedAtIn applies the In predicate on the "startedAt" field.
+func StartedAtIn(vs ...time.Time) predicate.StepRun {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
 	return predicate.StepRun(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldStartAt), v))
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldStartedAt), v...))
 	})
 }
 
-// StartAtLTE applies the LTE predicate on the "startAt" field.
-func StartAtLTE(v time.Time) predicate.StepRun {
+// StartedAtNotIn applies the NotIn predicate on the "startedAt" field.
+func StartedAtNotIn(vs ...time.Time) predicate.StepRun {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
 	return predicate.StepRun(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldStartAt), v))
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldStartedAt), v...))
+	})
+}
+
+// StartedAtGT applies the GT predicate on the "startedAt" field.
+func StartedAtGT(v time.Time) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldStartedAt), v))
+	})
+}
+
+// StartedAtGTE applies the GTE predicate on the "startedAt" field.
+func StartedAtGTE(v time.Time) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldStartedAt), v))
+	})
+}
+
+// StartedAtLT applies the LT predicate on the "startedAt" field.
+func StartedAtLT(v time.Time) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldStartedAt), v))
+	})
+}
+
+// StartedAtLTE applies the LTE predicate on the "startedAt" field.
+func StartedAtLTE(v time.Time) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldStartedAt), v))
+	})
+}
+
+// StartedAtIsNil applies the IsNil predicate on the "startedAt" field.
+func StartedAtIsNil() predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldStartedAt)))
+	})
+}
+
+// StartedAtNotNil applies the NotNil predicate on the "startedAt" field.
+func StartedAtNotNil() predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldStartedAt)))
 	})
 }
 
@@ -436,6 +498,20 @@ func EndedAtLT(v time.Time) predicate.StepRun {
 func EndedAtLTE(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldEndedAt), v))
+	})
+}
+
+// EndedAtIsNil applies the IsNil predicate on the "endedAt" field.
+func EndedAtIsNil() predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldEndedAt)))
+	})
+}
+
+// EndedAtNotNil applies the NotNil predicate on the "endedAt" field.
+func EndedAtNotNil() predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldEndedAt)))
 	})
 }
 

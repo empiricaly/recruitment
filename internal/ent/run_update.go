@@ -32,41 +32,15 @@ func (ru *RunUpdate) Where(ps ...predicate.Run) *RunUpdate {
 	return ru
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (ru *RunUpdate) SetUpdatedAt(t time.Time) *RunUpdate {
 	ru.mutation.SetUpdatedAt(t)
-	return ru
-}
-
-// SetName sets the name field.
-func (ru *RunUpdate) SetName(s string) *RunUpdate {
-	ru.mutation.SetName(s)
 	return ru
 }
 
 // SetStatus sets the status field.
 func (ru *RunUpdate) SetStatus(r run.Status) *RunUpdate {
 	ru.mutation.SetStatus(r)
-	return ru
-}
-
-// SetStartAt sets the startAt field.
-func (ru *RunUpdate) SetStartAt(t time.Time) *RunUpdate {
-	ru.mutation.SetStartAt(t)
-	return ru
-}
-
-// SetNillableStartAt sets the startAt field if the given value is not nil.
-func (ru *RunUpdate) SetNillableStartAt(t *time.Time) *RunUpdate {
-	if t != nil {
-		ru.SetStartAt(*t)
-	}
-	return ru
-}
-
-// ClearStartAt clears the value of startAt.
-func (ru *RunUpdate) ClearStartAt() *RunUpdate {
-	ru.mutation.ClearStartAt()
 	return ru
 }
 
@@ -107,6 +81,32 @@ func (ru *RunUpdate) SetNillableEndedAt(t *time.Time) *RunUpdate {
 // ClearEndedAt clears the value of endedAt.
 func (ru *RunUpdate) ClearEndedAt() *RunUpdate {
 	ru.mutation.ClearEndedAt()
+	return ru
+}
+
+// SetName sets the name field.
+func (ru *RunUpdate) SetName(s string) *RunUpdate {
+	ru.mutation.SetName(s)
+	return ru
+}
+
+// SetStartAt sets the startAt field.
+func (ru *RunUpdate) SetStartAt(t time.Time) *RunUpdate {
+	ru.mutation.SetStartAt(t)
+	return ru
+}
+
+// SetNillableStartAt sets the startAt field if the given value is not nil.
+func (ru *RunUpdate) SetNillableStartAt(t *time.Time) *RunUpdate {
+	if t != nil {
+		ru.SetStartAt(*t)
+	}
+	return ru
+}
+
+// ClearStartAt clears the value of startAt.
+func (ru *RunUpdate) ClearStartAt() *RunUpdate {
+	ru.mutation.ClearStartAt()
 	return ru
 }
 
@@ -160,6 +160,25 @@ func (ru *RunUpdate) SetTemplate(t *Template) *RunUpdate {
 	return ru.SetTemplateID(t.ID)
 }
 
+// SetCurrentStepID sets the currentStep edge to StepRun by id.
+func (ru *RunUpdate) SetCurrentStepID(id string) *RunUpdate {
+	ru.mutation.SetCurrentStepID(id)
+	return ru
+}
+
+// SetNillableCurrentStepID sets the currentStep edge to StepRun by id if the given value is not nil.
+func (ru *RunUpdate) SetNillableCurrentStepID(id *string) *RunUpdate {
+	if id != nil {
+		ru = ru.SetCurrentStepID(*id)
+	}
+	return ru
+}
+
+// SetCurrentStep sets the currentStep edge to StepRun.
+func (ru *RunUpdate) SetCurrentStep(s *StepRun) *RunUpdate {
+	return ru.SetCurrentStepID(s.ID)
+}
+
 // AddStepIDs adds the steps edge to StepRun by ids.
 func (ru *RunUpdate) AddStepIDs(ids ...string) *RunUpdate {
 	ru.mutation.AddStepIDs(ids...)
@@ -189,6 +208,12 @@ func (ru *RunUpdate) ClearProject() *RunUpdate {
 // ClearTemplate clears the template edge to Template.
 func (ru *RunUpdate) ClearTemplate() *RunUpdate {
 	ru.mutation.ClearTemplate()
+	return ru
+}
+
+// ClearCurrentStep clears the currentStep edge to StepRun.
+func (ru *RunUpdate) ClearCurrentStep() *RunUpdate {
+	ru.mutation.ClearCurrentStep()
 	return ru
 }
 
@@ -297,31 +322,11 @@ func (ru *RunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: run.FieldUpdatedAt,
 		})
 	}
-	if value, ok := ru.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: run.FieldName,
-		})
-	}
 	if value, ok := ru.mutation.Status(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeEnum,
 			Value:  value,
 			Column: run.FieldStatus,
-		})
-	}
-	if value, ok := ru.mutation.StartAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: run.FieldStartAt,
-		})
-	}
-	if ru.mutation.StartAtCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Column: run.FieldStartAt,
 		})
 	}
 	if value, ok := ru.mutation.StartedAt(); ok {
@@ -348,6 +353,26 @@ func (ru *RunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Column: run.FieldEndedAt,
+		})
+	}
+	if value, ok := ru.mutation.Name(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: run.FieldName,
+		})
+	}
+	if value, ok := ru.mutation.StartAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: run.FieldStartAt,
+		})
+	}
+	if ru.mutation.StartAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Column: run.FieldStartAt,
 		})
 	}
 	if value, ok := ru.mutation.Error(); ok {
@@ -433,6 +458,41 @@ func (ru *RunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if ru.mutation.CurrentStepCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   run.CurrentStepTable,
+			Columns: []string{run.CurrentStepColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.CurrentStepIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   run.CurrentStepTable,
+			Columns: []string{run.CurrentStepColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if nodes := ru.mutation.RemovedStepsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -489,41 +549,15 @@ type RunUpdateOne struct {
 	mutation *RunMutation
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (ruo *RunUpdateOne) SetUpdatedAt(t time.Time) *RunUpdateOne {
 	ruo.mutation.SetUpdatedAt(t)
-	return ruo
-}
-
-// SetName sets the name field.
-func (ruo *RunUpdateOne) SetName(s string) *RunUpdateOne {
-	ruo.mutation.SetName(s)
 	return ruo
 }
 
 // SetStatus sets the status field.
 func (ruo *RunUpdateOne) SetStatus(r run.Status) *RunUpdateOne {
 	ruo.mutation.SetStatus(r)
-	return ruo
-}
-
-// SetStartAt sets the startAt field.
-func (ruo *RunUpdateOne) SetStartAt(t time.Time) *RunUpdateOne {
-	ruo.mutation.SetStartAt(t)
-	return ruo
-}
-
-// SetNillableStartAt sets the startAt field if the given value is not nil.
-func (ruo *RunUpdateOne) SetNillableStartAt(t *time.Time) *RunUpdateOne {
-	if t != nil {
-		ruo.SetStartAt(*t)
-	}
-	return ruo
-}
-
-// ClearStartAt clears the value of startAt.
-func (ruo *RunUpdateOne) ClearStartAt() *RunUpdateOne {
-	ruo.mutation.ClearStartAt()
 	return ruo
 }
 
@@ -564,6 +598,32 @@ func (ruo *RunUpdateOne) SetNillableEndedAt(t *time.Time) *RunUpdateOne {
 // ClearEndedAt clears the value of endedAt.
 func (ruo *RunUpdateOne) ClearEndedAt() *RunUpdateOne {
 	ruo.mutation.ClearEndedAt()
+	return ruo
+}
+
+// SetName sets the name field.
+func (ruo *RunUpdateOne) SetName(s string) *RunUpdateOne {
+	ruo.mutation.SetName(s)
+	return ruo
+}
+
+// SetStartAt sets the startAt field.
+func (ruo *RunUpdateOne) SetStartAt(t time.Time) *RunUpdateOne {
+	ruo.mutation.SetStartAt(t)
+	return ruo
+}
+
+// SetNillableStartAt sets the startAt field if the given value is not nil.
+func (ruo *RunUpdateOne) SetNillableStartAt(t *time.Time) *RunUpdateOne {
+	if t != nil {
+		ruo.SetStartAt(*t)
+	}
+	return ruo
+}
+
+// ClearStartAt clears the value of startAt.
+func (ruo *RunUpdateOne) ClearStartAt() *RunUpdateOne {
+	ruo.mutation.ClearStartAt()
 	return ruo
 }
 
@@ -617,6 +677,25 @@ func (ruo *RunUpdateOne) SetTemplate(t *Template) *RunUpdateOne {
 	return ruo.SetTemplateID(t.ID)
 }
 
+// SetCurrentStepID sets the currentStep edge to StepRun by id.
+func (ruo *RunUpdateOne) SetCurrentStepID(id string) *RunUpdateOne {
+	ruo.mutation.SetCurrentStepID(id)
+	return ruo
+}
+
+// SetNillableCurrentStepID sets the currentStep edge to StepRun by id if the given value is not nil.
+func (ruo *RunUpdateOne) SetNillableCurrentStepID(id *string) *RunUpdateOne {
+	if id != nil {
+		ruo = ruo.SetCurrentStepID(*id)
+	}
+	return ruo
+}
+
+// SetCurrentStep sets the currentStep edge to StepRun.
+func (ruo *RunUpdateOne) SetCurrentStep(s *StepRun) *RunUpdateOne {
+	return ruo.SetCurrentStepID(s.ID)
+}
+
 // AddStepIDs adds the steps edge to StepRun by ids.
 func (ruo *RunUpdateOne) AddStepIDs(ids ...string) *RunUpdateOne {
 	ruo.mutation.AddStepIDs(ids...)
@@ -646,6 +725,12 @@ func (ruo *RunUpdateOne) ClearProject() *RunUpdateOne {
 // ClearTemplate clears the template edge to Template.
 func (ruo *RunUpdateOne) ClearTemplate() *RunUpdateOne {
 	ruo.mutation.ClearTemplate()
+	return ruo
+}
+
+// ClearCurrentStep clears the currentStep edge to StepRun.
+func (ruo *RunUpdateOne) ClearCurrentStep() *RunUpdateOne {
+	ruo.mutation.ClearCurrentStep()
 	return ruo
 }
 
@@ -752,31 +837,11 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 			Column: run.FieldUpdatedAt,
 		})
 	}
-	if value, ok := ruo.mutation.Name(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: run.FieldName,
-		})
-	}
 	if value, ok := ruo.mutation.Status(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeEnum,
 			Value:  value,
 			Column: run.FieldStatus,
-		})
-	}
-	if value, ok := ruo.mutation.StartAt(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: run.FieldStartAt,
-		})
-	}
-	if ruo.mutation.StartAtCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Column: run.FieldStartAt,
 		})
 	}
 	if value, ok := ruo.mutation.StartedAt(); ok {
@@ -803,6 +868,26 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Column: run.FieldEndedAt,
+		})
+	}
+	if value, ok := ruo.mutation.Name(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: run.FieldName,
+		})
+	}
+	if value, ok := ruo.mutation.StartAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: run.FieldStartAt,
+		})
+	}
+	if ruo.mutation.StartAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Column: run.FieldStartAt,
 		})
 	}
 	if value, ok := ruo.mutation.Error(); ok {
@@ -880,6 +965,41 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: template.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ruo.mutation.CurrentStepCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   run.CurrentStepTable,
+			Columns: []string{run.CurrentStepColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.CurrentStepIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   run.CurrentStepTable,
+			Columns: []string{run.CurrentStepColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
 				},
 			},
 		}

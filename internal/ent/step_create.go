@@ -22,13 +22,13 @@ type StepCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the createdAt field.
+// SetCreatedAt sets the created_at field.
 func (sc *StepCreate) SetCreatedAt(t time.Time) *StepCreate {
 	sc.mutation.SetCreatedAt(t)
 	return sc
 }
 
-// SetNillableCreatedAt sets the createdAt field if the given value is not nil.
+// SetNillableCreatedAt sets the created_at field if the given value is not nil.
 func (sc *StepCreate) SetNillableCreatedAt(t *time.Time) *StepCreate {
 	if t != nil {
 		sc.SetCreatedAt(*t)
@@ -36,13 +36,13 @@ func (sc *StepCreate) SetNillableCreatedAt(t *time.Time) *StepCreate {
 	return sc
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (sc *StepCreate) SetUpdatedAt(t time.Time) *StepCreate {
 	sc.mutation.SetUpdatedAt(t)
 	return sc
 }
 
-// SetNillableUpdatedAt sets the updatedAt field if the given value is not nil.
+// SetNillableUpdatedAt sets the updated_at field if the given value is not nil.
 func (sc *StepCreate) SetNillableUpdatedAt(t *time.Time) *StepCreate {
 	if t != nil {
 		sc.SetUpdatedAt(*t)
@@ -198,6 +198,11 @@ func (sc *StepCreate) preSave() error {
 	}
 	if _, ok := sc.mutation.Duration(); !ok {
 		return &ValidationError{Name: "duration", err: errors.New("ent: missing required field \"duration\"")}
+	}
+	if v, ok := sc.mutation.ID(); ok {
+		if err := step.IDValidator(v); err != nil {
+			return &ValidationError{Name: "id", err: fmt.Errorf("ent: validator failed for field \"id\": %w", err)}
+		}
 	}
 	return nil
 }

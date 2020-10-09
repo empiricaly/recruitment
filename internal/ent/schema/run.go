@@ -11,17 +11,21 @@ type Run struct {
 	ent.Schema
 }
 
+// Mixin of the Run.
+func (Run) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		BaseMixin{},
+		StatusMixin{},
+	}
+}
+
 // Fields of the Run.
 func (Run) Fields() []ent.Field {
-	return append(
-		append([]ent.Field{}, commonFields...),
+	return []ent.Field{
 		field.String("name"),
-		statusField,
-		field.Time("startAt").Optional(),
-		field.Time("startedAt").Optional(),
-		field.Time("endedAt").Optional(),
-		field.String("error").Optional(),
-	)
+		field.Time("startAt").Optional().Nillable(),
+		field.String("error").Optional().Nillable(),
+	}
 }
 
 // Edges of the Run.
@@ -33,6 +37,8 @@ func (Run) Edges() []ent.Edge {
 		edge.To("template", Template.Type).
 			Unique().
 			Required(),
+		edge.To("currentStep", StepRun.Type).
+			Unique(),
 		edge.To("steps", StepRun.Type),
 	}
 }

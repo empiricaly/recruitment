@@ -118,20 +118,16 @@ func (s *Session) RunStep(run *ent.Run, stepRun *ent.StepRun) error {
 	defer cancel()
 
 	var err error
-	var step *ent.Step
-	if stepRun.Edges.Step != nil {
-		step = stepRun.Edges.Step
-	} else {
+	step, err := stepRun.Edges.StepOrErr()
+	if err != nil {
 		step, err = stepRun.QueryStep().Only(ctx)
 		if err != nil {
 			return errors.Wrap(err, "query step for stepRun")
 		}
 	}
 
-	var template *ent.Template
-	if run.Edges.Template != nil {
-		template = run.Edges.Template
-	} else {
+	template, err := run.Edges.TemplateOrErr()
+	if err != nil {
 		template, err = run.QueryTemplate().Only(ctx)
 		if err != nil {
 			return errors.Wrap(err, "query template for stepRun")

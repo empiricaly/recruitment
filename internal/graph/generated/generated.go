@@ -350,7 +350,6 @@ type StepResolver interface {
 type StepRunResolver interface {
 	Step(ctx context.Context, obj *ent.StepRun) (*ent.Step, error)
 	Status(ctx context.Context, obj *ent.StepRun) (model.Status, error)
-	StartedAt(ctx context.Context, obj *ent.StepRun) (*time.Time, error)
 
 	Participants(ctx context.Context, obj *ent.StepRun, first *int, after *string) (*model.ParticipantsConnection, error)
 }
@@ -7888,9 +7887,9 @@ func (ec *executionContext) _Run_startAt(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*time.Time)
 	fc.Result = res
-	return ec.marshalODateTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalODateTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Run_startedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
@@ -7919,9 +7918,9 @@ func (ec *executionContext) _Run_startedAt(ctx context.Context, field graphql.Co
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*time.Time)
 	fc.Result = res
-	return ec.marshalODateTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalODateTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Run_endedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
@@ -7950,9 +7949,9 @@ func (ec *executionContext) _Run_endedAt(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*time.Time)
 	fc.Result = res
-	return ec.marshalODateTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalODateTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Run_steps(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
@@ -8046,9 +8045,9 @@ func (ec *executionContext) _Run_error(ctx context.Context, field graphql.Collec
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Run_data(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
@@ -8499,13 +8498,13 @@ func (ec *executionContext) _StepRun_startedAt(ctx context.Context, field graphq
 		Object:   "StepRun",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.StepRun().StartedAt(rctx, obj)
+		return obj.StartedAt, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8545,9 +8544,9 @@ func (ec *executionContext) _StepRun_endedAt(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*time.Time)
 	fc.Result = res
-	return ec.marshalODateTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalODateTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _StepRun_participants(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
@@ -12213,16 +12212,7 @@ func (ec *executionContext) _StepRun(ctx context.Context, sel ast.SelectionSet, 
 				return res
 			})
 		case "startedAt":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._StepRun_startedAt(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._StepRun_startedAt(ctx, field, obj)
 		case "endedAt":
 			out.Values[i] = ec._StepRun_endedAt(ctx, field, obj)
 		case "participants":

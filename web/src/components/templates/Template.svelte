@@ -62,7 +62,7 @@
         });
         notify({
           success: true,
-          title: `Updated Run successfully`,
+          title: `Run Saved`,
         });
       } catch (error) {
         console.error(error);

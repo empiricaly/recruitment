@@ -31,21 +31,55 @@ func (sru *StepRunUpdate) Where(ps ...predicate.StepRun) *StepRunUpdate {
 	return sru
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (sru *StepRunUpdate) SetUpdatedAt(t time.Time) *StepRunUpdate {
 	sru.mutation.SetUpdatedAt(t)
 	return sru
 }
 
-// SetStartAt sets the startAt field.
-func (sru *StepRunUpdate) SetStartAt(t time.Time) *StepRunUpdate {
-	sru.mutation.SetStartAt(t)
+// SetStatus sets the status field.
+func (sru *StepRunUpdate) SetStatus(s steprun.Status) *StepRunUpdate {
+	sru.mutation.SetStatus(s)
+	return sru
+}
+
+// SetStartedAt sets the startedAt field.
+func (sru *StepRunUpdate) SetStartedAt(t time.Time) *StepRunUpdate {
+	sru.mutation.SetStartedAt(t)
+	return sru
+}
+
+// SetNillableStartedAt sets the startedAt field if the given value is not nil.
+func (sru *StepRunUpdate) SetNillableStartedAt(t *time.Time) *StepRunUpdate {
+	if t != nil {
+		sru.SetStartedAt(*t)
+	}
+	return sru
+}
+
+// ClearStartedAt clears the value of startedAt.
+func (sru *StepRunUpdate) ClearStartedAt() *StepRunUpdate {
+	sru.mutation.ClearStartedAt()
 	return sru
 }
 
 // SetEndedAt sets the endedAt field.
 func (sru *StepRunUpdate) SetEndedAt(t time.Time) *StepRunUpdate {
 	sru.mutation.SetEndedAt(t)
+	return sru
+}
+
+// SetNillableEndedAt sets the endedAt field if the given value is not nil.
+func (sru *StepRunUpdate) SetNillableEndedAt(t *time.Time) *StepRunUpdate {
+	if t != nil {
+		sru.SetEndedAt(*t)
+	}
+	return sru
+}
+
+// ClearEndedAt clears the value of endedAt.
+func (sru *StepRunUpdate) ClearEndedAt() *StepRunUpdate {
+	sru.mutation.ClearEndedAt()
 	return sru
 }
 
@@ -135,6 +169,11 @@ func (sru *StepRunUpdate) Save(ctx context.Context) (int, error) {
 		v := steprun.UpdateDefaultUpdatedAt()
 		sru.mutation.SetUpdatedAt(v)
 	}
+	if v, ok := sru.mutation.Status(); ok {
+		if err := steprun.StatusValidator(v); err != nil {
+			return 0, &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
+		}
+	}
 
 	if _, ok := sru.mutation.StepID(); sru.mutation.StepCleared() && !ok {
 		return 0, errors.New("ent: clearing a unique edge \"step\"")
@@ -214,17 +253,36 @@ func (sru *StepRunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: steprun.FieldUpdatedAt,
 		})
 	}
-	if value, ok := sru.mutation.StartAt(); ok {
+	if value, ok := sru.mutation.Status(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: steprun.FieldStatus,
+		})
+	}
+	if value, ok := sru.mutation.StartedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
-			Column: steprun.FieldStartAt,
+			Column: steprun.FieldStartedAt,
+		})
+	}
+	if sru.mutation.StartedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Column: steprun.FieldStartedAt,
 		})
 	}
 	if value, ok := sru.mutation.EndedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
+			Column: steprun.FieldEndedAt,
+		})
+	}
+	if sru.mutation.EndedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
 			Column: steprun.FieldEndedAt,
 		})
 	}
@@ -343,21 +401,55 @@ type StepRunUpdateOne struct {
 	mutation *StepRunMutation
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (sruo *StepRunUpdateOne) SetUpdatedAt(t time.Time) *StepRunUpdateOne {
 	sruo.mutation.SetUpdatedAt(t)
 	return sruo
 }
 
-// SetStartAt sets the startAt field.
-func (sruo *StepRunUpdateOne) SetStartAt(t time.Time) *StepRunUpdateOne {
-	sruo.mutation.SetStartAt(t)
+// SetStatus sets the status field.
+func (sruo *StepRunUpdateOne) SetStatus(s steprun.Status) *StepRunUpdateOne {
+	sruo.mutation.SetStatus(s)
+	return sruo
+}
+
+// SetStartedAt sets the startedAt field.
+func (sruo *StepRunUpdateOne) SetStartedAt(t time.Time) *StepRunUpdateOne {
+	sruo.mutation.SetStartedAt(t)
+	return sruo
+}
+
+// SetNillableStartedAt sets the startedAt field if the given value is not nil.
+func (sruo *StepRunUpdateOne) SetNillableStartedAt(t *time.Time) *StepRunUpdateOne {
+	if t != nil {
+		sruo.SetStartedAt(*t)
+	}
+	return sruo
+}
+
+// ClearStartedAt clears the value of startedAt.
+func (sruo *StepRunUpdateOne) ClearStartedAt() *StepRunUpdateOne {
+	sruo.mutation.ClearStartedAt()
 	return sruo
 }
 
 // SetEndedAt sets the endedAt field.
 func (sruo *StepRunUpdateOne) SetEndedAt(t time.Time) *StepRunUpdateOne {
 	sruo.mutation.SetEndedAt(t)
+	return sruo
+}
+
+// SetNillableEndedAt sets the endedAt field if the given value is not nil.
+func (sruo *StepRunUpdateOne) SetNillableEndedAt(t *time.Time) *StepRunUpdateOne {
+	if t != nil {
+		sruo.SetEndedAt(*t)
+	}
+	return sruo
+}
+
+// ClearEndedAt clears the value of endedAt.
+func (sruo *StepRunUpdateOne) ClearEndedAt() *StepRunUpdateOne {
+	sruo.mutation.ClearEndedAt()
 	return sruo
 }
 
@@ -447,6 +539,11 @@ func (sruo *StepRunUpdateOne) Save(ctx context.Context) (*StepRun, error) {
 		v := steprun.UpdateDefaultUpdatedAt()
 		sruo.mutation.SetUpdatedAt(v)
 	}
+	if v, ok := sruo.mutation.Status(); ok {
+		if err := steprun.StatusValidator(v); err != nil {
+			return nil, &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
+		}
+	}
 
 	if _, ok := sruo.mutation.StepID(); sruo.mutation.StepCleared() && !ok {
 		return nil, errors.New("ent: clearing a unique edge \"step\"")
@@ -524,17 +621,36 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 			Column: steprun.FieldUpdatedAt,
 		})
 	}
-	if value, ok := sruo.mutation.StartAt(); ok {
+	if value, ok := sruo.mutation.Status(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: steprun.FieldStatus,
+		})
+	}
+	if value, ok := sruo.mutation.StartedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
-			Column: steprun.FieldStartAt,
+			Column: steprun.FieldStartedAt,
+		})
+	}
+	if sruo.mutation.StartedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Column: steprun.FieldStartedAt,
 		})
 	}
 	if value, ok := sruo.mutation.EndedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
+			Column: steprun.FieldEndedAt,
+		})
+	}
+	if sruo.mutation.EndedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
 			Column: steprun.FieldEndedAt,
 		})
 	}

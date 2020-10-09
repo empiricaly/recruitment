@@ -11,17 +11,23 @@ type Step struct {
 	ent.Schema
 }
 
+// Mixin of the Step.
+func (Step) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		BaseMixin{},
+	}
+}
+
 // Fields of the Step.
 func (Step) Fields() []ent.Field {
-	return append(
-		append([]ent.Field{}, commonFields...),
+	return []ent.Field{
 		field.Enum("type").Values("MTURK_HIT", "MTURK_MESSAGE", "PARTICIPANT_FILTER"),
 		field.Int("index"),
 		field.Int("duration"),
 		field.Bytes("msgArgs").Optional(),
 		field.Bytes("hitArgs").Optional(),
 		field.Bytes("filterArgs").Optional(),
-	)
+	}
 }
 
 // Edges of the Step.

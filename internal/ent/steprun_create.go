@@ -22,13 +22,13 @@ type StepRunCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the createdAt field.
+// SetCreatedAt sets the created_at field.
 func (src *StepRunCreate) SetCreatedAt(t time.Time) *StepRunCreate {
 	src.mutation.SetCreatedAt(t)
 	return src
 }
 
-// SetNillableCreatedAt sets the createdAt field if the given value is not nil.
+// SetNillableCreatedAt sets the created_at field if the given value is not nil.
 func (src *StepRunCreate) SetNillableCreatedAt(t *time.Time) *StepRunCreate {
 	if t != nil {
 		src.SetCreatedAt(*t)
@@ -36,13 +36,13 @@ func (src *StepRunCreate) SetNillableCreatedAt(t *time.Time) *StepRunCreate {
 	return src
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (src *StepRunCreate) SetUpdatedAt(t time.Time) *StepRunCreate {
 	src.mutation.SetUpdatedAt(t)
 	return src
 }
 
-// SetNillableUpdatedAt sets the updatedAt field if the given value is not nil.
+// SetNillableUpdatedAt sets the updated_at field if the given value is not nil.
 func (src *StepRunCreate) SetNillableUpdatedAt(t *time.Time) *StepRunCreate {
 	if t != nil {
 		src.SetUpdatedAt(*t)
@@ -50,15 +50,37 @@ func (src *StepRunCreate) SetNillableUpdatedAt(t *time.Time) *StepRunCreate {
 	return src
 }
 
-// SetStartAt sets the startAt field.
-func (src *StepRunCreate) SetStartAt(t time.Time) *StepRunCreate {
-	src.mutation.SetStartAt(t)
+// SetStatus sets the status field.
+func (src *StepRunCreate) SetStatus(s steprun.Status) *StepRunCreate {
+	src.mutation.SetStatus(s)
+	return src
+}
+
+// SetStartedAt sets the startedAt field.
+func (src *StepRunCreate) SetStartedAt(t time.Time) *StepRunCreate {
+	src.mutation.SetStartedAt(t)
+	return src
+}
+
+// SetNillableStartedAt sets the startedAt field if the given value is not nil.
+func (src *StepRunCreate) SetNillableStartedAt(t *time.Time) *StepRunCreate {
+	if t != nil {
+		src.SetStartedAt(*t)
+	}
 	return src
 }
 
 // SetEndedAt sets the endedAt field.
 func (src *StepRunCreate) SetEndedAt(t time.Time) *StepRunCreate {
 	src.mutation.SetEndedAt(t)
+	return src
+}
+
+// SetNillableEndedAt sets the endedAt field if the given value is not nil.
+func (src *StepRunCreate) SetNillableEndedAt(t *time.Time) *StepRunCreate {
+	if t != nil {
+		src.SetEndedAt(*t)
+	}
 	return src
 }
 
@@ -173,14 +195,21 @@ func (src *StepRunCreate) preSave() error {
 		v := steprun.DefaultUpdatedAt()
 		src.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := src.mutation.StartAt(); !ok {
-		return &ValidationError{Name: "startAt", err: errors.New("ent: missing required field \"startAt\"")}
+	if _, ok := src.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New("ent: missing required field \"status\"")}
 	}
-	if _, ok := src.mutation.EndedAt(); !ok {
-		return &ValidationError{Name: "endedAt", err: errors.New("ent: missing required field \"endedAt\"")}
+	if v, ok := src.mutation.Status(); ok {
+		if err := steprun.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
+		}
 	}
 	if _, ok := src.mutation.ParticipantsCount(); !ok {
 		return &ValidationError{Name: "participantsCount", err: errors.New("ent: missing required field \"participantsCount\"")}
+	}
+	if v, ok := src.mutation.ID(); ok {
+		if err := steprun.IDValidator(v); err != nil {
+			return &ValidationError{Name: "id", err: fmt.Errorf("ent: validator failed for field \"id\": %w", err)}
+		}
 	}
 	if _, ok := src.mutation.StepID(); !ok {
 		return &ValidationError{Name: "step", err: errors.New("ent: missing required edge \"step\"")}
@@ -230,13 +259,21 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 		})
 		sr.UpdatedAt = value
 	}
-	if value, ok := src.mutation.StartAt(); ok {
+	if value, ok := src.mutation.Status(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: steprun.FieldStatus,
+		})
+		sr.Status = value
+	}
+	if value, ok := src.mutation.StartedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
-			Column: steprun.FieldStartAt,
+			Column: steprun.FieldStartedAt,
 		})
-		sr.StartAt = value
+		sr.StartedAt = &value
 	}
 	if value, ok := src.mutation.EndedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -244,7 +281,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: steprun.FieldEndedAt,
 		})
-		sr.EndedAt = value
+		sr.EndedAt = &value
 	}
 	if value, ok := src.mutation.ParticipantsCount(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
