@@ -27,6 +27,10 @@ type Runtime struct {
 	// for the runtime, or if it doesn't exist, we add it to the runtime.
 	updates chan string
 
+	// triggers receives timed events, at the time of the event, for the event
+	// to be processed.
+	triggers chan *runState
+
 	// If done == true, stop running hooks
 	done bool
 }
@@ -34,11 +38,13 @@ type Runtime struct {
 // Start the empirica recruitment runtime
 func Start(conn *storage.Conn) (*Runtime, error) {
 	r := &Runtime{
-		conn:    conn,
-		runs:    make(map[string]*runState),
-		updates: make(chan string),
+		conn:     conn,
+		runs:     make(map[string]*runState),
+		updates:  make(chan string),
+		triggers: make(chan *runState),
 	}
 	go r.processRuns()
+	go r.processEvents()
 	err := r.registerExistingSteps()
 	if err != nil {
 		return nil, err
@@ -54,32 +60,136 @@ func (r *Runtime) Stop() {
 	// stop run loop here?
 }
 
+//go:generate stringer  -linecomment -type=runEvent  -output=runtime_strings.go
+
+type runEvent int
+
+const (
+	startRunEvent runEvent = iota // Start Run
+	endRunEvent                   // End Run
+	nextStepEvent                 // Next Run Step
+)
+
 type runState struct {
-	run   *ent.Run
-	timer *time.Timer
+	run       *ent.Run
+	timer     *time.Timer
+	nextEvent runEvent
 }
 
 func (r *Runtime) addRun(run *ent.Run) {
+	return
 	_, ok := r.runs[run.ID]
 	if ok {
 		log.Warn().Msgf("run %s already tracked", run.ID)
 		return
 	}
 
+	// If the status is created, and scheduled, set trigger for startAt
 	if run.Status == runModel.StatusCREATED {
 		if run.StartAt != nil {
-			// Schedule first even
+			r.schedule(run, startRunEvent, time.Until(*run.StartAt))
 		}
 		return
 	}
 
+	// Double-check this can only happen on created or running Runs
 	if run.Status != runModel.StatusRUNNING {
 		log.Warn().Msgf("runtime: tried to add run with wrong status: %s", run.ID)
 		return
 	}
 
-	// Look for next event
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	currentStepRun, err := run.QueryCurrentStep().Only(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		log.Error().Err(err).Msg("query currentStepRun for next event trigger")
+		return
+	}
 
+	// Run set to start now
+	if currentStepRun == nil {
+		if run.StartAt == nil {
+			run.Start()
+		} else {
+			log.Error().Msg("Run is running but first step hasn't started yet and is scheduled")
+		}
+		return
+	}
+
+	r.scheduleNextStep(run)
+}
+
+func (r *Runtime) scheduleNextStep(run *ent.Run) {
+	// Get related objects
+	_, currentStep, _, _, steps, err := run.Relations()
+	if err != nil {
+		log.Error().Err(err).Msg("preparing next event trigger")
+		return
+	}
+
+	var next bool
+	var nextStep *ent.Step
+	for _, step := range steps {
+		if next {
+			nextStep = step
+		}
+		if step.ID == currentStep.ID {
+			next = true
+		}
+	}
+
+	// If there is no next step, it's the last step
+	if nextStep == nil {
+		until, err := untilNextStep(run, steps, steps[len(steps)-1], true)
+		if err != nil {
+			log.Error().Err(err).Msg("getting end of run time")
+		}
+		r.schedule(run, endRunEvent, until)
+		return
+	}
+
+	// Schedule next step
+	until, err := untilNextStep(run, steps, steps[len(steps)-1], false)
+	if err != nil {
+		log.Error().Err(err).Msg("getting next step start")
+	}
+	r.schedule(run, nextStepEvent, until)
+}
+
+func (r *Runtime) schedule(run *ent.Run, nextEvent runEvent, wait time.Duration) {
+	_, ok := r.runs[run.ID]
+	if ok {
+		log.Warn().Msgf("run %s already scheduled", run.ID)
+		return
+	}
+	// Schedule starting the Run
+	state := &runState{
+		run:       run,
+		nextEvent: nextEvent,
+	}
+
+	state.timer = time.AfterFunc(wait, func() {
+		r.triggers <- state
+	})
+	r.runs[run.ID] = state
+}
+
+func untilNextStep(run *ent.Run, steps []*ent.Step, step *ent.Step, toEnd bool) (time.Duration, error) {
+	if run.StartedAt == nil {
+		return 0, errors.New("run has not started")
+	}
+	var dur time.Duration
+	for _, s := range steps {
+		if !toEnd && s.ID == step.ID {
+			break
+		}
+		dur += time.Second * time.Duration(s.Duration)
+		if toEnd && s.ID == step.ID {
+			break
+		}
+	}
+
+	return time.Until(run.StartedAt.Add(dur)), nil
 }
 
 func (r *Runtime) removeRun(run *ent.Run) {
@@ -90,6 +200,20 @@ func (r *Runtime) removeRun(run *ent.Run) {
 
 	if !state.timer.Stop() {
 		<-state.timer.C
+	}
+}
+
+func (r *Runtime) processEvent(state *runState) {
+	switch state.nextEvent {
+	case startRunEvent:
+		state.run.Start()
+	case endRunEvent:
+		state.run.End()
+	case nextStepEvent:
+		state.run.RunStep()
+		r.scheduleNextStep(state.run)
+	default:
+		log.Error().Msgf("connot process next event on %s: %s", state.run.ID, state.nextEvent.String())
 	}
 }
 
@@ -115,6 +239,13 @@ func (r *Runtime) processRun(runID string) {
 		r.addRun(runRecord)
 	default:
 		log.Error().Msgf("unknown run status: %s", runRecord.Status.String())
+	}
+}
+
+func (r *Runtime) processEvents() {
+	for {
+		event := <-r.triggers
+		r.processEvent(event)
 	}
 }
 
