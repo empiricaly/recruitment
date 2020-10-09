@@ -1,18 +1,19 @@
 <script>
   import { createEventDispatcher } from "svelte";
-import Button from "../../base/Button.svelte";
-import Input from "../../base/Input.svelte";
-import Select from "../../base/Select.svelte";
-import { comparators } from "./criteria.js";
-import ValueInput from "./ValueInput.svelte";
-
+  import Button from "../../base/Button.svelte";
+  import Input from "../../base/Input.svelte";
+  import Select from "../../base/Select.svelte";
+  import { comparators } from "./criteria.js";
+  import ValueInput from "./ValueInput.svelte";
 
   const dispatch = createEventDispatcher();
 
   export let first = false;
   export let criteria = {};
 
-  $: operator = !criteria.key && (criteria.and ? "and" : "or");
+  $: operator = criteria.and && criteria.and.length > 0 ? "and" : "or";
+
+  $: console.log(criteria[operator], operator);
 
   function handleChildAdd(event) {
     const {
@@ -20,18 +21,18 @@ import ValueInput from "./ValueInput.svelte";
       operator: childOperator,
       newCriteria = {
         key: "",
-        comparator: "EqualTo",
-        values: []
-      }
+        comparator: "EQUAL_TO",
+        values: [],
+      },
     } = event.detail;
 
-    const childIndex = criteria[operator].findIndex(c => c === child);
+    const childIndex = criteria[operator].findIndex((c) => c === child);
 
     if (operator === childOperator) {
       criteria[operator].splice(childIndex + 1, 0, newCriteria);
     } else {
       criteria[operator].splice(childIndex, 1, {
-        [childOperator]: [child, newCriteria]
+        [childOperator]: [child, newCriteria],
       });
     }
     criteria[operator] = criteria[operator];
@@ -40,21 +41,21 @@ import ValueInput from "./ValueInput.svelte";
   function handleChildRemove(event) {
     const { criteria: child } = event.detail;
 
-    criteria[operator] = criteria[operator].filter(item => item !== child);
+    criteria[operator] = criteria[operator].filter((item) => item !== child);
     if (first && criteria[operator].length === 0) {
       criteria[operator] = [
         {
           key: "",
-          comparator: "EqualTo",
-          values: []
-        }
+          comparator: "EQUAL_TO",
+          values: [],
+        },
       ];
     }
     if (criteria[operator].length === 1) {
       dispatch("add", {
         criteria,
         newCriteria: criteria[operator][0],
-        operator: operator === "and" ? "or" : "and"
+        operator: operator === "and" ? "or" : "and",
       });
       dispatch("remove", { criteria });
     }
@@ -71,10 +72,12 @@ import ValueInput from "./ValueInput.svelte";
       }
     }
   }
+
+  console.log(first);
 </script>
 
 <li>
-  {#if criteria.key !== undefined}
+  {#if (!criteria[operator] || criteria[operator].length === 0) && !first}
     <div
       class="min-w-0 flex-1 md:grid md:grid-cols-3 md:gap-2 mt-4 md:mt-1
       items-center">
