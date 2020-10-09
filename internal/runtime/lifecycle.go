@@ -8,10 +8,22 @@ import (
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	steprunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
+	templateModel "github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/pkg/errors"
 	"github.com/rs/xid"
 	"github.com/rs/zerolog/log"
 )
+
+func (r *Runtime) filterParticipants(ctx context.Context, tx *ent.Tx, template *ent.Template) ([]*ent.Participant, error) {
+	participants, err := tx.Participant.Query().All(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "find participants")
+	}
+
+	// TODO should filter participants here
+
+	return participants[:template.ParticipantCount], nil
+}
 
 func (r *Runtime) startRun(run *ent.Run) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -29,93 +41,51 @@ func (r *Runtime) startRun(run *ent.Run) {
 		return
 	}
 
-	tx, err := r.conn.Tx(ctx)
-	if err != nil {
-		log.Error().Err(err).Msg("start run: create transaction")
-		return
-	}
+	if err := ent.WithTx(ctx, r.conn.Client, func(tx *ent.Tx) error {
 
-	for _, step := range steps {
-		_, err := tx.
-			StepRun.
-			Create().
-			SetID(xid.New().String()).
-			SetRun(run).
-			SetStep(step).
-			SetStatus(steprunModel.StatusCREATED).
-			SetParticipantsCount(0).
+		for i, step := range steps {
+			stepRun, err := tx.
+				StepRun.
+				Create().
+				SetID(xid.New().String()).
+				SetRun(run).
+				SetStep(step).
+				SetStatus(steprunModel.StatusCREATED).
+				SetParticipantsCount(0).
+				Save(ctx)
+			if err != nil {
+				return errors.Wrap(err, "create stepRun")
+			}
+
+			if i == 0 && template.SelectionType == templateModel.SelectionTypeINTERNAL_DB {
+				participants, err := r.filterParticipants(ctx, tx, template)
+				if err != nil {
+					return errors.Wrap(err, "filter participants")
+				}
+
+				for _, participant := range participants {
+					_, err = participant.Update().AddSteps(stepRun).Save(ctx)
+					if err != nil {
+						return errors.Wrap(err, "add participant to stepRun")
+					}
+				}
+			}
+		}
+
+		run, err = tx.Run.UpdateOne(run).
+			SetStatus(runModel.StatusRUNNING).
+			SetStartAt(time.Now()).
 			Save(ctx)
 		if err != nil {
-			err = errors.Wrap(err, "start run: create stepRun")
-			return
+			return errors.Wrap(err, "create run")
 		}
-	}
 
-	run, err = tx.Run.UpdateOne(run).
-		SetStatus(runModel.StatusRUNNING).
-		SetStartAt(time.Now()).
-		Save(ctx)
-
-	err = tx.Commit()
-	if err != nil {
+		return nil
+	}); err != nil {
 		log.Error().Err(err).Msg("start run: commit transaction")
-		return
 	}
 
 	r.startStep(run)
-}
-
-func (r *Runtime) endRun(run *ent.Run) {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-
-	tx, err := r.conn.Tx(ctx)
-	if err != nil {
-		log.Error().Err(err).Msg("end run: create transaction")
-		return
-	}
-
-	now := time.Now()
-
-	currentRun, err := run.QueryCurrentStep().Only(ctx)
-	if err != nil {
-		log.Error().Err(err).Msg("end run: get last step")
-		return
-	}
-
-	_, err = tx.
-		StepRun.
-		UpdateOne(currentRun).
-		SetStatus(steprunModel.StatusCREATED).
-		SetEndedAt(now).
-		Save(ctx)
-	if err != nil {
-		log.Error().Err(err).Msg("end run: update last step")
-		return
-	}
-
-	_, err = tx.
-		Run.
-		UpdateOne(run).
-		SetStatus(runModel.StatusRUNNING).
-		SetStartAt(now).
-		Save(ctx)
-	if err != nil {
-		log.Error().Err(err).Msg("end run: update run")
-		return
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		log.Error().Err(err).Msg("end run: commit transaction")
-		return
-	}
-}
-
-func (r *Runtime) endStep(run *ent.Run, stepRun *ent.StepRun) {
-	// TODO end anything MTurk is doing for this run.
-	// On a HIT Step, we should make sure the HIT is deleted and people who
-	// haven't  completed the HIT yet are not brought to the next round
 }
 
 func (r *Runtime) startStep(run *ent.Run) {
@@ -146,7 +116,7 @@ func (r *Runtime) startStep(run *ent.Run) {
 	if err := ent.WithTx(ctx, r.conn.Client, func(tx *ent.Tx) error {
 		var nextStepRun *ent.StepRun
 		if currentStepRun == nil {
-			// starting the first run
+			// starting the first step
 
 			for _, stepRun := range stepRuns {
 				if stepRun.Edges.Step.Index == 0 {
@@ -159,7 +129,7 @@ func (r *Runtime) startStep(run *ent.Run) {
 				return errors.Errorf("could not find first step for run (%s)", run.ID)
 			}
 		} else {
-			// running subsequent run
+			// running subsequent step
 
 			for _, stepRun := range stepRuns {
 				if stepRun.Edges.Step.Index == currentStepRun.Edges.Step.Index {
@@ -193,5 +163,49 @@ func (r *Runtime) startStep(run *ent.Run) {
 		return nil
 	}); err != nil {
 		log.Error().Err(err).Msg("start step: transaction failed")
+	}
+}
+
+func (r *Runtime) endStep(run *ent.Run, stepRun *ent.StepRun) {
+	// TODO end anything MTurk is doing for this run.
+	// On a HIT Step, we should make sure the HIT is deleted and people who
+	// haven't  completed the HIT yet are not brought to the next round
+}
+
+func (r *Runtime) endRun(run *ent.Run) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if err := ent.WithTx(ctx, r.conn.Client, func(tx *ent.Tx) error {
+		now := time.Now()
+
+		currentRun, err := run.QueryCurrentStep().Only(ctx)
+		if err != nil {
+			return errors.Wrap(err, "get last step")
+		}
+
+		_, err = tx.
+			StepRun.
+			UpdateOne(currentRun).
+			SetStatus(steprunModel.StatusCREATED).
+			SetEndedAt(now).
+			Save(ctx)
+		if err != nil {
+			return errors.Wrap(err, "update last step")
+		}
+
+		_, err = tx.
+			Run.
+			UpdateOne(run).
+			SetStatus(runModel.StatusRUNNING).
+			SetStartAt(now).
+			Save(ctx)
+		if err != nil {
+			return errors.Wrap(err, "update run")
+		}
+
+		return nil
+	}); err != nil {
+		log.Error().Err(err).Msg("end run: commit transaction")
 	}
 }

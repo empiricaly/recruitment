@@ -16,6 +16,7 @@ const awsRegion = "us-east-1"
 type Session struct {
 	quals []*model.MTurkQulificationType
 	*mturk.MTurk
+	config *Config
 }
 
 // New create a new session for mTurk

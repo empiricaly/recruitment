@@ -72,11 +72,56 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 		return errors.Wrap(err, "unmarshal Step Hit args")
 	}
 
+	// TODO: add correct URL there
+	question, err := getExternalQuestion("some url here")
+	if err != nil {
+		return errors.Wrap(err, "encode HIT question URL")
+	}
+
 	isFirstStep := step.Index == 0
 	isInternalDB := template.SelectionType == templateModel.SelectionTypeINTERNAL_DB
 
 	if isFirstStep && isInternalDB {
-		// Go crazzy
+		participants, err := stepRun.QueryParticipants().All(ctx)
+		if err != nil {
+			return errors.Wrap(err, "get step participants")
+		}
+
+		for _, participant := range participants {
+			qualParams := &mturk.CreateQualificationTypeInput{
+				AutoGranted:             aws.Bool(true),
+				Name:                    aws.String(fmt.Sprintf("empirica_%s_%s", stepRun.ID, participant.ID)),
+				Description:             aws.String("internal empirica qual"),
+				Keywords:                aws.String("empirica_recruitment_internal"),
+				QualificationTypeStatus: aws.String("Active"),
+			}
+			qualID, err := s.createQual(qualParams)
+			if err != nil {
+				return errors.Wrap(err, "create individual qual")
+			}
+
+			hitParams := &mturk.CreateHITInput{
+				Question:                    aws.String(question),
+				AssignmentDurationInSeconds: aws.Int64(int64(hitArgs.Duration)),
+				LifetimeInSeconds:           aws.Int64(int64(hitArgs.Duration)),
+				MaxAssignments:              aws.Int64(int64(1)),
+				Title:                       aws.String(hitArgs.Title),
+				Description:                 aws.String(hitArgs.Description),
+				Keywords:                    aws.String(hitArgs.Keywords),
+				Reward:                      aws.String(fmt.Sprintf("%f", hitArgs.Reward)),
+				QualificationRequirements: []*mturk.QualificationRequirement{
+					{
+						QualificationTypeId: aws.String(qualID),
+						Comparator:          aws.String("Exists"),
+					},
+				},
+			}
+			_, err = s.createHit(hitParams)
+			if err != nil {
+				return errors.Wrap(err, "create individual hit")
+			}
+
+		}
 	}
 
 	var quals []*mturk.QualificationRequirement
@@ -113,12 +158,6 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 		}
 	}
 
-	// TODO: add correct URL there
-	question, err := getExternalQuestion("some url here")
-	if err != nil {
-		return errors.Wrap(err, "encode HIT question URL")
-	}
-
 	params := &mturk.CreateHITInput{
 		Question:                    aws.String(question),
 		AssignmentDurationInSeconds: aws.Int64(int64(hitArgs.Duration)),
@@ -130,12 +169,13 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 		Reward:                      aws.String(fmt.Sprintf("%f", hitArgs.Reward)),
 		QualificationRequirements:   quals,
 	}
-	hit, err := s.MTurk.CreateHIT(params)
+
+	hitID, err := s.createHit(params)
 	if err != nil {
 		return errors.Wrap(err, "create hit")
 	}
 
-	_, err = stepRun.Update().SetHitID(*hit.HIT.HITId).Save(ctx)
+	_, err = stepRun.Update().SetHitID(hitID).Save(ctx)
 	if err != nil {
 		return errors.Wrap(err, "save hit ID in StepRun")
 	}

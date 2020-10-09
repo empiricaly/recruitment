@@ -8,6 +8,7 @@ import (
 // Config is MTurk configuration
 type Config struct {
 	Sandbox bool `mapstructure:"sandbox"`
+	Dev     bool `mapstructure:"dev"`
 }
 
 // Validate configuration is ok
@@ -26,6 +27,11 @@ func ConfigFlags(cmd *cobra.Command, prefix string) error {
 	flag := prefix + ".sandbox"
 	val := false
 	cmd.Flags().Bool(flag, val, "Use the MTurk Sandbox")
+	viper.SetDefault(flag, val)
+
+	flag = prefix + ".dev"
+	val = false
+	cmd.Flags().Bool(flag, val, "Use the MTurk local dev mock (superseeds sandbox)")
 	viper.SetDefault(flag, val)
 
 	return nil

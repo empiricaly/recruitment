@@ -2,6 +2,7 @@ package mturk
 
 import (
 	"encoding/json"
+	"strings"
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/aws/aws-sdk-go/aws"
@@ -15,10 +16,16 @@ import (
 // GetQuals will get a list of qualification types created by the user
 func (s *Session) GetQuals() ([]*model.MTurkQulificationType, error) {
 	var quals []*model.MTurkQulificationType
-	params := &mturk.ListQualificationTypesInput{MustBeRequestable: aws.Bool(true), MustBeOwnedByCaller: aws.Bool(true)}
-	err := s.MTurk.ListQualificationTypesPages(params, func(page *mturk.ListQualificationTypesOutput, lastPage bool) bool {
+
+	params := &mturk.ListQualificationTypesInput{
+		MustBeRequestable:   aws.Bool(true),
+		MustBeOwnedByCaller: aws.Bool(true),
+	}
+	err := s.MTurk.ListQualificationTypesPages(params, func(page *mturk.ListQualificationTypesOutput, _ bool) bool {
 		for _, qual := range page.QualificationTypes {
-			quals = append(quals, &model.MTurkQulificationType{ID: *qual.QualificationTypeId, Name: *qual.Name, Description: *qual.Description, Type: "Custom"})
+			if *qual.QualificationTypeStatus == "Active" && !strings.Contains(*qual.Keywords, "empirica_recruitment_internal") {
+				quals = append(quals, &model.MTurkQulificationType{ID: *qual.QualificationTypeId, Name: *qual.Name, Description: *qual.Description, Type: "Custom"})
+			}
 		}
 		return true
 	})
