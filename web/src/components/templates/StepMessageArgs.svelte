@@ -27,30 +27,33 @@
 </script>
 
 <script>
-  import Select from "../base/Select.svelte";
-  import Label from "../base/Label.svelte";
-  import Input from "../base/Input.svelte";
-  import SlideOver from "../overlays/SlideOver.svelte";
-  import CodeMirror from "../editors/CodeMirror.svelte";
   import { uniqueID } from "../../utils/uniq.js";
+  import Input from "../base/Input.svelte";
+  import Label from "../base/Label.svelte";
+  import Select from "../base/Select.svelte";
+  import CodeMirror from "../editors/CodeMirror.svelte";
+  import SlideOver from "../overlays/SlideOver.svelte";
 
   export let msgArgs;
+  export let hasSubject = false;
   let showVariables = false;
 
   const uniq = uniqueID();
 </script>
 
-<div class="">
-  <Label
-    forID={uniq('subject')}
-    text="Message Subject"
-    question="The subject line of the email message to send" />
-  <Input
-    max={200}
-    id={uniq('subject')}
-    bind:value={msgArgs.subject}
-    placeholder="Message Subject" />
-</div>
+{#if hasSubject}
+  <div class="">
+    <Label
+      forID={uniq('subject')}
+      text="Message Subject"
+      question="The subject line of the email message to send" />
+    <Input
+      max={200}
+      id={uniq('subject')}
+      bind:value={msgArgs.subject}
+      placeholder="Message Subject" />
+  </div>
+{/if}
 <div class="mt-4">
   <Label
     forID={uniq('url')}

@@ -47,7 +47,7 @@
                 2v2h2v-2H5z" />
             </svg>
             {stepCount}
-            Step{stepCount !== 1 && 's'}
+            Step{stepCount !== 1 ? 's' : ''}
           </div>
         </div>
 

@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent"
@@ -21,8 +22,8 @@ func (r *Runtime) filterParticipants(ctx context.Context, tx *ent.Tx, template *
 	}
 
 	// TODO should filter participants here
-
-	return participants[:template.ParticipantCount], nil
+	l := math.Min(float64(template.ParticipantCount), float64(len(participants)))
+	return participants[:int(l)], nil
 }
 
 func (r *Runtime) startRun(run *ent.Run) {

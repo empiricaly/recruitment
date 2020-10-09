@@ -2690,20 +2690,24 @@ input UpdateRunInput {
 }
 
 input ScheduleRunInput {
-  runID: ID!
+  ID: ID!
+  projectID: ID!
   startAt: DateTime!
 }
 
 input UnscheduleRunInput {
-  runID: ID!
+  ID: ID!
+  projectID: ID!
 }
 
 input StartRunInput {
-  runID: ID!
+  ID: ID!
+  projectID: ID!
 }
 
 input CancelRunInput {
-  runID: ID!
+  ID: ID!
+  projectID: ID!
 }
 
 type Mutation {
@@ -10176,9 +10180,15 @@ func (ec *executionContext) unmarshalInputCancelRunInput(ctx context.Context, ob
 
 	for k, v := range asMap {
 		switch k {
-		case "runID":
+		case "ID":
 			var err error
-			it.RunID, err = ec.unmarshalNID2string(ctx, v)
+			it.ID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "projectID":
+			var err error
+			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10692,9 +10702,15 @@ func (ec *executionContext) unmarshalInputScheduleRunInput(ctx context.Context, 
 
 	for k, v := range asMap {
 		switch k {
-		case "runID":
+		case "ID":
 			var err error
-			it.RunID, err = ec.unmarshalNID2string(ctx, v)
+			it.ID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "projectID":
+			var err error
+			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10716,9 +10732,15 @@ func (ec *executionContext) unmarshalInputStartRunInput(ctx context.Context, obj
 
 	for k, v := range asMap {
 		switch k {
-		case "runID":
+		case "ID":
 			var err error
-			it.RunID, err = ec.unmarshalNID2string(ctx, v)
+			it.ID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "projectID":
+			var err error
+			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10848,9 +10870,15 @@ func (ec *executionContext) unmarshalInputUnscheduleRunInput(ctx context.Context
 
 	for k, v := range asMap {
 		switch k {
-		case "runID":
+		case "ID":
 			var err error
-			it.RunID, err = ec.unmarshalNID2string(ctx, v)
+			it.ID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "projectID":
+			var err error
+			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

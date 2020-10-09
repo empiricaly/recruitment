@@ -36,5 +36,5 @@
     use:init
     bind:value
     class="form-textarea block w-full transition duration-150 ease-in-out
-    sm:text-sm sm:leading-5" />
+    sm:text-sm sm:leading-5 focus:outline-none focus:shadow-outline focus:border-mint-300" />
 </div>

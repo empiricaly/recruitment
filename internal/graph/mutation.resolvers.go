@@ -12,7 +12,8 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/ent/run"
-	stepy "github.com/empiricaly/recruitment/internal/ent/step"
+	runModel "github.com/empiricaly/recruitment/internal/ent/run"
+	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
@@ -118,7 +119,7 @@ func (r *mutationResolver) UpdateTemplate(ctx context.Context, input *model.Upda
 
 			if found {
 				step, err := existinStep.Update().
-					SetType(stepy.Type(step.Type.String())).
+					SetType(stepModel.Type(step.Type.String())).
 					SetIndex(step.Index).
 					SetDuration(step.Duration).
 					SetFilterArgs(filterArgs).
@@ -135,7 +136,7 @@ func (r *mutationResolver) UpdateTemplate(ctx context.Context, input *model.Upda
 
 		step, err := tx.Step.Create().
 			SetID(xid.New().String()).
-			SetType(stepy.Type(step.Type.String())).
+			SetType(stepModel.Type(step.Type.String())).
 			SetIndex(step.Index).
 			SetDuration(step.Duration).
 			SetFilterArgs(filterArgs).
@@ -230,7 +231,11 @@ func (r *mutationResolver) UnscheduleRun(ctx context.Context, input *model.Unsch
 }
 
 func (r *mutationResolver) StartRun(ctx context.Context, input *model.StartRunInput) (*ent.Run, error) {
-	panic(fmt.Errorf("not implemented"))
+	run, err := r.Store.Run.UpdateOneID(input.ID).
+		SetStatus(runModel.StatusRUNNING).
+		Save(ctx)
+
+	return run, err
 }
 
 func (r *mutationResolver) CancelRun(ctx context.Context, input *model.CancelRunInput) (*ent.Run, error) {

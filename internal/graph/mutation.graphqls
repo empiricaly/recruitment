@@ -192,20 +192,24 @@ input UpdateRunInput {
 }
 
 input ScheduleRunInput {
-  runID: ID!
+  ID: ID!
+  projectID: ID!
   startAt: DateTime!
 }
 
 input UnscheduleRunInput {
-  runID: ID!
+  ID: ID!
+  projectID: ID!
 }
 
 input StartRunInput {
-  runID: ID!
+  ID: ID!
+  projectID: ID!
 }
 
 input CancelRunInput {
-  runID: ID!
+  ID: ID!
+  projectID: ID!
 }
 
 type Mutation {

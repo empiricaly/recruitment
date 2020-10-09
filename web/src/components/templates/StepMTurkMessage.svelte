@@ -4,4 +4,4 @@
   export let step;
 </script>
 
-<StepMessageArgs bind:msgArgs={step.msgArgs} />
+<StepMessageArgs bind:msgArgs={step.msgArgs} hasSubject />

@@ -1,9 +1,7 @@
 <script>
   import { uniqueID } from "../../utils/uniq.js";
-  import Input from "../base/Input.svelte";
   import Label from "../base/Label.svelte";
-  import Textarea from "../base/Textarea.svelte";
-  import StepMessageArgs from "./StepMessageArgs.svelte";
+  import StepRunMessageArgs from "./StepRunMessageArgs.svelte";
 
   export let step;
   let mode = "markdown";
@@ -24,11 +22,7 @@
   Tasks that contain adult content are required to include the following phrase
   in your task title: (WARNING: This HIT may contain adult content. Worker
   discretion is advised.)`} />
-      <Input
-        id={uniq('title')}
-        bind:value={step.hitArgs.title}
-        required
-        placeholder="Describe the task to Workers" />
+      {step.hitArgs.title}
     </div>
 
     <div class="mt-4">
@@ -37,11 +31,7 @@
         text="HIT Description"
         question="Give more detail about this task. This gives Workers a bit
         more information before they decide to view your task" />
-      <Textarea
-        id={uniq('description')}
-        bind:value={step.hitArgs.description}
-        required
-        placeholder="Give more detail about this task" />
+      {step.hitArgs.description}
     </div>
 
     <div class="mt-4">
@@ -49,11 +39,7 @@
         forID={uniq('keywords')}
         text="HIT Keywords"
         question="Provide keywords that will help Workers search for your tasks" />
-      <Input
-        id={uniq('keywords')}
-        bind:value={step.hitArgs.keywords}
-        required
-        placeholder="Comma-Seperated Keywords" />
+      {step.hitArgs.keywords}
     </div>
   </div>
 
@@ -63,16 +49,8 @@
         forID={uniq('reward')}
         text="HIT Reward"
         question="MTurk HIT reward for task in USD" />
-      <Input
-        id={uniq('reward')}
-        type="number"
-        min="0"
-        left="$"
-        right="USD"
-        bind:value={step.hitArgs.reward}
-        inputmode="numeric"
-        required
-        placeholder="0.0" />
+      ${step.hitArgs.reward}
+      USD
     </div>
 
     <div class="mt-4">
@@ -80,14 +58,8 @@
         forID={uniq('timeout')}
         text="HIT Accepted HIT Timeout"
         question="Timeout of a single accepted HIT in seconds" />
-      <Input
-        type="number"
-        id={uniq('timeout')}
-        right="seconds"
-        bind:value={step.hitArgs.timeout}
-        inputmode="numeric"
-        required
-        placeholder="0" />
+      {step.hitArgs.timeout}
+      seconds
     </div>
 
     <div class="mt-4">
@@ -95,14 +67,8 @@
         forID={uniq('workersCount')}
         text="Number of HITs to publish"
         question="Maximum number of HITs to publish." />
-      <Input
-        type="number"
-        id={uniq('workersCount')}
-        right="hits"
-        bind:value={step.hitArgs.workersCount}
-        inputmode="numeric"
-        required
-        placeholder="0" />
+      {step.hitArgs.workersCount}
+      workers
     </div>
   </div>
 </div>
@@ -114,5 +80,5 @@
 </div>
 
 <div class="mt-1">
-  <StepMessageArgs bind:msgArgs={step.msgArgs} />
+  <StepRunMessageArgs msgArgs={step.msgArgs} />
 </div>

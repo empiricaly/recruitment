@@ -3,12 +3,13 @@
   import { mutate } from "svelte-apollo";
   import Layout from "../../layouts/Layout.svelte";
   import { client } from "../../lib/apollo";
-  import { UPDATE_RUN } from "../../lib/queries";
+  import { START_RUN, UPDATE_RUN } from "../../lib/queries";
   import { deepCopy } from "../../utils/copy";
   import { debounce } from "../../utils/timing";
   import StatusBadge from "../misc/StatusBadge.svelte";
   import { notify } from "../overlays/Notification.svelte";
   import Template from "../templates/Template.svelte";
+  import RunningRun from "./RunningRun.svelte";
 
   export let project;
   export let run;
@@ -20,6 +21,7 @@
     if (name !== initialName) {
       update();
       initialName = name;
+      console.log("wtf");
     }
   }
 
@@ -63,10 +65,51 @@
     10000
   );
 
+  const startRun = async () => {
+    console.log("start run");
+    try {
+      const input = {
+        ID: run.id,
+        projectID: project.id,
+      };
+
+      console.log(JSON.stringify(input, null, "  "));
+
+      await mutate(client, {
+        mutation: START_RUN,
+        variables: {
+          input,
+        },
+      });
+
+      notify({
+        success: true,
+        title: `Run Started`,
+        // body:
+        //   "Something happened on the server, and we could not create a new Run as requested.",
+      });
+    } catch (error) {
+      console.error(error);
+      notify({
+        failed: true,
+        title: `Could not start Run`,
+        body:
+          "Something happened on the server, and we could not start the Run.",
+      });
+    }
+  };
+
   let template = deepCopy(run.template);
 
   function handleClick(event) {
-    console.log(event.detail);
+    const { action } = event.detail;
+    switch (action) {
+      case "start":
+        startRun();
+        break;
+      default:
+        break;
+    }
   }
 
   let actions = [];
@@ -213,6 +256,10 @@
       <StatusBadge large status={run.status} />
     </div>
 
-    <Template {project} {run} bind:template />
+    {#if run.status === 'RUNNING'}
+      <RunningRun {project} {run} />
+    {:else}
+      <Template {project} {run} bind:template />
+    {/if}
   </Layout>
 {/if}

@@ -26,7 +26,8 @@ type AuthResp struct {
 }
 
 type CancelRunInput struct {
-	RunID string `json:"runID"`
+	ID        string `json:"ID"`
+	ProjectID string `json:"projectID"`
 }
 
 // Possible Condition values. Only one of the fields in a CompValue should be
@@ -520,12 +521,14 @@ type RegisterParticipantInput struct {
 }
 
 type ScheduleRunInput struct {
-	RunID   string    `json:"runID"`
-	StartAt time.Time `json:"startAt"`
+	ID        string    `json:"ID"`
+	ProjectID string    `json:"projectID"`
+	StartAt   time.Time `json:"startAt"`
 }
 
 type StartRunInput struct {
-	RunID string `json:"runID"`
+	ID        string `json:"ID"`
+	ProjectID string `json:"projectID"`
 }
 
 type StepInput struct {
@@ -570,7 +573,8 @@ type TemplateInput struct {
 }
 
 type UnscheduleRunInput struct {
-	RunID string `json:"runID"`
+	ID        string `json:"ID"`
+	ProjectID string `json:"projectID"`
 }
 
 type UpdateRunInput struct {

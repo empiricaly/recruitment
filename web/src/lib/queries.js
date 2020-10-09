@@ -52,6 +52,38 @@ export const UPDATE_RUN = gql`
   }
 `;
 
+export const SCHEDULE_RUN = gql`
+  mutation scheduleRun($input: ScheduleRunInput!) {
+    scheduleRun(input: $input) {
+      id
+    }
+  }
+`;
+
+export const UNSCHEDULE_RUN = gql`
+  mutation unscheduleRun($input: UnscheduleRunInput!) {
+    unscheduleRun(input: $input) {
+      id
+    }
+  }
+`;
+
+export const START_RUN = gql`
+  mutation startRun($input: StartRunInput!) {
+    startRun(input: $input) {
+      id
+    }
+  }
+`;
+
+export const CANCEL_RUN = gql`
+  mutation cancelRun($input: CancelRunInput!) {
+    cancelRun(input: $input) {
+      id
+    }
+  }
+`;
+
 export const GET_RUNS = gql`
   query getRuns($projectID: ID!, $limit: Int) {
     project(projectID: $projectID) {

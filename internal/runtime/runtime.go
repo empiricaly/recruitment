@@ -81,7 +81,7 @@ type runState struct {
 }
 
 func (r *Runtime) addRun(run *ent.Run) {
-	return
+	// return
 	_, ok := r.runs[run.ID]
 	if ok {
 		log.Warn().Msgf("run %s already tracked", run.ID)

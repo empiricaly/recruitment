@@ -4,6 +4,7 @@
   export let header = false;
   export let footer = false;
   export let invalid = false;
+  export let current = false;
 </script>
 
 <section class="mt-4 md:grid md:grid-cols-10 md:gap-6">
@@ -17,7 +18,8 @@
     </div>
   </div>
 
-  <div class="mt-5 md:mt-0 md:col-span-7 shadow sm:rounded-md bg-white">
+  <div
+    class="mt-5 md:mt-0 md:col-span-7 shadow sm:rounded-md bg-white {current ? 'border border-mint-500' : ''}">
     {#if header}
       <header
         class="px-4 sm:px-4 py-3 {invalid ? 'bg-red-600' : 'bg-mint-600'} text-gray-50 sm:rounded-t-md">
