@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/empiricaly/recruitment/internal/ent/participant"
+	"github.com/empiricaly/recruitment/internal/ent/participation"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/step"
@@ -116,6 +118,51 @@ func (sru *StepRunUpdate) ClearHitID() *StepRunUpdate {
 	return sru
 }
 
+// AddCreatedParticipantIDs adds the createdParticipants edge to Participant by ids.
+func (sru *StepRunUpdate) AddCreatedParticipantIDs(ids ...string) *StepRunUpdate {
+	sru.mutation.AddCreatedParticipantIDs(ids...)
+	return sru
+}
+
+// AddCreatedParticipants adds the createdParticipants edges to Participant.
+func (sru *StepRunUpdate) AddCreatedParticipants(p ...*Participant) *StepRunUpdate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sru.AddCreatedParticipantIDs(ids...)
+}
+
+// AddParticipantIDs adds the participants edge to Participant by ids.
+func (sru *StepRunUpdate) AddParticipantIDs(ids ...string) *StepRunUpdate {
+	sru.mutation.AddParticipantIDs(ids...)
+	return sru
+}
+
+// AddParticipants adds the participants edges to Participant.
+func (sru *StepRunUpdate) AddParticipants(p ...*Participant) *StepRunUpdate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sru.AddParticipantIDs(ids...)
+}
+
+// AddParticipationIDs adds the participations edge to Participation by ids.
+func (sru *StepRunUpdate) AddParticipationIDs(ids ...string) *StepRunUpdate {
+	sru.mutation.AddParticipationIDs(ids...)
+	return sru
+}
+
+// AddParticipations adds the participations edges to Participation.
+func (sru *StepRunUpdate) AddParticipations(p ...*Participation) *StepRunUpdate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sru.AddParticipationIDs(ids...)
+}
+
 // SetStepID sets the step edge to Step by id.
 func (sru *StepRunUpdate) SetStepID(id string) *StepRunUpdate {
 	sru.mutation.SetStepID(id)
@@ -149,6 +196,51 @@ func (sru *StepRunUpdate) SetRun(r *Run) *StepRunUpdate {
 // Mutation returns the StepRunMutation object of the builder.
 func (sru *StepRunUpdate) Mutation() *StepRunMutation {
 	return sru.mutation
+}
+
+// RemoveCreatedParticipantIDs removes the createdParticipants edge to Participant by ids.
+func (sru *StepRunUpdate) RemoveCreatedParticipantIDs(ids ...string) *StepRunUpdate {
+	sru.mutation.RemoveCreatedParticipantIDs(ids...)
+	return sru
+}
+
+// RemoveCreatedParticipants removes createdParticipants edges to Participant.
+func (sru *StepRunUpdate) RemoveCreatedParticipants(p ...*Participant) *StepRunUpdate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sru.RemoveCreatedParticipantIDs(ids...)
+}
+
+// RemoveParticipantIDs removes the participants edge to Participant by ids.
+func (sru *StepRunUpdate) RemoveParticipantIDs(ids ...string) *StepRunUpdate {
+	sru.mutation.RemoveParticipantIDs(ids...)
+	return sru
+}
+
+// RemoveParticipants removes participants edges to Participant.
+func (sru *StepRunUpdate) RemoveParticipants(p ...*Participant) *StepRunUpdate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sru.RemoveParticipantIDs(ids...)
+}
+
+// RemoveParticipationIDs removes the participations edge to Participation by ids.
+func (sru *StepRunUpdate) RemoveParticipationIDs(ids ...string) *StepRunUpdate {
+	sru.mutation.RemoveParticipationIDs(ids...)
+	return sru
+}
+
+// RemoveParticipations removes participations edges to Participation.
+func (sru *StepRunUpdate) RemoveParticipations(p ...*Participation) *StepRunUpdate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sru.RemoveParticipationIDs(ids...)
 }
 
 // ClearStep clears the step edge to Step.
@@ -312,6 +404,120 @@ func (sru *StepRunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeString,
 			Column: steprun.FieldHitID,
 		})
+	}
+	if nodes := sru.mutation.RemovedCreatedParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.CreatedParticipantsTable,
+			Columns: []string{steprun.CreatedParticipantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sru.mutation.CreatedParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.CreatedParticipantsTable,
+			Columns: []string{steprun.CreatedParticipantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if nodes := sru.mutation.RemovedParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   steprun.ParticipantsTable,
+			Columns: steprun.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sru.mutation.ParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   steprun.ParticipantsTable,
+			Columns: steprun.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if nodes := sru.mutation.RemovedParticipationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.ParticipationsTable,
+			Columns: []string{steprun.ParticipationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participation.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sru.mutation.ParticipationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.ParticipationsTable,
+			Columns: []string{steprun.ParticipationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participation.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if sru.mutation.StepCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -486,6 +692,51 @@ func (sruo *StepRunUpdateOne) ClearHitID() *StepRunUpdateOne {
 	return sruo
 }
 
+// AddCreatedParticipantIDs adds the createdParticipants edge to Participant by ids.
+func (sruo *StepRunUpdateOne) AddCreatedParticipantIDs(ids ...string) *StepRunUpdateOne {
+	sruo.mutation.AddCreatedParticipantIDs(ids...)
+	return sruo
+}
+
+// AddCreatedParticipants adds the createdParticipants edges to Participant.
+func (sruo *StepRunUpdateOne) AddCreatedParticipants(p ...*Participant) *StepRunUpdateOne {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sruo.AddCreatedParticipantIDs(ids...)
+}
+
+// AddParticipantIDs adds the participants edge to Participant by ids.
+func (sruo *StepRunUpdateOne) AddParticipantIDs(ids ...string) *StepRunUpdateOne {
+	sruo.mutation.AddParticipantIDs(ids...)
+	return sruo
+}
+
+// AddParticipants adds the participants edges to Participant.
+func (sruo *StepRunUpdateOne) AddParticipants(p ...*Participant) *StepRunUpdateOne {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sruo.AddParticipantIDs(ids...)
+}
+
+// AddParticipationIDs adds the participations edge to Participation by ids.
+func (sruo *StepRunUpdateOne) AddParticipationIDs(ids ...string) *StepRunUpdateOne {
+	sruo.mutation.AddParticipationIDs(ids...)
+	return sruo
+}
+
+// AddParticipations adds the participations edges to Participation.
+func (sruo *StepRunUpdateOne) AddParticipations(p ...*Participation) *StepRunUpdateOne {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sruo.AddParticipationIDs(ids...)
+}
+
 // SetStepID sets the step edge to Step by id.
 func (sruo *StepRunUpdateOne) SetStepID(id string) *StepRunUpdateOne {
 	sruo.mutation.SetStepID(id)
@@ -519,6 +770,51 @@ func (sruo *StepRunUpdateOne) SetRun(r *Run) *StepRunUpdateOne {
 // Mutation returns the StepRunMutation object of the builder.
 func (sruo *StepRunUpdateOne) Mutation() *StepRunMutation {
 	return sruo.mutation
+}
+
+// RemoveCreatedParticipantIDs removes the createdParticipants edge to Participant by ids.
+func (sruo *StepRunUpdateOne) RemoveCreatedParticipantIDs(ids ...string) *StepRunUpdateOne {
+	sruo.mutation.RemoveCreatedParticipantIDs(ids...)
+	return sruo
+}
+
+// RemoveCreatedParticipants removes createdParticipants edges to Participant.
+func (sruo *StepRunUpdateOne) RemoveCreatedParticipants(p ...*Participant) *StepRunUpdateOne {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sruo.RemoveCreatedParticipantIDs(ids...)
+}
+
+// RemoveParticipantIDs removes the participants edge to Participant by ids.
+func (sruo *StepRunUpdateOne) RemoveParticipantIDs(ids ...string) *StepRunUpdateOne {
+	sruo.mutation.RemoveParticipantIDs(ids...)
+	return sruo
+}
+
+// RemoveParticipants removes participants edges to Participant.
+func (sruo *StepRunUpdateOne) RemoveParticipants(p ...*Participant) *StepRunUpdateOne {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sruo.RemoveParticipantIDs(ids...)
+}
+
+// RemoveParticipationIDs removes the participations edge to Participation by ids.
+func (sruo *StepRunUpdateOne) RemoveParticipationIDs(ids ...string) *StepRunUpdateOne {
+	sruo.mutation.RemoveParticipationIDs(ids...)
+	return sruo
+}
+
+// RemoveParticipations removes participations edges to Participation.
+func (sruo *StepRunUpdateOne) RemoveParticipations(p ...*Participation) *StepRunUpdateOne {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return sruo.RemoveParticipationIDs(ids...)
 }
 
 // ClearStep clears the step edge to Step.
@@ -680,6 +976,120 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 			Type:   field.TypeString,
 			Column: steprun.FieldHitID,
 		})
+	}
+	if nodes := sruo.mutation.RemovedCreatedParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.CreatedParticipantsTable,
+			Columns: []string{steprun.CreatedParticipantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sruo.mutation.CreatedParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.CreatedParticipantsTable,
+			Columns: []string{steprun.CreatedParticipantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if nodes := sruo.mutation.RemovedParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   steprun.ParticipantsTable,
+			Columns: steprun.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sruo.mutation.ParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   steprun.ParticipantsTable,
+			Columns: steprun.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if nodes := sruo.mutation.RemovedParticipationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.ParticipationsTable,
+			Columns: []string{steprun.ParticipationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participation.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sruo.mutation.ParticipationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.ParticipationsTable,
+			Columns: []string{steprun.ParticipationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participation.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if sruo.mutation.StepCleared() {
 		edge := &sqlgraph.EdgeSpec{

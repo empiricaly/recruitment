@@ -14,8 +14,14 @@ type Tx struct {
 	config
 	// Admin is the client for interacting with the Admin builders.
 	Admin *AdminClient
+	// Participant is the client for interacting with the Participant builders.
+	Participant *ParticipantClient
+	// Participation is the client for interacting with the Participation builders.
+	Participation *ParticipationClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
+	// ProviderID is the client for interacting with the ProviderID builders.
+	ProviderID *ProviderIDClient
 	// Run is the client for interacting with the Run builders.
 	Run *RunClient
 	// Step is the client for interacting with the Step builders.
@@ -160,7 +166,10 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Admin = NewAdminClient(tx.config)
+	tx.Participant = NewParticipantClient(tx.config)
+	tx.Participation = NewParticipationClient(tx.config)
 	tx.Project = NewProjectClient(tx.config)
+	tx.ProviderID = NewProviderIDClient(tx.config)
 	tx.Run = NewRunClient(tx.config)
 	tx.Step = NewStepClient(tx.config)
 	tx.StepRun = NewStepRunClient(tx.config)

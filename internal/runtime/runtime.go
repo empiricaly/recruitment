@@ -7,6 +7,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/hook"
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/mturk"
 	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -17,6 +18,9 @@ import (
 type Runtime struct {
 	// db conn
 	conn *storage.Conn
+
+	// mturk session
+	mturk *mturk.Session
 
 	// runs tracked by the runtime. The map key is the Run ID.
 	runs map[string]*runState
@@ -109,7 +113,7 @@ func (r *Runtime) addRun(run *ent.Run) {
 	// Run set to start now
 	if currentStepRun == nil {
 		if run.StartAt == nil {
-			run.Start()
+			r.startRun(run)
 		} else {
 			log.Error().Msg("Run is running but first step hasn't started yet and is scheduled")
 		}
@@ -198,6 +202,8 @@ func (r *Runtime) removeRun(run *ent.Run) {
 		return
 	}
 
+	delete(r.runs, run.ID)
+
 	if !state.timer.Stop() {
 		<-state.timer.C
 	}
@@ -206,11 +212,13 @@ func (r *Runtime) removeRun(run *ent.Run) {
 func (r *Runtime) processEvent(state *runState) {
 	switch state.nextEvent {
 	case startRunEvent:
-		state.run.Start()
+		r.startRun(state.run)
+		r.scheduleNextStep(state.run)
 	case endRunEvent:
-		state.run.End()
+		r.endRun(state.run)
+		r.removeRun(state.run)
 	case nextStepEvent:
-		state.run.RunStep()
+		r.startStep(state.run)
 		r.scheduleNextStep(state.run)
 	default:
 		log.Error().Msgf("connot process next event on %s: %s", state.run.ID, state.nextEvent.String())

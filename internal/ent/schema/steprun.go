@@ -30,6 +30,9 @@ func (StepRun) Fields() []ent.Field {
 // Edges of the StepRun.
 func (StepRun) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.To("createdParticipants", Participant.Type),
+		edge.To("participants", Participant.Type),
+		edge.To("participations", Participation.Type),
 		edge.To("step", Step.Type).
 			Unique().
 			Required(),

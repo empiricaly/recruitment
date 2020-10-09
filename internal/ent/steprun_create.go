@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/empiricaly/recruitment/internal/ent/participant"
+	"github.com/empiricaly/recruitment/internal/ent/participation"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
@@ -108,6 +110,51 @@ func (src *StepRunCreate) SetNillableHitID(s *string) *StepRunCreate {
 func (src *StepRunCreate) SetID(s string) *StepRunCreate {
 	src.mutation.SetID(s)
 	return src
+}
+
+// AddCreatedParticipantIDs adds the createdParticipants edge to Participant by ids.
+func (src *StepRunCreate) AddCreatedParticipantIDs(ids ...string) *StepRunCreate {
+	src.mutation.AddCreatedParticipantIDs(ids...)
+	return src
+}
+
+// AddCreatedParticipants adds the createdParticipants edges to Participant.
+func (src *StepRunCreate) AddCreatedParticipants(p ...*Participant) *StepRunCreate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return src.AddCreatedParticipantIDs(ids...)
+}
+
+// AddParticipantIDs adds the participants edge to Participant by ids.
+func (src *StepRunCreate) AddParticipantIDs(ids ...string) *StepRunCreate {
+	src.mutation.AddParticipantIDs(ids...)
+	return src
+}
+
+// AddParticipants adds the participants edges to Participant.
+func (src *StepRunCreate) AddParticipants(p ...*Participant) *StepRunCreate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return src.AddParticipantIDs(ids...)
+}
+
+// AddParticipationIDs adds the participations edge to Participation by ids.
+func (src *StepRunCreate) AddParticipationIDs(ids ...string) *StepRunCreate {
+	src.mutation.AddParticipationIDs(ids...)
+	return src
+}
+
+// AddParticipations adds the participations edges to Participation.
+func (src *StepRunCreate) AddParticipations(p ...*Participation) *StepRunCreate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return src.AddParticipationIDs(ids...)
 }
 
 // SetStepID sets the step edge to Step by id.
@@ -298,6 +345,63 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Column: steprun.FieldHitID,
 		})
 		sr.HitID = value
+	}
+	if nodes := src.mutation.CreatedParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.CreatedParticipantsTable,
+			Columns: []string{steprun.CreatedParticipantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := src.mutation.ParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   steprun.ParticipantsTable,
+			Columns: steprun.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := src.mutation.ParticipationsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.ParticipationsTable,
+			Columns: []string{steprun.ParticipationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participation.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := src.mutation.StepIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

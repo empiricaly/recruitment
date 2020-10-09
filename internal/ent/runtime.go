@@ -6,7 +6,10 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/participant"
+	"github.com/empiricaly/recruitment/internal/ent/participation"
 	"github.com/empiricaly/recruitment/internal/ent/project"
+	"github.com/empiricaly/recruitment/internal/ent/providerid"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/schema"
 	"github.com/empiricaly/recruitment/internal/ent/step"
@@ -51,6 +54,72 @@ func init() {
 			return nil
 		}
 	}()
+	participantMixin := schema.Participant{}.Mixin()
+	participantMixinFields0 := participantMixin[0].Fields()
+	participantFields := schema.Participant{}.Fields()
+	_ = participantFields
+	// participantDescCreatedAt is the schema descriptor for created_at field.
+	participantDescCreatedAt := participantMixinFields0[1].Descriptor()
+	// participant.DefaultCreatedAt holds the default value on creation for the created_at field.
+	participant.DefaultCreatedAt = participantDescCreatedAt.Default.(func() time.Time)
+	// participantDescUpdatedAt is the schema descriptor for updated_at field.
+	participantDescUpdatedAt := participantMixinFields0[2].Descriptor()
+	// participant.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	participant.DefaultUpdatedAt = participantDescUpdatedAt.Default.(func() time.Time)
+	// participant.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	participant.UpdateDefaultUpdatedAt = participantDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// participantDescID is the schema descriptor for id field.
+	participantDescID := participantMixinFields0[0].Descriptor()
+	// participant.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	participant.IDValidator = func() func(string) error {
+		validators := participantDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+			validators[2].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	participationMixin := schema.Participation{}.Mixin()
+	participationMixinFields0 := participationMixin[0].Fields()
+	participationFields := schema.Participation{}.Fields()
+	_ = participationFields
+	// participationDescCreatedAt is the schema descriptor for created_at field.
+	participationDescCreatedAt := participationMixinFields0[1].Descriptor()
+	// participation.DefaultCreatedAt holds the default value on creation for the created_at field.
+	participation.DefaultCreatedAt = participationDescCreatedAt.Default.(func() time.Time)
+	// participationDescUpdatedAt is the schema descriptor for updated_at field.
+	participationDescUpdatedAt := participationMixinFields0[2].Descriptor()
+	// participation.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	participation.DefaultUpdatedAt = participationDescUpdatedAt.Default.(func() time.Time)
+	// participation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	participation.UpdateDefaultUpdatedAt = participationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// participationDescID is the schema descriptor for id field.
+	participationDescID := participationMixinFields0[0].Descriptor()
+	// participation.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	participation.IDValidator = func() func(string) error {
+		validators := participationDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+			validators[2].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	projectMixin := schema.Project{}.Mixin()
 	projectMixinFields0 := projectMixin[0].Fields()
 	projectFields := schema.Project{}.Fields()
@@ -70,6 +139,39 @@ func init() {
 	// project.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	project.IDValidator = func() func(string) error {
 		validators := projectDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+			validators[2].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	provideridMixin := schema.ProviderID{}.Mixin()
+	provideridMixinFields0 := provideridMixin[0].Fields()
+	provideridFields := schema.ProviderID{}.Fields()
+	_ = provideridFields
+	// provideridDescCreatedAt is the schema descriptor for created_at field.
+	provideridDescCreatedAt := provideridMixinFields0[1].Descriptor()
+	// providerid.DefaultCreatedAt holds the default value on creation for the created_at field.
+	providerid.DefaultCreatedAt = provideridDescCreatedAt.Default.(func() time.Time)
+	// provideridDescUpdatedAt is the schema descriptor for updated_at field.
+	provideridDescUpdatedAt := provideridMixinFields0[2].Descriptor()
+	// providerid.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	providerid.DefaultUpdatedAt = provideridDescUpdatedAt.Default.(func() time.Time)
+	// providerid.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	providerid.UpdateDefaultUpdatedAt = provideridDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// provideridDescID is the schema descriptor for id field.
+	provideridDescID := provideridMixinFields0[0].Descriptor()
+	// providerid.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	providerid.IDValidator = func() func(string) error {
+		validators := provideridDescID.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),

@@ -23,6 +23,63 @@ var (
 		PrimaryKey:  []*schema.Column{AdminsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{},
 	}
+	// ParticipantsColumns holds the columns for the "participants" table.
+	ParticipantsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "mturk_worker_id", Type: field.TypeString},
+		{Name: "step_run_created_participants", Type: field.TypeString, Nullable: true, Size: 20},
+	}
+	// ParticipantsTable holds the schema information for the "participants" table.
+	ParticipantsTable = &schema.Table{
+		Name:       "participants",
+		Columns:    ParticipantsColumns,
+		PrimaryKey: []*schema.Column{ParticipantsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "participants_step_runs_createdParticipants",
+				Columns: []*schema.Column{ParticipantsColumns[4]},
+
+				RefColumns: []*schema.Column{StepRunsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// ParticipationsColumns holds the columns for the "participations" table.
+	ParticipationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "mturk_worker_id", Type: field.TypeString},
+		{Name: "mturk_assignment_id", Type: field.TypeString},
+		{Name: "mturk_hit_id", Type: field.TypeString},
+		{Name: "mturk_turk_submit_to", Type: field.TypeString},
+		{Name: "participant_participations", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "step_run_participations", Type: field.TypeString, Nullable: true, Size: 20},
+	}
+	// ParticipationsTable holds the schema information for the "participations" table.
+	ParticipationsTable = &schema.Table{
+		Name:       "participations",
+		Columns:    ParticipationsColumns,
+		PrimaryKey: []*schema.Column{ParticipationsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "participations_participants_participations",
+				Columns: []*schema.Column{ParticipationsColumns[7]},
+
+				RefColumns: []*schema.Column{ParticipantsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:  "participations_step_runs_participations",
+				Columns: []*schema.Column{ParticipationsColumns[8]},
+
+				RefColumns: []*schema.Column{StepRunsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// ProjectsColumns holds the columns for the "projects" table.
 	ProjectsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
@@ -43,6 +100,29 @@ var (
 				Columns: []*schema.Column{ProjectsColumns[5]},
 
 				RefColumns: []*schema.Column{AdminsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// ProviderIdsColumns holds the columns for the "provider_ids" table.
+	ProviderIdsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "mturk_worker_id", Type: field.TypeString},
+		{Name: "participant_provider_ids", Type: field.TypeString, Nullable: true, Size: 20},
+	}
+	// ProviderIdsTable holds the schema information for the "provider_ids" table.
+	ProviderIdsTable = &schema.Table{
+		Name:       "provider_ids",
+		Columns:    ProviderIdsColumns,
+		PrimaryKey: []*schema.Column{ProviderIdsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "provider_ids_participants_providerIDs",
+				Columns: []*schema.Column{ProviderIdsColumns[4]},
+
+				RefColumns: []*schema.Column{ParticipantsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -190,19 +270,54 @@ var (
 			},
 		},
 	}
+	// StepRunParticipantsColumns holds the columns for the "step_run_participants" table.
+	StepRunParticipantsColumns = []*schema.Column{
+		{Name: "step_run_id", Type: field.TypeString, Size: 20},
+		{Name: "participant_id", Type: field.TypeString, Size: 20},
+	}
+	// StepRunParticipantsTable holds the schema information for the "step_run_participants" table.
+	StepRunParticipantsTable = &schema.Table{
+		Name:       "step_run_participants",
+		Columns:    StepRunParticipantsColumns,
+		PrimaryKey: []*schema.Column{StepRunParticipantsColumns[0], StepRunParticipantsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "step_run_participants_step_run_id",
+				Columns: []*schema.Column{StepRunParticipantsColumns[0]},
+
+				RefColumns: []*schema.Column{StepRunsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:  "step_run_participants_participant_id",
+				Columns: []*schema.Column{StepRunParticipantsColumns[1]},
+
+				RefColumns: []*schema.Column{ParticipantsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AdminsTable,
+		ParticipantsTable,
+		ParticipationsTable,
 		ProjectsTable,
+		ProviderIdsTable,
 		RunsTable,
 		StepsTable,
 		StepRunsTable,
 		TemplatesTable,
+		StepRunParticipantsTable,
 	}
 )
 
 func init() {
+	ParticipantsTable.ForeignKeys[0].RefTable = StepRunsTable
+	ParticipationsTable.ForeignKeys[0].RefTable = ParticipantsTable
+	ParticipationsTable.ForeignKeys[1].RefTable = StepRunsTable
 	ProjectsTable.ForeignKeys[0].RefTable = AdminsTable
+	ProviderIdsTable.ForeignKeys[0].RefTable = ParticipantsTable
 	RunsTable.ForeignKeys[0].RefTable = ProjectsTable
 	RunsTable.ForeignKeys[1].RefTable = StepRunsTable
 	StepsTable.ForeignKeys[0].RefTable = StepRunsTable
@@ -211,4 +326,6 @@ func init() {
 	TemplatesTable.ForeignKeys[0].RefTable = AdminsTable
 	TemplatesTable.ForeignKeys[1].RefTable = ProjectsTable
 	TemplatesTable.ForeignKeys[2].RefTable = RunsTable
+	StepRunParticipantsTable.ForeignKeys[0].RefTable = StepRunsTable
+	StepRunParticipantsTable.ForeignKeys[1].RefTable = ParticipantsTable
 }

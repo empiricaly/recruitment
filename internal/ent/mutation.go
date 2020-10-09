@@ -9,7 +9,10 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/participant"
+	"github.com/empiricaly/recruitment/internal/ent/participation"
 	"github.com/empiricaly/recruitment/internal/ent/project"
+	"github.com/empiricaly/recruitment/internal/ent/providerid"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
@@ -27,12 +30,15 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAdmin    = "Admin"
-	TypeProject  = "Project"
-	TypeRun      = "Run"
-	TypeStep     = "Step"
-	TypeStepRun  = "StepRun"
-	TypeTemplate = "Template"
+	TypeAdmin         = "Admin"
+	TypeParticipant   = "Participant"
+	TypeParticipation = "Participation"
+	TypeProject       = "Project"
+	TypeProviderID    = "ProviderID"
+	TypeRun           = "Run"
+	TypeStep          = "Step"
+	TypeStepRun       = "StepRun"
+	TypeTemplate      = "Template"
 )
 
 // AdminMutation represents an operation that mutate the Admins
@@ -637,6 +643,1381 @@ func (m *AdminMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Admin edge %s", name)
+}
+
+// ParticipantMutation represents an operation that mutate the Participants
+// nodes in the graph.
+type ParticipantMutation struct {
+	config
+	op                    Op
+	typ                   string
+	id                    *string
+	created_at            *time.Time
+	updated_at            *time.Time
+	mturkWorkerID         *string
+	clearedFields         map[string]struct{}
+	providerIDs           map[string]struct{}
+	removedproviderIDs    map[string]struct{}
+	participations        map[string]struct{}
+	removedparticipations map[string]struct{}
+	createdBy             *string
+	clearedcreatedBy      bool
+	steps                 map[string]struct{}
+	removedsteps          map[string]struct{}
+	done                  bool
+	oldValue              func(context.Context) (*Participant, error)
+}
+
+var _ ent.Mutation = (*ParticipantMutation)(nil)
+
+// participantOption allows to manage the mutation configuration using functional options.
+type participantOption func(*ParticipantMutation)
+
+// newParticipantMutation creates new mutation for $n.Name.
+func newParticipantMutation(c config, op Op, opts ...participantOption) *ParticipantMutation {
+	m := &ParticipantMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeParticipant,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withParticipantID sets the id field of the mutation.
+func withParticipantID(id string) participantOption {
+	return func(m *ParticipantMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Participant
+		)
+		m.oldValue = func(ctx context.Context) (*Participant, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Participant.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withParticipant sets the old Participant of the mutation.
+func withParticipant(node *Participant) participantOption {
+	return func(m *ParticipantMutation) {
+		m.oldValue = func(context.Context) (*Participant, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ParticipantMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ParticipantMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that, this
+// operation is accepted only on Participant creation.
+func (m *ParticipantMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the id value in the mutation. Note that, the id
+// is available only if it was provided to the builder.
+func (m *ParticipantMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetCreatedAt sets the created_at field.
+func (m *ParticipantMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the created_at value in the mutation.
+func (m *ParticipantMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old created_at value of the Participant.
+// If the Participant object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ParticipantMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt reset all changes of the "created_at" field.
+func (m *ParticipantMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the updated_at field.
+func (m *ParticipantMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the updated_at value in the mutation.
+func (m *ParticipantMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old updated_at value of the Participant.
+// If the Participant object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ParticipantMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt reset all changes of the "updated_at" field.
+func (m *ParticipantMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetMturkWorkerID sets the mturkWorkerID field.
+func (m *ParticipantMutation) SetMturkWorkerID(s string) {
+	m.mturkWorkerID = &s
+}
+
+// MturkWorkerID returns the mturkWorkerID value in the mutation.
+func (m *ParticipantMutation) MturkWorkerID() (r string, exists bool) {
+	v := m.mturkWorkerID
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMturkWorkerID returns the old mturkWorkerID value of the Participant.
+// If the Participant object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ParticipantMutation) OldMturkWorkerID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMturkWorkerID is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMturkWorkerID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMturkWorkerID: %w", err)
+	}
+	return oldValue.MturkWorkerID, nil
+}
+
+// ResetMturkWorkerID reset all changes of the "mturkWorkerID" field.
+func (m *ParticipantMutation) ResetMturkWorkerID() {
+	m.mturkWorkerID = nil
+}
+
+// AddProviderIDIDs adds the providerIDs edge to ProviderID by ids.
+func (m *ParticipantMutation) AddProviderIDIDs(ids ...string) {
+	if m.providerIDs == nil {
+		m.providerIDs = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.providerIDs[ids[i]] = struct{}{}
+	}
+}
+
+// RemoveProviderIDIDs removes the providerIDs edge to ProviderID by ids.
+func (m *ParticipantMutation) RemoveProviderIDIDs(ids ...string) {
+	if m.removedproviderIDs == nil {
+		m.removedproviderIDs = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedproviderIDs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedProviderIDs returns the removed ids of providerIDs.
+func (m *ParticipantMutation) RemovedProviderIDsIDs() (ids []string) {
+	for id := range m.removedproviderIDs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ProviderIDsIDs returns the providerIDs ids in the mutation.
+func (m *ParticipantMutation) ProviderIDsIDs() (ids []string) {
+	for id := range m.providerIDs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetProviderIDs reset all changes of the "providerIDs" edge.
+func (m *ParticipantMutation) ResetProviderIDs() {
+	m.providerIDs = nil
+	m.removedproviderIDs = nil
+}
+
+// AddParticipationIDs adds the participations edge to Participation by ids.
+func (m *ParticipantMutation) AddParticipationIDs(ids ...string) {
+	if m.participations == nil {
+		m.participations = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.participations[ids[i]] = struct{}{}
+	}
+}
+
+// RemoveParticipationIDs removes the participations edge to Participation by ids.
+func (m *ParticipantMutation) RemoveParticipationIDs(ids ...string) {
+	if m.removedparticipations == nil {
+		m.removedparticipations = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedparticipations[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedParticipations returns the removed ids of participations.
+func (m *ParticipantMutation) RemovedParticipationsIDs() (ids []string) {
+	for id := range m.removedparticipations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ParticipationsIDs returns the participations ids in the mutation.
+func (m *ParticipantMutation) ParticipationsIDs() (ids []string) {
+	for id := range m.participations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetParticipations reset all changes of the "participations" edge.
+func (m *ParticipantMutation) ResetParticipations() {
+	m.participations = nil
+	m.removedparticipations = nil
+}
+
+// SetCreatedByID sets the createdBy edge to StepRun by id.
+func (m *ParticipantMutation) SetCreatedByID(id string) {
+	m.createdBy = &id
+}
+
+// ClearCreatedBy clears the createdBy edge to StepRun.
+func (m *ParticipantMutation) ClearCreatedBy() {
+	m.clearedcreatedBy = true
+}
+
+// CreatedByCleared returns if the edge createdBy was cleared.
+func (m *ParticipantMutation) CreatedByCleared() bool {
+	return m.clearedcreatedBy
+}
+
+// CreatedByID returns the createdBy id in the mutation.
+func (m *ParticipantMutation) CreatedByID() (id string, exists bool) {
+	if m.createdBy != nil {
+		return *m.createdBy, true
+	}
+	return
+}
+
+// CreatedByIDs returns the createdBy ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// CreatedByID instead. It exists only for internal usage by the builders.
+func (m *ParticipantMutation) CreatedByIDs() (ids []string) {
+	if id := m.createdBy; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCreatedBy reset all changes of the "createdBy" edge.
+func (m *ParticipantMutation) ResetCreatedBy() {
+	m.createdBy = nil
+	m.clearedcreatedBy = false
+}
+
+// AddStepIDs adds the steps edge to StepRun by ids.
+func (m *ParticipantMutation) AddStepIDs(ids ...string) {
+	if m.steps == nil {
+		m.steps = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.steps[ids[i]] = struct{}{}
+	}
+}
+
+// RemoveStepIDs removes the steps edge to StepRun by ids.
+func (m *ParticipantMutation) RemoveStepIDs(ids ...string) {
+	if m.removedsteps == nil {
+		m.removedsteps = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedsteps[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSteps returns the removed ids of steps.
+func (m *ParticipantMutation) RemovedStepsIDs() (ids []string) {
+	for id := range m.removedsteps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// StepsIDs returns the steps ids in the mutation.
+func (m *ParticipantMutation) StepsIDs() (ids []string) {
+	for id := range m.steps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSteps reset all changes of the "steps" edge.
+func (m *ParticipantMutation) ResetSteps() {
+	m.steps = nil
+	m.removedsteps = nil
+}
+
+// Op returns the operation name.
+func (m *ParticipantMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Participant).
+func (m *ParticipantMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during
+// this mutation. Note that, in order to get all numeric
+// fields that were in/decremented, call AddedFields().
+func (m *ParticipantMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.created_at != nil {
+		fields = append(fields, participant.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, participant.FieldUpdatedAt)
+	}
+	if m.mturkWorkerID != nil {
+		fields = append(fields, participant.FieldMturkWorkerID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name.
+// The second boolean value indicates that this field was
+// not set, or was not define in the schema.
+func (m *ParticipantMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case participant.FieldCreatedAt:
+		return m.CreatedAt()
+	case participant.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case participant.FieldMturkWorkerID:
+		return m.MturkWorkerID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database.
+// An error is returned if the mutation operation is not UpdateOne,
+// or the query to the database was failed.
+func (m *ParticipantMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case participant.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case participant.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case participant.FieldMturkWorkerID:
+		return m.OldMturkWorkerID(ctx)
+	}
+	return nil, fmt.Errorf("unknown Participant field %s", name)
+}
+
+// SetField sets the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *ParticipantMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case participant.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case participant.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case participant.FieldMturkWorkerID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMturkWorkerID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Participant field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented
+// or decremented during this mutation.
+func (m *ParticipantMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was in/decremented
+// from a field with the given name. The second value indicates
+// that this field was not set, or was not define in the schema.
+func (m *ParticipantMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *ParticipantMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Participant numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared
+// during this mutation.
+func (m *ParticipantMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicates if this field was
+// cleared in this mutation.
+func (m *ParticipantMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value for the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ParticipantMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Participant nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation regarding the
+// given field name. It returns an error if the field is not
+// defined in the schema.
+func (m *ParticipantMutation) ResetField(name string) error {
+	switch name {
+	case participant.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case participant.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case participant.FieldMturkWorkerID:
+		m.ResetMturkWorkerID()
+		return nil
+	}
+	return fmt.Errorf("unknown Participant field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this
+// mutation.
+func (m *ParticipantMutation) AddedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.providerIDs != nil {
+		edges = append(edges, participant.EdgeProviderIDs)
+	}
+	if m.participations != nil {
+		edges = append(edges, participant.EdgeParticipations)
+	}
+	if m.createdBy != nil {
+		edges = append(edges, participant.EdgeCreatedBy)
+	}
+	if m.steps != nil {
+		edges = append(edges, participant.EdgeSteps)
+	}
+	return edges
+}
+
+// AddedIDs returns all ids (to other nodes) that were added for
+// the given edge name.
+func (m *ParticipantMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case participant.EdgeProviderIDs:
+		ids := make([]ent.Value, 0, len(m.providerIDs))
+		for id := range m.providerIDs {
+			ids = append(ids, id)
+		}
+		return ids
+	case participant.EdgeParticipations:
+		ids := make([]ent.Value, 0, len(m.participations))
+		for id := range m.participations {
+			ids = append(ids, id)
+		}
+		return ids
+	case participant.EdgeCreatedBy:
+		if id := m.createdBy; id != nil {
+			return []ent.Value{*id}
+		}
+	case participant.EdgeSteps:
+		ids := make([]ent.Value, 0, len(m.steps))
+		for id := range m.steps {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this
+// mutation.
+func (m *ParticipantMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.removedproviderIDs != nil {
+		edges = append(edges, participant.EdgeProviderIDs)
+	}
+	if m.removedparticipations != nil {
+		edges = append(edges, participant.EdgeParticipations)
+	}
+	if m.removedsteps != nil {
+		edges = append(edges, participant.EdgeSteps)
+	}
+	return edges
+}
+
+// RemovedIDs returns all ids (to other nodes) that were removed for
+// the given edge name.
+func (m *ParticipantMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case participant.EdgeProviderIDs:
+		ids := make([]ent.Value, 0, len(m.removedproviderIDs))
+		for id := range m.removedproviderIDs {
+			ids = append(ids, id)
+		}
+		return ids
+	case participant.EdgeParticipations:
+		ids := make([]ent.Value, 0, len(m.removedparticipations))
+		for id := range m.removedparticipations {
+			ids = append(ids, id)
+		}
+		return ids
+	case participant.EdgeSteps:
+		ids := make([]ent.Value, 0, len(m.removedsteps))
+		for id := range m.removedsteps {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this
+// mutation.
+func (m *ParticipantMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.clearedcreatedBy {
+		edges = append(edges, participant.EdgeCreatedBy)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean indicates if this edge was
+// cleared in this mutation.
+func (m *ParticipantMutation) EdgeCleared(name string) bool {
+	switch name {
+	case participant.EdgeCreatedBy:
+		return m.clearedcreatedBy
+	}
+	return false
+}
+
+// ClearEdge clears the value for the given name. It returns an
+// error if the edge name is not defined in the schema.
+func (m *ParticipantMutation) ClearEdge(name string) error {
+	switch name {
+	case participant.EdgeCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	}
+	return fmt.Errorf("unknown Participant unique edge %s", name)
+}
+
+// ResetEdge resets all changes in the mutation regarding the
+// given edge name. It returns an error if the edge is not
+// defined in the schema.
+func (m *ParticipantMutation) ResetEdge(name string) error {
+	switch name {
+	case participant.EdgeProviderIDs:
+		m.ResetProviderIDs()
+		return nil
+	case participant.EdgeParticipations:
+		m.ResetParticipations()
+		return nil
+	case participant.EdgeCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case participant.EdgeSteps:
+		m.ResetSteps()
+		return nil
+	}
+	return fmt.Errorf("unknown Participant edge %s", name)
+}
+
+// ParticipationMutation represents an operation that mutate the Participations
+// nodes in the graph.
+type ParticipationMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *string
+	created_at         *time.Time
+	updated_at         *time.Time
+	mturkWorkerId      *string
+	mturkAssignmentID  *string
+	mturkHitID         *string
+	mturkTurkSubmitTo  *string
+	clearedFields      map[string]struct{}
+	stepRun            *string
+	clearedstepRun     bool
+	participant        *string
+	clearedparticipant bool
+	done               bool
+	oldValue           func(context.Context) (*Participation, error)
+}
+
+var _ ent.Mutation = (*ParticipationMutation)(nil)
+
+// participationOption allows to manage the mutation configuration using functional options.
+type participationOption func(*ParticipationMutation)
+
+// newParticipationMutation creates new mutation for $n.Name.
+func newParticipationMutation(c config, op Op, opts ...participationOption) *ParticipationMutation {
+	m := &ParticipationMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeParticipation,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withParticipationID sets the id field of the mutation.
+func withParticipationID(id string) participationOption {
+	return func(m *ParticipationMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Participation
+		)
+		m.oldValue = func(ctx context.Context) (*Participation, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Participation.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withParticipation sets the old Participation of the mutation.
+func withParticipation(node *Participation) participationOption {
+	return func(m *ParticipationMutation) {
+		m.oldValue = func(context.Context) (*Participation, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ParticipationMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ParticipationMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that, this
+// operation is accepted only on Participation creation.
+func (m *ParticipationMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the id value in the mutation. Note that, the id
+// is available only if it was provided to the builder.
+func (m *ParticipationMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetCreatedAt sets the created_at field.
+func (m *ParticipationMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the created_at value in the mutation.
+func (m *ParticipationMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old created_at value of the Participation.
+// If the Participation object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ParticipationMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt reset all changes of the "created_at" field.
+func (m *ParticipationMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the updated_at field.
+func (m *ParticipationMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the updated_at value in the mutation.
+func (m *ParticipationMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old updated_at value of the Participation.
+// If the Participation object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ParticipationMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt reset all changes of the "updated_at" field.
+func (m *ParticipationMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetMturkWorkerId sets the mturkWorkerId field.
+func (m *ParticipationMutation) SetMturkWorkerId(s string) {
+	m.mturkWorkerId = &s
+}
+
+// MturkWorkerId returns the mturkWorkerId value in the mutation.
+func (m *ParticipationMutation) MturkWorkerId() (r string, exists bool) {
+	v := m.mturkWorkerId
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMturkWorkerId returns the old mturkWorkerId value of the Participation.
+// If the Participation object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ParticipationMutation) OldMturkWorkerId(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMturkWorkerId is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMturkWorkerId requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMturkWorkerId: %w", err)
+	}
+	return oldValue.MturkWorkerId, nil
+}
+
+// ResetMturkWorkerId reset all changes of the "mturkWorkerId" field.
+func (m *ParticipationMutation) ResetMturkWorkerId() {
+	m.mturkWorkerId = nil
+}
+
+// SetMturkAssignmentID sets the mturkAssignmentID field.
+func (m *ParticipationMutation) SetMturkAssignmentID(s string) {
+	m.mturkAssignmentID = &s
+}
+
+// MturkAssignmentID returns the mturkAssignmentID value in the mutation.
+func (m *ParticipationMutation) MturkAssignmentID() (r string, exists bool) {
+	v := m.mturkAssignmentID
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMturkAssignmentID returns the old mturkAssignmentID value of the Participation.
+// If the Participation object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ParticipationMutation) OldMturkAssignmentID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMturkAssignmentID is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMturkAssignmentID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMturkAssignmentID: %w", err)
+	}
+	return oldValue.MturkAssignmentID, nil
+}
+
+// ResetMturkAssignmentID reset all changes of the "mturkAssignmentID" field.
+func (m *ParticipationMutation) ResetMturkAssignmentID() {
+	m.mturkAssignmentID = nil
+}
+
+// SetMturkHitID sets the mturkHitID field.
+func (m *ParticipationMutation) SetMturkHitID(s string) {
+	m.mturkHitID = &s
+}
+
+// MturkHitID returns the mturkHitID value in the mutation.
+func (m *ParticipationMutation) MturkHitID() (r string, exists bool) {
+	v := m.mturkHitID
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMturkHitID returns the old mturkHitID value of the Participation.
+// If the Participation object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ParticipationMutation) OldMturkHitID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMturkHitID is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMturkHitID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMturkHitID: %w", err)
+	}
+	return oldValue.MturkHitID, nil
+}
+
+// ResetMturkHitID reset all changes of the "mturkHitID" field.
+func (m *ParticipationMutation) ResetMturkHitID() {
+	m.mturkHitID = nil
+}
+
+// SetMturkTurkSubmitTo sets the mturkTurkSubmitTo field.
+func (m *ParticipationMutation) SetMturkTurkSubmitTo(s string) {
+	m.mturkTurkSubmitTo = &s
+}
+
+// MturkTurkSubmitTo returns the mturkTurkSubmitTo value in the mutation.
+func (m *ParticipationMutation) MturkTurkSubmitTo() (r string, exists bool) {
+	v := m.mturkTurkSubmitTo
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMturkTurkSubmitTo returns the old mturkTurkSubmitTo value of the Participation.
+// If the Participation object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ParticipationMutation) OldMturkTurkSubmitTo(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMturkTurkSubmitTo is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMturkTurkSubmitTo requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMturkTurkSubmitTo: %w", err)
+	}
+	return oldValue.MturkTurkSubmitTo, nil
+}
+
+// ResetMturkTurkSubmitTo reset all changes of the "mturkTurkSubmitTo" field.
+func (m *ParticipationMutation) ResetMturkTurkSubmitTo() {
+	m.mturkTurkSubmitTo = nil
+}
+
+// SetStepRunID sets the stepRun edge to StepRun by id.
+func (m *ParticipationMutation) SetStepRunID(id string) {
+	m.stepRun = &id
+}
+
+// ClearStepRun clears the stepRun edge to StepRun.
+func (m *ParticipationMutation) ClearStepRun() {
+	m.clearedstepRun = true
+}
+
+// StepRunCleared returns if the edge stepRun was cleared.
+func (m *ParticipationMutation) StepRunCleared() bool {
+	return m.clearedstepRun
+}
+
+// StepRunID returns the stepRun id in the mutation.
+func (m *ParticipationMutation) StepRunID() (id string, exists bool) {
+	if m.stepRun != nil {
+		return *m.stepRun, true
+	}
+	return
+}
+
+// StepRunIDs returns the stepRun ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// StepRunID instead. It exists only for internal usage by the builders.
+func (m *ParticipationMutation) StepRunIDs() (ids []string) {
+	if id := m.stepRun; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetStepRun reset all changes of the "stepRun" edge.
+func (m *ParticipationMutation) ResetStepRun() {
+	m.stepRun = nil
+	m.clearedstepRun = false
+}
+
+// SetParticipantID sets the participant edge to Participant by id.
+func (m *ParticipationMutation) SetParticipantID(id string) {
+	m.participant = &id
+}
+
+// ClearParticipant clears the participant edge to Participant.
+func (m *ParticipationMutation) ClearParticipant() {
+	m.clearedparticipant = true
+}
+
+// ParticipantCleared returns if the edge participant was cleared.
+func (m *ParticipationMutation) ParticipantCleared() bool {
+	return m.clearedparticipant
+}
+
+// ParticipantID returns the participant id in the mutation.
+func (m *ParticipationMutation) ParticipantID() (id string, exists bool) {
+	if m.participant != nil {
+		return *m.participant, true
+	}
+	return
+}
+
+// ParticipantIDs returns the participant ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// ParticipantID instead. It exists only for internal usage by the builders.
+func (m *ParticipationMutation) ParticipantIDs() (ids []string) {
+	if id := m.participant; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetParticipant reset all changes of the "participant" edge.
+func (m *ParticipationMutation) ResetParticipant() {
+	m.participant = nil
+	m.clearedparticipant = false
+}
+
+// Op returns the operation name.
+func (m *ParticipationMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Participation).
+func (m *ParticipationMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during
+// this mutation. Note that, in order to get all numeric
+// fields that were in/decremented, call AddedFields().
+func (m *ParticipationMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.created_at != nil {
+		fields = append(fields, participation.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, participation.FieldUpdatedAt)
+	}
+	if m.mturkWorkerId != nil {
+		fields = append(fields, participation.FieldMturkWorkerId)
+	}
+	if m.mturkAssignmentID != nil {
+		fields = append(fields, participation.FieldMturkAssignmentID)
+	}
+	if m.mturkHitID != nil {
+		fields = append(fields, participation.FieldMturkHitID)
+	}
+	if m.mturkTurkSubmitTo != nil {
+		fields = append(fields, participation.FieldMturkTurkSubmitTo)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name.
+// The second boolean value indicates that this field was
+// not set, or was not define in the schema.
+func (m *ParticipationMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case participation.FieldCreatedAt:
+		return m.CreatedAt()
+	case participation.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case participation.FieldMturkWorkerId:
+		return m.MturkWorkerId()
+	case participation.FieldMturkAssignmentID:
+		return m.MturkAssignmentID()
+	case participation.FieldMturkHitID:
+		return m.MturkHitID()
+	case participation.FieldMturkTurkSubmitTo:
+		return m.MturkTurkSubmitTo()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database.
+// An error is returned if the mutation operation is not UpdateOne,
+// or the query to the database was failed.
+func (m *ParticipationMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case participation.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case participation.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case participation.FieldMturkWorkerId:
+		return m.OldMturkWorkerId(ctx)
+	case participation.FieldMturkAssignmentID:
+		return m.OldMturkAssignmentID(ctx)
+	case participation.FieldMturkHitID:
+		return m.OldMturkHitID(ctx)
+	case participation.FieldMturkTurkSubmitTo:
+		return m.OldMturkTurkSubmitTo(ctx)
+	}
+	return nil, fmt.Errorf("unknown Participation field %s", name)
+}
+
+// SetField sets the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *ParticipationMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case participation.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case participation.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case participation.FieldMturkWorkerId:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMturkWorkerId(v)
+		return nil
+	case participation.FieldMturkAssignmentID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMturkAssignmentID(v)
+		return nil
+	case participation.FieldMturkHitID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMturkHitID(v)
+		return nil
+	case participation.FieldMturkTurkSubmitTo:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMturkTurkSubmitTo(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Participation field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented
+// or decremented during this mutation.
+func (m *ParticipationMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was in/decremented
+// from a field with the given name. The second value indicates
+// that this field was not set, or was not define in the schema.
+func (m *ParticipationMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *ParticipationMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Participation numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared
+// during this mutation.
+func (m *ParticipationMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicates if this field was
+// cleared in this mutation.
+func (m *ParticipationMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value for the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ParticipationMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Participation nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation regarding the
+// given field name. It returns an error if the field is not
+// defined in the schema.
+func (m *ParticipationMutation) ResetField(name string) error {
+	switch name {
+	case participation.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case participation.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case participation.FieldMturkWorkerId:
+		m.ResetMturkWorkerId()
+		return nil
+	case participation.FieldMturkAssignmentID:
+		m.ResetMturkAssignmentID()
+		return nil
+	case participation.FieldMturkHitID:
+		m.ResetMturkHitID()
+		return nil
+	case participation.FieldMturkTurkSubmitTo:
+		m.ResetMturkTurkSubmitTo()
+		return nil
+	}
+	return fmt.Errorf("unknown Participation field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this
+// mutation.
+func (m *ParticipationMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.stepRun != nil {
+		edges = append(edges, participation.EdgeStepRun)
+	}
+	if m.participant != nil {
+		edges = append(edges, participation.EdgeParticipant)
+	}
+	return edges
+}
+
+// AddedIDs returns all ids (to other nodes) that were added for
+// the given edge name.
+func (m *ParticipationMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case participation.EdgeStepRun:
+		if id := m.stepRun; id != nil {
+			return []ent.Value{*id}
+		}
+	case participation.EdgeParticipant:
+		if id := m.participant; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this
+// mutation.
+func (m *ParticipationMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all ids (to other nodes) that were removed for
+// the given edge name.
+func (m *ParticipationMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this
+// mutation.
+func (m *ParticipationMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedstepRun {
+		edges = append(edges, participation.EdgeStepRun)
+	}
+	if m.clearedparticipant {
+		edges = append(edges, participation.EdgeParticipant)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean indicates if this edge was
+// cleared in this mutation.
+func (m *ParticipationMutation) EdgeCleared(name string) bool {
+	switch name {
+	case participation.EdgeStepRun:
+		return m.clearedstepRun
+	case participation.EdgeParticipant:
+		return m.clearedparticipant
+	}
+	return false
+}
+
+// ClearEdge clears the value for the given name. It returns an
+// error if the edge name is not defined in the schema.
+func (m *ParticipationMutation) ClearEdge(name string) error {
+	switch name {
+	case participation.EdgeStepRun:
+		m.ClearStepRun()
+		return nil
+	case participation.EdgeParticipant:
+		m.ClearParticipant()
+		return nil
+	}
+	return fmt.Errorf("unknown Participation unique edge %s", name)
+}
+
+// ResetEdge resets all changes in the mutation regarding the
+// given edge name. It returns an error if the edge is not
+// defined in the schema.
+func (m *ParticipationMutation) ResetEdge(name string) error {
+	switch name {
+	case participation.EdgeStepRun:
+		m.ResetStepRun()
+		return nil
+	case participation.EdgeParticipant:
+		m.ResetParticipant()
+		return nil
+	}
+	return fmt.Errorf("unknown Participation edge %s", name)
 }
 
 // ProjectMutation represents an operation that mutate the Projects
@@ -1300,6 +2681,484 @@ func (m *ProjectMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Project edge %s", name)
+}
+
+// ProviderIDMutation represents an operation that mutate the ProviderIDs
+// nodes in the graph.
+type ProviderIDMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *string
+	created_at        *time.Time
+	updated_at        *time.Time
+	mturkWorkerID     *string
+	clearedFields     map[string]struct{}
+	particpant        *string
+	clearedparticpant bool
+	done              bool
+	oldValue          func(context.Context) (*ProviderID, error)
+}
+
+var _ ent.Mutation = (*ProviderIDMutation)(nil)
+
+// provideridOption allows to manage the mutation configuration using functional options.
+type provideridOption func(*ProviderIDMutation)
+
+// newProviderIDMutation creates new mutation for $n.Name.
+func newProviderIDMutation(c config, op Op, opts ...provideridOption) *ProviderIDMutation {
+	m := &ProviderIDMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeProviderID,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withProviderIDID sets the id field of the mutation.
+func withProviderIDID(id string) provideridOption {
+	return func(m *ProviderIDMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ProviderID
+		)
+		m.oldValue = func(ctx context.Context) (*ProviderID, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ProviderID.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withProviderID sets the old ProviderID of the mutation.
+func withProviderID(node *ProviderID) provideridOption {
+	return func(m *ProviderIDMutation) {
+		m.oldValue = func(context.Context) (*ProviderID, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ProviderIDMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ProviderIDMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that, this
+// operation is accepted only on ProviderID creation.
+func (m *ProviderIDMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the id value in the mutation. Note that, the id
+// is available only if it was provided to the builder.
+func (m *ProviderIDMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetCreatedAt sets the created_at field.
+func (m *ProviderIDMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the created_at value in the mutation.
+func (m *ProviderIDMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old created_at value of the ProviderID.
+// If the ProviderID object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ProviderIDMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt reset all changes of the "created_at" field.
+func (m *ProviderIDMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the updated_at field.
+func (m *ProviderIDMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the updated_at value in the mutation.
+func (m *ProviderIDMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old updated_at value of the ProviderID.
+// If the ProviderID object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ProviderIDMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt reset all changes of the "updated_at" field.
+func (m *ProviderIDMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetMturkWorkerID sets the mturkWorkerID field.
+func (m *ProviderIDMutation) SetMturkWorkerID(s string) {
+	m.mturkWorkerID = &s
+}
+
+// MturkWorkerID returns the mturkWorkerID value in the mutation.
+func (m *ProviderIDMutation) MturkWorkerID() (r string, exists bool) {
+	v := m.mturkWorkerID
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMturkWorkerID returns the old mturkWorkerID value of the ProviderID.
+// If the ProviderID object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ProviderIDMutation) OldMturkWorkerID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMturkWorkerID is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMturkWorkerID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMturkWorkerID: %w", err)
+	}
+	return oldValue.MturkWorkerID, nil
+}
+
+// ResetMturkWorkerID reset all changes of the "mturkWorkerID" field.
+func (m *ProviderIDMutation) ResetMturkWorkerID() {
+	m.mturkWorkerID = nil
+}
+
+// SetParticpantID sets the particpant edge to Participant by id.
+func (m *ProviderIDMutation) SetParticpantID(id string) {
+	m.particpant = &id
+}
+
+// ClearParticpant clears the particpant edge to Participant.
+func (m *ProviderIDMutation) ClearParticpant() {
+	m.clearedparticpant = true
+}
+
+// ParticpantCleared returns if the edge particpant was cleared.
+func (m *ProviderIDMutation) ParticpantCleared() bool {
+	return m.clearedparticpant
+}
+
+// ParticpantID returns the particpant id in the mutation.
+func (m *ProviderIDMutation) ParticpantID() (id string, exists bool) {
+	if m.particpant != nil {
+		return *m.particpant, true
+	}
+	return
+}
+
+// ParticpantIDs returns the particpant ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// ParticpantID instead. It exists only for internal usage by the builders.
+func (m *ProviderIDMutation) ParticpantIDs() (ids []string) {
+	if id := m.particpant; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetParticpant reset all changes of the "particpant" edge.
+func (m *ProviderIDMutation) ResetParticpant() {
+	m.particpant = nil
+	m.clearedparticpant = false
+}
+
+// Op returns the operation name.
+func (m *ProviderIDMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (ProviderID).
+func (m *ProviderIDMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during
+// this mutation. Note that, in order to get all numeric
+// fields that were in/decremented, call AddedFields().
+func (m *ProviderIDMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.created_at != nil {
+		fields = append(fields, providerid.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, providerid.FieldUpdatedAt)
+	}
+	if m.mturkWorkerID != nil {
+		fields = append(fields, providerid.FieldMturkWorkerID)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name.
+// The second boolean value indicates that this field was
+// not set, or was not define in the schema.
+func (m *ProviderIDMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case providerid.FieldCreatedAt:
+		return m.CreatedAt()
+	case providerid.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case providerid.FieldMturkWorkerID:
+		return m.MturkWorkerID()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database.
+// An error is returned if the mutation operation is not UpdateOne,
+// or the query to the database was failed.
+func (m *ProviderIDMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case providerid.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case providerid.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case providerid.FieldMturkWorkerID:
+		return m.OldMturkWorkerID(ctx)
+	}
+	return nil, fmt.Errorf("unknown ProviderID field %s", name)
+}
+
+// SetField sets the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *ProviderIDMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case providerid.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case providerid.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case providerid.FieldMturkWorkerID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMturkWorkerID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProviderID field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented
+// or decremented during this mutation.
+func (m *ProviderIDMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was in/decremented
+// from a field with the given name. The second value indicates
+// that this field was not set, or was not define in the schema.
+func (m *ProviderIDMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *ProviderIDMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ProviderID numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared
+// during this mutation.
+func (m *ProviderIDMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicates if this field was
+// cleared in this mutation.
+func (m *ProviderIDMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value for the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ProviderIDMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ProviderID nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation regarding the
+// given field name. It returns an error if the field is not
+// defined in the schema.
+func (m *ProviderIDMutation) ResetField(name string) error {
+	switch name {
+	case providerid.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case providerid.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case providerid.FieldMturkWorkerID:
+		m.ResetMturkWorkerID()
+		return nil
+	}
+	return fmt.Errorf("unknown ProviderID field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this
+// mutation.
+func (m *ProviderIDMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.particpant != nil {
+		edges = append(edges, providerid.EdgeParticpant)
+	}
+	return edges
+}
+
+// AddedIDs returns all ids (to other nodes) that were added for
+// the given edge name.
+func (m *ProviderIDMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case providerid.EdgeParticpant:
+		if id := m.particpant; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this
+// mutation.
+func (m *ProviderIDMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all ids (to other nodes) that were removed for
+// the given edge name.
+func (m *ProviderIDMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this
+// mutation.
+func (m *ProviderIDMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedparticpant {
+		edges = append(edges, providerid.EdgeParticpant)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean indicates if this edge was
+// cleared in this mutation.
+func (m *ProviderIDMutation) EdgeCleared(name string) bool {
+	switch name {
+	case providerid.EdgeParticpant:
+		return m.clearedparticpant
+	}
+	return false
+}
+
+// ClearEdge clears the value for the given name. It returns an
+// error if the edge name is not defined in the schema.
+func (m *ProviderIDMutation) ClearEdge(name string) error {
+	switch name {
+	case providerid.EdgeParticpant:
+		m.ClearParticpant()
+		return nil
+	}
+	return fmt.Errorf("unknown ProviderID unique edge %s", name)
+}
+
+// ResetEdge resets all changes in the mutation regarding the
+// given edge name. It returns an error if the edge is not
+// defined in the schema.
+func (m *ProviderIDMutation) ResetEdge(name string) error {
+	switch name {
+	case providerid.EdgeParticpant:
+		m.ResetParticpant()
+		return nil
+	}
+	return fmt.Errorf("unknown ProviderID edge %s", name)
 }
 
 // RunMutation represents an operation that mutate the Runs
@@ -3262,24 +5121,30 @@ func (m *StepMutation) ResetEdge(name string) error {
 // nodes in the graph.
 type StepRunMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *string
-	created_at           *time.Time
-	updated_at           *time.Time
-	status               *steprun.Status
-	startedAt            *time.Time
-	endedAt              *time.Time
-	participantsCount    *int
-	addparticipantsCount *int
-	hitID                *string
-	clearedFields        map[string]struct{}
-	step                 *string
-	clearedstep          bool
-	run                  *string
-	clearedrun           bool
-	done                 bool
-	oldValue             func(context.Context) (*StepRun, error)
+	op                         Op
+	typ                        string
+	id                         *string
+	created_at                 *time.Time
+	updated_at                 *time.Time
+	status                     *steprun.Status
+	startedAt                  *time.Time
+	endedAt                    *time.Time
+	participantsCount          *int
+	addparticipantsCount       *int
+	hitID                      *string
+	clearedFields              map[string]struct{}
+	createdParticipants        map[string]struct{}
+	removedcreatedParticipants map[string]struct{}
+	participants               map[string]struct{}
+	removedparticipants        map[string]struct{}
+	participations             map[string]struct{}
+	removedparticipations      map[string]struct{}
+	step                       *string
+	clearedstep                bool
+	run                        *string
+	clearedrun                 bool
+	done                       bool
+	oldValue                   func(context.Context) (*StepRun, error)
 }
 
 var _ ent.Mutation = (*StepRunMutation)(nil)
@@ -3685,6 +5550,132 @@ func (m *StepRunMutation) ResetHitID() {
 	delete(m.clearedFields, steprun.FieldHitID)
 }
 
+// AddCreatedParticipantIDs adds the createdParticipants edge to Participant by ids.
+func (m *StepRunMutation) AddCreatedParticipantIDs(ids ...string) {
+	if m.createdParticipants == nil {
+		m.createdParticipants = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.createdParticipants[ids[i]] = struct{}{}
+	}
+}
+
+// RemoveCreatedParticipantIDs removes the createdParticipants edge to Participant by ids.
+func (m *StepRunMutation) RemoveCreatedParticipantIDs(ids ...string) {
+	if m.removedcreatedParticipants == nil {
+		m.removedcreatedParticipants = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedcreatedParticipants[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedCreatedParticipants returns the removed ids of createdParticipants.
+func (m *StepRunMutation) RemovedCreatedParticipantsIDs() (ids []string) {
+	for id := range m.removedcreatedParticipants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// CreatedParticipantsIDs returns the createdParticipants ids in the mutation.
+func (m *StepRunMutation) CreatedParticipantsIDs() (ids []string) {
+	for id := range m.createdParticipants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetCreatedParticipants reset all changes of the "createdParticipants" edge.
+func (m *StepRunMutation) ResetCreatedParticipants() {
+	m.createdParticipants = nil
+	m.removedcreatedParticipants = nil
+}
+
+// AddParticipantIDs adds the participants edge to Participant by ids.
+func (m *StepRunMutation) AddParticipantIDs(ids ...string) {
+	if m.participants == nil {
+		m.participants = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.participants[ids[i]] = struct{}{}
+	}
+}
+
+// RemoveParticipantIDs removes the participants edge to Participant by ids.
+func (m *StepRunMutation) RemoveParticipantIDs(ids ...string) {
+	if m.removedparticipants == nil {
+		m.removedparticipants = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedparticipants[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedParticipants returns the removed ids of participants.
+func (m *StepRunMutation) RemovedParticipantsIDs() (ids []string) {
+	for id := range m.removedparticipants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ParticipantsIDs returns the participants ids in the mutation.
+func (m *StepRunMutation) ParticipantsIDs() (ids []string) {
+	for id := range m.participants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetParticipants reset all changes of the "participants" edge.
+func (m *StepRunMutation) ResetParticipants() {
+	m.participants = nil
+	m.removedparticipants = nil
+}
+
+// AddParticipationIDs adds the participations edge to Participation by ids.
+func (m *StepRunMutation) AddParticipationIDs(ids ...string) {
+	if m.participations == nil {
+		m.participations = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.participations[ids[i]] = struct{}{}
+	}
+}
+
+// RemoveParticipationIDs removes the participations edge to Participation by ids.
+func (m *StepRunMutation) RemoveParticipationIDs(ids ...string) {
+	if m.removedparticipations == nil {
+		m.removedparticipations = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedparticipations[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedParticipations returns the removed ids of participations.
+func (m *StepRunMutation) RemovedParticipationsIDs() (ids []string) {
+	for id := range m.removedparticipations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ParticipationsIDs returns the participations ids in the mutation.
+func (m *StepRunMutation) ParticipationsIDs() (ids []string) {
+	for id := range m.participations {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetParticipations reset all changes of the "participations" edge.
+func (m *StepRunMutation) ResetParticipations() {
+	m.participations = nil
+	m.removedparticipations = nil
+}
+
 // SetStepID sets the step edge to Step by id.
 func (m *StepRunMutation) SetStepID(id string) {
 	m.step = &id
@@ -4016,7 +6007,16 @@ func (m *StepRunMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *StepRunMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 5)
+	if m.createdParticipants != nil {
+		edges = append(edges, steprun.EdgeCreatedParticipants)
+	}
+	if m.participants != nil {
+		edges = append(edges, steprun.EdgeParticipants)
+	}
+	if m.participations != nil {
+		edges = append(edges, steprun.EdgeParticipations)
+	}
 	if m.step != nil {
 		edges = append(edges, steprun.EdgeStep)
 	}
@@ -4030,6 +6030,24 @@ func (m *StepRunMutation) AddedEdges() []string {
 // the given edge name.
 func (m *StepRunMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case steprun.EdgeCreatedParticipants:
+		ids := make([]ent.Value, 0, len(m.createdParticipants))
+		for id := range m.createdParticipants {
+			ids = append(ids, id)
+		}
+		return ids
+	case steprun.EdgeParticipants:
+		ids := make([]ent.Value, 0, len(m.participants))
+		for id := range m.participants {
+			ids = append(ids, id)
+		}
+		return ids
+	case steprun.EdgeParticipations:
+		ids := make([]ent.Value, 0, len(m.participations))
+		for id := range m.participations {
+			ids = append(ids, id)
+		}
+		return ids
 	case steprun.EdgeStep:
 		if id := m.step; id != nil {
 			return []ent.Value{*id}
@@ -4045,7 +6063,16 @@ func (m *StepRunMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *StepRunMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 5)
+	if m.removedcreatedParticipants != nil {
+		edges = append(edges, steprun.EdgeCreatedParticipants)
+	}
+	if m.removedparticipants != nil {
+		edges = append(edges, steprun.EdgeParticipants)
+	}
+	if m.removedparticipations != nil {
+		edges = append(edges, steprun.EdgeParticipations)
+	}
 	return edges
 }
 
@@ -4053,6 +6080,24 @@ func (m *StepRunMutation) RemovedEdges() []string {
 // the given edge name.
 func (m *StepRunMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case steprun.EdgeCreatedParticipants:
+		ids := make([]ent.Value, 0, len(m.removedcreatedParticipants))
+		for id := range m.removedcreatedParticipants {
+			ids = append(ids, id)
+		}
+		return ids
+	case steprun.EdgeParticipants:
+		ids := make([]ent.Value, 0, len(m.removedparticipants))
+		for id := range m.removedparticipants {
+			ids = append(ids, id)
+		}
+		return ids
+	case steprun.EdgeParticipations:
+		ids := make([]ent.Value, 0, len(m.removedparticipations))
+		for id := range m.removedparticipations {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -4060,7 +6105,7 @@ func (m *StepRunMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *StepRunMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 5)
 	if m.clearedstep {
 		edges = append(edges, steprun.EdgeStep)
 	}
@@ -4101,6 +6146,15 @@ func (m *StepRunMutation) ClearEdge(name string) error {
 // defined in the schema.
 func (m *StepRunMutation) ResetEdge(name string) error {
 	switch name {
+	case steprun.EdgeCreatedParticipants:
+		m.ResetCreatedParticipants()
+		return nil
+	case steprun.EdgeParticipants:
+		m.ResetParticipants()
+		return nil
+	case steprun.EdgeParticipations:
+		m.ResetParticipations()
+		return nil
 	case steprun.EdgeStep:
 		m.ResetStep()
 		return nil

@@ -9,8 +9,17 @@ import (
 // Admin is the predicate function for admin builders.
 type Admin func(*sql.Selector)
 
+// Participant is the predicate function for participant builders.
+type Participant func(*sql.Selector)
+
+// Participation is the predicate function for participation builders.
+type Participation func(*sql.Selector)
+
 // Project is the predicate function for project builders.
 type Project func(*sql.Selector)
+
+// ProviderID is the predicate function for providerid builders.
+type ProviderID func(*sql.Selector)
 
 // Run is the predicate function for run builders.
 type Run func(*sql.Selector)

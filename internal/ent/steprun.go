@@ -40,19 +40,52 @@ type StepRun struct {
 
 // StepRunEdges holds the relations/edges for other nodes in the graph.
 type StepRunEdges struct {
+	// CreatedParticipants holds the value of the createdParticipants edge.
+	CreatedParticipants []*Participant
+	// Participants holds the value of the participants edge.
+	Participants []*Participant
+	// Participations holds the value of the participations edge.
+	Participations []*Participation
 	// Step holds the value of the step edge.
 	Step *Step
 	// Run holds the value of the run edge.
 	Run *Run
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [5]bool
+}
+
+// CreatedParticipantsOrErr returns the CreatedParticipants value or an error if the edge
+// was not loaded in eager-loading.
+func (e StepRunEdges) CreatedParticipantsOrErr() ([]*Participant, error) {
+	if e.loadedTypes[0] {
+		return e.CreatedParticipants, nil
+	}
+	return nil, &NotLoadedError{edge: "createdParticipants"}
+}
+
+// ParticipantsOrErr returns the Participants value or an error if the edge
+// was not loaded in eager-loading.
+func (e StepRunEdges) ParticipantsOrErr() ([]*Participant, error) {
+	if e.loadedTypes[1] {
+		return e.Participants, nil
+	}
+	return nil, &NotLoadedError{edge: "participants"}
+}
+
+// ParticipationsOrErr returns the Participations value or an error if the edge
+// was not loaded in eager-loading.
+func (e StepRunEdges) ParticipationsOrErr() ([]*Participation, error) {
+	if e.loadedTypes[2] {
+		return e.Participations, nil
+	}
+	return nil, &NotLoadedError{edge: "participations"}
 }
 
 // StepOrErr returns the Step value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e StepRunEdges) StepOrErr() (*Step, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[3] {
 		if e.Step == nil {
 			// The edge step was loaded in eager-loading,
 			// but was not found.
@@ -66,7 +99,7 @@ func (e StepRunEdges) StepOrErr() (*Step, error) {
 // RunOrErr returns the Run value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e StepRunEdges) RunOrErr() (*Run, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[4] {
 		if e.Run == nil {
 			// The edge run was loaded in eager-loading,
 			// but was not found.
@@ -157,6 +190,21 @@ func (sr *StepRun) assignValues(values ...interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryCreatedParticipants queries the createdParticipants edge of the StepRun.
+func (sr *StepRun) QueryCreatedParticipants() *ParticipantQuery {
+	return (&StepRunClient{config: sr.config}).QueryCreatedParticipants(sr)
+}
+
+// QueryParticipants queries the participants edge of the StepRun.
+func (sr *StepRun) QueryParticipants() *ParticipantQuery {
+	return (&StepRunClient{config: sr.config}).QueryParticipants(sr)
+}
+
+// QueryParticipations queries the participations edge of the StepRun.
+func (sr *StepRun) QueryParticipations() *ParticipationQuery {
+	return (&StepRunClient{config: sr.config}).QueryParticipations(sr)
 }
 
 // QueryStep queries the step edge of the StepRun.

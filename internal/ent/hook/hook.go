@@ -22,6 +22,32 @@ func (f AdminFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return f(ctx, mv)
 }
 
+// The ParticipantFunc type is an adapter to allow the use of ordinary
+// function as Participant mutator.
+type ParticipantFunc func(context.Context, *ent.ParticipantMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ParticipantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ParticipantMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ParticipantMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The ParticipationFunc type is an adapter to allow the use of ordinary
+// function as Participation mutator.
+type ParticipationFunc func(context.Context, *ent.ParticipationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ParticipationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ParticipationMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ParticipationMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The ProjectFunc type is an adapter to allow the use of ordinary
 // function as Project mutator.
 type ProjectFunc func(context.Context, *ent.ProjectMutation) (ent.Value, error)
@@ -31,6 +57,19 @@ func (f ProjectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	mv, ok := m.(*ent.ProjectMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProjectMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The ProviderIDFunc type is an adapter to allow the use of ordinary
+// function as ProviderID mutator.
+type ProviderIDFunc func(context.Context, *ent.ProviderIDMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProviderIDFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.ProviderIDMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProviderIDMutation", m)
 	}
 	return f(ctx, mv)
 }

@@ -32,6 +32,22 @@ func (r *messageStepArgsResolver) LobbyType(ctx context.Context, obj *model.Mess
 	return &t, nil
 }
 
+func (r *participantResolver) CreatedBy(ctx context.Context, obj *ent.Participant) (*ent.StepRun, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *participantResolver) Steps(ctx context.Context, obj *ent.Participant) ([]*ent.StepRun, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *participantResolver) ProviderIDs(ctx context.Context, obj *ent.Participant) ([]*ent.ProviderID, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *participantResolver) Data(ctx context.Context, obj *ent.Participant, keys []string) ([]*model.Datum, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *projectResolver) Creator(ctx context.Context, obj *ent.Project) (*ent.Admin, error) {
 	panic(fmt.Errorf("not implemented"))
 }
@@ -54,6 +70,14 @@ func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project, runID *str
 }
 
 func (r *projectResolver) Data(ctx context.Context, obj *ent.Project, keys []string) ([]*model.Datum, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *providerIDResolver) ProviderID(ctx context.Context, obj *ent.ProviderID) (string, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *providerIDResolver) Provider(ctx context.Context, obj *ent.ProviderID) (*model.Provider, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -153,8 +177,14 @@ func (r *Resolver) MessageStepArgs() generated.MessageStepArgsResolver {
 	return &messageStepArgsResolver{r}
 }
 
+// Participant returns generated.ParticipantResolver implementation.
+func (r *Resolver) Participant() generated.ParticipantResolver { return &participantResolver{r} }
+
 // Project returns generated.ProjectResolver implementation.
 func (r *Resolver) Project() generated.ProjectResolver { return &projectResolver{r} }
+
+// ProviderID returns generated.ProviderIDResolver implementation.
+func (r *Resolver) ProviderID() generated.ProviderIDResolver { return &providerIDResolver{r} }
 
 // Run returns generated.RunResolver implementation.
 func (r *Resolver) Run() generated.RunResolver { return &runResolver{r} }
@@ -170,7 +200,9 @@ func (r *Resolver) Template() generated.TemplateResolver { return &templateResol
 
 type filterStepArgsResolver struct{ *Resolver }
 type messageStepArgsResolver struct{ *Resolver }
+type participantResolver struct{ *Resolver }
 type projectResolver struct{ *Resolver }
+type providerIDResolver struct{ *Resolver }
 type runResolver struct{ *Resolver }
 type stepResolver struct{ *Resolver }
 type stepRunResolver struct{ *Resolver }

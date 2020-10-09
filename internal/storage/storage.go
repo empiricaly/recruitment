@@ -49,7 +49,7 @@ func Connect(ctx context.Context, config *Config) (c *Conn, err error) {
 	options := []ent.Option{ent.Driver(drv)}
 	if config.Debug {
 		options = append(options, ent.Log(dbLog))
-		options = append(options, ent.Debug())
+		// options = append(options, ent.Debug())
 	}
 	client := ent.NewClient(options...)
 
@@ -58,13 +58,13 @@ func Connect(ctx context.Context, config *Config) (c *Conn, err error) {
 	// 	return nil, errors.Wrap(err, "open sqlite conn")
 	// }
 
-	if config.Debug {
-		client = client.Debug()
-	}
-
 	// Run the auto migration tool.
 	if err := client.Schema.Create(ctx, migrate.WithGlobalUniqueID(true)); err != nil {
 		return nil, errors.Wrap(err, "write sqlite schema")
+	}
+
+	if config.Debug {
+		client = client.Debug()
 	}
 
 	return &Conn{Client: client}, nil

@@ -498,45 +498,16 @@ type PageInfo struct {
 	HasNextPage bool   `json:"hasNextPage"`
 }
 
-// Participant is a worker in the system.
-type Participant struct {
-	ID        string    `json:"id"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	// Step during which the Participant was created.
-	CreatedBy *ent.StepRun `json:"createdBy"`
-	// All StepRuns the Participant participated in.
-	Steps []*ent.StepRun `json:"steps"`
-	// ProviderIDs contains the IDs from 3rd providers corresponding the participant.
-	// A single participant could potentially be referenced in different in multiple
-	// providers.
-	ProviderIDs []*ProviderID `json:"providerIDs"`
-	// Data returns the custom data that has been set on the Participant.
-	Data []*Datum `json:"data"`
-}
-
-func (Participant) IsUser() {}
-
 type ParticipantsConnection struct {
 	TotalCount   int                 `json:"totalCount"`
 	Edges        []*ParticipantsEdge `json:"edges"`
-	Participants []*Participant      `json:"participants"`
+	Participants []*ent.Participant  `json:"participants"`
 	PageInfo     *PageInfo           `json:"pageInfo"`
 }
 
 type ParticipantsEdge struct {
-	Cursor string       `json:"cursor"`
-	Node   *Participant `json:"node"`
-}
-
-// ProviderID contains the identifier for a 3rd party provider.
-type ProviderID struct {
-	// createdAt is the time of creation of the record.
-	CreatedAt time.Time `json:"createdAt"`
-	// providerID is the ID of the 3rd party Provider.
-	ProviderID string `json:"providerID"`
-	// ID is the ID of the 3rd party Provider.
-	Provider *Provider `json:"provider"`
+	Cursor string           `json:"cursor"`
+	Node   *ent.Participant `json:"node"`
 }
 
 type RegisterParticipantInput struct {

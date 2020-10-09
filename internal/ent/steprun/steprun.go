@@ -27,6 +27,12 @@ const (
 	// FieldHitID holds the string denoting the hitid field in the database.
 	FieldHitID = "hit_id"
 
+	// EdgeCreatedParticipants holds the string denoting the createdparticipants edge name in mutations.
+	EdgeCreatedParticipants = "createdParticipants"
+	// EdgeParticipants holds the string denoting the participants edge name in mutations.
+	EdgeParticipants = "participants"
+	// EdgeParticipations holds the string denoting the participations edge name in mutations.
+	EdgeParticipations = "participations"
 	// EdgeStep holds the string denoting the step edge name in mutations.
 	EdgeStep = "step"
 	// EdgeRun holds the string denoting the run edge name in mutations.
@@ -34,6 +40,25 @@ const (
 
 	// Table holds the table name of the steprun in the database.
 	Table = "step_runs"
+	// CreatedParticipantsTable is the table the holds the createdParticipants relation/edge.
+	CreatedParticipantsTable = "participants"
+	// CreatedParticipantsInverseTable is the table name for the Participant entity.
+	// It exists in this package in order to avoid circular dependency with the "participant" package.
+	CreatedParticipantsInverseTable = "participants"
+	// CreatedParticipantsColumn is the table column denoting the createdParticipants relation/edge.
+	CreatedParticipantsColumn = "step_run_created_participants"
+	// ParticipantsTable is the table the holds the participants relation/edge. The primary key declared below.
+	ParticipantsTable = "step_run_participants"
+	// ParticipantsInverseTable is the table name for the Participant entity.
+	// It exists in this package in order to avoid circular dependency with the "participant" package.
+	ParticipantsInverseTable = "participants"
+	// ParticipationsTable is the table the holds the participations relation/edge.
+	ParticipationsTable = "participations"
+	// ParticipationsInverseTable is the table name for the Participation entity.
+	// It exists in this package in order to avoid circular dependency with the "participation" package.
+	ParticipationsInverseTable = "participations"
+	// ParticipationsColumn is the table column denoting the participations relation/edge.
+	ParticipationsColumn = "step_run_participations"
 	// StepTable is the table the holds the step relation/edge.
 	StepTable = "steps"
 	// StepInverseTable is the table name for the Step entity.
@@ -66,6 +91,12 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"run_steps",
 }
+
+var (
+	// ParticipantsPrimaryKey and ParticipantsColumn2 are the table columns denoting the
+	// primary key for the participants relation (M2M).
+	ParticipantsPrimaryKey = []string{"step_run_id", "participant_id"}
+)
 
 var (
 	// DefaultCreatedAt holds the default value on creation for the created_at field.

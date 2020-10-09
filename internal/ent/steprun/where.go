@@ -716,6 +716,90 @@ func HitIDContainsFold(v string) predicate.StepRun {
 	})
 }
 
+// HasCreatedParticipants applies the HasEdge predicate on the "createdParticipants" edge.
+func HasCreatedParticipants() predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(CreatedParticipantsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, CreatedParticipantsTable, CreatedParticipantsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCreatedParticipantsWith applies the HasEdge predicate on the "createdParticipants" edge with a given conditions (other predicates).
+func HasCreatedParticipantsWith(preds ...predicate.Participant) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(CreatedParticipantsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, CreatedParticipantsTable, CreatedParticipantsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasParticipants applies the HasEdge predicate on the "participants" edge.
+func HasParticipants() predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ParticipantsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, ParticipantsTable, ParticipantsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasParticipantsWith applies the HasEdge predicate on the "participants" edge with a given conditions (other predicates).
+func HasParticipantsWith(preds ...predicate.Participant) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ParticipantsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, ParticipantsTable, ParticipantsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasParticipations applies the HasEdge predicate on the "participations" edge.
+func HasParticipations() predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ParticipationsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ParticipationsTable, ParticipationsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasParticipationsWith applies the HasEdge predicate on the "participations" edge with a given conditions (other predicates).
+func HasParticipationsWith(preds ...predicate.Participation) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ParticipationsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ParticipationsTable, ParticipationsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasStep applies the HasEdge predicate on the "step" edge.
 func HasStep() predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {

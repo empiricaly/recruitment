@@ -42,7 +42,9 @@ type ResolverRoot interface {
 	FilterStepArgs() FilterStepArgsResolver
 	MessageStepArgs() MessageStepArgsResolver
 	Mutation() MutationResolver
+	Participant() ParticipantResolver
 	Project() ProjectResolver
+	ProviderID() ProviderIDResolver
 	Query() QueryResolver
 	Run() RunResolver
 	Step() StepResolver
@@ -298,7 +300,7 @@ type MessageStepArgsResolver interface {
 	LobbyType(ctx context.Context, obj *model.MessageStepArgs) (*model.ContentType, error)
 }
 type MutationResolver interface {
-	RegisterParticipant(ctx context.Context, input *model.RegisterParticipantInput) (*model.Participant, error)
+	RegisterParticipant(ctx context.Context, input *model.RegisterParticipantInput) (*ent.Participant, error)
 	MutateDatum(ctx context.Context, input *model.MutateDatumInput) (*model.Datum, error)
 	Auth(ctx context.Context, input *model.AuthInput) (*model.AuthResp, error)
 	CreateProject(ctx context.Context, input *model.CreateProjectInput) (*ent.Project, error)
@@ -312,12 +314,22 @@ type MutationResolver interface {
 	StartRun(ctx context.Context, input *model.StartRunInput) (*ent.Run, error)
 	CancelRun(ctx context.Context, input *model.CancelRunInput) (*ent.Run, error)
 }
+type ParticipantResolver interface {
+	CreatedBy(ctx context.Context, obj *ent.Participant) (*ent.StepRun, error)
+	Steps(ctx context.Context, obj *ent.Participant) ([]*ent.StepRun, error)
+	ProviderIDs(ctx context.Context, obj *ent.Participant) ([]*ent.ProviderID, error)
+	Data(ctx context.Context, obj *ent.Participant, keys []string) ([]*model.Datum, error)
+}
 type ProjectResolver interface {
 	Creator(ctx context.Context, obj *ent.Project) (*ent.Admin, error)
 
 	Templates(ctx context.Context, obj *ent.Project) ([]*ent.Template, error)
 	Runs(ctx context.Context, obj *ent.Project, runID *string, limit *int) ([]*ent.Run, error)
 	Data(ctx context.Context, obj *ent.Project, keys []string) ([]*model.Datum, error)
+}
+type ProviderIDResolver interface {
+	ProviderID(ctx context.Context, obj *ent.ProviderID) (string, error)
+	Provider(ctx context.Context, obj *ent.ProviderID) (*model.Provider, error)
 }
 type QueryResolver interface {
 	Projects(ctx context.Context) ([]*ent.Project, error)
@@ -5456,9 +5468,9 @@ func (ec *executionContext) _Mutation_registerParticipant(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Participant)
+	res := resTmp.(*ent.Participant)
 	fc.Result = res
-	return ec.marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx, field.Selections, res)
+	return ec.marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_mutateDatum(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6419,7 +6431,7 @@ func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field gra
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Participant_id(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
+func (ec *executionContext) _Participant_id(ctx context.Context, field graphql.CollectedField, obj *ent.Participant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6453,7 +6465,7 @@ func (ec *executionContext) _Participant_id(ctx context.Context, field graphql.C
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Participant_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
+func (ec *executionContext) _Participant_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Participant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6487,7 +6499,7 @@ func (ec *executionContext) _Participant_createdAt(ctx context.Context, field gr
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Participant_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
+func (ec *executionContext) _Participant_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Participant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6521,7 +6533,7 @@ func (ec *executionContext) _Participant_updatedAt(ctx context.Context, field gr
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Participant_createdBy(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
+func (ec *executionContext) _Participant_createdBy(ctx context.Context, field graphql.CollectedField, obj *ent.Participant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6532,13 +6544,13 @@ func (ec *executionContext) _Participant_createdBy(ctx context.Context, field gr
 		Object:   "Participant",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedBy, nil
+		return ec.resolvers.Participant().CreatedBy(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6552,7 +6564,7 @@ func (ec *executionContext) _Participant_createdBy(ctx context.Context, field gr
 	return ec.marshalOStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Participant_steps(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
+func (ec *executionContext) _Participant_steps(ctx context.Context, field graphql.CollectedField, obj *ent.Participant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6563,13 +6575,13 @@ func (ec *executionContext) _Participant_steps(ctx context.Context, field graphq
 		Object:   "Participant",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Steps, nil
+		return ec.resolvers.Participant().Steps(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6586,7 +6598,7 @@ func (ec *executionContext) _Participant_steps(ctx context.Context, field graphq
 	return ec.marshalNStepRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRunᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Participant_providerIDs(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
+func (ec *executionContext) _Participant_providerIDs(ctx context.Context, field graphql.CollectedField, obj *ent.Participant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6597,13 +6609,13 @@ func (ec *executionContext) _Participant_providerIDs(ctx context.Context, field 
 		Object:   "Participant",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ProviderIDs, nil
+		return ec.resolvers.Participant().ProviderIDs(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6615,12 +6627,12 @@ func (ec *executionContext) _Participant_providerIDs(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.ProviderID)
+	res := resTmp.([]*ent.ProviderID)
 	fc.Result = res
-	return ec.marshalNProviderID2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProviderIDᚄ(ctx, field.Selections, res)
+	return ec.marshalNProviderID2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProviderIDᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Participant_data(ctx context.Context, field graphql.CollectedField, obj *model.Participant) (ret graphql.Marshaler) {
+func (ec *executionContext) _Participant_data(ctx context.Context, field graphql.CollectedField, obj *ent.Participant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6631,7 +6643,7 @@ func (ec *executionContext) _Participant_data(ctx context.Context, field graphql
 		Object:   "Participant",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6644,7 +6656,7 @@ func (ec *executionContext) _Participant_data(ctx context.Context, field graphql
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Data, nil
+		return ec.resolvers.Participant().Data(rctx, obj, args["keys"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6755,9 +6767,9 @@ func (ec *executionContext) _ParticipantsConnection_participants(ctx context.Con
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Participant)
+	res := resTmp.([]*ent.Participant)
 	fc.Result = res
-	return ec.marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantᚄ(ctx, field.Selections, res)
+	return ec.marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipantᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ParticipantsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.ParticipantsConnection) (ret graphql.Marshaler) {
@@ -6854,9 +6866,9 @@ func (ec *executionContext) _ParticipantsEdge_node(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Participant)
+	res := resTmp.(*ent.Participant)
 	fc.Result = res
-	return ec.marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx, field.Selections, res)
+	return ec.marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Project_id(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
@@ -7179,7 +7191,7 @@ func (ec *executionContext) _Project_data(ctx context.Context, field graphql.Col
 	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProviderID_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.ProviderID) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProviderID_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.ProviderID) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7213,7 +7225,7 @@ func (ec *executionContext) _ProviderID_createdAt(ctx context.Context, field gra
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProviderID_providerID(ctx context.Context, field graphql.CollectedField, obj *model.ProviderID) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProviderID_providerID(ctx context.Context, field graphql.CollectedField, obj *ent.ProviderID) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7224,13 +7236,13 @@ func (ec *executionContext) _ProviderID_providerID(ctx context.Context, field gr
 		Object:   "ProviderID",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ProviderID, nil
+		return ec.resolvers.ProviderID().ProviderID(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7247,7 +7259,7 @@ func (ec *executionContext) _ProviderID_providerID(ctx context.Context, field gr
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProviderID_provider(ctx context.Context, field graphql.CollectedField, obj *model.ProviderID) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProviderID_provider(ctx context.Context, field graphql.CollectedField, obj *ent.ProviderID) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7258,13 +7270,13 @@ func (ec *executionContext) _ProviderID_provider(ctx context.Context, field grap
 		Object:   "ProviderID",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Provider, nil
+		return ec.resolvers.ProviderID().Provider(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10916,9 +10928,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case model.Participant:
-		return ec._Participant(ctx, sel, &obj)
-	case *model.Participant:
+	case *ent.Participant:
 		if obj == nil {
 			return graphql.Null
 		}
@@ -11614,7 +11624,7 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 
 var participantImplementors = []string{"Participant", "User"}
 
-func (ec *executionContext) _Participant(ctx context.Context, sel ast.SelectionSet, obj *model.Participant) graphql.Marshaler {
+func (ec *executionContext) _Participant(ctx context.Context, sel ast.SelectionSet, obj *ent.Participant) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, participantImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -11626,35 +11636,71 @@ func (ec *executionContext) _Participant(ctx context.Context, sel ast.SelectionS
 		case "id":
 			out.Values[i] = ec._Participant_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Participant_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Participant_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdBy":
-			out.Values[i] = ec._Participant_createdBy(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Participant_createdBy(ctx, field, obj)
+				return res
+			})
 		case "steps":
-			out.Values[i] = ec._Participant_steps(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Participant_steps(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "providerIDs":
-			out.Values[i] = ec._Participant_providerIDs(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Participant_providerIDs(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "data":
-			out.Values[i] = ec._Participant_data(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Participant_data(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11839,7 +11885,7 @@ func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, 
 
 var providerIDImplementors = []string{"ProviderID"}
 
-func (ec *executionContext) _ProviderID(ctx context.Context, sel ast.SelectionSet, obj *model.ProviderID) graphql.Marshaler {
+func (ec *executionContext) _ProviderID(ctx context.Context, sel ast.SelectionSet, obj *ent.ProviderID) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, providerIDImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -11851,15 +11897,33 @@ func (ec *executionContext) _ProviderID(ctx context.Context, sel ast.SelectionSe
 		case "createdAt":
 			out.Values[i] = ec._ProviderID_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "providerID":
-			out.Values[i] = ec._ProviderID_providerID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ProviderID_providerID(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "provider":
-			out.Values[i] = ec._ProviderID_provider(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ProviderID_provider(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13110,11 +13174,11 @@ func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋempiricalyᚋrecr
 	return ec._PageInfo(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNParticipant2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx context.Context, sel ast.SelectionSet, v model.Participant) graphql.Marshaler {
+func (ec *executionContext) marshalNParticipant2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx context.Context, sel ast.SelectionSet, v ent.Participant) graphql.Marshaler {
 	return ec._Participant(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Participant) graphql.Marshaler {
+func (ec *executionContext) marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipantᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Participant) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -13138,7 +13202,7 @@ func (ec *executionContext) marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricaly�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx, sel, v[i])
+			ret[i] = ec.marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -13151,7 +13215,7 @@ func (ec *executionContext) marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricaly�
 	return ret
 }
 
-func (ec *executionContext) marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx context.Context, sel ast.SelectionSet, v *model.Participant) graphql.Marshaler {
+func (ec *executionContext) marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx context.Context, sel ast.SelectionSet, v *ent.Participant) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -13249,11 +13313,11 @@ func (ec *executionContext) marshalNProject2ᚖgithubᚗcomᚋempiricalyᚋrecru
 	return ec._Project(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProviderID2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProviderID(ctx context.Context, sel ast.SelectionSet, v model.ProviderID) graphql.Marshaler {
+func (ec *executionContext) marshalNProviderID2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProviderID(ctx context.Context, sel ast.SelectionSet, v ent.ProviderID) graphql.Marshaler {
 	return ec._ProviderID(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNProviderID2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProviderIDᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ProviderID) graphql.Marshaler {
+func (ec *executionContext) marshalNProviderID2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProviderIDᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.ProviderID) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -13277,7 +13341,7 @@ func (ec *executionContext) marshalNProviderID2ᚕᚖgithubᚗcomᚋempiricaly�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNProviderID2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProviderID(ctx, sel, v[i])
+			ret[i] = ec.marshalNProviderID2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProviderID(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -13290,7 +13354,7 @@ func (ec *executionContext) marshalNProviderID2ᚕᚖgithubᚗcomᚋempiricaly�
 	return ret
 }
 
-func (ec *executionContext) marshalNProviderID2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProviderID(ctx context.Context, sel ast.SelectionSet, v *model.ProviderID) graphql.Marshaler {
+func (ec *executionContext) marshalNProviderID2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProviderID(ctx context.Context, sel ast.SelectionSet, v *ent.ProviderID) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -14526,11 +14590,11 @@ func (ec *executionContext) marshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecr
 	return v
 }
 
-func (ec *executionContext) marshalOParticipant2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx context.Context, sel ast.SelectionSet, v model.Participant) graphql.Marshaler {
+func (ec *executionContext) marshalOParticipant2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx context.Context, sel ast.SelectionSet, v ent.Participant) graphql.Marshaler {
 	return ec._Participant(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipant(ctx context.Context, sel ast.SelectionSet, v *model.Participant) graphql.Marshaler {
+func (ec *executionContext) marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx context.Context, sel ast.SelectionSet, v *ent.Participant) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

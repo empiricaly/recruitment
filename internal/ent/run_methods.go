@@ -8,21 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Start starts the run
-func (run *Run) Start() {
-
-}
-
-// End ends the run
-func (run *Run) End() {
-
-}
-
-// RunStep runs the next Step
-func (run *Run) RunStep() {
-
-}
-
 // Relations returns all the Run close relations (steps, stepRuns, and template).
 func (run *Run) Relations() (currentStepRun *StepRun, currentStep *Step, stepRuns []*StepRun, template *Template, steps []*Step, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

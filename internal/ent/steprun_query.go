@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/empiricaly/recruitment/internal/ent/participant"
+	"github.com/empiricaly/recruitment/internal/ent/participation"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/step"
@@ -27,9 +29,12 @@ type StepRunQuery struct {
 	unique     []string
 	predicates []predicate.StepRun
 	// eager-loading edges.
-	withStep *StepQuery
-	withRun  *RunQuery
-	withFKs  bool
+	withCreatedParticipants *ParticipantQuery
+	withParticipants        *ParticipantQuery
+	withParticipations      *ParticipationQuery
+	withStep                *StepQuery
+	withRun                 *RunQuery
+	withFKs                 bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -57,6 +62,60 @@ func (srq *StepRunQuery) Offset(offset int) *StepRunQuery {
 func (srq *StepRunQuery) Order(o ...OrderFunc) *StepRunQuery {
 	srq.order = append(srq.order, o...)
 	return srq
+}
+
+// QueryCreatedParticipants chains the current query on the createdParticipants edge.
+func (srq *StepRunQuery) QueryCreatedParticipants() *ParticipantQuery {
+	query := &ParticipantQuery{config: srq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := srq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(steprun.Table, steprun.FieldID, srq.sqlQuery()),
+			sqlgraph.To(participant.Table, participant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, steprun.CreatedParticipantsTable, steprun.CreatedParticipantsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(srq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryParticipants chains the current query on the participants edge.
+func (srq *StepRunQuery) QueryParticipants() *ParticipantQuery {
+	query := &ParticipantQuery{config: srq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := srq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(steprun.Table, steprun.FieldID, srq.sqlQuery()),
+			sqlgraph.To(participant.Table, participant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, steprun.ParticipantsTable, steprun.ParticipantsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(srq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryParticipations chains the current query on the participations edge.
+func (srq *StepRunQuery) QueryParticipations() *ParticipationQuery {
+	query := &ParticipationQuery{config: srq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := srq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(steprun.Table, steprun.FieldID, srq.sqlQuery()),
+			sqlgraph.To(participation.Table, participation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, steprun.ParticipationsTable, steprun.ParticipationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(srq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryStep chains the current query on the step edge.
@@ -274,6 +333,39 @@ func (srq *StepRunQuery) Clone() *StepRunQuery {
 	}
 }
 
+//  WithCreatedParticipants tells the query-builder to eager-loads the nodes that are connected to
+// the "createdParticipants" edge. The optional arguments used to configure the query builder of the edge.
+func (srq *StepRunQuery) WithCreatedParticipants(opts ...func(*ParticipantQuery)) *StepRunQuery {
+	query := &ParticipantQuery{config: srq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	srq.withCreatedParticipants = query
+	return srq
+}
+
+//  WithParticipants tells the query-builder to eager-loads the nodes that are connected to
+// the "participants" edge. The optional arguments used to configure the query builder of the edge.
+func (srq *StepRunQuery) WithParticipants(opts ...func(*ParticipantQuery)) *StepRunQuery {
+	query := &ParticipantQuery{config: srq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	srq.withParticipants = query
+	return srq
+}
+
+//  WithParticipations tells the query-builder to eager-loads the nodes that are connected to
+// the "participations" edge. The optional arguments used to configure the query builder of the edge.
+func (srq *StepRunQuery) WithParticipations(opts ...func(*ParticipationQuery)) *StepRunQuery {
+	query := &ParticipationQuery{config: srq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	srq.withParticipations = query
+	return srq
+}
+
 //  WithStep tells the query-builder to eager-loads the nodes that are connected to
 // the "step" edge. The optional arguments used to configure the query builder of the edge.
 func (srq *StepRunQuery) WithStep(opts ...func(*StepQuery)) *StepRunQuery {
@@ -363,7 +455,10 @@ func (srq *StepRunQuery) sqlAll(ctx context.Context) ([]*StepRun, error) {
 		nodes       = []*StepRun{}
 		withFKs     = srq.withFKs
 		_spec       = srq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [5]bool{
+			srq.withCreatedParticipants != nil,
+			srq.withParticipants != nil,
+			srq.withParticipations != nil,
 			srq.withStep != nil,
 			srq.withRun != nil,
 		}
@@ -396,6 +491,125 @@ func (srq *StepRunQuery) sqlAll(ctx context.Context) ([]*StepRun, error) {
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+
+	if query := srq.withCreatedParticipants; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[string]*StepRun)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.Participant(func(s *sql.Selector) {
+			s.Where(sql.InValues(steprun.CreatedParticipantsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.step_run_created_participants
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "step_run_created_participants" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "step_run_created_participants" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.CreatedParticipants = append(node.Edges.CreatedParticipants, n)
+		}
+	}
+
+	if query := srq.withParticipants; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[string]*StepRun, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+		}
+		var (
+			edgeids []string
+			edges   = make(map[string][]*StepRun)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: false,
+				Table:   steprun.ParticipantsTable,
+				Columns: steprun.ParticipantsPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(steprun.ParticipantsPrimaryKey[0], fks...))
+			},
+
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{&sql.NullString{}, &sql.NullString{}}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullString)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullString)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := eout.String
+				inValue := ein.String
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				edgeids = append(edgeids, inValue)
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, srq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "participants": %v`, err)
+		}
+		query.Where(participant.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "participants" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Participants = append(nodes[i].Edges.Participants, n)
+			}
+		}
+	}
+
+	if query := srq.withParticipations; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[string]*StepRun)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.Participation(func(s *sql.Selector) {
+			s.Where(sql.InValues(steprun.ParticipationsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.step_run_participations
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "step_run_participations" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "step_run_participations" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Participations = append(node.Edges.Participations, n)
+		}
 	}
 
 	if query := srq.withStep; query != nil {

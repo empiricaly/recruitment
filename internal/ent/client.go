@@ -10,7 +10,10 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/migrate"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/participant"
+	"github.com/empiricaly/recruitment/internal/ent/participation"
 	"github.com/empiricaly/recruitment/internal/ent/project"
+	"github.com/empiricaly/recruitment/internal/ent/providerid"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
@@ -28,8 +31,14 @@ type Client struct {
 	Schema *migrate.Schema
 	// Admin is the client for interacting with the Admin builders.
 	Admin *AdminClient
+	// Participant is the client for interacting with the Participant builders.
+	Participant *ParticipantClient
+	// Participation is the client for interacting with the Participation builders.
+	Participation *ParticipationClient
 	// Project is the client for interacting with the Project builders.
 	Project *ProjectClient
+	// ProviderID is the client for interacting with the ProviderID builders.
+	ProviderID *ProviderIDClient
 	// Run is the client for interacting with the Run builders.
 	Run *RunClient
 	// Step is the client for interacting with the Step builders.
@@ -52,7 +61,10 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Admin = NewAdminClient(c.config)
+	c.Participant = NewParticipantClient(c.config)
+	c.Participation = NewParticipationClient(c.config)
 	c.Project = NewProjectClient(c.config)
+	c.ProviderID = NewProviderIDClient(c.config)
 	c.Run = NewRunClient(c.config)
 	c.Step = NewStepClient(c.config)
 	c.StepRun = NewStepRunClient(c.config)
@@ -87,14 +99,17 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	}
 	cfg := config{driver: tx, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		ctx:      ctx,
-		config:   cfg,
-		Admin:    NewAdminClient(cfg),
-		Project:  NewProjectClient(cfg),
-		Run:      NewRunClient(cfg),
-		Step:     NewStepClient(cfg),
-		StepRun:  NewStepRunClient(cfg),
-		Template: NewTemplateClient(cfg),
+		ctx:           ctx,
+		config:        cfg,
+		Admin:         NewAdminClient(cfg),
+		Participant:   NewParticipantClient(cfg),
+		Participation: NewParticipationClient(cfg),
+		Project:       NewProjectClient(cfg),
+		ProviderID:    NewProviderIDClient(cfg),
+		Run:           NewRunClient(cfg),
+		Step:          NewStepClient(cfg),
+		StepRun:       NewStepRunClient(cfg),
+		Template:      NewTemplateClient(cfg),
 	}, nil
 }
 
@@ -109,13 +124,16 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	}
 	cfg := config{driver: &txDriver{tx: tx, drv: c.driver}, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		config:   cfg,
-		Admin:    NewAdminClient(cfg),
-		Project:  NewProjectClient(cfg),
-		Run:      NewRunClient(cfg),
-		Step:     NewStepClient(cfg),
-		StepRun:  NewStepRunClient(cfg),
-		Template: NewTemplateClient(cfg),
+		config:        cfg,
+		Admin:         NewAdminClient(cfg),
+		Participant:   NewParticipantClient(cfg),
+		Participation: NewParticipationClient(cfg),
+		Project:       NewProjectClient(cfg),
+		ProviderID:    NewProviderIDClient(cfg),
+		Run:           NewRunClient(cfg),
+		Step:          NewStepClient(cfg),
+		StepRun:       NewStepRunClient(cfg),
+		Template:      NewTemplateClient(cfg),
 	}, nil
 }
 
@@ -145,7 +163,10 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Admin.Use(hooks...)
+	c.Participant.Use(hooks...)
+	c.Participation.Use(hooks...)
 	c.Project.Use(hooks...)
+	c.ProviderID.Use(hooks...)
 	c.Run.Use(hooks...)
 	c.Step.Use(hooks...)
 	c.StepRun.Use(hooks...)
@@ -270,6 +291,278 @@ func (c *AdminClient) QueryTemplates(a *Admin) *TemplateQuery {
 // Hooks returns the client hooks.
 func (c *AdminClient) Hooks() []Hook {
 	return c.hooks.Admin
+}
+
+// ParticipantClient is a client for the Participant schema.
+type ParticipantClient struct {
+	config
+}
+
+// NewParticipantClient returns a client for the Participant from the given config.
+func NewParticipantClient(c config) *ParticipantClient {
+	return &ParticipantClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `participant.Hooks(f(g(h())))`.
+func (c *ParticipantClient) Use(hooks ...Hook) {
+	c.hooks.Participant = append(c.hooks.Participant, hooks...)
+}
+
+// Create returns a create builder for Participant.
+func (c *ParticipantClient) Create() *ParticipantCreate {
+	mutation := newParticipantMutation(c.config, OpCreate)
+	return &ParticipantCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// BulkCreate returns a builder for creating a bulk of Participant entities.
+func (c *ParticipantClient) CreateBulk(builders ...*ParticipantCreate) *ParticipantCreateBulk {
+	return &ParticipantCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Participant.
+func (c *ParticipantClient) Update() *ParticipantUpdate {
+	mutation := newParticipantMutation(c.config, OpUpdate)
+	return &ParticipantUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ParticipantClient) UpdateOne(pa *Participant) *ParticipantUpdateOne {
+	mutation := newParticipantMutation(c.config, OpUpdateOne, withParticipant(pa))
+	return &ParticipantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ParticipantClient) UpdateOneID(id string) *ParticipantUpdateOne {
+	mutation := newParticipantMutation(c.config, OpUpdateOne, withParticipantID(id))
+	return &ParticipantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Participant.
+func (c *ParticipantClient) Delete() *ParticipantDelete {
+	mutation := newParticipantMutation(c.config, OpDelete)
+	return &ParticipantDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ParticipantClient) DeleteOne(pa *Participant) *ParticipantDeleteOne {
+	return c.DeleteOneID(pa.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ParticipantClient) DeleteOneID(id string) *ParticipantDeleteOne {
+	builder := c.Delete().Where(participant.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ParticipantDeleteOne{builder}
+}
+
+// Query returns a query builder for Participant.
+func (c *ParticipantClient) Query() *ParticipantQuery {
+	return &ParticipantQuery{config: c.config}
+}
+
+// Get returns a Participant entity by its id.
+func (c *ParticipantClient) Get(ctx context.Context, id string) (*Participant, error) {
+	return c.Query().Where(participant.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ParticipantClient) GetX(ctx context.Context, id string) *Participant {
+	pa, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return pa
+}
+
+// QueryProviderIDs queries the providerIDs edge of a Participant.
+func (c *ParticipantClient) QueryProviderIDs(pa *Participant) *ProviderIDQuery {
+	query := &ProviderIDQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(participant.Table, participant.FieldID, id),
+			sqlgraph.To(providerid.Table, providerid.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, participant.ProviderIDsTable, participant.ProviderIDsColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryParticipations queries the participations edge of a Participant.
+func (c *ParticipantClient) QueryParticipations(pa *Participant) *ParticipationQuery {
+	query := &ParticipationQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(participant.Table, participant.FieldID, id),
+			sqlgraph.To(participation.Table, participation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, participant.ParticipationsTable, participant.ParticipationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCreatedBy queries the createdBy edge of a Participant.
+func (c *ParticipantClient) QueryCreatedBy(pa *Participant) *StepRunQuery {
+	query := &StepRunQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(participant.Table, participant.FieldID, id),
+			sqlgraph.To(steprun.Table, steprun.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, participant.CreatedByTable, participant.CreatedByColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySteps queries the steps edge of a Participant.
+func (c *ParticipantClient) QuerySteps(pa *Participant) *StepRunQuery {
+	query := &StepRunQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(participant.Table, participant.FieldID, id),
+			sqlgraph.To(steprun.Table, steprun.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, participant.StepsTable, participant.StepsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ParticipantClient) Hooks() []Hook {
+	return c.hooks.Participant
+}
+
+// ParticipationClient is a client for the Participation schema.
+type ParticipationClient struct {
+	config
+}
+
+// NewParticipationClient returns a client for the Participation from the given config.
+func NewParticipationClient(c config) *ParticipationClient {
+	return &ParticipationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `participation.Hooks(f(g(h())))`.
+func (c *ParticipationClient) Use(hooks ...Hook) {
+	c.hooks.Participation = append(c.hooks.Participation, hooks...)
+}
+
+// Create returns a create builder for Participation.
+func (c *ParticipationClient) Create() *ParticipationCreate {
+	mutation := newParticipationMutation(c.config, OpCreate)
+	return &ParticipationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// BulkCreate returns a builder for creating a bulk of Participation entities.
+func (c *ParticipationClient) CreateBulk(builders ...*ParticipationCreate) *ParticipationCreateBulk {
+	return &ParticipationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Participation.
+func (c *ParticipationClient) Update() *ParticipationUpdate {
+	mutation := newParticipationMutation(c.config, OpUpdate)
+	return &ParticipationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ParticipationClient) UpdateOne(pa *Participation) *ParticipationUpdateOne {
+	mutation := newParticipationMutation(c.config, OpUpdateOne, withParticipation(pa))
+	return &ParticipationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ParticipationClient) UpdateOneID(id string) *ParticipationUpdateOne {
+	mutation := newParticipationMutation(c.config, OpUpdateOne, withParticipationID(id))
+	return &ParticipationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Participation.
+func (c *ParticipationClient) Delete() *ParticipationDelete {
+	mutation := newParticipationMutation(c.config, OpDelete)
+	return &ParticipationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ParticipationClient) DeleteOne(pa *Participation) *ParticipationDeleteOne {
+	return c.DeleteOneID(pa.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ParticipationClient) DeleteOneID(id string) *ParticipationDeleteOne {
+	builder := c.Delete().Where(participation.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ParticipationDeleteOne{builder}
+}
+
+// Query returns a query builder for Participation.
+func (c *ParticipationClient) Query() *ParticipationQuery {
+	return &ParticipationQuery{config: c.config}
+}
+
+// Get returns a Participation entity by its id.
+func (c *ParticipationClient) Get(ctx context.Context, id string) (*Participation, error) {
+	return c.Query().Where(participation.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ParticipationClient) GetX(ctx context.Context, id string) *Participation {
+	pa, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return pa
+}
+
+// QueryStepRun queries the stepRun edge of a Participation.
+func (c *ParticipationClient) QueryStepRun(pa *Participation) *StepRunQuery {
+	query := &StepRunQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(participation.Table, participation.FieldID, id),
+			sqlgraph.To(steprun.Table, steprun.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, participation.StepRunTable, participation.StepRunColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryParticipant queries the participant edge of a Participation.
+func (c *ParticipationClient) QueryParticipant(pa *Participation) *ParticipantQuery {
+	query := &ParticipantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(participation.Table, participation.FieldID, id),
+			sqlgraph.To(participant.Table, participant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, participation.ParticipantTable, participation.ParticipantColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ParticipationClient) Hooks() []Hook {
+	return c.hooks.Participation
 }
 
 // ProjectClient is a client for the Project schema.
@@ -406,6 +699,110 @@ func (c *ProjectClient) QueryOwner(pr *Project) *AdminQuery {
 // Hooks returns the client hooks.
 func (c *ProjectClient) Hooks() []Hook {
 	return c.hooks.Project
+}
+
+// ProviderIDClient is a client for the ProviderID schema.
+type ProviderIDClient struct {
+	config
+}
+
+// NewProviderIDClient returns a client for the ProviderID from the given config.
+func NewProviderIDClient(c config) *ProviderIDClient {
+	return &ProviderIDClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `providerid.Hooks(f(g(h())))`.
+func (c *ProviderIDClient) Use(hooks ...Hook) {
+	c.hooks.ProviderID = append(c.hooks.ProviderID, hooks...)
+}
+
+// Create returns a create builder for ProviderID.
+func (c *ProviderIDClient) Create() *ProviderIDCreate {
+	mutation := newProviderIDMutation(c.config, OpCreate)
+	return &ProviderIDCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// BulkCreate returns a builder for creating a bulk of ProviderID entities.
+func (c *ProviderIDClient) CreateBulk(builders ...*ProviderIDCreate) *ProviderIDCreateBulk {
+	return &ProviderIDCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProviderID.
+func (c *ProviderIDClient) Update() *ProviderIDUpdate {
+	mutation := newProviderIDMutation(c.config, OpUpdate)
+	return &ProviderIDUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProviderIDClient) UpdateOne(pi *ProviderID) *ProviderIDUpdateOne {
+	mutation := newProviderIDMutation(c.config, OpUpdateOne, withProviderID(pi))
+	return &ProviderIDUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProviderIDClient) UpdateOneID(id string) *ProviderIDUpdateOne {
+	mutation := newProviderIDMutation(c.config, OpUpdateOne, withProviderIDID(id))
+	return &ProviderIDUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProviderID.
+func (c *ProviderIDClient) Delete() *ProviderIDDelete {
+	mutation := newProviderIDMutation(c.config, OpDelete)
+	return &ProviderIDDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ProviderIDClient) DeleteOne(pi *ProviderID) *ProviderIDDeleteOne {
+	return c.DeleteOneID(pi.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ProviderIDClient) DeleteOneID(id string) *ProviderIDDeleteOne {
+	builder := c.Delete().Where(providerid.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProviderIDDeleteOne{builder}
+}
+
+// Query returns a query builder for ProviderID.
+func (c *ProviderIDClient) Query() *ProviderIDQuery {
+	return &ProviderIDQuery{config: c.config}
+}
+
+// Get returns a ProviderID entity by its id.
+func (c *ProviderIDClient) Get(ctx context.Context, id string) (*ProviderID, error) {
+	return c.Query().Where(providerid.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProviderIDClient) GetX(ctx context.Context, id string) *ProviderID {
+	pi, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return pi
+}
+
+// QueryParticpant queries the particpant edge of a ProviderID.
+func (c *ProviderIDClient) QueryParticpant(pi *ProviderID) *ParticipantQuery {
+	query := &ParticipantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pi.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(providerid.Table, providerid.FieldID, id),
+			sqlgraph.To(participant.Table, participant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, providerid.ParticpantTable, providerid.ParticpantColumn),
+		)
+		fromV = sqlgraph.Neighbors(pi.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ProviderIDClient) Hooks() []Hook {
+	return c.hooks.ProviderID
 }
 
 // RunClient is a client for the Run schema.
@@ -761,6 +1158,54 @@ func (c *StepRunClient) GetX(ctx context.Context, id string) *StepRun {
 		panic(err)
 	}
 	return sr
+}
+
+// QueryCreatedParticipants queries the createdParticipants edge of a StepRun.
+func (c *StepRunClient) QueryCreatedParticipants(sr *StepRun) *ParticipantQuery {
+	query := &ParticipantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := sr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(steprun.Table, steprun.FieldID, id),
+			sqlgraph.To(participant.Table, participant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, steprun.CreatedParticipantsTable, steprun.CreatedParticipantsColumn),
+		)
+		fromV = sqlgraph.Neighbors(sr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryParticipants queries the participants edge of a StepRun.
+func (c *StepRunClient) QueryParticipants(sr *StepRun) *ParticipantQuery {
+	query := &ParticipantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := sr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(steprun.Table, steprun.FieldID, id),
+			sqlgraph.To(participant.Table, participant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, steprun.ParticipantsTable, steprun.ParticipantsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(sr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryParticipations queries the participations edge of a StepRun.
+func (c *StepRunClient) QueryParticipations(sr *StepRun) *ParticipationQuery {
+	query := &ParticipationQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := sr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(steprun.Table, steprun.FieldID, id),
+			sqlgraph.To(participation.Table, participation.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, steprun.ParticipationsTable, steprun.ParticipationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(sr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryStep queries the step edge of a StepRun.
