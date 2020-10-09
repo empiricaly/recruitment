@@ -9,7 +9,8 @@
     bind:group
     {value}
     type="radio"
-    class="form-radio text-mint-600"
+    class="form-radio text-mint-600 focus:outline-none
+    focus:border-mint-300 focus:shadow-outline"
     {name} />
   <span class="ml-2">
     <slot />

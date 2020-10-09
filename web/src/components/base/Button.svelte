@@ -8,12 +8,12 @@
   export let disabled = false;
 
   $: css = disabled
-    ? "text-gray-400 bg-gray-200 hover:bg-gray-50 focus:border-gray-300 focus:shadow-outline-gray active:bg-gray-200"
+    ? "text-gray-400 bg-gray-200 hover:bg-gray-50 focus:border-gray-300 active:bg-gray-200"
     : tertiary
-    ? "border-gray-300 text-gray-700 bg-white hover:text-gray-500 focus:shadow-outline-mint focus:border-mint-300 active:text-gray-800 active:bg-gray-50 active:text-gray-800"
+    ? "border-gray-300 text-gray-700 bg-white hover:text-gray-500 focus:border-mint-300 active:text-gray-800 active:bg-gray-50 active:text-gray-800"
     : secondary
-    ? "text-mint-700 bg-mint-100 hover:bg-mint-50 focus:border-mint-300 focus:shadow-outline-mint active:bg-mint-200"
-    : "text-white bg-mint-600 hover:bg-mint-500 focus:border-mint-700 focus:shadow-outline-mint active:bg-mint-700";
+    ? "text-mint-700 bg-mint-100 hover:bg-mint-50 focus:border-mint-300 active:bg-mint-200"
+    : "text-white bg-mint-600 hover:bg-mint-500 focus:border-mint-700 active:bg-mint-700";
 </script>
 
 <span class:w-full={full} class="block rounded-md shadow-sm">
@@ -23,7 +23,7 @@
     {disabled}
     class="{css} flex w-full justify-center items-center px-4 py-2 border
     border-transparent text-sm font-medium rounded-md transition duration-150
-    ease-in-out focus:outline-none">
+    ease-in-out focus:outline-none focus:shadow-outline">
     {#if icon}
       <svg
         class="flex-shrink-0 mr-1.5 h-4 w-4 "

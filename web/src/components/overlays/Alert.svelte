@@ -1,5 +1,7 @@
 <script context="module">
+  import { cubicIn, cubicOut } from "svelte/easing";
   import { get, writable } from "svelte/store";
+  import { fade, scale } from "svelte/transition";
 
   const open = writable(false);
   const config = writable({});
@@ -8,7 +10,7 @@
   const defaultConfig = {
     color: "red",
     title: null,
-    button: "Ok"
+    button: "Ok",
   };
 
   export function confirm(conf) {
@@ -29,9 +31,6 @@
 </script>
 
 <script>
-  import { fade, scale } from "svelte/transition";
-  import { cubicIn, cubicOut } from "svelte/easing";
-
   function handleCancel() {
     $open = false;
     $prom.reject();
@@ -106,7 +105,7 @@
             border-transparent px-4 py-2 bg-{$config.color}-600 text-base
             leading-6 font-medium text-white shadow-sm hover:bg-{$config.color}-500
             focus:outline-none focus:border-{$config.color}-700
-            focus:shadow-outline-{$config.color} transition ease-in-out
+            focus:shadow-outline transition ease-in-out
             duration-150 sm:text-sm sm:leading-5">
             {$config.button}
           </button>
@@ -118,7 +117,7 @@
             class="inline-flex justify-center w-full rounded-md border
             border-gray-300 px-4 py-2 bg-white text-base leading-6 font-medium
             text-gray-700 shadow-sm hover:text-gray-500 focus:outline-none
-            focus:border-blue-300 focus:shadow-outline-blue transition
+            focus:border-mint-300 focus:shadow-outline transition
             ease-in-out duration-150 sm:text-sm sm:leading-5">
             Cancel
           </button>

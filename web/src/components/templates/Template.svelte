@@ -26,7 +26,7 @@
   export let template;
 
   // $: console.log(JSON.stringify(template, "", "  "));
-  $: console.log(JSON.stringify(template));
+  // $: console.log(JSON.stringify(template));
 
   $: {
     if (template) {
@@ -34,8 +34,15 @@
     }
   }
 
+  let previousTemplate = JSON.stringify(template);
   const save = debounce(
     async () => {
+      const newTemplate = JSON.stringify(template);
+      if (newTemplate === previousTemplate) {
+        console.log("nothing changed");
+        return;
+      }
+      previousTemplate = newTemplate;
       console.log("project", project);
       console.log("run", run);
       try {

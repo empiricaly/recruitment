@@ -3,7 +3,7 @@
     $: 7,
     USD: 12,
     seconds: 20,
-    minutes: 20
+    minutes: 20,
   };
 </script>
 
@@ -76,7 +76,7 @@
     bind:value
     class="appearance-none block w-full pl-{left ? inserts[left] : 3} pr-{right ? inserts[right] : 3}
     text-gray-900 py-2 border border-gray-300 rounded-md placeholder-gray-400
-    focus:outline-none focus:shadow-outline-blue focus:border-blue-300
+    focus:outline-none focus:shadow-outline focus:border-mint-300
     transition duration-150 ease-in-out sm:text-sm sm:leading-5" />
   {#if right}
     <div
