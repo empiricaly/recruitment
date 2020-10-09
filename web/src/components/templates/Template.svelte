@@ -94,8 +94,8 @@
     }
   }
 
-  function handleMovingStep(event, isUpward) {
-    const { step } = event.detail;
+  function handleMoveStep(event) {
+    const { step, isUpward } = event.detail;
     let otherStep;
 
     template.steps = template.steps.filter((s) => {
@@ -195,8 +195,7 @@
   <Step
     bind:step
     stepLength={template.steps.length}
-    on:upward={(e) => handleMovingStep(e, true)}
-    on:downward={(e) => handleMovingStep(e, false)}
+    on:moveStep={handleMoveStep}
     on:delete={handleDeleteStep} />
 {/each}
 

@@ -43,12 +43,8 @@
     dispatch("delete", { step });
   }
 
-  async function handleUpward() {
-    dispatch("upward", { step });
-  }
-
-  async function handleDownward() {
-    dispatch("downward", { step });
+  function handleMoveStep(isUpward) {
+    dispatch("moveStep", { step, isUpward });
   }
 
   $: isFirstStep = step.index === 0;
@@ -81,7 +77,7 @@
       <div class="flex items-center md:justify-end">
         {#if stepLength !== 1 && !isFirstStep}
           <button
-            on:click={handleUpward}
+            on:click={() => handleMoveStep(true)}
             class="flex items-center mt-2 md:mt-0 focus:outline-none">
             <svg
               class="text-gray-50"
@@ -102,7 +98,7 @@
         {/if}
         {#if stepLength !== 1 && !isLastStep}
           <button
-            on:click={handleDownward}
+            on:click={() => handleMoveStep(false)}
             class="flex items-center mt-2 ml-4 md:mt-0 focus:outline-none">
             <svg
               class="text-gray-50"
