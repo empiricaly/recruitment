@@ -2,27 +2,27 @@
   const modes = [
     {
       label: "Markdown",
-      value: "MARKDOWN"
+      value: "MARKDOWN",
     },
     {
       label: "HTML",
-      value: "HTML"
+      value: "HTML",
     },
     {
       label: "React",
-      value: "REACT"
+      value: "REACT",
     },
     {
       label: "Svelte",
-      value: "SVELTE"
-    }
+      value: "SVELTE",
+    },
   ];
 
   const typeToMode = {
     MARKDOWN: "markdown",
     HTML: "html",
     REACT: "jsx",
-    SVELTE: "svelte"
+    SVELTE: "svelte",
   };
 </script>
 
@@ -41,6 +41,17 @@
 </script>
 
 <div class="">
+  <Label
+    forID={uniq('subject')}
+    text="Message Subject"
+    question="The subject line of the email message to send" />
+  <Input
+    max={200}
+    id={uniq('subject')}
+    bind:value={msgArgs.subject}
+    placeholder="Message Subject" />
+</div>
+<div class="mt-4">
   <Label
     forID={uniq('url')}
     text="Target URL"
@@ -102,10 +113,7 @@
           information. It also points to it's parent's Run object. See
           documentation for further details.
         </li>
-        <li>
-          <code>participant:</code>
-          The current participant.
-        </li>
+        <li><code>participant:</code> The current participant.</li>
       </ul>
     </div>
   </SlideOver>

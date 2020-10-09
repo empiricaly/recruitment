@@ -399,6 +399,8 @@ type MTurkQulificationType struct {
 // MessageStepArgs are arguments passed to a Step that has a message.
 // This is only valid for MTURK_HIT and MTURK_MESSAGE Steps.
 type MessageStepArgs struct {
+	// The subject line of the email message to send.
+	Subject *string `json:"subject"`
 	// URL that will be transformed into a redirect (proxy URL) through the Empirica
 	// Recruitment website and passed to the Message template. This URL is the final
 	// destination the worker will land on. Empirica Recruitment redirects
@@ -431,6 +433,8 @@ type MessageStepArgs struct {
 // MessageStepArgs are arguments passed to a Step that has a message.
 // This is only valid for MTURK_HIT and MTURK_MESSAGE Steps.
 type MessageStepArgsInput struct {
+	// The subject line of the email message to send.
+	Subject *string `json:"subject"`
 	// URL that will be transformed into a redirect (proxy URL) through the Empirica
 	// Recruitment website and passed to the Message template. This URL is the final
 	// destination the worker will land on. Empirica Recruitment redirects

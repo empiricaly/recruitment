@@ -148,6 +148,7 @@ type ComplexityRoot struct {
 		LobbyType       func(childComplexity int) int
 		Message         func(childComplexity int) int
 		MessageType     func(childComplexity int) int
+		Subject         func(childComplexity int) int
 		URL             func(childComplexity int) int
 	}
 
@@ -765,6 +766,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MessageStepArgs.MessageType(childComplexity), true
+
+	case "MessageStepArgs.subject":
+		if e.complexity.MessageStepArgs.Subject == nil {
+			break
+		}
+
+		return e.complexity.MessageStepArgs.Subject(childComplexity), true
 
 	case "MessageStepArgs.url":
 		if e.complexity.MessageStepArgs.URL == nil {
@@ -2239,6 +2247,11 @@ This is only valid for MTURK_HIT and MTURK_MESSAGE Steps.
 """
 type MessageStepArgs {
   """
+  The subject line of the email message to send.
+  """
+  subject: String
+
+  """
   URL that will be transformed into a redirect (proxy URL) through the Empirica
   Recruitment website and passed to the Message template. This URL is the final
   destination the worker will land on. Empirica Recruitment redirects
@@ -2981,6 +2994,11 @@ MessageStepArgs are arguments passed to a Step that has a message.
 This is only valid for MTURK_HIT and MTURK_MESSAGE Steps.
 """
 input MessageStepArgsInput {
+  """
+  The subject line of the email message to send.
+  """
+  subject: String
+
   """
   URL that will be transformed into a redirect (proxy URL) through the Empirica
   Recruitment website and passed to the Message template. This URL is the final
@@ -5178,6 +5196,37 @@ func (ec *executionContext) _MTurkQulificationType_type(ctx context.Context, fie
 	res := resTmp.(model.QualType)
 	fc.Result = res
 	return ec.marshalNQualType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐQualType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MessageStepArgs_subject(ctx context.Context, field graphql.CollectedField, obj *model.MessageStepArgs) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MessageStepArgs",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Subject, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MessageStepArgs_url(ctx context.Context, field graphql.CollectedField, obj *model.MessageStepArgs) (ret graphql.Marshaler) {
@@ -10512,6 +10561,12 @@ func (ec *executionContext) unmarshalInputMessageStepArgsInput(ctx context.Conte
 
 	for k, v := range asMap {
 		switch k {
+		case "subject":
+			var err error
+			it.Subject, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "url":
 			var err error
 			it.URL, err = ec.unmarshalOString2ᚖstring(ctx, v)
@@ -11351,6 +11406,8 @@ func (ec *executionContext) _MessageStepArgs(ctx context.Context, sel ast.Select
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MessageStepArgs")
+		case "subject":
+			out.Values[i] = ec._MessageStepArgs_subject(ctx, field, obj)
 		case "url":
 			out.Values[i] = ec._MessageStepArgs_url(ctx, field, obj)
 		case "message":

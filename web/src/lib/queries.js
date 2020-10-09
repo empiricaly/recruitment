@@ -97,6 +97,7 @@ export const GET_RUN = gql`
             type
             duration
             msgArgs {
+              subject
               url
               message
               messageType

@@ -10,6 +10,7 @@ export const selectionTypes = [
 ];
 
 export const defaultMessageStepArgs = {
+  subject: "",
   url: "",
   message: "\n\n\n\n",
   messageType: "MARKDOWN",

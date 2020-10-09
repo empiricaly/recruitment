@@ -100,6 +100,11 @@ This is only valid for MTURK_HIT and MTURK_MESSAGE Steps.
 """
 input MessageStepArgsInput {
   """
+  The subject line of the email message to send.
+  """
+  subject: String
+
+  """
   URL that will be transformed into a redirect (proxy URL) through the Empirica
   Recruitment website and passed to the Message template. This URL is the final
   destination the worker will land on. Empirica Recruitment redirects
