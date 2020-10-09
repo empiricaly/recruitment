@@ -85,7 +85,7 @@
       title={valueOption && valueOption.title}
       class="{thin ? 'rounded pl-2 pr-8' : 'py-2 border rounded-md pl-3 pr-10'}
       cursor-default relative w-full border-gray-300 bg-white text-left
-      focus:outline-none focus:shadow-outline-blue focus:border-blue-300
+      focus:outline-none focus:shadow-outline focus:border-blue-300
       transition ease-in-out duration-150 sm:text-sm sm:leading-5">
       <span class="block truncate {empty && 'text-gray-400'}">
         {valueLabel}

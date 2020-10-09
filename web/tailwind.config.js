@@ -13,7 +13,7 @@ module.exports = {
       },
 
       boxShadow: {
-        outline: "0 0 0 3px #63B3ED",
+        outline: "0 0 0 3px rgba(156, 209, 204, 0.5)",
       },
 
       colors: {

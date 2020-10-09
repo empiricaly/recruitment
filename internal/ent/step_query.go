@@ -301,7 +301,7 @@ func (sq *StepQuery) WithTemplate(opts ...func(*TemplateQuery)) *StepQuery {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -327,7 +327,7 @@ func (sq *StepQuery) GroupBy(field string, fields ...string) *StepGroupBy {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
 //	client.Step.Query().

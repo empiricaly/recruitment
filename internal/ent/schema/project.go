@@ -11,13 +11,19 @@ type Project struct {
 	ent.Schema
 }
 
+// Mixin of the Project.
+func (Project) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		BaseMixin{},
+	}
+}
+
 // Fields of the Project.
 func (Project) Fields() []ent.Field {
-	return append(
-		append([]ent.Field{}, commonFields...),
+	return []ent.Field{
 		field.String("projectID"),
 		field.String("name"),
-	)
+	}
 }
 
 // Edges of the Project.

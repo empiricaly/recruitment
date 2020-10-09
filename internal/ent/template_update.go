@@ -32,7 +32,7 @@ func (tu *TemplateUpdate) Where(ps ...predicate.Template) *TemplateUpdate {
 	return tu
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (tu *TemplateUpdate) SetUpdatedAt(t time.Time) *TemplateUpdate {
 	tu.mutation.SetUpdatedAt(t)
 	return tu
@@ -513,7 +513,7 @@ type TemplateUpdateOne struct {
 	mutation *TemplateMutation
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (tuo *TemplateUpdateOne) SetUpdatedAt(t time.Time) *TemplateUpdateOne {
 	tuo.mutation.SetUpdatedAt(t)
 	return tuo

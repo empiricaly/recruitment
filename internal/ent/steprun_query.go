@@ -302,7 +302,7 @@ func (srq *StepRunQuery) WithRun(opts ...func(*RunQuery)) *StepRunQuery {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -328,7 +328,7 @@ func (srq *StepRunQuery) GroupBy(field string, fields ...string) *StepRunGroupBy
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
 //	client.StepRun.Query().

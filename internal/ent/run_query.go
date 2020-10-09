@@ -28,10 +28,11 @@ type RunQuery struct {
 	unique     []string
 	predicates []predicate.Run
 	// eager-loading edges.
-	withProject  *ProjectQuery
-	withTemplate *TemplateQuery
-	withSteps    *StepRunQuery
-	withFKs      bool
+	withProject     *ProjectQuery
+	withTemplate    *TemplateQuery
+	withCurrentStep *StepRunQuery
+	withSteps       *StepRunQuery
+	withFKs         bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -90,6 +91,24 @@ func (rq *RunQuery) QueryTemplate() *TemplateQuery {
 			sqlgraph.From(run.Table, run.FieldID, rq.sqlQuery()),
 			sqlgraph.To(template.Table, template.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, run.TemplateTable, run.TemplateColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCurrentStep chains the current query on the currentStep edge.
+func (rq *RunQuery) QueryCurrentStep() *StepRunQuery {
+	query := &StepRunQuery{config: rq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(run.Table, run.FieldID, rq.sqlQuery()),
+			sqlgraph.To(steprun.Table, steprun.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, run.CurrentStepTable, run.CurrentStepColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil
@@ -316,6 +335,17 @@ func (rq *RunQuery) WithTemplate(opts ...func(*TemplateQuery)) *RunQuery {
 	return rq
 }
 
+//  WithCurrentStep tells the query-builder to eager-loads the nodes that are connected to
+// the "currentStep" edge. The optional arguments used to configure the query builder of the edge.
+func (rq *RunQuery) WithCurrentStep(opts ...func(*StepRunQuery)) *RunQuery {
+	query := &StepRunQuery{config: rq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withCurrentStep = query
+	return rq
+}
+
 //  WithSteps tells the query-builder to eager-loads the nodes that are connected to
 // the "steps" edge. The optional arguments used to configure the query builder of the edge.
 func (rq *RunQuery) WithSteps(opts ...func(*StepRunQuery)) *RunQuery {
@@ -333,7 +363,7 @@ func (rq *RunQuery) WithSteps(opts ...func(*StepRunQuery)) *RunQuery {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -359,7 +389,7 @@ func (rq *RunQuery) GroupBy(field string, fields ...string) *RunGroupBy {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
 //	client.Run.Query().
@@ -394,13 +424,14 @@ func (rq *RunQuery) sqlAll(ctx context.Context) ([]*Run, error) {
 		nodes       = []*Run{}
 		withFKs     = rq.withFKs
 		_spec       = rq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			rq.withProject != nil,
 			rq.withTemplate != nil,
+			rq.withCurrentStep != nil,
 			rq.withSteps != nil,
 		}
 	)
-	if rq.withProject != nil {
+	if rq.withProject != nil || rq.withCurrentStep != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -480,6 +511,31 @@ func (rq *RunQuery) sqlAll(ctx context.Context) ([]*Run, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "run_template" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Template = n
+		}
+	}
+
+	if query := rq.withCurrentStep; query != nil {
+		ids := make([]string, 0, len(nodes))
+		nodeids := make(map[string][]*Run)
+		for i := range nodes {
+			if fk := nodes[i].run_current_step; fk != nil {
+				ids = append(ids, *fk)
+				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			}
+		}
+		query.Where(steprun.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "run_current_step" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.CurrentStep = n
+			}
 		}
 	}
 

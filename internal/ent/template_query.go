@@ -364,7 +364,7 @@ func (tq *TemplateQuery) WithRun(opts ...func(*RunQuery)) *TemplateQuery {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -390,7 +390,7 @@ func (tq *TemplateQuery) GroupBy(field string, fields ...string) *TemplateGroupB
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
 //	client.Template.Query().

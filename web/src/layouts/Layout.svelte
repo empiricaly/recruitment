@@ -178,16 +178,24 @@
     <div class="hidden md:flex md:flex-shrink-0">
       <div class="flex flex-col w-64 bg-gray-800">
         <div class="h-0 flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-          <div class="flex items-center flex-shrink-0 px-4 text-white">
+          <div class="flex items-center flex-shrink-0 px-4 pt-8 pb-2 text-white">
             <Logo />
           </div>
-          <Link
+          <!-- <Link
             to="/projects"
             className="mt-5 flex items-center flex-shrink-0 px-4 text-white py-2
             bg-gray-700 font-medium hover:text-gray-200">
             {result.data.project.name}
+          </Link> -->
+          <Link
+            to="/projects"
+            className="mt-5 mx-4">
+            <div class="items-center flex flex-shrink-0 px-4 rounded text-white py-2
+            bg-gray-700 font-medium hover:text-gray-200">
+            {result.data.project.name}
+          </div>  
           </Link>
-          <nav class="mt-3 flex-1 px-2 bg-gray-800">
+          <nav class="mt-6 flex-1 px-2 bg-gray-800">
             {#each menuitems as item}
               <Link
                 to={item.path}
@@ -293,5 +301,6 @@
     </div>
   </div>
 {:catch error}
-  Error loading Project: {error}
+  Error loading Project:
+  {error}
 {/await}

@@ -11,15 +11,20 @@ type StepRun struct {
 	ent.Schema
 }
 
+// Mixin of the StepRun.
+func (StepRun) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		BaseMixin{},
+		StatusMixin{},
+	}
+}
+
 // Fields of the StepRun.
 func (StepRun) Fields() []ent.Field {
-	return append(
-		append([]ent.Field{}, commonFields...),
-		field.Time("startAt"),
-		field.Time("endedAt"),
+	return []ent.Field{
 		field.Int("participantsCount"),
 		field.String("hitID").Optional(),
-	)
+	}
 }
 
 // Edges of the StepRun.

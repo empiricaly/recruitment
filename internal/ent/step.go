@@ -18,10 +18,10 @@ type Step struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID string `json:"id,omitempty"`
-	// CreatedAt holds the value of the "createdAt" field.
-	CreatedAt time.Time `json:"createdAt,omitempty"`
-	// UpdatedAt holds the value of the "updatedAt" field.
-	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Type holds the value of the "type" field.
 	Type step.Type `json:"type,omitempty"`
 	// Index holds the value of the "index" field.
@@ -84,8 +84,8 @@ func (e StepEdges) TemplateOrErr() (*Template, error) {
 func (*Step) scanValues() []interface{} {
 	return []interface{}{
 		&sql.NullString{}, // id
-		&sql.NullTime{},   // createdAt
-		&sql.NullTime{},   // updatedAt
+		&sql.NullTime{},   // created_at
+		&sql.NullTime{},   // updated_at
 		&sql.NullString{}, // type
 		&sql.NullInt64{},  // index
 		&sql.NullInt64{},  // duration
@@ -116,12 +116,12 @@ func (s *Step) assignValues(values ...interface{}) error {
 	}
 	values = values[1:]
 	if value, ok := values[0].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field createdAt", values[0])
+		return fmt.Errorf("unexpected type %T for field created_at", values[0])
 	} else if value.Valid {
 		s.CreatedAt = value.Time
 	}
 	if value, ok := values[1].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field updatedAt", values[1])
+		return fmt.Errorf("unexpected type %T for field updated_at", values[1])
 	} else if value.Valid {
 		s.UpdatedAt = value.Time
 	}
@@ -206,9 +206,9 @@ func (s *Step) String() string {
 	var builder strings.Builder
 	builder.WriteString("Step(")
 	builder.WriteString(fmt.Sprintf("id=%v", s.ID))
-	builder.WriteString(", createdAt=")
+	builder.WriteString(", created_at=")
 	builder.WriteString(s.CreatedAt.Format(time.ANSIC))
-	builder.WriteString(", updatedAt=")
+	builder.WriteString(", updated_at=")
 	builder.WriteString(s.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", type=")
 	builder.WriteString(fmt.Sprintf("%v", s.Type))

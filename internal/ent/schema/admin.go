@@ -11,13 +11,19 @@ type Admin struct {
 	ent.Schema
 }
 
+// Mixin of the Admin.
+func (Admin) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		BaseMixin{},
+	}
+}
+
 // Fields of the Admin.
 func (Admin) Fields() []ent.Field {
-	return append(
-		append([]ent.Field{}, commonFields...),
+	return []ent.Field{
 		field.String("name"),
 		field.String("username"),
-	)
+	}
 }
 
 // Edges of the Admin.

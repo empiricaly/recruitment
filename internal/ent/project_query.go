@@ -333,7 +333,7 @@ func (pq *ProjectQuery) WithOwner(opts ...func(*AdminQuery)) *ProjectQuery {
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -359,7 +359,7 @@ func (pq *ProjectQuery) GroupBy(field string, fields ...string) *ProjectGroupBy 
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
 //	client.Project.Query().

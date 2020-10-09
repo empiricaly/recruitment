@@ -52,7 +52,7 @@ func Run(ctx context.Context, config *Config) (err error) {
 		return errors.Wrap(err, "could not initialize metrics")
 	}
 
-	s.storeConn, err = storage.Connect(config.Store)
+	s.storeConn, err = storage.Connect(ctx, config.Store)
 	if err != nil {
 		return errors.Wrap(err, "store err")
 	}

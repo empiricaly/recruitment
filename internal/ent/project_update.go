@@ -31,7 +31,7 @@ func (pu *ProjectUpdate) Where(ps ...predicate.Project) *ProjectUpdate {
 	return pu
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (pu *ProjectUpdate) SetUpdatedAt(t time.Time) *ProjectUpdate {
 	pu.mutation.SetUpdatedAt(t)
 	return pu
@@ -363,7 +363,7 @@ type ProjectUpdateOne struct {
 	mutation *ProjectMutation
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (puo *ProjectUpdateOne) SetUpdatedAt(t time.Time) *ProjectUpdateOne {
 	puo.mutation.SetUpdatedAt(t)
 	return puo

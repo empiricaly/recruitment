@@ -30,7 +30,7 @@ func (au *AdminUpdate) Where(ps ...predicate.Admin) *AdminUpdate {
 	return au
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (au *AdminUpdate) SetUpdatedAt(t time.Time) *AdminUpdate {
 	au.mutation.SetUpdatedAt(t)
 	return au
@@ -302,7 +302,7 @@ type AdminUpdateOne struct {
 	mutation *AdminMutation
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (auo *AdminUpdateOne) SetUpdatedAt(t time.Time) *AdminUpdateOne {
 	auo.mutation.SetUpdatedAt(t)
 	return auo

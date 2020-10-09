@@ -22,13 +22,13 @@ type AdminCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the createdAt field.
+// SetCreatedAt sets the created_at field.
 func (ac *AdminCreate) SetCreatedAt(t time.Time) *AdminCreate {
 	ac.mutation.SetCreatedAt(t)
 	return ac
 }
 
-// SetNillableCreatedAt sets the createdAt field if the given value is not nil.
+// SetNillableCreatedAt sets the created_at field if the given value is not nil.
 func (ac *AdminCreate) SetNillableCreatedAt(t *time.Time) *AdminCreate {
 	if t != nil {
 		ac.SetCreatedAt(*t)
@@ -36,13 +36,13 @@ func (ac *AdminCreate) SetNillableCreatedAt(t *time.Time) *AdminCreate {
 	return ac
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (ac *AdminCreate) SetUpdatedAt(t time.Time) *AdminCreate {
 	ac.mutation.SetUpdatedAt(t)
 	return ac
 }
 
-// SetNillableUpdatedAt sets the updatedAt field if the given value is not nil.
+// SetNillableUpdatedAt sets the updated_at field if the given value is not nil.
 func (ac *AdminCreate) SetNillableUpdatedAt(t *time.Time) *AdminCreate {
 	if t != nil {
 		ac.SetUpdatedAt(*t)
@@ -158,6 +158,11 @@ func (ac *AdminCreate) preSave() error {
 	}
 	if _, ok := ac.mutation.Username(); !ok {
 		return &ValidationError{Name: "username", err: errors.New("ent: missing required field \"username\"")}
+	}
+	if v, ok := ac.mutation.ID(); ok {
+		if err := admin.IDValidator(v); err != nil {
+			return &ValidationError{Name: "id", err: fmt.Errorf("ent: validator failed for field \"id\": %w", err)}
+		}
 	}
 	return nil
 }

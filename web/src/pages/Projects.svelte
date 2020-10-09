@@ -10,17 +10,16 @@
 </script>
 
 <script>
-  import { query, mutate } from "svelte-apollo";
-  import { client } from "../lib/apollo";
-  import { CREATE_PROJECT, GET_PROJECTS } from "../lib/queries";
+  import { mutate, query } from "svelte-apollo";
+  import Button from "../components/base/Button.svelte";
+  import Callout from "../components/base/Callout.svelte";
+  import Input from "../components/base/Input.svelte";
+  import Label from "../components/base/Label.svelte";
+  import LinkButton from "../components/base/LinkButton.svelte";
   import { notify } from "../components/overlays/Notification.svelte";
   import ProjectLine from "../components/projects/ProjectLine.svelte";
-  import Label from "../components/base/Label.svelte";
-  import Input from "../components/base/Input.svelte";
-  import Button from "../components/base/Button.svelte";
-  import Link from "../components/base/Link.svelte";
-  import LinkButton from "../components/base/LinkButton.svelte";
-  import Callout from "../components/base/Callout.svelte";
+  import { client } from "../lib/apollo";
+  import { CREATE_PROJECT, GET_PROJECTS } from "../lib/queries";
 
   let newProject = false;
   let name = "";
@@ -72,7 +71,9 @@
     {#if result.data.projects.length === 0}
       <div class="w-64 px-4 py-4">
         <Callout color="yellow">
-          You have no projects yet. <br /> Create one now!
+          You have no projects yet.
+          <br />
+          Create one now!
         </Callout>
       </div>
     {/if}
@@ -129,7 +130,7 @@
       {:else}
         <div class="flex h-full overflow-hidden items-center">
           <div class="max-h-full overflow-auto">
-            <div class="w-64 px-4 py-4">
+            <div class="w-96 px-8 py-4">
               <h1 class="font-semibold pl-2">Projects</h1>
               <ul class="mt-3">
                 {#each result.data.projects as project}
@@ -137,19 +138,20 @@
                 {/each}
               </ul>
 
-              <div class="mt-4">
+              <div class="mt-8">
                 <Button
                   on:click={() => (newProject = true)}
                   text="Create a new Project"
+                  secondary
                   full />
               </div>
             </div>
           </div>
 
-          <div class="w-64 px-4 py-4">
+          <div class="w-96 px-8 py-4">
             <h1 class="font-semibold pl-2">Participants</h1>
             <div class="mt-3">There are 0 participants in the internal DB.</div>
-            <div class="mt-4">
+            <div class="mt-8">
               <LinkButton to="/participants" secondary>
                 View Participants
               </LinkButton>
@@ -159,6 +161,7 @@
       {/if}
     </div>
   {:catch error}
-    Error loading Projects: {error}
+    Error loading Projects:
+    {error}
   {/await}
 </main>

@@ -17,10 +17,10 @@ type Project struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID string `json:"id,omitempty"`
-	// CreatedAt holds the value of the "createdAt" field.
-	CreatedAt time.Time `json:"createdAt,omitempty"`
-	// UpdatedAt holds the value of the "updatedAt" field.
-	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// ProjectID holds the value of the "projectID" field.
 	ProjectID string `json:"projectID,omitempty"`
 	// Name holds the value of the "name" field.
@@ -80,8 +80,8 @@ func (e ProjectEdges) OwnerOrErr() (*Admin, error) {
 func (*Project) scanValues() []interface{} {
 	return []interface{}{
 		&sql.NullString{}, // id
-		&sql.NullTime{},   // createdAt
-		&sql.NullTime{},   // updatedAt
+		&sql.NullTime{},   // created_at
+		&sql.NullTime{},   // updated_at
 		&sql.NullString{}, // projectID
 		&sql.NullString{}, // name
 	}
@@ -107,12 +107,12 @@ func (pr *Project) assignValues(values ...interface{}) error {
 	}
 	values = values[1:]
 	if value, ok := values[0].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field createdAt", values[0])
+		return fmt.Errorf("unexpected type %T for field created_at", values[0])
 	} else if value.Valid {
 		pr.CreatedAt = value.Time
 	}
 	if value, ok := values[1].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field updatedAt", values[1])
+		return fmt.Errorf("unexpected type %T for field updated_at", values[1])
 	} else if value.Valid {
 		pr.UpdatedAt = value.Time
 	}
@@ -176,9 +176,9 @@ func (pr *Project) String() string {
 	var builder strings.Builder
 	builder.WriteString("Project(")
 	builder.WriteString(fmt.Sprintf("id=%v", pr.ID))
-	builder.WriteString(", createdAt=")
+	builder.WriteString(", created_at=")
 	builder.WriteString(pr.CreatedAt.Format(time.ANSIC))
-	builder.WriteString(", updatedAt=")
+	builder.WriteString(", updated_at=")
 	builder.WriteString(pr.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", projectID=")
 	builder.WriteString(pr.ProjectID)

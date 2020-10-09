@@ -23,13 +23,13 @@ type RunCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the createdAt field.
+// SetCreatedAt sets the created_at field.
 func (rc *RunCreate) SetCreatedAt(t time.Time) *RunCreate {
 	rc.mutation.SetCreatedAt(t)
 	return rc
 }
 
-// SetNillableCreatedAt sets the createdAt field if the given value is not nil.
+// SetNillableCreatedAt sets the created_at field if the given value is not nil.
 func (rc *RunCreate) SetNillableCreatedAt(t *time.Time) *RunCreate {
 	if t != nil {
 		rc.SetCreatedAt(*t)
@@ -37,13 +37,13 @@ func (rc *RunCreate) SetNillableCreatedAt(t *time.Time) *RunCreate {
 	return rc
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (rc *RunCreate) SetUpdatedAt(t time.Time) *RunCreate {
 	rc.mutation.SetUpdatedAt(t)
 	return rc
 }
 
-// SetNillableUpdatedAt sets the updatedAt field if the given value is not nil.
+// SetNillableUpdatedAt sets the updated_at field if the given value is not nil.
 func (rc *RunCreate) SetNillableUpdatedAt(t *time.Time) *RunCreate {
 	if t != nil {
 		rc.SetUpdatedAt(*t)
@@ -51,29 +51,9 @@ func (rc *RunCreate) SetNillableUpdatedAt(t *time.Time) *RunCreate {
 	return rc
 }
 
-// SetName sets the name field.
-func (rc *RunCreate) SetName(s string) *RunCreate {
-	rc.mutation.SetName(s)
-	return rc
-}
-
 // SetStatus sets the status field.
 func (rc *RunCreate) SetStatus(r run.Status) *RunCreate {
 	rc.mutation.SetStatus(r)
-	return rc
-}
-
-// SetStartAt sets the startAt field.
-func (rc *RunCreate) SetStartAt(t time.Time) *RunCreate {
-	rc.mutation.SetStartAt(t)
-	return rc
-}
-
-// SetNillableStartAt sets the startAt field if the given value is not nil.
-func (rc *RunCreate) SetNillableStartAt(t *time.Time) *RunCreate {
-	if t != nil {
-		rc.SetStartAt(*t)
-	}
 	return rc
 }
 
@@ -101,6 +81,26 @@ func (rc *RunCreate) SetEndedAt(t time.Time) *RunCreate {
 func (rc *RunCreate) SetNillableEndedAt(t *time.Time) *RunCreate {
 	if t != nil {
 		rc.SetEndedAt(*t)
+	}
+	return rc
+}
+
+// SetName sets the name field.
+func (rc *RunCreate) SetName(s string) *RunCreate {
+	rc.mutation.SetName(s)
+	return rc
+}
+
+// SetStartAt sets the startAt field.
+func (rc *RunCreate) SetStartAt(t time.Time) *RunCreate {
+	rc.mutation.SetStartAt(t)
+	return rc
+}
+
+// SetNillableStartAt sets the startAt field if the given value is not nil.
+func (rc *RunCreate) SetNillableStartAt(t *time.Time) *RunCreate {
+	if t != nil {
+		rc.SetStartAt(*t)
 	}
 	return rc
 }
@@ -153,6 +153,25 @@ func (rc *RunCreate) SetTemplateID(id string) *RunCreate {
 // SetTemplate sets the template edge to Template.
 func (rc *RunCreate) SetTemplate(t *Template) *RunCreate {
 	return rc.SetTemplateID(t.ID)
+}
+
+// SetCurrentStepID sets the currentStep edge to StepRun by id.
+func (rc *RunCreate) SetCurrentStepID(id string) *RunCreate {
+	rc.mutation.SetCurrentStepID(id)
+	return rc
+}
+
+// SetNillableCurrentStepID sets the currentStep edge to StepRun by id if the given value is not nil.
+func (rc *RunCreate) SetNillableCurrentStepID(id *string) *RunCreate {
+	if id != nil {
+		rc = rc.SetCurrentStepID(*id)
+	}
+	return rc
+}
+
+// SetCurrentStep sets the currentStep edge to StepRun.
+func (rc *RunCreate) SetCurrentStep(s *StepRun) *RunCreate {
+	return rc.SetCurrentStepID(s.ID)
 }
 
 // AddStepIDs adds the steps edge to StepRun by ids.
@@ -225,15 +244,20 @@ func (rc *RunCreate) preSave() error {
 		v := run.DefaultUpdatedAt()
 		rc.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := rc.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
-	}
 	if _, ok := rc.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New("ent: missing required field \"status\"")}
 	}
 	if v, ok := rc.mutation.Status(); ok {
 		if err := run.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
+		}
+	}
+	if _, ok := rc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
+	}
+	if v, ok := rc.mutation.ID(); ok {
+		if err := run.IDValidator(v); err != nil {
+			return &ValidationError{Name: "id", err: fmt.Errorf("ent: validator failed for field \"id\": %w", err)}
 		}
 	}
 	if _, ok := rc.mutation.TemplateID(); !ok {
@@ -284,14 +308,6 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 		})
 		r.UpdatedAt = value
 	}
-	if value, ok := rc.mutation.Name(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: run.FieldName,
-		})
-		r.Name = value
-	}
 	if value, ok := rc.mutation.Status(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeEnum,
@@ -300,21 +316,13 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 		})
 		r.Status = value
 	}
-	if value, ok := rc.mutation.StartAt(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeTime,
-			Value:  value,
-			Column: run.FieldStartAt,
-		})
-		r.StartAt = value
-	}
 	if value, ok := rc.mutation.StartedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
 			Column: run.FieldStartedAt,
 		})
-		r.StartedAt = value
+		r.StartedAt = &value
 	}
 	if value, ok := rc.mutation.EndedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -322,7 +330,23 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: run.FieldEndedAt,
 		})
-		r.EndedAt = value
+		r.EndedAt = &value
+	}
+	if value, ok := rc.mutation.Name(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: run.FieldName,
+		})
+		r.Name = value
+	}
+	if value, ok := rc.mutation.StartAt(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: run.FieldStartAt,
+		})
+		r.StartAt = &value
 	}
 	if value, ok := rc.mutation.Error(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -330,7 +354,7 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: run.FieldError,
 		})
-		r.Error = value
+		r.Error = &value
 	}
 	if nodes := rc.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -362,6 +386,25 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: template.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rc.mutation.CurrentStepIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   run.CurrentStepTable,
+			Columns: []string{run.CurrentStepColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
 				},
 			},
 		}

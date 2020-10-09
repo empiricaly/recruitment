@@ -12,20 +12,20 @@ const (
 	Label = "run"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldCreatedAt holds the string denoting the createdat field in the database.
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
-	// FieldUpdatedAt holds the string denoting the updatedat field in the database.
+	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// FieldName holds the string denoting the name field in the database.
-	FieldName = "name"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
-	// FieldStartAt holds the string denoting the startat field in the database.
-	FieldStartAt = "start_at"
 	// FieldStartedAt holds the string denoting the startedat field in the database.
 	FieldStartedAt = "started_at"
 	// FieldEndedAt holds the string denoting the endedat field in the database.
 	FieldEndedAt = "ended_at"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
+	// FieldStartAt holds the string denoting the startat field in the database.
+	FieldStartAt = "start_at"
 	// FieldError holds the string denoting the error field in the database.
 	FieldError = "error"
 
@@ -33,6 +33,8 @@ const (
 	EdgeProject = "project"
 	// EdgeTemplate holds the string denoting the template edge name in mutations.
 	EdgeTemplate = "template"
+	// EdgeCurrentStep holds the string denoting the currentstep edge name in mutations.
+	EdgeCurrentStep = "currentStep"
 	// EdgeSteps holds the string denoting the steps edge name in mutations.
 	EdgeSteps = "steps"
 
@@ -52,6 +54,13 @@ const (
 	TemplateInverseTable = "templates"
 	// TemplateColumn is the table column denoting the template relation/edge.
 	TemplateColumn = "run_template"
+	// CurrentStepTable is the table the holds the currentStep relation/edge.
+	CurrentStepTable = "runs"
+	// CurrentStepInverseTable is the table name for the StepRun entity.
+	// It exists in this package in order to avoid circular dependency with the "steprun" package.
+	CurrentStepInverseTable = "step_runs"
+	// CurrentStepColumn is the table column denoting the currentStep relation/edge.
+	CurrentStepColumn = "run_current_step"
 	// StepsTable is the table the holds the steps relation/edge.
 	StepsTable = "step_runs"
 	// StepsInverseTable is the table name for the StepRun entity.
@@ -66,26 +75,29 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-	FieldName,
 	FieldStatus,
-	FieldStartAt,
 	FieldStartedAt,
 	FieldEndedAt,
+	FieldName,
+	FieldStartAt,
 	FieldError,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the Run type.
 var ForeignKeys = []string{
 	"project_runs",
+	"run_current_step",
 }
 
 var (
-	// DefaultCreatedAt holds the default value on creation for the createdAt field.
+	// DefaultCreatedAt holds the default value on creation for the created_at field.
 	DefaultCreatedAt func() time.Time
-	// DefaultUpdatedAt holds the default value on creation for the updatedAt field.
+	// DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	DefaultUpdatedAt func() time.Time
-	// UpdateDefaultUpdatedAt holds the default value on update for the updatedAt field.
+	// UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// IDValidator is a validator for the "id" field. It is called by the builders before save.
+	IDValidator func(string) error
 )
 
 // Status defines the type for the status enum field.

@@ -42,8 +42,8 @@ type AdminMutation struct {
 	op               Op
 	typ              string
 	id               *string
-	createdAt        *time.Time
-	updatedAt        *time.Time
+	created_at       *time.Time
+	updated_at       *time.Time
 	name             *string
 	username         *string
 	clearedFields    map[string]struct{}
@@ -140,21 +140,21 @@ func (m *AdminMutation) ID() (id string, exists bool) {
 	return *m.id, true
 }
 
-// SetCreatedAt sets the createdAt field.
+// SetCreatedAt sets the created_at field.
 func (m *AdminMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
+	m.created_at = &t
 }
 
-// CreatedAt returns the createdAt value in the mutation.
+// CreatedAt returns the created_at value in the mutation.
 func (m *AdminMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
+	v := m.created_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCreatedAt returns the old createdAt value of the Admin.
+// OldCreatedAt returns the old created_at value of the Admin.
 // If the Admin object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
@@ -172,26 +172,26 @@ func (m *AdminMutation) OldCreatedAt(ctx context.Context) (v time.Time, err erro
 	return oldValue.CreatedAt, nil
 }
 
-// ResetCreatedAt reset all changes of the "createdAt" field.
+// ResetCreatedAt reset all changes of the "created_at" field.
 func (m *AdminMutation) ResetCreatedAt() {
-	m.createdAt = nil
+	m.created_at = nil
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (m *AdminMutation) SetUpdatedAt(t time.Time) {
-	m.updatedAt = &t
+	m.updated_at = &t
 }
 
-// UpdatedAt returns the updatedAt value in the mutation.
+// UpdatedAt returns the updated_at value in the mutation.
 func (m *AdminMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updatedAt
+	v := m.updated_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldUpdatedAt returns the old updatedAt value of the Admin.
+// OldUpdatedAt returns the old updated_at value of the Admin.
 // If the Admin object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
@@ -209,9 +209,9 @@ func (m *AdminMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err erro
 	return oldValue.UpdatedAt, nil
 }
 
-// ResetUpdatedAt reset all changes of the "updatedAt" field.
+// ResetUpdatedAt reset all changes of the "updated_at" field.
 func (m *AdminMutation) ResetUpdatedAt() {
-	m.updatedAt = nil
+	m.updated_at = nil
 }
 
 // SetName sets the name field.
@@ -387,10 +387,10 @@ func (m *AdminMutation) Type() string {
 // fields that were in/decremented, call AddedFields().
 func (m *AdminMutation) Fields() []string {
 	fields := make([]string, 0, 4)
-	if m.createdAt != nil {
+	if m.created_at != nil {
 		fields = append(fields, admin.FieldCreatedAt)
 	}
-	if m.updatedAt != nil {
+	if m.updated_at != nil {
 		fields = append(fields, admin.FieldUpdatedAt)
 	}
 	if m.name != nil {
@@ -646,8 +646,8 @@ type ProjectMutation struct {
 	op               Op
 	typ              string
 	id               *string
-	createdAt        *time.Time
-	updatedAt        *time.Time
+	created_at       *time.Time
+	updated_at       *time.Time
 	projectID        *string
 	name             *string
 	clearedFields    map[string]struct{}
@@ -746,21 +746,21 @@ func (m *ProjectMutation) ID() (id string, exists bool) {
 	return *m.id, true
 }
 
-// SetCreatedAt sets the createdAt field.
+// SetCreatedAt sets the created_at field.
 func (m *ProjectMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
+	m.created_at = &t
 }
 
-// CreatedAt returns the createdAt value in the mutation.
+// CreatedAt returns the created_at value in the mutation.
 func (m *ProjectMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
+	v := m.created_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCreatedAt returns the old createdAt value of the Project.
+// OldCreatedAt returns the old created_at value of the Project.
 // If the Project object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
@@ -778,26 +778,26 @@ func (m *ProjectMutation) OldCreatedAt(ctx context.Context) (v time.Time, err er
 	return oldValue.CreatedAt, nil
 }
 
-// ResetCreatedAt reset all changes of the "createdAt" field.
+// ResetCreatedAt reset all changes of the "created_at" field.
 func (m *ProjectMutation) ResetCreatedAt() {
-	m.createdAt = nil
+	m.created_at = nil
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (m *ProjectMutation) SetUpdatedAt(t time.Time) {
-	m.updatedAt = &t
+	m.updated_at = &t
 }
 
-// UpdatedAt returns the updatedAt value in the mutation.
+// UpdatedAt returns the updated_at value in the mutation.
 func (m *ProjectMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updatedAt
+	v := m.updated_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldUpdatedAt returns the old updatedAt value of the Project.
+// OldUpdatedAt returns the old updated_at value of the Project.
 // If the Project object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
@@ -815,9 +815,9 @@ func (m *ProjectMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err er
 	return oldValue.UpdatedAt, nil
 }
 
-// ResetUpdatedAt reset all changes of the "updatedAt" field.
+// ResetUpdatedAt reset all changes of the "updated_at" field.
 func (m *ProjectMutation) ResetUpdatedAt() {
-	m.updatedAt = nil
+	m.updated_at = nil
 }
 
 // SetProjectID sets the projectID field.
@@ -1032,10 +1032,10 @@ func (m *ProjectMutation) Type() string {
 // fields that were in/decremented, call AddedFields().
 func (m *ProjectMutation) Fields() []string {
 	fields := make([]string, 0, 4)
-	if m.createdAt != nil {
+	if m.created_at != nil {
 		fields = append(fields, project.FieldCreatedAt)
 	}
-	if m.updatedAt != nil {
+	if m.updated_at != nil {
 		fields = append(fields, project.FieldUpdatedAt)
 	}
 	if m.projectID != nil {
@@ -1306,26 +1306,28 @@ func (m *ProjectMutation) ResetEdge(name string) error {
 // nodes in the graph.
 type RunMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *string
-	createdAt       *time.Time
-	updatedAt       *time.Time
-	name            *string
-	status          *run.Status
-	startAt         *time.Time
-	startedAt       *time.Time
-	endedAt         *time.Time
-	error           *string
-	clearedFields   map[string]struct{}
-	project         *string
-	clearedproject  bool
-	template        *string
-	clearedtemplate bool
-	steps           map[string]struct{}
-	removedsteps    map[string]struct{}
-	done            bool
-	oldValue        func(context.Context) (*Run, error)
+	op                 Op
+	typ                string
+	id                 *string
+	created_at         *time.Time
+	updated_at         *time.Time
+	status             *run.Status
+	startedAt          *time.Time
+	endedAt            *time.Time
+	name               *string
+	startAt            *time.Time
+	error              *string
+	clearedFields      map[string]struct{}
+	project            *string
+	clearedproject     bool
+	template           *string
+	clearedtemplate    bool
+	currentStep        *string
+	clearedcurrentStep bool
+	steps              map[string]struct{}
+	removedsteps       map[string]struct{}
+	done               bool
+	oldValue           func(context.Context) (*Run, error)
 }
 
 var _ ent.Mutation = (*RunMutation)(nil)
@@ -1413,21 +1415,21 @@ func (m *RunMutation) ID() (id string, exists bool) {
 	return *m.id, true
 }
 
-// SetCreatedAt sets the createdAt field.
+// SetCreatedAt sets the created_at field.
 func (m *RunMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
+	m.created_at = &t
 }
 
-// CreatedAt returns the createdAt value in the mutation.
+// CreatedAt returns the created_at value in the mutation.
 func (m *RunMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
+	v := m.created_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCreatedAt returns the old createdAt value of the Run.
+// OldCreatedAt returns the old created_at value of the Run.
 // If the Run object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
@@ -1445,26 +1447,26 @@ func (m *RunMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error)
 	return oldValue.CreatedAt, nil
 }
 
-// ResetCreatedAt reset all changes of the "createdAt" field.
+// ResetCreatedAt reset all changes of the "created_at" field.
 func (m *RunMutation) ResetCreatedAt() {
-	m.createdAt = nil
+	m.created_at = nil
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (m *RunMutation) SetUpdatedAt(t time.Time) {
-	m.updatedAt = &t
+	m.updated_at = &t
 }
 
-// UpdatedAt returns the updatedAt value in the mutation.
+// UpdatedAt returns the updated_at value in the mutation.
 func (m *RunMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updatedAt
+	v := m.updated_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldUpdatedAt returns the old updatedAt value of the Run.
+// OldUpdatedAt returns the old updated_at value of the Run.
 // If the Run object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
@@ -1482,46 +1484,9 @@ func (m *RunMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error)
 	return oldValue.UpdatedAt, nil
 }
 
-// ResetUpdatedAt reset all changes of the "updatedAt" field.
+// ResetUpdatedAt reset all changes of the "updated_at" field.
 func (m *RunMutation) ResetUpdatedAt() {
-	m.updatedAt = nil
-}
-
-// SetName sets the name field.
-func (m *RunMutation) SetName(s string) {
-	m.name = &s
-}
-
-// Name returns the name value in the mutation.
-func (m *RunMutation) Name() (r string, exists bool) {
-	v := m.name
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldName returns the old name value of the Run.
-// If the Run object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *RunMutation) OldName(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldName is allowed only on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldName requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldName: %w", err)
-	}
-	return oldValue.Name, nil
-}
-
-// ResetName reset all changes of the "name" field.
-func (m *RunMutation) ResetName() {
-	m.name = nil
+	m.updated_at = nil
 }
 
 // SetStatus sets the status field.
@@ -1561,56 +1526,6 @@ func (m *RunMutation) ResetStatus() {
 	m.status = nil
 }
 
-// SetStartAt sets the startAt field.
-func (m *RunMutation) SetStartAt(t time.Time) {
-	m.startAt = &t
-}
-
-// StartAt returns the startAt value in the mutation.
-func (m *RunMutation) StartAt() (r time.Time, exists bool) {
-	v := m.startAt
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldStartAt returns the old startAt value of the Run.
-// If the Run object wasn't provided to the builder, the object is fetched
-// from the database.
-// An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *RunMutation) OldStartAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldStartAt is allowed only on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldStartAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldStartAt: %w", err)
-	}
-	return oldValue.StartAt, nil
-}
-
-// ClearStartAt clears the value of startAt.
-func (m *RunMutation) ClearStartAt() {
-	m.startAt = nil
-	m.clearedFields[run.FieldStartAt] = struct{}{}
-}
-
-// StartAtCleared returns if the field startAt was cleared in this mutation.
-func (m *RunMutation) StartAtCleared() bool {
-	_, ok := m.clearedFields[run.FieldStartAt]
-	return ok
-}
-
-// ResetStartAt reset all changes of the "startAt" field.
-func (m *RunMutation) ResetStartAt() {
-	m.startAt = nil
-	delete(m.clearedFields, run.FieldStartAt)
-}
-
 // SetStartedAt sets the startedAt field.
 func (m *RunMutation) SetStartedAt(t time.Time) {
 	m.startedAt = &t
@@ -1629,7 +1544,7 @@ func (m *RunMutation) StartedAt() (r time.Time, exists bool) {
 // If the Run object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *RunMutation) OldStartedAt(ctx context.Context) (v time.Time, err error) {
+func (m *RunMutation) OldStartedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldStartedAt is allowed only on UpdateOne operations")
 	}
@@ -1679,7 +1594,7 @@ func (m *RunMutation) EndedAt() (r time.Time, exists bool) {
 // If the Run object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *RunMutation) OldEndedAt(ctx context.Context) (v time.Time, err error) {
+func (m *RunMutation) OldEndedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldEndedAt is allowed only on UpdateOne operations")
 	}
@@ -1711,6 +1626,93 @@ func (m *RunMutation) ResetEndedAt() {
 	delete(m.clearedFields, run.FieldEndedAt)
 }
 
+// SetName sets the name field.
+func (m *RunMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the name value in the mutation.
+func (m *RunMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old name value of the Run.
+// If the Run object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *RunMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldName is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName reset all changes of the "name" field.
+func (m *RunMutation) ResetName() {
+	m.name = nil
+}
+
+// SetStartAt sets the startAt field.
+func (m *RunMutation) SetStartAt(t time.Time) {
+	m.startAt = &t
+}
+
+// StartAt returns the startAt value in the mutation.
+func (m *RunMutation) StartAt() (r time.Time, exists bool) {
+	v := m.startAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartAt returns the old startAt value of the Run.
+// If the Run object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *RunMutation) OldStartAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldStartAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldStartAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartAt: %w", err)
+	}
+	return oldValue.StartAt, nil
+}
+
+// ClearStartAt clears the value of startAt.
+func (m *RunMutation) ClearStartAt() {
+	m.startAt = nil
+	m.clearedFields[run.FieldStartAt] = struct{}{}
+}
+
+// StartAtCleared returns if the field startAt was cleared in this mutation.
+func (m *RunMutation) StartAtCleared() bool {
+	_, ok := m.clearedFields[run.FieldStartAt]
+	return ok
+}
+
+// ResetStartAt reset all changes of the "startAt" field.
+func (m *RunMutation) ResetStartAt() {
+	m.startAt = nil
+	delete(m.clearedFields, run.FieldStartAt)
+}
+
 // SetError sets the error field.
 func (m *RunMutation) SetError(s string) {
 	m.error = &s
@@ -1729,7 +1731,7 @@ func (m *RunMutation) Error() (r string, exists bool) {
 // If the Run object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *RunMutation) OldError(ctx context.Context) (v string, err error) {
+func (m *RunMutation) OldError(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldError is allowed only on UpdateOne operations")
 	}
@@ -1839,6 +1841,45 @@ func (m *RunMutation) ResetTemplate() {
 	m.clearedtemplate = false
 }
 
+// SetCurrentStepID sets the currentStep edge to StepRun by id.
+func (m *RunMutation) SetCurrentStepID(id string) {
+	m.currentStep = &id
+}
+
+// ClearCurrentStep clears the currentStep edge to StepRun.
+func (m *RunMutation) ClearCurrentStep() {
+	m.clearedcurrentStep = true
+}
+
+// CurrentStepCleared returns if the edge currentStep was cleared.
+func (m *RunMutation) CurrentStepCleared() bool {
+	return m.clearedcurrentStep
+}
+
+// CurrentStepID returns the currentStep id in the mutation.
+func (m *RunMutation) CurrentStepID() (id string, exists bool) {
+	if m.currentStep != nil {
+		return *m.currentStep, true
+	}
+	return
+}
+
+// CurrentStepIDs returns the currentStep ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// CurrentStepID instead. It exists only for internal usage by the builders.
+func (m *RunMutation) CurrentStepIDs() (ids []string) {
+	if id := m.currentStep; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCurrentStep reset all changes of the "currentStep" edge.
+func (m *RunMutation) ResetCurrentStep() {
+	m.currentStep = nil
+	m.clearedcurrentStep = false
+}
+
 // AddStepIDs adds the steps edge to StepRun by ids.
 func (m *RunMutation) AddStepIDs(ids ...string) {
 	if m.steps == nil {
@@ -1896,26 +1937,26 @@ func (m *RunMutation) Type() string {
 // fields that were in/decremented, call AddedFields().
 func (m *RunMutation) Fields() []string {
 	fields := make([]string, 0, 8)
-	if m.createdAt != nil {
+	if m.created_at != nil {
 		fields = append(fields, run.FieldCreatedAt)
 	}
-	if m.updatedAt != nil {
+	if m.updated_at != nil {
 		fields = append(fields, run.FieldUpdatedAt)
-	}
-	if m.name != nil {
-		fields = append(fields, run.FieldName)
 	}
 	if m.status != nil {
 		fields = append(fields, run.FieldStatus)
-	}
-	if m.startAt != nil {
-		fields = append(fields, run.FieldStartAt)
 	}
 	if m.startedAt != nil {
 		fields = append(fields, run.FieldStartedAt)
 	}
 	if m.endedAt != nil {
 		fields = append(fields, run.FieldEndedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, run.FieldName)
+	}
+	if m.startAt != nil {
+		fields = append(fields, run.FieldStartAt)
 	}
 	if m.error != nil {
 		fields = append(fields, run.FieldError)
@@ -1932,16 +1973,16 @@ func (m *RunMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case run.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case run.FieldName:
-		return m.Name()
 	case run.FieldStatus:
 		return m.Status()
-	case run.FieldStartAt:
-		return m.StartAt()
 	case run.FieldStartedAt:
 		return m.StartedAt()
 	case run.FieldEndedAt:
 		return m.EndedAt()
+	case run.FieldName:
+		return m.Name()
+	case run.FieldStartAt:
+		return m.StartAt()
 	case run.FieldError:
 		return m.Error()
 	}
@@ -1957,16 +1998,16 @@ func (m *RunMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldCreatedAt(ctx)
 	case run.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case run.FieldName:
-		return m.OldName(ctx)
 	case run.FieldStatus:
 		return m.OldStatus(ctx)
-	case run.FieldStartAt:
-		return m.OldStartAt(ctx)
 	case run.FieldStartedAt:
 		return m.OldStartedAt(ctx)
 	case run.FieldEndedAt:
 		return m.OldEndedAt(ctx)
+	case run.FieldName:
+		return m.OldName(ctx)
+	case run.FieldStartAt:
+		return m.OldStartAt(ctx)
 	case run.FieldError:
 		return m.OldError(ctx)
 	}
@@ -1992,26 +2033,12 @@ func (m *RunMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdatedAt(v)
 		return nil
-	case run.FieldName:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetName(v)
-		return nil
 	case run.FieldStatus:
 		v, ok := value.(run.Status)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
-		return nil
-	case run.FieldStartAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetStartAt(v)
 		return nil
 	case run.FieldStartedAt:
 		v, ok := value.(time.Time)
@@ -2026,6 +2053,20 @@ func (m *RunMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEndedAt(v)
+		return nil
+	case run.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case run.FieldStartAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartAt(v)
 		return nil
 	case run.FieldError:
 		v, ok := value.(string)
@@ -2064,14 +2105,14 @@ func (m *RunMutation) AddField(name string, value ent.Value) error {
 // during this mutation.
 func (m *RunMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(run.FieldStartAt) {
-		fields = append(fields, run.FieldStartAt)
-	}
 	if m.FieldCleared(run.FieldStartedAt) {
 		fields = append(fields, run.FieldStartedAt)
 	}
 	if m.FieldCleared(run.FieldEndedAt) {
 		fields = append(fields, run.FieldEndedAt)
+	}
+	if m.FieldCleared(run.FieldStartAt) {
+		fields = append(fields, run.FieldStartAt)
 	}
 	if m.FieldCleared(run.FieldError) {
 		fields = append(fields, run.FieldError)
@@ -2090,14 +2131,14 @@ func (m *RunMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *RunMutation) ClearField(name string) error {
 	switch name {
-	case run.FieldStartAt:
-		m.ClearStartAt()
-		return nil
 	case run.FieldStartedAt:
 		m.ClearStartedAt()
 		return nil
 	case run.FieldEndedAt:
 		m.ClearEndedAt()
+		return nil
+	case run.FieldStartAt:
+		m.ClearStartAt()
 		return nil
 	case run.FieldError:
 		m.ClearError()
@@ -2117,20 +2158,20 @@ func (m *RunMutation) ResetField(name string) error {
 	case run.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
-	case run.FieldName:
-		m.ResetName()
-		return nil
 	case run.FieldStatus:
 		m.ResetStatus()
-		return nil
-	case run.FieldStartAt:
-		m.ResetStartAt()
 		return nil
 	case run.FieldStartedAt:
 		m.ResetStartedAt()
 		return nil
 	case run.FieldEndedAt:
 		m.ResetEndedAt()
+		return nil
+	case run.FieldName:
+		m.ResetName()
+		return nil
+	case run.FieldStartAt:
+		m.ResetStartAt()
 		return nil
 	case run.FieldError:
 		m.ResetError()
@@ -2142,12 +2183,15 @@ func (m *RunMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *RunMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.project != nil {
 		edges = append(edges, run.EdgeProject)
 	}
 	if m.template != nil {
 		edges = append(edges, run.EdgeTemplate)
+	}
+	if m.currentStep != nil {
+		edges = append(edges, run.EdgeCurrentStep)
 	}
 	if m.steps != nil {
 		edges = append(edges, run.EdgeSteps)
@@ -2167,6 +2211,10 @@ func (m *RunMutation) AddedIDs(name string) []ent.Value {
 		if id := m.template; id != nil {
 			return []ent.Value{*id}
 		}
+	case run.EdgeCurrentStep:
+		if id := m.currentStep; id != nil {
+			return []ent.Value{*id}
+		}
 	case run.EdgeSteps:
 		ids := make([]ent.Value, 0, len(m.steps))
 		for id := range m.steps {
@@ -2180,7 +2228,7 @@ func (m *RunMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *RunMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedsteps != nil {
 		edges = append(edges, run.EdgeSteps)
 	}
@@ -2204,12 +2252,15 @@ func (m *RunMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *RunMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedproject {
 		edges = append(edges, run.EdgeProject)
 	}
 	if m.clearedtemplate {
 		edges = append(edges, run.EdgeTemplate)
+	}
+	if m.clearedcurrentStep {
+		edges = append(edges, run.EdgeCurrentStep)
 	}
 	return edges
 }
@@ -2222,6 +2273,8 @@ func (m *RunMutation) EdgeCleared(name string) bool {
 		return m.clearedproject
 	case run.EdgeTemplate:
 		return m.clearedtemplate
+	case run.EdgeCurrentStep:
+		return m.clearedcurrentStep
 	}
 	return false
 }
@@ -2235,6 +2288,9 @@ func (m *RunMutation) ClearEdge(name string) error {
 		return nil
 	case run.EdgeTemplate:
 		m.ClearTemplate()
+		return nil
+	case run.EdgeCurrentStep:
+		m.ClearCurrentStep()
 		return nil
 	}
 	return fmt.Errorf("unknown Run unique edge %s", name)
@@ -2251,6 +2307,9 @@ func (m *RunMutation) ResetEdge(name string) error {
 	case run.EdgeTemplate:
 		m.ResetTemplate()
 		return nil
+	case run.EdgeCurrentStep:
+		m.ResetCurrentStep()
+		return nil
 	case run.EdgeSteps:
 		m.ResetSteps()
 		return nil
@@ -2265,8 +2324,8 @@ type StepMutation struct {
 	op              Op
 	typ             string
 	id              *string
-	createdAt       *time.Time
-	updatedAt       *time.Time
+	created_at      *time.Time
+	updated_at      *time.Time
 	_type           *step.Type
 	index           *int
 	addindex        *int
@@ -2369,21 +2428,21 @@ func (m *StepMutation) ID() (id string, exists bool) {
 	return *m.id, true
 }
 
-// SetCreatedAt sets the createdAt field.
+// SetCreatedAt sets the created_at field.
 func (m *StepMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
+	m.created_at = &t
 }
 
-// CreatedAt returns the createdAt value in the mutation.
+// CreatedAt returns the created_at value in the mutation.
 func (m *StepMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
+	v := m.created_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCreatedAt returns the old createdAt value of the Step.
+// OldCreatedAt returns the old created_at value of the Step.
 // If the Step object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
@@ -2401,26 +2460,26 @@ func (m *StepMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error
 	return oldValue.CreatedAt, nil
 }
 
-// ResetCreatedAt reset all changes of the "createdAt" field.
+// ResetCreatedAt reset all changes of the "created_at" field.
 func (m *StepMutation) ResetCreatedAt() {
-	m.createdAt = nil
+	m.created_at = nil
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (m *StepMutation) SetUpdatedAt(t time.Time) {
-	m.updatedAt = &t
+	m.updated_at = &t
 }
 
-// UpdatedAt returns the updatedAt value in the mutation.
+// UpdatedAt returns the updated_at value in the mutation.
 func (m *StepMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updatedAt
+	v := m.updated_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldUpdatedAt returns the old updatedAt value of the Step.
+// OldUpdatedAt returns the old updated_at value of the Step.
 // If the Step object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
@@ -2438,9 +2497,9 @@ func (m *StepMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error
 	return oldValue.UpdatedAt, nil
 }
 
-// ResetUpdatedAt reset all changes of the "updatedAt" field.
+// ResetUpdatedAt reset all changes of the "updated_at" field.
 func (m *StepMutation) ResetUpdatedAt() {
-	m.updatedAt = nil
+	m.updated_at = nil
 }
 
 // SetType sets the type field.
@@ -2837,10 +2896,10 @@ func (m *StepMutation) Type() string {
 // fields that were in/decremented, call AddedFields().
 func (m *StepMutation) Fields() []string {
 	fields := make([]string, 0, 8)
-	if m.createdAt != nil {
+	if m.created_at != nil {
 		fields = append(fields, step.FieldCreatedAt)
 	}
-	if m.updatedAt != nil {
+	if m.updated_at != nil {
 		fields = append(fields, step.FieldUpdatedAt)
 	}
 	if m._type != nil {
@@ -3206,9 +3265,10 @@ type StepRunMutation struct {
 	op                   Op
 	typ                  string
 	id                   *string
-	createdAt            *time.Time
-	updatedAt            *time.Time
-	startAt              *time.Time
+	created_at           *time.Time
+	updated_at           *time.Time
+	status               *steprun.Status
+	startedAt            *time.Time
 	endedAt              *time.Time
 	participantsCount    *int
 	addparticipantsCount *int
@@ -3307,21 +3367,21 @@ func (m *StepRunMutation) ID() (id string, exists bool) {
 	return *m.id, true
 }
 
-// SetCreatedAt sets the createdAt field.
+// SetCreatedAt sets the created_at field.
 func (m *StepRunMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
+	m.created_at = &t
 }
 
-// CreatedAt returns the createdAt value in the mutation.
+// CreatedAt returns the created_at value in the mutation.
 func (m *StepRunMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
+	v := m.created_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCreatedAt returns the old createdAt value of the StepRun.
+// OldCreatedAt returns the old created_at value of the StepRun.
 // If the StepRun object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
@@ -3339,26 +3399,26 @@ func (m *StepRunMutation) OldCreatedAt(ctx context.Context) (v time.Time, err er
 	return oldValue.CreatedAt, nil
 }
 
-// ResetCreatedAt reset all changes of the "createdAt" field.
+// ResetCreatedAt reset all changes of the "created_at" field.
 func (m *StepRunMutation) ResetCreatedAt() {
-	m.createdAt = nil
+	m.created_at = nil
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (m *StepRunMutation) SetUpdatedAt(t time.Time) {
-	m.updatedAt = &t
+	m.updated_at = &t
 }
 
-// UpdatedAt returns the updatedAt value in the mutation.
+// UpdatedAt returns the updated_at value in the mutation.
 func (m *StepRunMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updatedAt
+	v := m.updated_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldUpdatedAt returns the old updatedAt value of the StepRun.
+// OldUpdatedAt returns the old updated_at value of the StepRun.
 // If the StepRun object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
@@ -3376,46 +3436,96 @@ func (m *StepRunMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err er
 	return oldValue.UpdatedAt, nil
 }
 
-// ResetUpdatedAt reset all changes of the "updatedAt" field.
+// ResetUpdatedAt reset all changes of the "updated_at" field.
 func (m *StepRunMutation) ResetUpdatedAt() {
-	m.updatedAt = nil
+	m.updated_at = nil
 }
 
-// SetStartAt sets the startAt field.
-func (m *StepRunMutation) SetStartAt(t time.Time) {
-	m.startAt = &t
+// SetStatus sets the status field.
+func (m *StepRunMutation) SetStatus(s steprun.Status) {
+	m.status = &s
 }
 
-// StartAt returns the startAt value in the mutation.
-func (m *StepRunMutation) StartAt() (r time.Time, exists bool) {
-	v := m.startAt
+// Status returns the status value in the mutation.
+func (m *StepRunMutation) Status() (r steprun.Status, exists bool) {
+	v := m.status
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldStartAt returns the old startAt value of the StepRun.
+// OldStatus returns the old status value of the StepRun.
 // If the StepRun object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *StepRunMutation) OldStartAt(ctx context.Context) (v time.Time, err error) {
+func (m *StepRunMutation) OldStatus(ctx context.Context) (v steprun.Status, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldStartAt is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldStatus is allowed only on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldStartAt requires an ID field in the mutation")
+		return v, fmt.Errorf("OldStatus requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldStartAt: %w", err)
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
 	}
-	return oldValue.StartAt, nil
+	return oldValue.Status, nil
 }
 
-// ResetStartAt reset all changes of the "startAt" field.
-func (m *StepRunMutation) ResetStartAt() {
-	m.startAt = nil
+// ResetStatus reset all changes of the "status" field.
+func (m *StepRunMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetStartedAt sets the startedAt field.
+func (m *StepRunMutation) SetStartedAt(t time.Time) {
+	m.startedAt = &t
+}
+
+// StartedAt returns the startedAt value in the mutation.
+func (m *StepRunMutation) StartedAt() (r time.Time, exists bool) {
+	v := m.startedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartedAt returns the old startedAt value of the StepRun.
+// If the StepRun object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepRunMutation) OldStartedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldStartedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldStartedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartedAt: %w", err)
+	}
+	return oldValue.StartedAt, nil
+}
+
+// ClearStartedAt clears the value of startedAt.
+func (m *StepRunMutation) ClearStartedAt() {
+	m.startedAt = nil
+	m.clearedFields[steprun.FieldStartedAt] = struct{}{}
+}
+
+// StartedAtCleared returns if the field startedAt was cleared in this mutation.
+func (m *StepRunMutation) StartedAtCleared() bool {
+	_, ok := m.clearedFields[steprun.FieldStartedAt]
+	return ok
+}
+
+// ResetStartedAt reset all changes of the "startedAt" field.
+func (m *StepRunMutation) ResetStartedAt() {
+	m.startedAt = nil
+	delete(m.clearedFields, steprun.FieldStartedAt)
 }
 
 // SetEndedAt sets the endedAt field.
@@ -3436,7 +3546,7 @@ func (m *StepRunMutation) EndedAt() (r time.Time, exists bool) {
 // If the StepRun object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *StepRunMutation) OldEndedAt(ctx context.Context) (v time.Time, err error) {
+func (m *StepRunMutation) OldEndedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldEndedAt is allowed only on UpdateOne operations")
 	}
@@ -3450,9 +3560,22 @@ func (m *StepRunMutation) OldEndedAt(ctx context.Context) (v time.Time, err erro
 	return oldValue.EndedAt, nil
 }
 
+// ClearEndedAt clears the value of endedAt.
+func (m *StepRunMutation) ClearEndedAt() {
+	m.endedAt = nil
+	m.clearedFields[steprun.FieldEndedAt] = struct{}{}
+}
+
+// EndedAtCleared returns if the field endedAt was cleared in this mutation.
+func (m *StepRunMutation) EndedAtCleared() bool {
+	_, ok := m.clearedFields[steprun.FieldEndedAt]
+	return ok
+}
+
 // ResetEndedAt reset all changes of the "endedAt" field.
 func (m *StepRunMutation) ResetEndedAt() {
 	m.endedAt = nil
+	delete(m.clearedFields, steprun.FieldEndedAt)
 }
 
 // SetParticipantsCount sets the participantsCount field.
@@ -3654,15 +3777,18 @@ func (m *StepRunMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *StepRunMutation) Fields() []string {
-	fields := make([]string, 0, 6)
-	if m.createdAt != nil {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
 		fields = append(fields, steprun.FieldCreatedAt)
 	}
-	if m.updatedAt != nil {
+	if m.updated_at != nil {
 		fields = append(fields, steprun.FieldUpdatedAt)
 	}
-	if m.startAt != nil {
-		fields = append(fields, steprun.FieldStartAt)
+	if m.status != nil {
+		fields = append(fields, steprun.FieldStatus)
+	}
+	if m.startedAt != nil {
+		fields = append(fields, steprun.FieldStartedAt)
 	}
 	if m.endedAt != nil {
 		fields = append(fields, steprun.FieldEndedAt)
@@ -3685,8 +3811,10 @@ func (m *StepRunMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case steprun.FieldUpdatedAt:
 		return m.UpdatedAt()
-	case steprun.FieldStartAt:
-		return m.StartAt()
+	case steprun.FieldStatus:
+		return m.Status()
+	case steprun.FieldStartedAt:
+		return m.StartedAt()
 	case steprun.FieldEndedAt:
 		return m.EndedAt()
 	case steprun.FieldParticipantsCount:
@@ -3706,8 +3834,10 @@ func (m *StepRunMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldCreatedAt(ctx)
 	case steprun.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
-	case steprun.FieldStartAt:
-		return m.OldStartAt(ctx)
+	case steprun.FieldStatus:
+		return m.OldStatus(ctx)
+	case steprun.FieldStartedAt:
+		return m.OldStartedAt(ctx)
 	case steprun.FieldEndedAt:
 		return m.OldEndedAt(ctx)
 	case steprun.FieldParticipantsCount:
@@ -3737,12 +3867,19 @@ func (m *StepRunMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpdatedAt(v)
 		return nil
-	case steprun.FieldStartAt:
+	case steprun.FieldStatus:
+		v, ok := value.(steprun.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case steprun.FieldStartedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetStartAt(v)
+		m.SetStartedAt(v)
 		return nil
 	case steprun.FieldEndedAt:
 		v, ok := value.(time.Time)
@@ -3810,6 +3947,12 @@ func (m *StepRunMutation) AddField(name string, value ent.Value) error {
 // during this mutation.
 func (m *StepRunMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(steprun.FieldStartedAt) {
+		fields = append(fields, steprun.FieldStartedAt)
+	}
+	if m.FieldCleared(steprun.FieldEndedAt) {
+		fields = append(fields, steprun.FieldEndedAt)
+	}
 	if m.FieldCleared(steprun.FieldHitID) {
 		fields = append(fields, steprun.FieldHitID)
 	}
@@ -3827,6 +3970,12 @@ func (m *StepRunMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *StepRunMutation) ClearField(name string) error {
 	switch name {
+	case steprun.FieldStartedAt:
+		m.ClearStartedAt()
+		return nil
+	case steprun.FieldEndedAt:
+		m.ClearEndedAt()
+		return nil
 	case steprun.FieldHitID:
 		m.ClearHitID()
 		return nil
@@ -3845,8 +3994,11 @@ func (m *StepRunMutation) ResetField(name string) error {
 	case steprun.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
-	case steprun.FieldStartAt:
-		m.ResetStartAt()
+	case steprun.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case steprun.FieldStartedAt:
+		m.ResetStartedAt()
 		return nil
 	case steprun.FieldEndedAt:
 		m.ResetEndedAt()
@@ -3966,8 +4118,8 @@ type TemplateMutation struct {
 	op                  Op
 	typ                 string
 	id                  *string
-	createdAt           *time.Time
-	updatedAt           *time.Time
+	created_at          *time.Time
+	updated_at          *time.Time
 	name                *string
 	selectionType       *template.SelectionType
 	participantCount    *int
@@ -4073,21 +4225,21 @@ func (m *TemplateMutation) ID() (id string, exists bool) {
 	return *m.id, true
 }
 
-// SetCreatedAt sets the createdAt field.
+// SetCreatedAt sets the created_at field.
 func (m *TemplateMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
+	m.created_at = &t
 }
 
-// CreatedAt returns the createdAt value in the mutation.
+// CreatedAt returns the created_at value in the mutation.
 func (m *TemplateMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
+	v := m.created_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCreatedAt returns the old createdAt value of the Template.
+// OldCreatedAt returns the old created_at value of the Template.
 // If the Template object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
@@ -4105,26 +4257,26 @@ func (m *TemplateMutation) OldCreatedAt(ctx context.Context) (v time.Time, err e
 	return oldValue.CreatedAt, nil
 }
 
-// ResetCreatedAt reset all changes of the "createdAt" field.
+// ResetCreatedAt reset all changes of the "created_at" field.
 func (m *TemplateMutation) ResetCreatedAt() {
-	m.createdAt = nil
+	m.created_at = nil
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (m *TemplateMutation) SetUpdatedAt(t time.Time) {
-	m.updatedAt = &t
+	m.updated_at = &t
 }
 
-// UpdatedAt returns the updatedAt value in the mutation.
+// UpdatedAt returns the updated_at value in the mutation.
 func (m *TemplateMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updatedAt
+	v := m.updated_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldUpdatedAt returns the old updatedAt value of the Template.
+// OldUpdatedAt returns the old updated_at value of the Template.
 // If the Template object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
@@ -4142,9 +4294,9 @@ func (m *TemplateMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err e
 	return oldValue.UpdatedAt, nil
 }
 
-// ResetUpdatedAt reset all changes of the "updatedAt" field.
+// ResetUpdatedAt reset all changes of the "updated_at" field.
 func (m *TemplateMutation) ResetUpdatedAt() {
-	m.updatedAt = nil
+	m.updated_at = nil
 }
 
 // SetName sets the name field.
@@ -4563,10 +4715,10 @@ func (m *TemplateMutation) Type() string {
 // fields that were in/decremented, call AddedFields().
 func (m *TemplateMutation) Fields() []string {
 	fields := make([]string, 0, 8)
-	if m.createdAt != nil {
+	if m.created_at != nil {
 		fields = append(fields, template.FieldCreatedAt)
 	}
-	if m.updatedAt != nil {
+	if m.updated_at != nil {
 		fields = append(fields, template.FieldUpdatedAt)
 	}
 	if m.name != nil {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql"
 )
@@ -18,26 +19,27 @@ type Run struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID string `json:"id,omitempty"`
-	// CreatedAt holds the value of the "createdAt" field.
-	CreatedAt time.Time `json:"createdAt,omitempty"`
-	// UpdatedAt holds the value of the "updatedAt" field.
-	UpdatedAt time.Time `json:"updatedAt,omitempty"`
-	// Name holds the value of the "name" field.
-	Name string `json:"name,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Status holds the value of the "status" field.
 	Status run.Status `json:"status,omitempty"`
-	// StartAt holds the value of the "startAt" field.
-	StartAt time.Time `json:"startAt,omitempty"`
 	// StartedAt holds the value of the "startedAt" field.
-	StartedAt time.Time `json:"startedAt,omitempty"`
+	StartedAt *time.Time `json:"startedAt,omitempty"`
 	// EndedAt holds the value of the "endedAt" field.
-	EndedAt time.Time `json:"endedAt,omitempty"`
+	EndedAt *time.Time `json:"endedAt,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
+	// StartAt holds the value of the "startAt" field.
+	StartAt *time.Time `json:"startAt,omitempty"`
 	// Error holds the value of the "error" field.
-	Error string `json:"error,omitempty"`
+	Error *string `json:"error,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RunQuery when eager-loading is set.
-	Edges        RunEdges `json:"edges"`
-	project_runs *string
+	Edges            RunEdges `json:"edges"`
+	project_runs     *string
+	run_current_step *string
 }
 
 // RunEdges holds the relations/edges for other nodes in the graph.
@@ -46,11 +48,13 @@ type RunEdges struct {
 	Project *Project
 	// Template holds the value of the template edge.
 	Template *Template
+	// CurrentStep holds the value of the currentStep edge.
+	CurrentStep *StepRun
 	// Steps holds the value of the steps edge.
 	Steps []*StepRun
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // ProjectOrErr returns the Project value or an error if the edge
@@ -81,10 +85,24 @@ func (e RunEdges) TemplateOrErr() (*Template, error) {
 	return nil, &NotLoadedError{edge: "template"}
 }
 
+// CurrentStepOrErr returns the CurrentStep value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RunEdges) CurrentStepOrErr() (*StepRun, error) {
+	if e.loadedTypes[2] {
+		if e.CurrentStep == nil {
+			// The edge currentStep was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: steprun.Label}
+		}
+		return e.CurrentStep, nil
+	}
+	return nil, &NotLoadedError{edge: "currentStep"}
+}
+
 // StepsOrErr returns the Steps value or an error if the edge
 // was not loaded in eager-loading.
 func (e RunEdges) StepsOrErr() ([]*StepRun, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Steps, nil
 	}
 	return nil, &NotLoadedError{edge: "steps"}
@@ -94,13 +112,13 @@ func (e RunEdges) StepsOrErr() ([]*StepRun, error) {
 func (*Run) scanValues() []interface{} {
 	return []interface{}{
 		&sql.NullString{}, // id
-		&sql.NullTime{},   // createdAt
-		&sql.NullTime{},   // updatedAt
-		&sql.NullString{}, // name
+		&sql.NullTime{},   // created_at
+		&sql.NullTime{},   // updated_at
 		&sql.NullString{}, // status
-		&sql.NullTime{},   // startAt
 		&sql.NullTime{},   // startedAt
 		&sql.NullTime{},   // endedAt
+		&sql.NullString{}, // name
+		&sql.NullTime{},   // startAt
 		&sql.NullString{}, // error
 	}
 }
@@ -109,6 +127,7 @@ func (*Run) scanValues() []interface{} {
 func (*Run) fkValues() []interface{} {
 	return []interface{}{
 		&sql.NullString{}, // project_runs
+		&sql.NullString{}, // run_current_step
 	}
 }
 
@@ -125,44 +144,48 @@ func (r *Run) assignValues(values ...interface{}) error {
 	}
 	values = values[1:]
 	if value, ok := values[0].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field createdAt", values[0])
+		return fmt.Errorf("unexpected type %T for field created_at", values[0])
 	} else if value.Valid {
 		r.CreatedAt = value.Time
 	}
 	if value, ok := values[1].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field updatedAt", values[1])
+		return fmt.Errorf("unexpected type %T for field updated_at", values[1])
 	} else if value.Valid {
 		r.UpdatedAt = value.Time
 	}
 	if value, ok := values[2].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field name", values[2])
-	} else if value.Valid {
-		r.Name = value.String
-	}
-	if value, ok := values[3].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field status", values[3])
+		return fmt.Errorf("unexpected type %T for field status", values[2])
 	} else if value.Valid {
 		r.Status = run.Status(value.String)
 	}
-	if value, ok := values[4].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field startAt", values[4])
+	if value, ok := values[3].(*sql.NullTime); !ok {
+		return fmt.Errorf("unexpected type %T for field startedAt", values[3])
 	} else if value.Valid {
-		r.StartAt = value.Time
+		r.StartedAt = new(time.Time)
+		*r.StartedAt = value.Time
 	}
-	if value, ok := values[5].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field startedAt", values[5])
+	if value, ok := values[4].(*sql.NullTime); !ok {
+		return fmt.Errorf("unexpected type %T for field endedAt", values[4])
 	} else if value.Valid {
-		r.StartedAt = value.Time
+		r.EndedAt = new(time.Time)
+		*r.EndedAt = value.Time
+	}
+	if value, ok := values[5].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field name", values[5])
+	} else if value.Valid {
+		r.Name = value.String
 	}
 	if value, ok := values[6].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field endedAt", values[6])
+		return fmt.Errorf("unexpected type %T for field startAt", values[6])
 	} else if value.Valid {
-		r.EndedAt = value.Time
+		r.StartAt = new(time.Time)
+		*r.StartAt = value.Time
 	}
 	if value, ok := values[7].(*sql.NullString); !ok {
 		return fmt.Errorf("unexpected type %T for field error", values[7])
 	} else if value.Valid {
-		r.Error = value.String
+		r.Error = new(string)
+		*r.Error = value.String
 	}
 	values = values[8:]
 	if len(values) == len(run.ForeignKeys) {
@@ -171,6 +194,12 @@ func (r *Run) assignValues(values ...interface{}) error {
 		} else if value.Valid {
 			r.project_runs = new(string)
 			*r.project_runs = value.String
+		}
+		if value, ok := values[1].(*sql.NullString); !ok {
+			return fmt.Errorf("unexpected type %T for field run_current_step", values[1])
+		} else if value.Valid {
+			r.run_current_step = new(string)
+			*r.run_current_step = value.String
 		}
 	}
 	return nil
@@ -184,6 +213,11 @@ func (r *Run) QueryProject() *ProjectQuery {
 // QueryTemplate queries the template edge of the Run.
 func (r *Run) QueryTemplate() *TemplateQuery {
 	return (&RunClient{config: r.config}).QueryTemplate(r)
+}
+
+// QueryCurrentStep queries the currentStep edge of the Run.
+func (r *Run) QueryCurrentStep() *StepRunQuery {
+	return (&RunClient{config: r.config}).QueryCurrentStep(r)
 }
 
 // QuerySteps queries the steps edge of the Run.
@@ -214,22 +248,30 @@ func (r *Run) String() string {
 	var builder strings.Builder
 	builder.WriteString("Run(")
 	builder.WriteString(fmt.Sprintf("id=%v", r.ID))
-	builder.WriteString(", createdAt=")
+	builder.WriteString(", created_at=")
 	builder.WriteString(r.CreatedAt.Format(time.ANSIC))
-	builder.WriteString(", updatedAt=")
+	builder.WriteString(", updated_at=")
 	builder.WriteString(r.UpdatedAt.Format(time.ANSIC))
-	builder.WriteString(", name=")
-	builder.WriteString(r.Name)
 	builder.WriteString(", status=")
 	builder.WriteString(fmt.Sprintf("%v", r.Status))
-	builder.WriteString(", startAt=")
-	builder.WriteString(r.StartAt.Format(time.ANSIC))
-	builder.WriteString(", startedAt=")
-	builder.WriteString(r.StartedAt.Format(time.ANSIC))
-	builder.WriteString(", endedAt=")
-	builder.WriteString(r.EndedAt.Format(time.ANSIC))
-	builder.WriteString(", error=")
-	builder.WriteString(r.Error)
+	if v := r.StartedAt; v != nil {
+		builder.WriteString(", startedAt=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	if v := r.EndedAt; v != nil {
+		builder.WriteString(", endedAt=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", name=")
+	builder.WriteString(r.Name)
+	if v := r.StartAt; v != nil {
+		builder.WriteString(", startAt=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	if v := r.Error; v != nil {
+		builder.WriteString(", error=")
+		builder.WriteString(*v)
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

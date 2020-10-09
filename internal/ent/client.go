@@ -523,6 +523,22 @@ func (c *RunClient) QueryTemplate(r *Run) *TemplateQuery {
 	return query
 }
 
+// QueryCurrentStep queries the currentStep edge of a Run.
+func (c *RunClient) QueryCurrentStep(r *Run) *StepRunQuery {
+	query := &StepRunQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(run.Table, run.FieldID, id),
+			sqlgraph.To(steprun.Table, steprun.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, run.CurrentStepTable, run.CurrentStepColumn),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QuerySteps queries the steps edge of a Run.
 func (c *RunClient) QuerySteps(r *Run) *StepRunQuery {
 	query := &StepRunQuery{config: c.config}

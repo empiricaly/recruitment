@@ -24,13 +24,13 @@ type TemplateCreate struct {
 	hooks    []Hook
 }
 
-// SetCreatedAt sets the createdAt field.
+// SetCreatedAt sets the created_at field.
 func (tc *TemplateCreate) SetCreatedAt(t time.Time) *TemplateCreate {
 	tc.mutation.SetCreatedAt(t)
 	return tc
 }
 
-// SetNillableCreatedAt sets the createdAt field if the given value is not nil.
+// SetNillableCreatedAt sets the created_at field if the given value is not nil.
 func (tc *TemplateCreate) SetNillableCreatedAt(t *time.Time) *TemplateCreate {
 	if t != nil {
 		tc.SetCreatedAt(*t)
@@ -38,13 +38,13 @@ func (tc *TemplateCreate) SetNillableCreatedAt(t *time.Time) *TemplateCreate {
 	return tc
 }
 
-// SetUpdatedAt sets the updatedAt field.
+// SetUpdatedAt sets the updated_at field.
 func (tc *TemplateCreate) SetUpdatedAt(t time.Time) *TemplateCreate {
 	tc.mutation.SetUpdatedAt(t)
 	return tc
 }
 
-// SetNillableUpdatedAt sets the updatedAt field if the given value is not nil.
+// SetNillableUpdatedAt sets the updated_at field if the given value is not nil.
 func (tc *TemplateCreate) SetNillableUpdatedAt(t *time.Time) *TemplateCreate {
 	if t != nil {
 		tc.SetUpdatedAt(*t)
@@ -271,6 +271,11 @@ func (tc *TemplateCreate) preSave() error {
 	if _, ok := tc.mutation.Adult(); !ok {
 		v := template.DefaultAdult
 		tc.mutation.SetAdult(v)
+	}
+	if v, ok := tc.mutation.ID(); ok {
+		if err := template.IDValidator(v); err != nil {
+			return &ValidationError{Name: "id", err: fmt.Errorf("ent: validator failed for field \"id\": %w", err)}
+		}
 	}
 	return nil
 }
