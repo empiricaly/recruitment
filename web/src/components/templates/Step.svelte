@@ -24,6 +24,7 @@
 
   export let step;
   export let stepLength;
+  export let error = "";
 
   const dispatch = createEventDispatcher();
 
@@ -51,30 +52,57 @@
   $: isLastStep = step.index + 1 === stepLength;
 </script>
 
-<TemplateSection title={stepTypeName[step.type]} header>
+<TemplateSection title={stepTypeName[step.type]} header invalid={error !== ''}>
   <div slot="header">
-    <div class="md:grid grid-cols-3 gap-6">
-      <div class="flex items-baseline">
-        <div class="mr-2 whitespace-no-wrap">
-          <Label
-            forID={uniq('duration')}
-            text="Duration"
-            white
-            question="Duration of Step in minutes" />
-        </div>
-        <Input
-          id={uniq('duration')}
-          type="number"
-          min="0"
-          right="minutes"
-          bind:value={step.duration}
-          inputmode="numeric"
-          required
-          placeholder="0" />
+    <div class="flex justify-between">
+      <div class="mr-2 flex items-baseline">
+        {#if error !== ''}
+          <div
+            class="bg-red-100 text-red-700 rounded px-4 py-2 flex items-center">
+            <svg
+              class="flex-shrink-0 h-6 w-6 text-red-500 mr-3"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="currentColor"
+              viewBox="0 0 512 512">
+              <path
+                d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111
+              248-248S393 8 256 8zm0 464c-118.7 0-216-96.1-216-216 0-118.7
+              96.1-216 216-216 118.7 0 216 96.1 216 216 0 118.7-96.1
+              216-216 216zm94.8-285.3L281.5 256l69.3 69.3c4.7 4.7 4.7 12.3
+              0 17l-8.5 8.5c-4.7 4.7-12.3 4.7-17 0L256 281.5l-69.3
+              69.3c-4.7 4.7-12.3 4.7-17 0l-8.5-8.5c-4.7-4.7-4.7-12.3
+              0-17l69.3-69.3-69.3-69.3c-4.7-4.7-4.7-12.3
+              0-17l8.5-8.5c4.7-4.7 12.3-4.7 17 0l69.3 69.3
+              69.3-69.3c4.7-4.7 12.3-4.7 17 0l8.5 8.5c4.6 4.7 4.6 12.3 0
+              17z" />
+            </svg>
+
+            {error}
+            {error}
+          </div>
+        {:else}
+          <div class="ml-2 mr-2 whitespace-no-wrap">
+            <Label
+              forID={uniq('duration')}
+              text="Duration"
+              white
+              question="Duration of Step in minutes" />
+          </div>
+          <div class="w-32">
+            <Input
+              id={uniq('duration')}
+              type="number"
+              min="0"
+              right="minutes"
+              bind:value={step.duration}
+              inputmode="numeric"
+              required
+              placeholder="0" />
+          </div>
+        {/if}
       </div>
 
-      <div />
-      <div class="flex items-center md:justify-end">
+      <div class="ml-2 flex items-center md:justify-end">
         {#if stepLength !== 1 && !isFirstStep}
           <button
             on:click={() => handleMoveStep(true)}
@@ -117,7 +145,7 @@
         {/if}
         <button
           on:click={handleDelete}
-          class="flex items-center mt-2 ml-4 md:mt-0 focus:outline-none">
+          class="flex items-center mt-2 ml-4 mr-2 md:mt-0 focus:outline-none">
           <svg
             class="text-gray-50"
             fill="currentColor"

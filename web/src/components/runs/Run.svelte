@@ -63,7 +63,7 @@
     10000
   );
 
-  const template = deepCopy(run.template);
+  let template = deepCopy(run.template);
 
   function handleClick(event) {
     console.log(event.detail);
@@ -71,10 +71,10 @@
 
   let actions = [];
   let facts = [];
-  $: disabled = false;
+  let disabled = false;
+  $: isMturkQual = template.selectionType === "MTURK_QUALIFICATIONS";
 
   $: {
-    let isMturkQual = template.selectionType === "MTURK_QUALIFICATIONS";
     if (
       template.steps.length === 0 ||
       (isMturkQual && template.steps[0].type !== "MTURK_HIT")
@@ -111,6 +111,7 @@
       default:
         break;
     }
+
     switch (run.status) {
       case "CREATED":
         actions.push({
@@ -212,6 +213,6 @@
       <StatusBadge large status={run.status} />
     </div>
 
-    <Template {disabled} {project} {run} {template} />
+    <Template {project} {run} bind:template />
   </Layout>
 {/if}

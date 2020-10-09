@@ -3,6 +3,7 @@
   export let description = "";
   export let header = false;
   export let footer = false;
+  export let invalid = false;
 </script>
 
 <section class="mt-4 md:grid md:grid-cols-10 md:gap-6">
@@ -19,7 +20,7 @@
   <div class="mt-5 md:mt-0 md:col-span-7 shadow sm:rounded-md bg-white">
     {#if header}
       <header
-        class="px-4 py-3 bg-mint-600 text-gray-50 sm:px-6 sm:rounded-t-md">
+        class="px-4 sm:px-4 py-3 {invalid ? 'bg-red-600' : 'bg-mint-600'} text-gray-50 sm:rounded-t-md">
         <slot name="header" />
       </header>
     {/if}

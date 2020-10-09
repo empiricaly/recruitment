@@ -24,12 +24,6 @@
   export let project;
   export let run;
   export let template;
-  export let disabled;
-
-  $: console.log("disabled ", disabled);
-
-  // $: console.log(JSON.stringify(template, "", "  "));
-  // $: console.log(JSON.stringify(template));
 
   $: {
     if (template) {
@@ -42,7 +36,6 @@
     async () => {
       const newTemplate = JSON.stringify(template);
       if (newTemplate === previousTemplate) {
-        console.log("nothing changed");
         return;
       }
       previousTemplate = newTemplate;
@@ -203,11 +196,11 @@
 
 {#each template.steps as step}
   <Step
-    {disabled}
     bind:step
     stepLength={template.steps.length}
     on:moveStep={handleMoveStep}
-    on:delete={handleDeleteStep} />
+    on:delete={handleDeleteStep}
+    error={template.selectionType === 'MTURK_QUALIFICATIONS' && step.index === 0 && step.type !== 'MTURK_HIT' ? 'First step of a Run using MTurk Qualifications must be an MTurk Hit.' : ''} />
 {/each}
 
 {#if template.steps.length > 0}
