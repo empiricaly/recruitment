@@ -93,6 +93,36 @@
       template.steps[i].index = i;
     }
   }
+
+  function handleMovingStep(event, isUpward) {
+    const { step } = event.detail;
+    let otherStep;
+
+    template.steps = template.steps.filter((s) => {
+      let foundOtherStep = false;
+
+      if (isUpward && step.index - 1 === s.index) {
+        s.index = s.index + 1;
+        foundOtherStep = true;
+      } else if (!isUpward && step.index + 1 === s.index) {
+        s.index = s.index - 1;
+        foundOtherStep = true;
+      }
+
+      if (foundOtherStep) {
+        otherStep = s;
+        return false;
+      }
+
+      return s !== step;
+    });
+
+    step.index = isUpward ? step.index - 1 : step.index + 1;
+
+    template.steps = template.steps
+      .concat([step, otherStep])
+      .sort((a, b) => a.index - b.index);
+  }
 </script>
 
 <TemplateSection
@@ -162,7 +192,12 @@
 </div>
 
 {#each template.steps as step}
-  <Step bind:step on:delete={handleDeleteStep} />
+  <Step
+    bind:step
+    stepLength={template.steps.length}
+    on:upward={(e) => handleMovingStep(e, true)}
+    on:downward={(e) => handleMovingStep(e, false)}
+    on:delete={handleDeleteStep} />
 {/each}
 
 {#if template.steps.length > 0}
