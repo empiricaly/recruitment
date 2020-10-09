@@ -24,6 +24,9 @@
   export let project;
   export let run;
   export let template;
+  export let disabled;
+
+  $: console.log("disabled ", disabled);
 
   // $: console.log(JSON.stringify(template, "", "  "));
   // $: console.log(JSON.stringify(template));
@@ -200,6 +203,7 @@
 
 {#each template.steps as step}
   <Step
+    {disabled}
     bind:step
     stepLength={template.steps.length}
     on:moveStep={handleMoveStep}

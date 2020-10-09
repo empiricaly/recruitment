@@ -71,6 +71,20 @@
 
   let actions = [];
   let facts = [];
+  $: disabled = false;
+
+  $: {
+    let isMturkQual = template.selectionType === "MTURK_QUALIFICATIONS";
+    if (
+      template.steps.length === 0 ||
+      (isMturkQual && template.steps[0].type !== "MTURK_HIT")
+    ) {
+      disabled = true;
+    } else {
+      disabled = false;
+    }
+  }
+
   $: {
     actions = [];
     facts = [];
@@ -102,12 +116,14 @@
         actions.push({
           text: "Schedule",
           action: "schedule",
+          disabled,
           icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm0 448c-110.5 0-200-89.5-200-200S145.5 56 256 56s200 89.5 200 200-89.5 200-200 200zm61.8-104.4l-84.9-61.7c-3.1-2.3-4.9-5.9-4.9-9.7V116c0-6.6 5.4-12 12-12h32c6.6 0 12 5.4 12 12v141.7l66.8 48.6c5.4 3.9 6.5 11.4 2.6 16.8L334.6 349c-3.9 5.3-11.4 6.5-16.8 2.6z"/></svg>`,
           primary: false,
         });
         actions.push({
           text: "Start Now",
           action: "start",
+          disabled,
           icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M424.4 214.7L72.4 6.6C43.8-10.3 0 6.1 0 47.9V464c0 37.5 40.7 60.1 72.4 41.3l352-208c31.4-18.5 31.5-64.1 0-82.6zM48 453.5v-395c0-4.6 5.1-7.5 9.1-5.2l334.2 197.5c3.9 2.3 3.9 8 0 10.3L57.1 458.7c-4 2.3-9.1-.6-9.1-5.2z"/></svg>`,
           primary: true,
         });
@@ -196,6 +212,6 @@
       <StatusBadge large status={run.status} />
     </div>
 
-    <Template {project} {run} {template} />
+    <Template {disabled} {project} {run} {template} />
   </Layout>
 {/if}

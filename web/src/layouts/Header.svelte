@@ -128,6 +128,7 @@
                 action: action.action,
                 project,
               })}
+            disabled={action.disabled}
             tertiary={!action.primary}
             icon={action.icon}
             text={action.text} />
