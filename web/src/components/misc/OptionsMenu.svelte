@@ -54,7 +54,7 @@
 
     {#if open}
       <div
-        class="origin-top-right absolute top-0 right-0 mt-12 w-56 rounded-md
+        class="origin-top-right absolute top-0 sm:right-0 mt-12 w-56 rounded-md
           shadow-lg z-10">
         <div class="rounded-md bg-white shadow-xs">
           <div class="py-1" role="menu" aria-orientation="vertical">

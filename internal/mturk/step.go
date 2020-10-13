@@ -116,7 +116,8 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 					},
 				},
 			}
-			_, err = s.createHit(hitParams)
+
+			_, err = s.createHit(ctx, hitParams)
 			if err != nil {
 				return errors.Wrap(err, "create individual hit")
 			}
@@ -170,7 +171,7 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 		QualificationRequirements:   quals,
 	}
 
-	hitID, err := s.createHit(params)
+	hitID, err := s.createHit(ctx, params)
 	if err != nil {
 		return errors.Wrap(err, "create hit")
 	}

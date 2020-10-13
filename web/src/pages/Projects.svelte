@@ -128,10 +128,11 @@
           </div>
         </div>
       {:else}
-        <div class="flex h-full overflow-hidden items-center">
+        <div
+          class="flex flex-col sm:flex-row justify-center items-stretch sm:items-center h-full overflow-hidden">
           <div class="max-h-full overflow-auto">
-            <div class="w-96 px-8 py-4">
-              <h1 class="font-semibold pl-2">Projects</h1>
+            <div class="sm:w-64 md:w-96 px-8 py-4">
+              <h1 class="font-semibold sm:pl-2">Projects</h1>
               <ul class="mt-3">
                 {#each result.data.projects as project}
                   <ProjectLine id={project.projectID} name={project.name} />
@@ -148,8 +149,8 @@
             </div>
           </div>
 
-          <div class="w-96 px-8 py-4">
-            <h1 class="font-semibold pl-2">Participants</h1>
+          <div class="mt-8 sm:mt-0 sm:w-64 md:w-96 px-8 py-4">
+            <h1 class="font-semibold sm:pl-2">Participants</h1>
             <div class="mt-3">There are 0 participants in the internal DB.</div>
             <div class="mt-8">
               <LinkButton to="/participants" secondary>

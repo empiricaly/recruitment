@@ -106,16 +106,19 @@
               </button>
             </div>
             <div class="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-              <div class="flex-shrink-0 flex items-center px-4">
+              <div class="flex-shrink-0 flex items-center px-4 pt-4 pb-6">
                 <Logo />
               </div>
 
+              <div class="mt-4 px-4">
               <Link
-                to="/projects"
-                className="mt-5 flex items-center flex-shrink-0 px-4 text-white
-                py-2 bg-gray-700 font-medium hover:text-gray-200">
-                {result.data.project.name}
+                to="/projects">
+                <div class="items-center flex flex-shrink-0 px-4 rounded text-white py-2
+                bg-gray-700 font-semibold hover:text-gray-200">
+                  {result.data.project.name}
+                </div>  
               </Link>
+            </div>
 
               <nav class="mt-5 px-2">
                 {#each menuitems as item}
@@ -191,7 +194,7 @@
             to="/projects"
             className="mt-5 mx-4">
             <div class="items-center flex flex-shrink-0 px-4 rounded text-white py-2
-            bg-gray-700 font-medium hover:text-gray-200">
+            bg-gray-700 font-semibold hover:text-gray-200">
             {result.data.project.name}
           </div>  
           </Link>

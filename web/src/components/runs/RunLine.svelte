@@ -29,7 +29,7 @@
     className="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50
     transition duration-150 ease-in-out sm:rounded-md">
     <div class="flex items-center px-4 py-4 sm:px-2">
-      <div class="min-w-0 flex-1 px-4 md:grid md:grid-cols-2 md:gap-4">
+      <div class="min-w-0 flex-1 px-4 sm:grid sm:grid-cols-2 sm:gap-4">
         <div>
           <div class="text-sm leading-5 font-medium text-mint-600 truncate">
             {name}
@@ -51,7 +51,7 @@
           </div>
         </div>
 
-        <div class="hidden md:block whitespace-no-wrap">
+        <div class="mt-4 sm:mt-0 whitespace-no-wrap">
           <div>
             <div>
               <StatusBadge {status} />

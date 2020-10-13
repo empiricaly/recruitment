@@ -43,7 +43,8 @@ func New(config *Config) (*Session, error) {
 
 	svc := mturk.New(sess)
 	return &Session{
-		MTurk: svc,
-		quals: quals,
+		config: config,
+		MTurk:  svc,
+		quals:  quals,
 	}, nil
 }
