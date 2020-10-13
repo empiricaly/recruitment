@@ -95,7 +95,7 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 				Keywords:                aws.String("empirica_recruitment_internal"),
 				QualificationTypeStatus: aws.String("Active"),
 			}
-			qualID, err := s.createQual(qualParams)
+			qualID, err := s.createQualificationType(ctx, qualParams)
 			if err != nil {
 				return errors.Wrap(err, "create individual qual")
 			}
