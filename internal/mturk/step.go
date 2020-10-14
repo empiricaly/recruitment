@@ -79,58 +79,10 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 	}
 
 	isFirstStep := step.Index == 0
-	isInternalDB := template.SelectionType == templateModel.SelectionTypeINTERNAL_DB
-
-	if isFirstStep && isInternalDB {
-		participants, err := stepRun.QueryParticipants().All(ctx)
-		if err != nil {
-			return errors.Wrap(err, "get step participants")
-		}
-
-		for _, participant := range participants {
-			qualParams := &mturk.CreateQualificationTypeInput{
-				AutoGranted:             aws.Bool(true),
-				Name:                    aws.String(fmt.Sprintf("empirica_%s_%s", stepRun.ID, participant.ID)),
-				Description:             aws.String("internal empirica qual"),
-				Keywords:                aws.String("empirica_recruitment_internal"),
-				QualificationTypeStatus: aws.String("Active"),
-			}
-			qualID, err := s.createQualificationType(ctx, qualParams)
-			if err != nil {
-				return errors.Wrap(err, "create individual qual")
-			}
-
-			hitParams := &mturk.CreateHITInput{
-				Question:                    aws.String(question),
-				AssignmentDurationInSeconds: aws.Int64(int64(hitArgs.Duration)),
-				LifetimeInSeconds:           aws.Int64(int64(hitArgs.Duration)),
-				MaxAssignments:              aws.Int64(int64(1)),
-				Title:                       aws.String(hitArgs.Title),
-				Description:                 aws.String(hitArgs.Description),
-				Keywords:                    aws.String(hitArgs.Keywords),
-				Reward:                      aws.String(fmt.Sprintf("%f", hitArgs.Reward)),
-				QualificationRequirements: []*mturk.QualificationRequirement{
-					{
-						QualificationTypeId: aws.String(qualID),
-						Comparator:          aws.String("Exists"),
-					},
-				},
-			}
-
-			_, err = s.createHit(ctx, hitParams)
-			if err != nil {
-				return errors.Wrap(err, "create individual hit")
-			}
-
-		}
-	}
+	isMturkSelection := template.SelectionType == templateModel.SelectionTypeMTURK_QUALIFICATIONS
 
 	var quals []*mturk.QualificationRequirement
-	if !isFirstStep {
-		// Go a little less crazy
-		// Create a special new qual to allows participants to go to this step
-		// and add it to quals
-	} else {
+	if isFirstStep && isMturkSelection {
 		crit := &model.MTurkCriteria{}
 		err := json.Unmarshal(template.MturkCriteria, crit)
 		if err != nil {
@@ -157,6 +109,40 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 				LocaleValues:        locales,
 			})
 		}
+	} else {
+		qualParams := &mturk.CreateQualificationTypeInput{
+			AutoGranted:             aws.Bool(true),
+			Name:                    aws.String(fmt.Sprintf("empirica_%s", stepRun.ID)),
+			Description:             aws.String("internal empirica qual"),
+			Keywords:                aws.String("empirica_recruitment_internal"),
+			QualificationTypeStatus: aws.String("Active"),
+		}
+		qualID, err := s.createQualificationType(ctx, qualParams)
+		if err != nil {
+			return errors.Wrap(err, "create step qual")
+		}
+
+		participants, err := stepRun.QueryParticipants().All(ctx)
+		if err != nil {
+			return errors.Wrap(err, "get step participants")
+		}
+
+		for _, participant := range participants {
+			params := &mturk.AssociateQualificationWithWorkerInput{
+				QualificationTypeId: aws.String(qualID),
+				SendNotification:    aws.Bool(false),
+				WorkerId:            aws.String(participant.MturkWorkerID),
+			}
+			err = s.associateQualificationWithWorker(ctx, params)
+			if err != nil {
+				return errors.Wrap(err, "create individual qual")
+			}
+		}
+
+		quals = append(quals, &mturk.QualificationRequirement{
+			QualificationTypeId: aws.String(qualID),
+			Comparator:          aws.String("Exists"),
+		})
 	}
 
 	params := &mturk.CreateHITInput{
