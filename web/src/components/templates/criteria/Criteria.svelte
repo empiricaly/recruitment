@@ -10,10 +10,11 @@
 
   export let first = false;
   export let criteria = {};
+  export let level = 0;
+  export let disabledAnd = false;
+  export let disabledOr = false;
 
   $: operator = criteria.and && criteria.and.length > 0 ? "and" : "or";
-
-  $: console.log(criteria[operator], operator);
 
   function handleChildAdd(event) {
     const {
@@ -72,8 +73,6 @@
       }
     }
   }
-
-  console.log(first);
 </script>
 
 <li>
@@ -101,10 +100,12 @@
         <Button
           on:click={() => dispatch('add', { criteria, operator: 'and' })}
           text="And"
+          disabled={disabledAnd}
           secondary />
         <Button
           on:click={() => dispatch('add', { criteria, operator: 'or' })}
           text="Or"
+          disabled={disabledOr}
           secondary />
         <Button
           on:click={() => dispatch('remove', { criteria })}
@@ -128,6 +129,9 @@
       <div class={!first && 'ml-8'}>
         {#each criteria[operator] as c (c)}
           <svelte:self
+            level={level + 1}
+            disabledOr={level === 3 && criteria.and && criteria.and.length > 0}
+            disabledAnd={level === 3 && criteria.or && criteria.or.length > 0}
             bind:criteria={c}
             on:remove={handleChildRemove}
             on:add={handleChildAdd} />
