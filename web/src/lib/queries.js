@@ -105,6 +105,33 @@ export const GET_RUNS = gql`
   }
 `;
 
+function recursiveComparator(level, indentation = 0) {
+  let indent = "  ";
+  if (level === 0) {
+    indent = "";
+    for (let index = 0; index < indentation; index++) {
+      indent += "  ";
+    }
+  }
+
+  return `{
+  ${level < 1 ? "" : `and ${recursiveComparator(level - 1)}`}
+  ${level < 1 ? "" : `or ${recursiveComparator(level - 1)}`}
+  key
+  comparator
+  values {
+    int
+    float
+    string
+    boolean
+  }
+}`
+    .split("\n")
+    .map((l) => indent + l)
+    .filter((l) => l.trim() !== "")
+    .join("\n");
+}
+
 export const GET_RUN = gql`
   query getRun($projectID: ID!, $runID: ID!) {
     project(projectID: $projectID) {
@@ -151,76 +178,7 @@ export const GET_RUN = gql`
               type
               filter
               js
-              condition {
-                and {
-                  and {
-                    key
-                    comparator
-                    values {
-                      int
-                      float
-                      string
-                      boolean
-                    }
-                  }
-                  or {
-                    key
-                    comparator
-                    values {
-                      int
-                      float
-                      string
-                      boolean
-                    }
-                  }
-                  key
-                  comparator
-                  values {
-                    int
-                    float
-                    string
-                    boolean
-                  }
-                }
-                or {
-                  and {
-                    key
-                    comparator
-                    values {
-                      int
-                      float
-                      string
-                      boolean
-                    }
-                  }
-                  or {
-                    key
-                    comparator
-                    values {
-                      int
-                      float
-                      string
-                      boolean
-                    }
-                  }
-                  key
-                  comparator
-                  values {
-                    int
-                    float
-                    string
-                    boolean
-                  }
-                }
-                key
-                comparator
-                values {
-                  int
-                  float
-                  string
-                  boolean
-                }
-              }
+              condition ${recursiveComparator(4, 14)}
             }
           }
           mturkCriteria {
@@ -236,76 +194,7 @@ export const GET_RUN = gql`
           }
           internalCriteria {
             all
-            condition {
-              and {
-                and {
-                  key
-                  comparator
-                  values {
-                    int
-                    float
-                    string
-                    boolean
-                  }
-                }
-                or {
-                  key
-                  comparator
-                  values {
-                    int
-                    float
-                    string
-                    boolean
-                  }
-                }
-                key
-                comparator
-                values {
-                  int
-                  float
-                  string
-                  boolean
-                }
-              }
-              or {
-                and {
-                  key
-                  comparator
-                  values {
-                    int
-                    float
-                    string
-                    boolean
-                  }
-                }
-                or {
-                  key
-                  comparator
-                  values {
-                    int
-                    float
-                    string
-                    boolean
-                  }
-                }
-                key
-                comparator
-                values {
-                  int
-                  float
-                  string
-                  boolean
-                }
-              }
-              key
-              comparator
-              values {
-                int
-                float
-                string
-                boolean
-              }
-            }
+            condition ${recursiveComparator(4, 7)}
           }
           steps {
             id
