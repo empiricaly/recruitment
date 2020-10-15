@@ -28,8 +28,10 @@ type Participation struct {
 	MturkAssignmentID string `json:"mturkAssignmentID,omitempty"`
 	// MturkHitID holds the value of the "mturkHitID" field.
 	MturkHitID string `json:"mturkHitID,omitempty"`
-	// MturkTurkSubmitTo holds the value of the "mturkTurkSubmitTo" field.
-	MturkTurkSubmitTo string `json:"mturkTurkSubmitTo,omitempty"`
+	// MturkAcceptedAt holds the value of the "mturkAcceptedAt" field.
+	MturkAcceptedAt time.Time `json:"mturkAcceptedAt,omitempty"`
+	// MturkSubmittedAt holds the value of the "mturkSubmittedAt" field.
+	MturkSubmittedAt time.Time `json:"mturkSubmittedAt,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ParticipationQuery when eager-loading is set.
 	Edges                      ParticipationEdges `json:"edges"`
@@ -85,7 +87,8 @@ func (*Participation) scanValues() []interface{} {
 		&sql.NullString{}, // mturkWorkerId
 		&sql.NullString{}, // mturkAssignmentID
 		&sql.NullString{}, // mturkHitID
-		&sql.NullString{}, // mturkTurkSubmitTo
+		&sql.NullTime{},   // mturkAcceptedAt
+		&sql.NullTime{},   // mturkSubmittedAt
 	}
 }
 
@@ -134,12 +137,17 @@ func (pa *Participation) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		pa.MturkHitID = value.String
 	}
-	if value, ok := values[5].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field mturkTurkSubmitTo", values[5])
+	if value, ok := values[5].(*sql.NullTime); !ok {
+		return fmt.Errorf("unexpected type %T for field mturkAcceptedAt", values[5])
 	} else if value.Valid {
-		pa.MturkTurkSubmitTo = value.String
+		pa.MturkAcceptedAt = value.Time
 	}
-	values = values[6:]
+	if value, ok := values[6].(*sql.NullTime); !ok {
+		return fmt.Errorf("unexpected type %T for field mturkSubmittedAt", values[6])
+	} else if value.Valid {
+		pa.MturkSubmittedAt = value.Time
+	}
+	values = values[7:]
 	if len(values) == len(participation.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullString); !ok {
 			return fmt.Errorf("unexpected type %T for field participant_participations", values[0])
@@ -200,8 +208,10 @@ func (pa *Participation) String() string {
 	builder.WriteString(pa.MturkAssignmentID)
 	builder.WriteString(", mturkHitID=")
 	builder.WriteString(pa.MturkHitID)
-	builder.WriteString(", mturkTurkSubmitTo=")
-	builder.WriteString(pa.MturkTurkSubmitTo)
+	builder.WriteString(", mturkAcceptedAt=")
+	builder.WriteString(pa.MturkAcceptedAt.Format(time.ANSIC))
+	builder.WriteString(", mturkSubmittedAt=")
+	builder.WriteString(pa.MturkSubmittedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

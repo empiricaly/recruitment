@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -54,6 +53,14 @@ func (pc *ParticipantCreate) SetNillableUpdatedAt(t *time.Time) *ParticipantCrea
 // SetMturkWorkerID sets the mturkWorkerID field.
 func (pc *ParticipantCreate) SetMturkWorkerID(s string) *ParticipantCreate {
 	pc.mutation.SetMturkWorkerID(s)
+	return pc
+}
+
+// SetNillableMturkWorkerID sets the mturkWorkerID field if the given value is not nil.
+func (pc *ParticipantCreate) SetNillableMturkWorkerID(s *string) *ParticipantCreate {
+	if s != nil {
+		pc.SetMturkWorkerID(*s)
+	}
 	return pc
 }
 
@@ -182,9 +189,6 @@ func (pc *ParticipantCreate) preSave() error {
 		v := participant.DefaultUpdatedAt()
 		pc.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := pc.mutation.MturkWorkerID(); !ok {
-		return &ValidationError{Name: "mturkWorkerID", err: errors.New("ent: missing required field \"mturkWorkerID\"")}
-	}
 	if v, ok := pc.mutation.ID(); ok {
 		if err := participant.IDValidator(v); err != nil {
 			return &ValidationError{Name: "id", err: fmt.Errorf("ent: validator failed for field \"id\": %w", err)}
@@ -241,7 +245,7 @@ func (pc *ParticipantCreate) createSpec() (*Participant, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: participant.FieldMturkWorkerID,
 		})
-		pa.MturkWorkerID = value
+		pa.MturkWorkerID = &value
 	}
 	if nodes := pc.mutation.ProviderIDsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

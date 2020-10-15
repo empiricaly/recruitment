@@ -31,7 +31,7 @@ type StepRun struct {
 	// ParticipantsCount holds the value of the "participantsCount" field.
 	ParticipantsCount int `json:"participantsCount,omitempty"`
 	// HitID holds the value of the "hitID" field.
-	HitID string `json:"hitID,omitempty"`
+	HitID *string `json:"hitID,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StepRunQuery when eager-loading is set.
 	Edges     StepRunEdges `json:"edges"`
@@ -178,7 +178,8 @@ func (sr *StepRun) assignValues(values ...interface{}) error {
 	if value, ok := values[6].(*sql.NullString); !ok {
 		return fmt.Errorf("unexpected type %T for field hitID", values[6])
 	} else if value.Valid {
-		sr.HitID = value.String
+		sr.HitID = new(string)
+		*sr.HitID = value.String
 	}
 	values = values[7:]
 	if len(values) == len(steprun.ForeignKeys) {
@@ -256,8 +257,10 @@ func (sr *StepRun) String() string {
 	}
 	builder.WriteString(", participantsCount=")
 	builder.WriteString(fmt.Sprintf("%v", sr.ParticipantsCount))
-	builder.WriteString(", hitID=")
-	builder.WriteString(sr.HitID)
+	if v := sr.HitID; v != nil {
+		builder.WriteString(", hitID=")
+		builder.WriteString(*v)
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

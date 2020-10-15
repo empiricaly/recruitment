@@ -26,7 +26,14 @@ func (Participation) Fields() []ent.Field {
 		field.String("mturkWorkerId"),
 		field.String("mturkAssignmentID"),
 		field.String("mturkHitID"),
-		field.String("mturkTurkSubmitTo"),
+		// Corresponds to MTurk AcceptTime: The date and time the Worker
+		// accepted the assignment.
+		field.Time("mturkAcceptedAt"),
+		// Corresponds to SubmitTime: If the Worker has submitted results,
+		// SubmitTime is the date and time the assignment was submitted.
+		// This value is omitted from the assignment if the Worker has not
+		// yet submitted results.
+		field.Time("mturkSubmittedAt"),
 	}
 }
 

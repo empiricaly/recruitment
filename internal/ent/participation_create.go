@@ -68,9 +68,15 @@ func (pc *ParticipationCreate) SetMturkHitID(s string) *ParticipationCreate {
 	return pc
 }
 
-// SetMturkTurkSubmitTo sets the mturkTurkSubmitTo field.
-func (pc *ParticipationCreate) SetMturkTurkSubmitTo(s string) *ParticipationCreate {
-	pc.mutation.SetMturkTurkSubmitTo(s)
+// SetMturkAcceptedAt sets the mturkAcceptedAt field.
+func (pc *ParticipationCreate) SetMturkAcceptedAt(t time.Time) *ParticipationCreate {
+	pc.mutation.SetMturkAcceptedAt(t)
+	return pc
+}
+
+// SetMturkSubmittedAt sets the mturkSubmittedAt field.
+func (pc *ParticipationCreate) SetMturkSubmittedAt(t time.Time) *ParticipationCreate {
+	pc.mutation.SetMturkSubmittedAt(t)
 	return pc
 }
 
@@ -182,8 +188,11 @@ func (pc *ParticipationCreate) preSave() error {
 	if _, ok := pc.mutation.MturkHitID(); !ok {
 		return &ValidationError{Name: "mturkHitID", err: errors.New("ent: missing required field \"mturkHitID\"")}
 	}
-	if _, ok := pc.mutation.MturkTurkSubmitTo(); !ok {
-		return &ValidationError{Name: "mturkTurkSubmitTo", err: errors.New("ent: missing required field \"mturkTurkSubmitTo\"")}
+	if _, ok := pc.mutation.MturkAcceptedAt(); !ok {
+		return &ValidationError{Name: "mturkAcceptedAt", err: errors.New("ent: missing required field \"mturkAcceptedAt\"")}
+	}
+	if _, ok := pc.mutation.MturkSubmittedAt(); !ok {
+		return &ValidationError{Name: "mturkSubmittedAt", err: errors.New("ent: missing required field \"mturkSubmittedAt\"")}
 	}
 	if v, ok := pc.mutation.ID(); ok {
 		if err := participation.IDValidator(v); err != nil {
@@ -259,13 +268,21 @@ func (pc *ParticipationCreate) createSpec() (*Participation, *sqlgraph.CreateSpe
 		})
 		pa.MturkHitID = value
 	}
-	if value, ok := pc.mutation.MturkTurkSubmitTo(); ok {
+	if value, ok := pc.mutation.MturkAcceptedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
+			Type:   field.TypeTime,
 			Value:  value,
-			Column: participation.FieldMturkTurkSubmitTo,
+			Column: participation.FieldMturkAcceptedAt,
 		})
-		pa.MturkTurkSubmitTo = value
+		pa.MturkAcceptedAt = value
+	}
+	if value, ok := pc.mutation.MturkSubmittedAt(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: participation.FieldMturkSubmittedAt,
+		})
+		pa.MturkSubmittedAt = value
 	}
 	if nodes := pc.mutation.StepRunIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

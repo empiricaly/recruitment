@@ -123,8 +123,6 @@ func (s *Session) associateQualificationWithWorker(ctx context.Context, params *
 	return nil
 }
 
-// associate qualification type
-
 func (s *Session) createQualificationType(ctx context.Context, params *mturk.CreateQualificationTypeInput) (string, error) {
 	var qualID string
 	if s.config.Dev {
@@ -139,4 +137,63 @@ func (s *Session) createQualificationType(ctx context.Context, params *mturk.Cre
 	}
 
 	return qualID, nil
+}
+
+func (s *Session) notifyWorkers(ctx context.Context, subject, text string, workerIDs []string) error {
+	if s.config.Dev {
+		log.Debug().Strs("players", workerIDs).Msg("Notify Players")
+	} else {
+		params := &mturk.NotifyWorkersInput{
+			WorkerIds:   aws.StringSlice(workerIDs),
+			Subject:     aws.String(subject),
+			MessageText: aws.String(text),
+		}
+		_, err := s.MTurk.NotifyWorkersWithContext(ctx, params)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *Session) assignmentsForHit(ctx context.Context, hitID string) (chan *mturk.Assignment, error) {
+	c := make(chan *mturk.Assignment)
+
+	if s.config.Dev {
+		log.Debug().Msg("Getting assignments")
+	} else {
+		go func() {
+			defer close(c)
+
+			for {
+				var nextToken *string
+				params := &mturk.ListAssignmentsForHITInput{
+					AssignmentStatuses: aws.StringSlice([]string{"Approved"}),
+					HITId:              aws.String(hitID),
+					MaxResults:         aws.Int64(100),
+				}
+
+				if nextToken != nil {
+					params.NextToken = nextToken
+				}
+
+				assignments, err := s.MTurk.ListAssignmentsForHITWithContext(ctx, params)
+				if err != nil {
+					log.Error().Err(err).Msg("list assignments for hit")
+				}
+
+				for _, assignment := range assignments.Assignments {
+					c <- assignment
+				}
+				if assignments.NextToken != nil {
+					nextToken = assignments.NextToken
+				} else {
+					return
+				}
+			}
+		}()
+	}
+
+	return c, nil
 }

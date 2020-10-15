@@ -54,9 +54,15 @@ func (pu *ParticipationUpdate) SetMturkHitID(s string) *ParticipationUpdate {
 	return pu
 }
 
-// SetMturkTurkSubmitTo sets the mturkTurkSubmitTo field.
-func (pu *ParticipationUpdate) SetMturkTurkSubmitTo(s string) *ParticipationUpdate {
-	pu.mutation.SetMturkTurkSubmitTo(s)
+// SetMturkAcceptedAt sets the mturkAcceptedAt field.
+func (pu *ParticipationUpdate) SetMturkAcceptedAt(t time.Time) *ParticipationUpdate {
+	pu.mutation.SetMturkAcceptedAt(t)
+	return pu
+}
+
+// SetMturkSubmittedAt sets the mturkSubmittedAt field.
+func (pu *ParticipationUpdate) SetMturkSubmittedAt(t time.Time) *ParticipationUpdate {
+	pu.mutation.SetMturkSubmittedAt(t)
 	return pu
 }
 
@@ -217,11 +223,18 @@ func (pu *ParticipationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: participation.FieldMturkHitID,
 		})
 	}
-	if value, ok := pu.mutation.MturkTurkSubmitTo(); ok {
+	if value, ok := pu.mutation.MturkAcceptedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
+			Type:   field.TypeTime,
 			Value:  value,
-			Column: participation.FieldMturkTurkSubmitTo,
+			Column: participation.FieldMturkAcceptedAt,
+		})
+	}
+	if value, ok := pu.mutation.MturkSubmittedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: participation.FieldMturkSubmittedAt,
 		})
 	}
 	if pu.mutation.StepRunCleared() {
@@ -336,9 +349,15 @@ func (puo *ParticipationUpdateOne) SetMturkHitID(s string) *ParticipationUpdateO
 	return puo
 }
 
-// SetMturkTurkSubmitTo sets the mturkTurkSubmitTo field.
-func (puo *ParticipationUpdateOne) SetMturkTurkSubmitTo(s string) *ParticipationUpdateOne {
-	puo.mutation.SetMturkTurkSubmitTo(s)
+// SetMturkAcceptedAt sets the mturkAcceptedAt field.
+func (puo *ParticipationUpdateOne) SetMturkAcceptedAt(t time.Time) *ParticipationUpdateOne {
+	puo.mutation.SetMturkAcceptedAt(t)
+	return puo
+}
+
+// SetMturkSubmittedAt sets the mturkSubmittedAt field.
+func (puo *ParticipationUpdateOne) SetMturkSubmittedAt(t time.Time) *ParticipationUpdateOne {
+	puo.mutation.SetMturkSubmittedAt(t)
 	return puo
 }
 
@@ -497,11 +516,18 @@ func (puo *ParticipationUpdateOne) sqlSave(ctx context.Context) (pa *Participati
 			Column: participation.FieldMturkHitID,
 		})
 	}
-	if value, ok := puo.mutation.MturkTurkSubmitTo(); ok {
+	if value, ok := puo.mutation.MturkAcceptedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
+			Type:   field.TypeTime,
 			Value:  value,
-			Column: participation.FieldMturkTurkSubmitTo,
+			Column: participation.FieldMturkAcceptedAt,
+		})
+	}
+	if value, ok := puo.mutation.MturkSubmittedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: participation.FieldMturkSubmittedAt,
 		})
 	}
 	if puo.mutation.StepRunCleared() {

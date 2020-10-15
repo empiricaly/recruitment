@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/mturk"
 	"github.com/empiricaly/recruitment/internal/model"
+	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/pkg/errors"
 )
 
@@ -17,10 +18,11 @@ type Session struct {
 	quals []*model.MTurkQulificationType
 	*mturk.MTurk
 	config *Config
+	store  *storage.Conn
 }
 
 // New create a new session for mTurk
-func New(config *Config) (*Session, error) {
+func New(config *Config, store *storage.Conn) (*Session, error) {
 	var endpoint string
 	if config.Sandbox {
 		endpoint = sandboxURL
@@ -46,5 +48,6 @@ func New(config *Config) (*Session, error) {
 		config: config,
 		MTurk:  svc,
 		quals:  quals,
+		store:  store,
 	}, nil
 }

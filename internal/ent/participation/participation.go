@@ -21,8 +21,10 @@ const (
 	FieldMturkAssignmentID = "mturk_assignment_id"
 	// FieldMturkHitID holds the string denoting the mturkhitid field in the database.
 	FieldMturkHitID = "mturk_hit_id"
-	// FieldMturkTurkSubmitTo holds the string denoting the mturkturksubmitto field in the database.
-	FieldMturkTurkSubmitTo = "mturk_turk_submit_to"
+	// FieldMturkAcceptedAt holds the string denoting the mturkacceptedat field in the database.
+	FieldMturkAcceptedAt = "mturk_accepted_at"
+	// FieldMturkSubmittedAt holds the string denoting the mturksubmittedat field in the database.
+	FieldMturkSubmittedAt = "mturk_submitted_at"
 
 	// EdgeStepRun holds the string denoting the steprun edge name in mutations.
 	EdgeStepRun = "stepRun"
@@ -55,7 +57,8 @@ var Columns = []string{
 	FieldMturkWorkerId,
 	FieldMturkAssignmentID,
 	FieldMturkHitID,
-	FieldMturkTurkSubmitTo,
+	FieldMturkAcceptedAt,
+	FieldMturkSubmittedAt,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the Participation type.

@@ -21,7 +21,7 @@ func (Participant) Mixin() []ent.Mixin {
 // Fields of the Participant.
 func (Participant) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("mturkWorkerID"),
+		field.String("mturkWorkerID").Optional().Nillable(),
 	}
 }
 

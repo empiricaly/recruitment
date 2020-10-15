@@ -28,7 +28,7 @@ var (
 		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "mturk_worker_id", Type: field.TypeString},
+		{Name: "mturk_worker_id", Type: field.TypeString, Nullable: true},
 		{Name: "step_run_created_participants", Type: field.TypeString, Nullable: true, Size: 20},
 	}
 	// ParticipantsTable holds the schema information for the "participants" table.
@@ -54,7 +54,8 @@ var (
 		{Name: "mturk_worker_id", Type: field.TypeString},
 		{Name: "mturk_assignment_id", Type: field.TypeString},
 		{Name: "mturk_hit_id", Type: field.TypeString},
-		{Name: "mturk_turk_submit_to", Type: field.TypeString},
+		{Name: "mturk_accepted_at", Type: field.TypeTime},
+		{Name: "mturk_submitted_at", Type: field.TypeTime},
 		{Name: "participant_participations", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "step_run_participations", Type: field.TypeString, Nullable: true, Size: 20},
 	}
@@ -66,14 +67,14 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "participations_participants_participations",
-				Columns: []*schema.Column{ParticipationsColumns[7]},
+				Columns: []*schema.Column{ParticipationsColumns[8]},
 
 				RefColumns: []*schema.Column{ParticipantsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:  "participations_step_runs_participations",
-				Columns: []*schema.Column{ParticipationsColumns[8]},
+				Columns: []*schema.Column{ParticipationsColumns[9]},
 
 				RefColumns: []*schema.Column{StepRunsColumns[0]},
 				OnDelete:   schema.SetNull,

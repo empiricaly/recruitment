@@ -344,7 +344,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: steprun.FieldHitID,
 		})
-		sr.HitID = value
+		sr.HitID = &value
 	}
 	if nodes := src.mutation.CreatedParticipantsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

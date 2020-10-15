@@ -43,6 +43,20 @@ func (pu *ParticipantUpdate) SetMturkWorkerID(s string) *ParticipantUpdate {
 	return pu
 }
 
+// SetNillableMturkWorkerID sets the mturkWorkerID field if the given value is not nil.
+func (pu *ParticipantUpdate) SetNillableMturkWorkerID(s *string) *ParticipantUpdate {
+	if s != nil {
+		pu.SetMturkWorkerID(*s)
+	}
+	return pu
+}
+
+// ClearMturkWorkerID clears the value of mturkWorkerID.
+func (pu *ParticipantUpdate) ClearMturkWorkerID() *ParticipantUpdate {
+	pu.mutation.ClearMturkWorkerID()
+	return pu
+}
+
 // AddProviderIDIDs adds the providerIDs edge to ProviderID by ids.
 func (pu *ParticipantUpdate) AddProviderIDIDs(ids ...string) *ParticipantUpdate {
 	pu.mutation.AddProviderIDIDs(ids...)
@@ -251,6 +265,12 @@ func (pu *ParticipantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: participant.FieldMturkWorkerID,
 		})
 	}
+	if pu.mutation.MturkWorkerIDCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: participant.FieldMturkWorkerID,
+		})
+	}
 	if nodes := pu.mutation.RemovedProviderIDsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -427,6 +447,20 @@ func (puo *ParticipantUpdateOne) SetUpdatedAt(t time.Time) *ParticipantUpdateOne
 // SetMturkWorkerID sets the mturkWorkerID field.
 func (puo *ParticipantUpdateOne) SetMturkWorkerID(s string) *ParticipantUpdateOne {
 	puo.mutation.SetMturkWorkerID(s)
+	return puo
+}
+
+// SetNillableMturkWorkerID sets the mturkWorkerID field if the given value is not nil.
+func (puo *ParticipantUpdateOne) SetNillableMturkWorkerID(s *string) *ParticipantUpdateOne {
+	if s != nil {
+		puo.SetMturkWorkerID(*s)
+	}
+	return puo
+}
+
+// ClearMturkWorkerID clears the value of mturkWorkerID.
+func (puo *ParticipantUpdateOne) ClearMturkWorkerID() *ParticipantUpdateOne {
+	puo.mutation.ClearMturkWorkerID()
 	return puo
 }
 
@@ -633,6 +667,12 @@ func (puo *ParticipantUpdateOne) sqlSave(ctx context.Context) (pa *Participant, 
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: participant.FieldMturkWorkerID,
+		})
+	}
+	if puo.mutation.MturkWorkerIDCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: participant.FieldMturkWorkerID,
 		})
 	}

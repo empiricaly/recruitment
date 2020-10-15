@@ -363,6 +363,20 @@ func MturkWorkerIDHasSuffix(v string) predicate.Participant {
 	})
 }
 
+// MturkWorkerIDIsNil applies the IsNil predicate on the "mturkWorkerID" field.
+func MturkWorkerIDIsNil() predicate.Participant {
+	return predicate.Participant(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldMturkWorkerID)))
+	})
+}
+
+// MturkWorkerIDNotNil applies the NotNil predicate on the "mturkWorkerID" field.
+func MturkWorkerIDNotNil() predicate.Participant {
+	return predicate.Participant(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldMturkWorkerID)))
+	})
+}
+
 // MturkWorkerIDEqualFold applies the EqualFold predicate on the "mturkWorkerID" field.
 func MturkWorkerIDEqualFold(v string) predicate.Participant {
 	return predicate.Participant(func(s *sql.Selector) {

@@ -128,10 +128,17 @@ func MturkHitID(v string) predicate.Participation {
 	})
 }
 
-// MturkTurkSubmitTo applies equality check predicate on the "mturkTurkSubmitTo" field. It's identical to MturkTurkSubmitToEQ.
-func MturkTurkSubmitTo(v string) predicate.Participation {
+// MturkAcceptedAt applies equality check predicate on the "mturkAcceptedAt" field. It's identical to MturkAcceptedAtEQ.
+func MturkAcceptedAt(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldMturkTurkSubmitTo), v))
+		s.Where(sql.EQ(s.C(FieldMturkAcceptedAt), v))
+	})
+}
+
+// MturkSubmittedAt applies equality check predicate on the "mturkSubmittedAt" field. It's identical to MturkSubmittedAtEQ.
+func MturkSubmittedAt(v time.Time) predicate.Participation {
+	return predicate.Participation(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldMturkSubmittedAt), v))
 	})
 }
 
@@ -620,22 +627,22 @@ func MturkHitIDContainsFold(v string) predicate.Participation {
 	})
 }
 
-// MturkTurkSubmitToEQ applies the EQ predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToEQ(v string) predicate.Participation {
+// MturkAcceptedAtEQ applies the EQ predicate on the "mturkAcceptedAt" field.
+func MturkAcceptedAtEQ(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldMturkTurkSubmitTo), v))
+		s.Where(sql.EQ(s.C(FieldMturkAcceptedAt), v))
 	})
 }
 
-// MturkTurkSubmitToNEQ applies the NEQ predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToNEQ(v string) predicate.Participation {
+// MturkAcceptedAtNEQ applies the NEQ predicate on the "mturkAcceptedAt" field.
+func MturkAcceptedAtNEQ(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldMturkTurkSubmitTo), v))
+		s.Where(sql.NEQ(s.C(FieldMturkAcceptedAt), v))
 	})
 }
 
-// MturkTurkSubmitToIn applies the In predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToIn(vs ...string) predicate.Participation {
+// MturkAcceptedAtIn applies the In predicate on the "mturkAcceptedAt" field.
+func MturkAcceptedAtIn(vs ...time.Time) predicate.Participation {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -647,12 +654,12 @@ func MturkTurkSubmitToIn(vs ...string) predicate.Participation {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.In(s.C(FieldMturkTurkSubmitTo), v...))
+		s.Where(sql.In(s.C(FieldMturkAcceptedAt), v...))
 	})
 }
 
-// MturkTurkSubmitToNotIn applies the NotIn predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToNotIn(vs ...string) predicate.Participation {
+// MturkAcceptedAtNotIn applies the NotIn predicate on the "mturkAcceptedAt" field.
+func MturkAcceptedAtNotIn(vs ...time.Time) predicate.Participation {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -664,70 +671,111 @@ func MturkTurkSubmitToNotIn(vs ...string) predicate.Participation {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.NotIn(s.C(FieldMturkTurkSubmitTo), v...))
+		s.Where(sql.NotIn(s.C(FieldMturkAcceptedAt), v...))
 	})
 }
 
-// MturkTurkSubmitToGT applies the GT predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToGT(v string) predicate.Participation {
+// MturkAcceptedAtGT applies the GT predicate on the "mturkAcceptedAt" field.
+func MturkAcceptedAtGT(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldMturkTurkSubmitTo), v))
+		s.Where(sql.GT(s.C(FieldMturkAcceptedAt), v))
 	})
 }
 
-// MturkTurkSubmitToGTE applies the GTE predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToGTE(v string) predicate.Participation {
+// MturkAcceptedAtGTE applies the GTE predicate on the "mturkAcceptedAt" field.
+func MturkAcceptedAtGTE(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldMturkTurkSubmitTo), v))
+		s.Where(sql.GTE(s.C(FieldMturkAcceptedAt), v))
 	})
 }
 
-// MturkTurkSubmitToLT applies the LT predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToLT(v string) predicate.Participation {
+// MturkAcceptedAtLT applies the LT predicate on the "mturkAcceptedAt" field.
+func MturkAcceptedAtLT(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldMturkTurkSubmitTo), v))
+		s.Where(sql.LT(s.C(FieldMturkAcceptedAt), v))
 	})
 }
 
-// MturkTurkSubmitToLTE applies the LTE predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToLTE(v string) predicate.Participation {
+// MturkAcceptedAtLTE applies the LTE predicate on the "mturkAcceptedAt" field.
+func MturkAcceptedAtLTE(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldMturkTurkSubmitTo), v))
+		s.Where(sql.LTE(s.C(FieldMturkAcceptedAt), v))
 	})
 }
 
-// MturkTurkSubmitToContains applies the Contains predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToContains(v string) predicate.Participation {
+// MturkSubmittedAtEQ applies the EQ predicate on the "mturkSubmittedAt" field.
+func MturkSubmittedAtEQ(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldMturkTurkSubmitTo), v))
+		s.Where(sql.EQ(s.C(FieldMturkSubmittedAt), v))
 	})
 }
 
-// MturkTurkSubmitToHasPrefix applies the HasPrefix predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToHasPrefix(v string) predicate.Participation {
+// MturkSubmittedAtNEQ applies the NEQ predicate on the "mturkSubmittedAt" field.
+func MturkSubmittedAtNEQ(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldMturkTurkSubmitTo), v))
+		s.Where(sql.NEQ(s.C(FieldMturkSubmittedAt), v))
 	})
 }
 
-// MturkTurkSubmitToHasSuffix applies the HasSuffix predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToHasSuffix(v string) predicate.Participation {
+// MturkSubmittedAtIn applies the In predicate on the "mturkSubmittedAt" field.
+func MturkSubmittedAtIn(vs ...time.Time) predicate.Participation {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldMturkTurkSubmitTo), v))
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldMturkSubmittedAt), v...))
 	})
 }
 
-// MturkTurkSubmitToEqualFold applies the EqualFold predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToEqualFold(v string) predicate.Participation {
+// MturkSubmittedAtNotIn applies the NotIn predicate on the "mturkSubmittedAt" field.
+func MturkSubmittedAtNotIn(vs ...time.Time) predicate.Participation {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldMturkTurkSubmitTo), v))
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldMturkSubmittedAt), v...))
 	})
 }
 
-// MturkTurkSubmitToContainsFold applies the ContainsFold predicate on the "mturkTurkSubmitTo" field.
-func MturkTurkSubmitToContainsFold(v string) predicate.Participation {
+// MturkSubmittedAtGT applies the GT predicate on the "mturkSubmittedAt" field.
+func MturkSubmittedAtGT(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldMturkTurkSubmitTo), v))
+		s.Where(sql.GT(s.C(FieldMturkSubmittedAt), v))
+	})
+}
+
+// MturkSubmittedAtGTE applies the GTE predicate on the "mturkSubmittedAt" field.
+func MturkSubmittedAtGTE(v time.Time) predicate.Participation {
+	return predicate.Participation(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldMturkSubmittedAt), v))
+	})
+}
+
+// MturkSubmittedAtLT applies the LT predicate on the "mturkSubmittedAt" field.
+func MturkSubmittedAtLT(v time.Time) predicate.Participation {
+	return predicate.Participation(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldMturkSubmittedAt), v))
+	})
+}
+
+// MturkSubmittedAtLTE applies the LTE predicate on the "mturkSubmittedAt" field.
+func MturkSubmittedAtLTE(v time.Time) predicate.Participation {
+	return predicate.Participation(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldMturkSubmittedAt), v))
 	})
 }
 

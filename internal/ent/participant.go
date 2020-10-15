@@ -22,7 +22,7 @@ type Participant struct {
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// MturkWorkerID holds the value of the "mturkWorkerID" field.
-	MturkWorkerID string `json:"mturkWorkerID,omitempty"`
+	MturkWorkerID *string `json:"mturkWorkerID,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ParticipantQuery when eager-loading is set.
 	Edges                         ParticipantEdges `json:"edges"`
@@ -127,7 +127,8 @@ func (pa *Participant) assignValues(values ...interface{}) error {
 	if value, ok := values[2].(*sql.NullString); !ok {
 		return fmt.Errorf("unexpected type %T for field mturkWorkerID", values[2])
 	} else if value.Valid {
-		pa.MturkWorkerID = value.String
+		pa.MturkWorkerID = new(string)
+		*pa.MturkWorkerID = value.String
 	}
 	values = values[3:]
 	if len(values) == len(participant.ForeignKeys) {
@@ -188,8 +189,10 @@ func (pa *Participant) String() string {
 	builder.WriteString(pa.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", updated_at=")
 	builder.WriteString(pa.UpdatedAt.Format(time.ANSIC))
-	builder.WriteString(", mturkWorkerID=")
-	builder.WriteString(pa.MturkWorkerID)
+	if v := pa.MturkWorkerID; v != nil {
+		builder.WriteString(", mturkWorkerID=")
+		builder.WriteString(*v)
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

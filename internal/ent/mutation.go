@@ -845,7 +845,7 @@ func (m *ParticipantMutation) MturkWorkerID() (r string, exists bool) {
 // If the Participant object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *ParticipantMutation) OldMturkWorkerID(ctx context.Context) (v string, err error) {
+func (m *ParticipantMutation) OldMturkWorkerID(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldMturkWorkerID is allowed only on UpdateOne operations")
 	}
@@ -859,9 +859,22 @@ func (m *ParticipantMutation) OldMturkWorkerID(ctx context.Context) (v string, e
 	return oldValue.MturkWorkerID, nil
 }
 
+// ClearMturkWorkerID clears the value of mturkWorkerID.
+func (m *ParticipantMutation) ClearMturkWorkerID() {
+	m.mturkWorkerID = nil
+	m.clearedFields[participant.FieldMturkWorkerID] = struct{}{}
+}
+
+// MturkWorkerIDCleared returns if the field mturkWorkerID was cleared in this mutation.
+func (m *ParticipantMutation) MturkWorkerIDCleared() bool {
+	_, ok := m.clearedFields[participant.FieldMturkWorkerID]
+	return ok
+}
+
 // ResetMturkWorkerID reset all changes of the "mturkWorkerID" field.
 func (m *ParticipantMutation) ResetMturkWorkerID() {
 	m.mturkWorkerID = nil
+	delete(m.clearedFields, participant.FieldMturkWorkerID)
 }
 
 // AddProviderIDIDs adds the providerIDs edge to ProviderID by ids.
@@ -1141,7 +1154,11 @@ func (m *ParticipantMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared
 // during this mutation.
 func (m *ParticipantMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(participant.FieldMturkWorkerID) {
+		fields = append(fields, participant.FieldMturkWorkerID)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicates if this field was
@@ -1154,6 +1171,11 @@ func (m *ParticipantMutation) FieldCleared(name string) bool {
 // ClearField clears the value for the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ParticipantMutation) ClearField(name string) error {
+	switch name {
+	case participant.FieldMturkWorkerID:
+		m.ClearMturkWorkerID()
+		return nil
+	}
 	return fmt.Errorf("unknown Participant nullable field %s", name)
 }
 
@@ -1330,7 +1352,8 @@ type ParticipationMutation struct {
 	mturkWorkerId      *string
 	mturkAssignmentID  *string
 	mturkHitID         *string
-	mturkTurkSubmitTo  *string
+	mturkAcceptedAt    *time.Time
+	mturkSubmittedAt   *time.Time
 	clearedFields      map[string]struct{}
 	stepRun            *string
 	clearedstepRun     bool
@@ -1610,41 +1633,78 @@ func (m *ParticipationMutation) ResetMturkHitID() {
 	m.mturkHitID = nil
 }
 
-// SetMturkTurkSubmitTo sets the mturkTurkSubmitTo field.
-func (m *ParticipationMutation) SetMturkTurkSubmitTo(s string) {
-	m.mturkTurkSubmitTo = &s
+// SetMturkAcceptedAt sets the mturkAcceptedAt field.
+func (m *ParticipationMutation) SetMturkAcceptedAt(t time.Time) {
+	m.mturkAcceptedAt = &t
 }
 
-// MturkTurkSubmitTo returns the mturkTurkSubmitTo value in the mutation.
-func (m *ParticipationMutation) MturkTurkSubmitTo() (r string, exists bool) {
-	v := m.mturkTurkSubmitTo
+// MturkAcceptedAt returns the mturkAcceptedAt value in the mutation.
+func (m *ParticipationMutation) MturkAcceptedAt() (r time.Time, exists bool) {
+	v := m.mturkAcceptedAt
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldMturkTurkSubmitTo returns the old mturkTurkSubmitTo value of the Participation.
+// OldMturkAcceptedAt returns the old mturkAcceptedAt value of the Participation.
 // If the Participation object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *ParticipationMutation) OldMturkTurkSubmitTo(ctx context.Context) (v string, err error) {
+func (m *ParticipationMutation) OldMturkAcceptedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldMturkTurkSubmitTo is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldMturkAcceptedAt is allowed only on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldMturkTurkSubmitTo requires an ID field in the mutation")
+		return v, fmt.Errorf("OldMturkAcceptedAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMturkTurkSubmitTo: %w", err)
+		return v, fmt.Errorf("querying old value for OldMturkAcceptedAt: %w", err)
 	}
-	return oldValue.MturkTurkSubmitTo, nil
+	return oldValue.MturkAcceptedAt, nil
 }
 
-// ResetMturkTurkSubmitTo reset all changes of the "mturkTurkSubmitTo" field.
-func (m *ParticipationMutation) ResetMturkTurkSubmitTo() {
-	m.mturkTurkSubmitTo = nil
+// ResetMturkAcceptedAt reset all changes of the "mturkAcceptedAt" field.
+func (m *ParticipationMutation) ResetMturkAcceptedAt() {
+	m.mturkAcceptedAt = nil
+}
+
+// SetMturkSubmittedAt sets the mturkSubmittedAt field.
+func (m *ParticipationMutation) SetMturkSubmittedAt(t time.Time) {
+	m.mturkSubmittedAt = &t
+}
+
+// MturkSubmittedAt returns the mturkSubmittedAt value in the mutation.
+func (m *ParticipationMutation) MturkSubmittedAt() (r time.Time, exists bool) {
+	v := m.mturkSubmittedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMturkSubmittedAt returns the old mturkSubmittedAt value of the Participation.
+// If the Participation object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ParticipationMutation) OldMturkSubmittedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMturkSubmittedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMturkSubmittedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMturkSubmittedAt: %w", err)
+	}
+	return oldValue.MturkSubmittedAt, nil
+}
+
+// ResetMturkSubmittedAt reset all changes of the "mturkSubmittedAt" field.
+func (m *ParticipationMutation) ResetMturkSubmittedAt() {
+	m.mturkSubmittedAt = nil
 }
 
 // SetStepRunID sets the stepRun edge to StepRun by id.
@@ -1739,7 +1799,7 @@ func (m *ParticipationMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *ParticipationMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, participation.FieldCreatedAt)
 	}
@@ -1755,8 +1815,11 @@ func (m *ParticipationMutation) Fields() []string {
 	if m.mturkHitID != nil {
 		fields = append(fields, participation.FieldMturkHitID)
 	}
-	if m.mturkTurkSubmitTo != nil {
-		fields = append(fields, participation.FieldMturkTurkSubmitTo)
+	if m.mturkAcceptedAt != nil {
+		fields = append(fields, participation.FieldMturkAcceptedAt)
+	}
+	if m.mturkSubmittedAt != nil {
+		fields = append(fields, participation.FieldMturkSubmittedAt)
 	}
 	return fields
 }
@@ -1776,8 +1839,10 @@ func (m *ParticipationMutation) Field(name string) (ent.Value, bool) {
 		return m.MturkAssignmentID()
 	case participation.FieldMturkHitID:
 		return m.MturkHitID()
-	case participation.FieldMturkTurkSubmitTo:
-		return m.MturkTurkSubmitTo()
+	case participation.FieldMturkAcceptedAt:
+		return m.MturkAcceptedAt()
+	case participation.FieldMturkSubmittedAt:
+		return m.MturkSubmittedAt()
 	}
 	return nil, false
 }
@@ -1797,8 +1862,10 @@ func (m *ParticipationMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldMturkAssignmentID(ctx)
 	case participation.FieldMturkHitID:
 		return m.OldMturkHitID(ctx)
-	case participation.FieldMturkTurkSubmitTo:
-		return m.OldMturkTurkSubmitTo(ctx)
+	case participation.FieldMturkAcceptedAt:
+		return m.OldMturkAcceptedAt(ctx)
+	case participation.FieldMturkSubmittedAt:
+		return m.OldMturkSubmittedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Participation field %s", name)
 }
@@ -1843,12 +1910,19 @@ func (m *ParticipationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetMturkHitID(v)
 		return nil
-	case participation.FieldMturkTurkSubmitTo:
-		v, ok := value.(string)
+	case participation.FieldMturkAcceptedAt:
+		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetMturkTurkSubmitTo(v)
+		m.SetMturkAcceptedAt(v)
+		return nil
+	case participation.FieldMturkSubmittedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMturkSubmittedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Participation field %s", name)
@@ -1915,8 +1989,11 @@ func (m *ParticipationMutation) ResetField(name string) error {
 	case participation.FieldMturkHitID:
 		m.ResetMturkHitID()
 		return nil
-	case participation.FieldMturkTurkSubmitTo:
-		m.ResetMturkTurkSubmitTo()
+	case participation.FieldMturkAcceptedAt:
+		m.ResetMturkAcceptedAt()
+		return nil
+	case participation.FieldMturkSubmittedAt:
+		m.ResetMturkSubmittedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Participation field %s", name)
@@ -5518,7 +5595,7 @@ func (m *StepRunMutation) HitID() (r string, exists bool) {
 // If the StepRun object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *StepRunMutation) OldHitID(ctx context.Context) (v string, err error) {
+func (m *StepRunMutation) OldHitID(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldHitID is allowed only on UpdateOne operations")
 	}
