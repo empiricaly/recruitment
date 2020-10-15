@@ -23,8 +23,10 @@ func (s *Session) GetQuals() ([]*model.MTurkQulificationType, error) {
 	}
 	err := s.MTurk.ListQualificationTypesPages(params, func(page *mturk.ListQualificationTypesOutput, _ bool) bool {
 		for _, qual := range page.QualificationTypes {
-			if *qual.QualificationTypeStatus == "Active" && !strings.Contains(*qual.Keywords, "empirica_recruitment_internal") {
-				quals = append(quals, &model.MTurkQulificationType{ID: *qual.QualificationTypeId, Name: *qual.Name, Description: *qual.Description, Type: "Custom"})
+			if qual.QualificationTypeStatus != nil && *qual.QualificationTypeStatus == "Active" {
+				if qual.Keywords == nil || !strings.Contains(*qual.Keywords, "empirica_recruitment_internal") {
+					quals = append(quals, &model.MTurkQulificationType{ID: *qual.QualificationTypeId, Name: *qual.Name, Description: *qual.Description, Type: "Custom"})
+				}
 			}
 		}
 		return true

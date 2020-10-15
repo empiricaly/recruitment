@@ -151,12 +151,13 @@
         bind:criteria={template.internalCriteria.condition} />
     {:else if template.selectionType === 'MTURK_QUALIFICATIONS'}
       <MTurkQualifications
+        sandbox={template.sandbox}
         bind:qualifications={template.mturkCriteria.qualifications} />
     {:else}Unknow Particpant Selection Type{/if}
   </div>
 
   <div slot="footer">
-    <div class="md:grid grid-cols-2 gap-6">
+    <div class="md:grid grid-cols-3 gap-6">
       <div>
         <Label
           forID="participantCount"
@@ -175,13 +176,24 @@
         </div>
       </div>
 
-      <div class="flex items-center mt-4 md:mt-0">
+      <div class="mt-4 md:mt-0">
         <Label
           forID="adult"
-          text="This project may contain potentially explicit or offensive
+          text="May contain Explicit Content"
+          question="This run may contain potentially explicit or offensive
             content, for example, nudity." />
-        <div class="ml-8">
+        <div class="">
           <Toggle id="adult" bind:checked={template.adult} />
+        </div>
+      </div>
+
+      <div class="mt-4 md:mt-0">
+        <Label
+          forID="sandbox"
+          text="Use Sandbox"
+          question="Use MTurk Sandbox mode instead of production mode. Real Workers will not see the HITs. Search for MTurk Sandbox on Google to find out more." />
+        <div class="">
+          <Toggle id="adult" bind:checked={template.sandbox} />
         </div>
       </div>
     </div>

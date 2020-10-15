@@ -23,11 +23,12 @@ type Server struct {
 	config    *Config
 	storeConn *storage.Conn
 
-	mturk   *mturk.Session
-	runtime *runtime.Runtime
-	metrics *metrics.Metrics
-	done    chan struct{}
-	wg      sync.WaitGroup
+	mturk        *mturk.Session
+	mturkSandbox *mturk.Session
+	runtime      *runtime.Runtime
+	metrics      *metrics.Metrics
+	done         chan struct{}
+	wg           sync.WaitGroup
 }
 
 // Run starts the server with the given configuration
@@ -80,12 +81,17 @@ func Run(ctx context.Context, config *Config) (err error) {
 		return errors.Wrap(err, "init admins")
 	}
 
-	s.mturk, err = mturk.New(config.MTurkConfig, s.storeConn)
+	s.mturk, err = mturk.New(config.MTurkConfig, false, s.storeConn)
 	if err != nil {
 		return errors.Wrap(err, "init mturk")
 	}
 
-	s.runtime, err = runtime.Start(s.storeConn)
+	s.mturkSandbox, err = mturk.New(config.MTurkConfig, true, s.storeConn)
+	if err != nil {
+		return errors.Wrap(err, "init mturk")
+	}
+
+	s.runtime, err = runtime.Start(s.storeConn, s.mturk, s.mturkSandbox)
 	if err != nil {
 		return errors.Wrap(err, "init runtime")
 	}

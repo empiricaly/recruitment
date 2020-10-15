@@ -65,7 +65,7 @@
 <div class="mt-2 h-8 flex items-center">
   <Radio bind:group={useCriteriaValue} value="doNotUseCriteria">
     <div class="flex items-center">
-      All Participants in the internal database.
+      Any Participant in the internal database.
     </div>
   </Radio>
 </div>

@@ -6313,6 +6313,7 @@ type TemplateMutation struct {
 	internalCriteria    *[]byte
 	mturkCriteria       *[]byte
 	adult               *bool
+	sandbox             *bool
 	clearedFields       map[string]struct{}
 	steps               map[string]struct{}
 	removedsteps        map[string]struct{}
@@ -6727,6 +6728,43 @@ func (m *TemplateMutation) ResetAdult() {
 	m.adult = nil
 }
 
+// SetSandbox sets the sandbox field.
+func (m *TemplateMutation) SetSandbox(b bool) {
+	m.sandbox = &b
+}
+
+// Sandbox returns the sandbox value in the mutation.
+func (m *TemplateMutation) Sandbox() (r bool, exists bool) {
+	v := m.sandbox
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSandbox returns the old sandbox value of the Template.
+// If the Template object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *TemplateMutation) OldSandbox(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldSandbox is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldSandbox requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSandbox: %w", err)
+	}
+	return oldValue.Sandbox, nil
+}
+
+// ResetSandbox reset all changes of the "sandbox" field.
+func (m *TemplateMutation) ResetSandbox() {
+	m.sandbox = nil
+}
+
 // AddStepIDs adds the steps edge to Step by ids.
 func (m *TemplateMutation) AddStepIDs(ids ...string) {
 	if m.steps == nil {
@@ -6900,7 +6938,7 @@ func (m *TemplateMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *TemplateMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, template.FieldCreatedAt)
 	}
@@ -6924,6 +6962,9 @@ func (m *TemplateMutation) Fields() []string {
 	}
 	if m.adult != nil {
 		fields = append(fields, template.FieldAdult)
+	}
+	if m.sandbox != nil {
+		fields = append(fields, template.FieldSandbox)
 	}
 	return fields
 }
@@ -6949,6 +6990,8 @@ func (m *TemplateMutation) Field(name string) (ent.Value, bool) {
 		return m.MturkCriteria()
 	case template.FieldAdult:
 		return m.Adult()
+	case template.FieldSandbox:
+		return m.Sandbox()
 	}
 	return nil, false
 }
@@ -6974,6 +7017,8 @@ func (m *TemplateMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldMturkCriteria(ctx)
 	case template.FieldAdult:
 		return m.OldAdult(ctx)
+	case template.FieldSandbox:
+		return m.OldSandbox(ctx)
 	}
 	return nil, fmt.Errorf("unknown Template field %s", name)
 }
@@ -7038,6 +7083,13 @@ func (m *TemplateMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAdult(v)
+		return nil
+	case template.FieldSandbox:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSandbox(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Template field %s", name)
@@ -7127,6 +7179,9 @@ func (m *TemplateMutation) ResetField(name string) error {
 		return nil
 	case template.FieldAdult:
 		m.ResetAdult()
+		return nil
+	case template.FieldSandbox:
+		m.ResetSandbox()
 		return nil
 	}
 	return fmt.Errorf("unknown Template field %s", name)

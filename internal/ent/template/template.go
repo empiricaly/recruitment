@@ -28,6 +28,8 @@ const (
 	FieldMturkCriteria = "mturk_criteria"
 	// FieldAdult holds the string denoting the adult field in the database.
 	FieldAdult = "adult"
+	// FieldSandbox holds the string denoting the sandbox field in the database.
+	FieldSandbox = "sandbox"
 
 	// EdgeSteps holds the string denoting the steps edge name in mutations.
 	EdgeSteps = "steps"
@@ -81,6 +83,7 @@ var Columns = []string{
 	FieldInternalCriteria,
 	FieldMturkCriteria,
 	FieldAdult,
+	FieldSandbox,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the Template type.
@@ -105,6 +108,8 @@ var (
 	ParticipantCountValidator func(int) error
 	// DefaultAdult holds the default value on creation for the adult field.
 	DefaultAdult bool
+	// DefaultSandbox holds the default value on creation for the sandbox field.
+	DefaultSandbox bool
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
 	IDValidator func(string) error
 )

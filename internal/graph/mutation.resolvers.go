@@ -83,6 +83,8 @@ func (r *mutationResolver) UpdateTemplate(ctx context.Context, input *model.Upda
 		SetParticipantCount(input.Template.ParticipantCount).
 		SetInternalCriteria(internalCriteria).
 		SetMturkCriteria(mturkCriteria).
+		SetAdult(input.Template.Adult).
+		SetSandbox(input.Template.Sandbox).
 		Save(ctx)
 	if err != nil {
 		return nil, errs.Wrap(err, "create template")
@@ -197,6 +199,8 @@ func (r *mutationResolver) CreateRun(ctx context.Context, input *model.CreateRun
 		SetMturkCriteria(mturkCriteria).
 		SetCreator(creator).
 		SetProjectID(input.ProjectID).
+		SetAdult(input.Template.Adult).
+		SetSandbox(input.Template.Sandbox).
 		Save(ctx)
 	if err != nil {
 		return nil, errs.Wrap(err, "create template")

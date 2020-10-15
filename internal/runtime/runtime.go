@@ -22,7 +22,8 @@ type Runtime struct {
 	conn *storage.Conn
 
 	// mturk session
-	mturk *mturk.Session
+	mturk        *mturk.Session
+	mturkSandbox *mturk.Session
 
 	// runs tracked by the runtime. The map key is the Run ID.
 	runs map[string]*runState
@@ -44,16 +45,18 @@ type Runtime struct {
 var initRand sync.Once
 
 // Start the empirica recruitment runtime
-func Start(conn *storage.Conn) (*Runtime, error) {
+func Start(conn *storage.Conn, mturk, mturkSandbox *mturk.Session) (*Runtime, error) {
 	initRand.Do(func() {
 		rand.Seed(time.Now().UnixNano())
 	})
 
 	r := &Runtime{
-		conn:     conn,
-		runs:     make(map[string]*runState),
-		updates:  make(chan string),
-		triggers: make(chan *runState),
+		conn:         conn,
+		mturk:        mturk,
+		mturkSandbox: mturkSandbox,
+		runs:         make(map[string]*runState),
+		updates:      make(chan string),
+		triggers:     make(chan *runState),
 	}
 	go r.processRuns()
 	go r.processEvents()

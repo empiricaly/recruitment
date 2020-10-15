@@ -3,7 +3,7 @@ const fs = require("fs");
 
 const isSandbox = true;
 const EXPORTED_FILE_NAME = `../../internal/mturk/quals/${
-  isSandbox ? "sandbox" : "production"
+  isSandbox ? "sandbox" : "prod"
 }.json`;
 const INPUT_FILE_NAME = "input.html";
 const root = HTMLParser.parse(fs.readFileSync(INPUT_FILE_NAME));

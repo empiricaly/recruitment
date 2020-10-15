@@ -8,6 +8,7 @@
     selectionType: "INTERNAL_DB",
     participantCount: null,
     adult: false,
+    sandbox: false,
     mturkCriteria: { qualifications: [] },
     internalCriteria: {
       condition: {

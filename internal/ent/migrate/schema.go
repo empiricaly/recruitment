@@ -239,6 +239,7 @@ var (
 		{Name: "internal_criteria", Type: field.TypeBytes},
 		{Name: "mturk_criteria", Type: field.TypeBytes},
 		{Name: "adult", Type: field.TypeBool},
+		{Name: "sandbox", Type: field.TypeBool},
 		{Name: "admin_templates", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "project_templates", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "run_template", Type: field.TypeString, Unique: true, Nullable: true, Size: 20},
@@ -251,21 +252,21 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "templates_admins_templates",
-				Columns: []*schema.Column{TemplatesColumns[9]},
+				Columns: []*schema.Column{TemplatesColumns[10]},
 
 				RefColumns: []*schema.Column{AdminsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:  "templates_projects_templates",
-				Columns: []*schema.Column{TemplatesColumns[10]},
+				Columns: []*schema.Column{TemplatesColumns[11]},
 
 				RefColumns: []*schema.Column{ProjectsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:  "templates_runs_template",
-				Columns: []*schema.Column{TemplatesColumns[11]},
+				Columns: []*schema.Column{TemplatesColumns[12]},
 
 				RefColumns: []*schema.Column{RunsColumns[0]},
 				OnDelete:   schema.SetNull,

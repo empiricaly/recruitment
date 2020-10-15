@@ -77,7 +77,7 @@ input MTurkQualificationCriteriaInput {
   A Qualification requirement can also test if a Qualification Exists or
   DoesNotExist in the user's profile, regardless of its value.
   """
-  comparator: Comparator!
+  comparator: Comparator
 
   """
   Array of integer values to compare against the Qualification's value.

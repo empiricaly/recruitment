@@ -7,8 +7,7 @@ import (
 
 // Config is MTurk configuration
 type Config struct {
-	Sandbox bool `mapstructure:"sandbox"`
-	Dev     bool `mapstructure:"dev"`
+	Dev bool `mapstructure:"dev"`
 }
 
 // Validate configuration is ok

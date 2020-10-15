@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client/core";
 
 export const MTURK_QUALIFICATION_TYPES = gql`
-  {
-    mturkQualificationTypes {
+  query mturkQualificationTypes($sandbox: Boolean) {
+    mturkQualificationTypes(sandbox: $sandbox) {
       id
       name
       description
@@ -12,8 +12,8 @@ export const MTURK_QUALIFICATION_TYPES = gql`
 `;
 
 export const MTURK_LOCALES = gql`
-  {
-    mturkLocales {
+  query mturkLocales($sandbox: Boolean) {
+    mturkLocales(sandbox: $sandbox) {
       country
       subdivision
     }
@@ -150,6 +150,7 @@ export const GET_RUN = gql`
           selectionType
           participantCount
           adult
+          sandbox
           steps {
             id
             index

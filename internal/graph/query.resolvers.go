@@ -13,6 +13,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
+	"github.com/empiricaly/recruitment/internal/mturk"
 	errs "github.com/pkg/errors"
 )
 
@@ -44,8 +45,15 @@ func (r *queryResolver) Page(ctx context.Context, token string, participantID st
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *queryResolver) MturkQualificationTypes(ctx context.Context) ([]*model.MTurkQulificationType, error) {
-	res, err := r.MTurk.GetQuals()
+func (r *queryResolver) MturkQualificationTypes(ctx context.Context, sandbox *bool) ([]*model.MTurkQulificationType, error) {
+	var mturkSession *mturk.Session
+	if sandbox != nil && *sandbox {
+		mturkSession = r.MTurkSanbox
+	} else {
+		mturkSession = r.MTurk
+	}
+
+	res, err := mturkSession.GetQuals()
 
 	if err != nil {
 		return nil, errs.Wrap(err, "get  qualificationTypes")
@@ -53,8 +61,15 @@ func (r *queryResolver) MturkQualificationTypes(ctx context.Context) ([]*model.M
 	return res, nil
 }
 
-func (r *queryResolver) MturkLocales(ctx context.Context) ([]*model.MTurkLocale, error) {
-	res, err := r.MTurk.GetLocales()
+func (r *queryResolver) MturkLocales(ctx context.Context, sandbox *bool) ([]*model.MTurkLocale, error) {
+	var mturkSession *mturk.Session
+	if sandbox != nil && *sandbox {
+		mturkSession = r.MTurkSanbox
+	} else {
+		mturkSession = r.MTurk
+	}
+
+	res, err := mturkSession.GetLocales()
 
 	if err != nil {
 		return nil, errs.Wrap(err, "get  locales")

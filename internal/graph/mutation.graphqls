@@ -126,6 +126,11 @@ input TemplateInput {
   content, for example, nudity.
   """
   adult: Boolean!
+
+  """
+  Use MTurk Sandbox.
+  """
+  sandbox: Boolean!
 }
 
 input UpdateTemplateInput {

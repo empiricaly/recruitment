@@ -327,6 +327,10 @@ func init() {
 	templateDescAdult := templateFields[5].Descriptor()
 	// template.DefaultAdult holds the default value on creation for the adult field.
 	template.DefaultAdult = templateDescAdult.Default.(bool)
+	// templateDescSandbox is the schema descriptor for sandbox field.
+	templateDescSandbox := templateFields[6].Descriptor()
+	// template.DefaultSandbox holds the default value on creation for the sandbox field.
+	template.DefaultSandbox = templateDescSandbox.Default.(bool)
 	// templateDescID is the schema descriptor for id field.
 	templateDescID := templateMixinFields0[0].Descriptor()
 	// template.IDValidator is a validator for the "id" field. It is called by the builders before save.

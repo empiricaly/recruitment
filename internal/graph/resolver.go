@@ -15,8 +15,9 @@ import (
 
 // Resolver implementation
 type Resolver struct {
-	MTurk     *mturk.Session
-	Store     *storage.Conn
-	Admins    []admin.User
-	SecretKey string
+	MTurk       *mturk.Session
+	MTurkSanbox *mturk.Session
+	Store       *storage.Conn
+	Admins      []admin.User
+	SecretKey   string
 }

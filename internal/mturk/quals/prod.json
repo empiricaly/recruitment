@@ -1,0 +1,696 @@
+{
+  "qualtypes": [
+    {
+      "type": "system",
+      "name": "System Qualifications",
+      "items": [
+        {
+          "id": "000000000000000000L0",
+          "name": "HIT Approval Rate (%)",
+          "type": "COMPARISON"
+        },
+        {
+          "id": "000000000000000000S0",
+          "name": "HIT rejection rate (%)",
+          "type": "COMPARISON"
+        },
+        {
+          "id": "00000000000000000000",
+          "name": "HIT submission rate (%)",
+          "type": "COMPARISON"
+        },
+        {
+          "id": "00000000000000000071",
+          "name": "Location",
+          "type": "LOCATION"
+        },
+        {
+          "id": "00000000000000000040",
+          "name": "Number of HITs Approved",
+          "type": "COMPARISON"
+        }
+      ]
+    },
+    {
+      "type": "premium",
+      "name": "Premium Qualifications",
+      "items": [
+        {
+          "id": "37V1T9MUUQLS5X0CG7PBSP0508ANH0",
+          "name": "Blogger",
+          "type": "BOOL"
+        },
+        {
+          "id": "37RZ1IA9BMTRDMCD256BNAG9EPOL19",
+          "name": "Born 1918 to 1960 (Age 55 or older)",
+          "type": "BOOL"
+        },
+        {
+          "id": "3RDXNS6RRB0V0OTA1HKLYE1WR1JCYI",
+          "name": "Born 1961 to 1971 (Age 45-55)",
+          "type": "BOOL"
+        },
+        {
+          "id": "33LUKQBDROXW64AYQRI5E2CN4VK9SK",
+          "name": "Born 1972 to 1981 (Age 35-45)",
+          "type": "BOOL"
+        },
+        {
+          "id": "39VCNG5CRYL60J30WLYJF0UNPVPCXC",
+          "name": "Born 1982 to 1986 (Age 30-35)",
+          "type": "BOOL"
+        },
+        {
+          "id": "33PZ965V93XK5PALB2I0OS7RIT19RW",
+          "name": "Born 1987 to 1991 (Age 25-30)",
+          "type": "BOOL"
+        },
+        {
+          "id": "3UAQCEERORX7JVO3O49VXC7OQZ2FK1",
+          "name": "Born 1992 to 1999 (Age 18-25)",
+          "type": "BOOL"
+        },
+        {
+          "id": "39VCNG5CRYL60J30WLYJF0UNPW4XCE",
+          "name": "Borrower - Auto Loans",
+          "type": "BOOL"
+        },
+        {
+          "id": "3VG0IABS94XN0BZR0CCIGSSBH74OQ9",
+          "name": "Borrower - Business Loan",
+          "type": "BOOL"
+        },
+        {
+          "id": "3F540QR0WZ78IJAPGO2L1HBT0AZ65Z",
+          "name": "Borrower - Credit Cards",
+          "type": "BOOL"
+        },
+        {
+          "id": "3RDXNS6RRB0V0OTA1HKLYE1WR2ZCY0",
+          "name": "Borrower - Home Mortgage",
+          "type": "BOOL"
+        },
+        {
+          "id": "3S7V3UIV5MQDGQ3OFWOD1L6U1K7IR9",
+          "name": "Borrower - Personal Loan",
+          "type": "BOOL"
+        },
+        {
+          "id": "3N6NEM56T1ZVIGM6K4SMPPDXJZV8EX",
+          "name": "Borrower - Student Loan",
+          "type": "BOOL"
+        },
+        {
+          "id": "38ASEUC7MCFMV5JQT3CG25R8ZWZGHW",
+          "name": "Car Owner",
+          "type": "BOOL"
+        },
+        {
+          "id": "38CFFZ6E4YEWFSATOJEZFYAAES4KV6",
+          "name": "Current Residence - Owned",
+          "type": "BOOL"
+        },
+        {
+          "id": "3OS50CZA2F39AOE5XZYICQ781HZICU",
+          "name": "Current Residence - Rented",
+          "type": "BOOL"
+        },
+        {
+          "id": "3YVJFZ3OL3WO7MYJTQ4D2E7BMTSIE3",
+          "name": "Daily Internet Usage - 1 to 4 hours",
+          "type": "BOOL"
+        },
+        {
+          "id": "3UKR6HO4BPAQ14DW3S8NQ0TQQ4NL5J",
+          "name": "Daily Internet Usage - 5 to 7 hours",
+          "type": "BOOL"
+        },
+        {
+          "id": "32S84VH440P85L9WPNPDL8NCQ8SL4E",
+          "name": "Daily Internet Usage - 7+ hours",
+          "type": "BOOL"
+        },
+        {
+          "id": "3ZG54WTVCO9XL4NDFRNVO7896FRT9O",
+          "name": "Employment Industry - Banking & Financial Services",
+          "type": "BOOL"
+        },
+        {
+          "id": "381E5BGASO1DQEPDVYG9G3166AT48F",
+          "name": "Employment Industry - Education",
+          "type": "BOOL"
+        },
+        {
+          "id": "36GCTHBRVS9BQNXI7X1VK2JTCX9TA3",
+          "name": "Employment Industry - Food & Beverage",
+          "type": "BOOL"
+        },
+        {
+          "id": "3IMKWLF0QJ62V2P9CPPURHO6K81W66",
+          "name": "Employment Industry - Government & Non-Profit",
+          "type": "BOOL"
+        },
+        {
+          "id": "3VG0IABS94XN0BZR0CCIGSSBH7EQOL",
+          "name": "Employment Industry - Healthcare",
+          "type": "BOOL"
+        },
+        {
+          "id": "3U8EC01SO75D4J8N0QMNGZWHQGB494",
+          "name": "Employment Industry - Manufacturing",
+          "type": "BOOL"
+        },
+        {
+          "id": "318L1LJO7B5R92ISSW0NCU71WYT4AJ",
+          "name": "Employment Industry - Media & Entertainment",
+          "type": "BOOL"
+        },
+        {
+          "id": "3X9X6Q117EWFUQWUNKWQOBOHM29QL4",
+          "name": "Employment Industry - Retail, Wholesale & Distribution",
+          "type": "BOOL"
+        },
+        {
+          "id": "3VSNQAPCUINZ6QITJEAGN90IR3FYR5",
+          "name": "Employment Industry - Software & IT Services",
+          "type": "BOOL"
+        },
+        {
+          "id": "3YJFVCPRIV85A69TXZHFWRSGIVLZDI",
+          "name": "Employment Sector - Non-Profit",
+          "type": "BOOL"
+        },
+        {
+          "id": "37O6MXR7LKP41NA3L7CQTNPTW4Z662",
+          "name": "Employment Status - Full time (35+ hours per week)",
+          "type": "BOOL"
+        },
+        {
+          "id": "3WALDZ9X0OB7T78DPLL9BGAVCDC3M3",
+          "name": "Employment Status - Part time (1-34 hours per week)",
+          "type": "BOOL"
+        },
+        {
+          "id": "36FDJD9TVZVDBPTD1M09OVZVH3M3N3",
+          "name": "Employment Status - Unemployed",
+          "type": "BOOL"
+        },
+        {
+          "id": "3HIOL0MDAM28KD395PPQBT5O8ADV7O",
+          "name": "Exercise - Every Day",
+          "type": "BOOL"
+        },
+        {
+          "id": "3XDG87E9EDCIDR3KWGJSAX8OBJ3PT9",
+          "name": "Exercise - Four Plus Times a Week",
+          "type": "BOOL"
+        },
+        {
+          "id": "3YKCX89WCYJVC8U03Y3Z1CBBM7BN7Z",
+          "name": "Exercise - Not at All",
+          "type": "BOOL"
+        },
+        {
+          "id": "3SO0EPWUEPDXD4I9WL92FTUQUXAPU0",
+          "name": "Exercise - Once a Week",
+          "type": "BOOL"
+        },
+        {
+          "id": "31I5O1WRTD0HYRQ57GE20SC290PSPN",
+          "name": "Exercise - Two to Three Times a Week",
+          "type": "BOOL"
+        },
+        {
+          "id": "3DUWYN247KLA7MVH3492QD8FQANM5Y",
+          "name": "Facebook Account Holder",
+          "type": "BOOL"
+        },
+        {
+          "id": "3XQ9NVMYZF1MNFFC46ABFAB5VKPMHS",
+          "name": "Financial Asset Owned - Certificate of Deposit (CD)",
+          "type": "BOOL"
+        },
+        {
+          "id": "3CYRGFX2KAGUQWY1O2DWAYZ1HGKUSM",
+          "name": "Financial Asset Owned - Checking Account",
+          "type": "BOOL"
+        },
+        {
+          "id": "3KX8IXT6XLTGSPSUVK1U7H2AVG9P5A",
+          "name": "Financial Asset Owned - Common Share Stocks",
+          "type": "BOOL"
+        },
+        {
+          "id": "30IMET1JUJVFS468HLWNQTP0KS6UOG",
+          "name": "Financial Asset Owned - Exchange-Traded Fund (ETF)",
+          "type": "BOOL"
+        },
+        {
+          "id": "31QNSEW3RLFMJAQWAOSWFMCKVX4MIL",
+          "name": "Financial Asset Owned - Money Market Account",
+          "type": "BOOL"
+        },
+        {
+          "id": "3CFGI1NEWHBV9Y4M9WMEXU17I4LS4O",
+          "name": "Financial Asset Owned - Mutual Funds",
+          "type": "BOOL"
+        },
+        {
+          "id": "3KSLQLZFBV6O9BY2VRP9724CC12LM2",
+          "name": "Financial Asset Owned - Real Estate Investment Trusts (REITs)",
+          "type": "BOOL"
+        },
+        {
+          "id": "32X4SEUEDBB9OU0UR7SXA3RZXZ4TD1",
+          "name": "Financial Asset Owned - Savings Account",
+          "type": "BOOL"
+        },
+        {
+          "id": "3KIOY293YU0U223PKQ4HWEV10W3V0K",
+          "name": "Financial Asset Owned - Stock Options",
+          "type": "BOOL"
+        },
+        {
+          "id": "33GZIFUQUFLJOGHJ5AKMT722KGIF7D",
+          "name": "Financial Asset Owned - U.S. Treasury Bills/Government Debt",
+          "type": "BOOL"
+        },
+        {
+          "id": "3ZA6VN4RCNNAUKDJ130LXNQBVABXQN",
+          "name": "Gender - Female",
+          "type": "BOOL"
+        },
+        {
+          "id": "3EDENFEKRDIEJX4GW8JJ0LTB6CQJW0",
+          "name": "Gender - Male",
+          "type": "BOOL"
+        },
+        {
+          "id": "347ZKNUE36WD5H8MN15O2M7LIZ8S5J",
+          "name": "Google Account Holder",
+          "type": "BOOL"
+        },
+        {
+          "id": "3AWO8D2RFXK7CQ72LFORA060VWNI94",
+          "name": "Handedness - Left",
+          "type": "BOOL"
+        },
+        {
+          "id": "37RZ1IA9BMTRDMCD256BNAG9EOTL1C",
+          "name": "Handedness - Right",
+          "type": "BOOL"
+        },
+        {
+          "id": "3RAGO4OQ8ADTOL3XK54GWS5D19B8YJ",
+          "name": "Household Income - $100,000 or more",
+          "type": "BOOL"
+        },
+        {
+          "id": "33AD3SBATXLPZG8X54MSBVKXQ1B8WK",
+          "name": "Household Income - $25,000 - $49,999",
+          "type": "BOOL"
+        },
+        {
+          "id": "3NRTOFVPEPMYQNL5UTHQXF45I043RK",
+          "name": "Household Income - $50,000 - $74,999",
+          "type": "BOOL"
+        },
+        {
+          "id": "39SVOSNB8XY4OGDNF9IEDEY4Z3H8XD",
+          "name": "Household Income - $75,000 - $99,999",
+          "type": "BOOL"
+        },
+        {
+          "id": "3J4VL7BYSILCKR8SFUHWPT1JJS98VA",
+          "name": "Household Income - Less than $25,000",
+          "type": "BOOL"
+        },
+        {
+          "id": "3NRTOFVPEPMYQNL5UTHQXF45I1L3R3",
+          "name": "Insurance Policyholder - Auto Insurance",
+          "type": "BOOL"
+        },
+        {
+          "id": "3IZO2596DL7WFW1Z8J51ZJ8675FOMS",
+          "name": "Insurance Policyholder - Healthcare Insurance",
+          "type": "BOOL"
+        },
+        {
+          "id": "3DHGVT984THT2QM7PXAUWO0OLHW9YG",
+          "name": "Insurance Policyholder - Home Owners Insurance",
+          "type": "BOOL"
+        },
+        {
+          "id": "3LLOUF5SOO5RS1LW45HAYP0VPSDUMN",
+          "name": "Insurance Policyholder - Life Insurance",
+          "type": "BOOL"
+        },
+        {
+          "id": "3S3QEEODN7QPH531ULOIRVBQNMQISX",
+          "name": "Insurance Policyholder - Renters Insurance",
+          "type": "BOOL"
+        },
+        {
+          "id": "34B493OWLLW142898C5JCC2PWYBR5I",
+          "name": "Job Function - Accounting & Finance",
+          "type": "BOOL"
+        },
+        {
+          "id": "3CFGI1NEWHBV9Y4M9WMEXU17I404SF",
+          "name": "Job Function - Administrative",
+          "type": "BOOL"
+        },
+        {
+          "id": "3L4WO517FMRS1L81B3OKDXR50W522E",
+          "name": "Job Function - Arts & Design",
+          "type": "BOOL"
+        },
+        {
+          "id": "39VG053QLP2TTBD2GR6ZAZEF75VZ8L",
+          "name": "Job Function - Education & Training",
+          "type": "BOOL"
+        },
+        {
+          "id": "38AR275WHHNWOYH1YWR47ZXTKNE4T4",
+          "name": "Job Function - Engineering",
+          "type": "BOOL"
+        },
+        {
+          "id": "3V2G7UO8H86T7GWCLJCDAV9QRBDZ9A",
+          "name": "Job Function - Information Technology",
+          "type": "BOOL"
+        },
+        {
+          "id": "37OFGIIEXQV7I0N6J2SXSMKY2XYWSS",
+          "name": "Job Function - Management",
+          "type": "BOOL"
+        },
+        {
+          "id": "3WU6VAO3A6EXN68NDVFO4IGPSTMR6Y",
+          "name": "Job Function - Marketing, Sales & Business Development",
+          "type": "BOOL"
+        },
+        {
+          "id": "33LB8PNHHTOBOBWQY1HECVJV31L4UV",
+          "name": "Job Function - Operations",
+          "type": "BOOL"
+        },
+        {
+          "id": "3X4GDYFBXICH47RBUXZI4RPTJ0J1PJ",
+          "name": "Language Fluency (Basic) - Brazilian Portuguese",
+          "type": "BOOL"
+        },
+        {
+          "id": "3GYFJBAR5GJ55GZO1DFWIKJEC2ZDYP",
+          "name": "Language Fluency (Basic) - Chinese Mandarin",
+          "type": "BOOL"
+        },
+        {
+          "id": "37AYPMB2R96GO8LN6LUXBB8N89XPE0",
+          "name": "Language Fluency (Basic) - French",
+          "type": "BOOL"
+        },
+        {
+          "id": "3C8RYQJ3V2MT89XT6UMJ2TDHC76M9R",
+          "name": "Language Fluency (Basic) - German",
+          "type": "BOOL"
+        },
+        {
+          "id": "3MS26IBOMQWBW27NAQJD5TQ28XWPD7",
+          "name": "Language Fluency (Basic) - Spanish",
+          "type": "BOOL"
+        },
+        {
+          "id": "3S4G8J928WR2XEMZKKK1CYX6CV5NO7",
+          "name": "LinkedIn Account Holder",
+          "type": "BOOL"
+        },
+        {
+          "id": "3NZO41202V5GP4GHF5O23SXFVZ15NJ",
+          "name": "Marital Status - Divorced",
+          "type": "BOOL"
+        },
+        {
+          "id": "3YG2ZEI8VYM6QSK9IRW2Y9OY33LBF1",
+          "name": "Marital Status - Married",
+          "type": "BOOL"
+        },
+        {
+          "id": "3VQG0T5OJZPXAJ6WG6WAB4PVUGTUNP",
+          "name": "Marital Status - Single",
+          "type": "BOOL"
+        },
+        {
+          "id": "3S8XFQY1FTN8R196LH1BP4OSKTYNF3",
+          "name": "Military experience",
+          "type": "BOOL"
+        },
+        {
+          "id": "3NWWWIUOD3RP3Y04HPAT9T39ZRH6U6",
+          "name": "Myspace Account Holder",
+          "type": "BOOL"
+        },
+        {
+          "id": "3SO0EPWUEPDXD4I9WL92FTUQUX2UPX",
+          "name": "Online Purchase - Automotive Products",
+          "type": "BOOL"
+        },
+        {
+          "id": "36GZVHHGINJ565HZKBZDESSFC2Y0FK",
+          "name": "Online Purchase - Baby & Kids",
+          "type": "BOOL"
+        },
+        {
+          "id": "3D3M1MRGIBSYAII7PSDCKRQMKG4C1E",
+          "name": "Online Purchase - Books",
+          "type": "BOOL"
+        },
+        {
+          "id": "3LRU1FDZH09315T0WC3ZNKZJ61B290",
+          "name": "Online Purchase - Clothing & Shoes",
+          "type": "BOOL"
+        },
+        {
+          "id": "3NF0BIUSIULEG0EUN23HGL9KXB5TEU",
+          "name": "Online Purchase - Electronics & Computers",
+          "type": "BOOL"
+        },
+        {
+          "id": "38K25CGMOFSUWCZ7BJYCEXCSRGD1UF",
+          "name": "Online Purchase - Groceries & Food",
+          "type": "BOOL"
+        },
+        {
+          "id": "3YGUJZ9C534G5B9EWHTUZ6C5AWGXDE",
+          "name": "Online Purchase - Handmade Products",
+          "type": "BOOL"
+        },
+        {
+          "id": "3J9MM9U3SHCS8I69VKBQ6Y90S9Y38S",
+          "name": "Online Purchase - Health & Beauty",
+          "type": "BOOL"
+        },
+        {
+          "id": "39J7PQMMU2E3YJ2RTNRWKECMAH63WE",
+          "name": "Online Purchase - Home & Garden",
+          "type": "BOOL"
+        },
+        {
+          "id": "31QSZWYWMZN79803MQ7AA0O4EA9XOX",
+          "name": "Online Purchase - Jewelry",
+          "type": "BOOL"
+        },
+        {
+          "id": "3FQW154NSKK6JPQ6Y2AFTGU59SL4HU",
+          "name": "Online Purchase - Movies",
+          "type": "BOOL"
+        },
+        {
+          "id": "30LLKV2ET72W5VQMHPZL4W6494009P",
+          "name": "Online Purchase - Music",
+          "type": "BOOL"
+        },
+        {
+          "id": "32Z3VVMZSSBBK5DUVV5VWDSRDHY0GJ",
+          "name": "Online Purchase - Sports & Outdoor Equipment",
+          "type": "BOOL"
+        },
+        {
+          "id": "3JO55QYDJPCOTS97D1ZW9AZYB632P7",
+          "name": "Online Purchase - Toys",
+          "type": "BOOL"
+        },
+        {
+          "id": "35TOGO3TMMYHM34KF32PW7WX6AA32V",
+          "name": "Online Purchase - Videogames",
+          "type": "BOOL"
+        },
+        {
+          "id": "3J4VL7BYSILCKR8SFUI3NB8QLSUV8I",
+          "name": "Parenthood Status",
+          "type": "BOOL"
+        },
+        {
+          "id": "33LK6UI8E3VMRM2OA73RLSYUSS9QC0",
+          "name": "Pinterest Account Holder",
+          "type": "BOOL"
+        },
+        {
+          "id": "3ZZ3ITZ94KDP2GDEGUQ4BS2ELTP7G7",
+          "name": "Primary Internet Device - Desktop",
+          "type": "BOOL"
+        },
+        {
+          "id": "3LRU1FDZH09315T0WC3ZNKZJ60829V",
+          "name": "Primary Internet Device - Laptop",
+          "type": "BOOL"
+        },
+        {
+          "id": "3PP3EVLPRLCKTOVLYNT0J2XMM6M9QG",
+          "name": "Primary Internet Device - Smartphone or Tablet",
+          "type": "BOOL"
+        },
+        {
+          "id": "3N5CCFXKGLIIGFG8AI99F1L6ACYG2T",
+          "name": "Primary Mobile Device - Android",
+          "type": "BOOL"
+        },
+        {
+          "id": "3OP13B7XRC2PNL47H29YVUOHXJC1IP",
+          "name": "Primary Mobile Device - iPhone",
+          "type": "BOOL"
+        },
+        {
+          "id": "3J9ZOWKR0FYAXIMOWZ2BROMSE3N313",
+          "name": "Primary News Source - Online News (News Websites, News Apps)",
+          "type": "BOOL"
+        },
+        {
+          "id": "3321WWT37PF955PMQT3LE5ZDCOAR27",
+          "name": "Primary News Source - Podcasts",
+          "type": "BOOL"
+        },
+        {
+          "id": "3L339059XKHPK185F1NDHD4SSHB0HI",
+          "name": "Primary News Source - Print (Newspapers & Periodicals)",
+          "type": "BOOL"
+        },
+        {
+          "id": "3PDP75MATNEQJU2M3DM0YCT83843V4",
+          "name": "Primary News Source - Radio (AM/FM, Internet, Satellite)",
+          "type": "BOOL"
+        },
+        {
+          "id": "3RAGO4OQ8ADTOL3XK54GWS5D1ARY8R",
+          "name": "Primary News Source - Social Media",
+          "type": "BOOL"
+        },
+        {
+          "id": "3XS9XHLESXZW2DLTJT4UJC8R0NWUKW",
+          "name": "Primary News Source - TV (Late Night Comedy, Other)",
+          "type": "BOOL"
+        },
+        {
+          "id": "34O6GN9FZ907HR3UA09DIGEF74GW04",
+          "name": "Primary News Source - TV (Local/Cable News Broadcast)",
+          "type": "BOOL"
+        },
+        {
+          "id": "3EJZ0T8ZKH8RJ6C1JEF2DXGVM7M96Z",
+          "name": "Primary News Source - Word of Mouth",
+          "type": "BOOL"
+        },
+        {
+          "id": "3E3LVQS9GBGA13KVM7XDK8VMZK4Y53",
+          "name": "Reddit Account Holder",
+          "type": "BOOL"
+        },
+        {
+          "id": "376OOLYQQ1F0O28454Q8ZE29OJF7XT",
+          "name": "Single Family Home Resident",
+          "type": "BOOL"
+        },
+        {
+          "id": "3SHVXOT5TLQLCGN7C39I3WQQ0ZVSJV",
+          "name": "Smoker",
+          "type": "BOOL"
+        },
+        {
+          "id": "33AQ5F1Y1V77OGOC6JDDWLXPCUPW16",
+          "name": "Tablet Owner",
+          "type": "BOOL"
+        },
+        {
+          "id": "3VKHPH0RG1TTUYMY19TSTYJXP51QFB",
+          "name": "Tumblr Account Holder",
+          "type": "BOOL"
+        },
+        {
+          "id": "3KSRVTP5A9P9ET3LRHH4AWD035YCHB",
+          "name": "Twitter Account Holder",
+          "type": "BOOL"
+        },
+        {
+          "id": "3QTUCSJAYWPDXVKYZOFDFX70RD5GK2",
+          "name": "US Bachelor's Degree",
+          "type": "BOOL"
+        },
+        {
+          "id": "3Q1RR1YLZJITU4EJ12G52XI6SZU8MQ",
+          "name": "US Graduate Degree",
+          "type": "BOOL"
+        },
+        {
+          "id": "3BB04KUNDGX1NXGW3YHWGQQMFB6F3C",
+          "name": "US High School Graduate",
+          "type": "BOOL"
+        },
+        {
+          "id": "35KYC9RVPIDU3HEVNHU6TDFXQB0XXI",
+          "name": "US Political Affiliation - Conservative",
+          "type": "BOOL"
+        },
+        {
+          "id": "3N2JCLSAPVSJ3M45SDG8CRM6SHUXYO",
+          "name": "US Political Affiliation - Liberal",
+          "type": "BOOL"
+        },
+        {
+          "id": "3XEJ90GX9GFRZXZASYFQO6PLC9MYVS",
+          "name": "Vacation Frequency - Every Few Years",
+          "type": "BOOL"
+        },
+        {
+          "id": "3U8EC01SO75D4J8N0QMNGZWHQG549Y",
+          "name": "Vacation Frequency - Every Month",
+          "type": "BOOL"
+        },
+        {
+          "id": "3O6AJM428T355ZYBFHJIORM8EYYCJE",
+          "name": "Vacation Frequency - Every Quarter",
+          "type": "BOOL"
+        },
+        {
+          "id": "3FIQQ827RGNC88GVKOY7VYBFRWS6NK",
+          "name": "Vacation Frequency - Every Year",
+          "type": "BOOL"
+        },
+        {
+          "id": "3KAW48Y220TUQTG7L3YKANBKH6X6OZ",
+          "name": "Vacation Frequency - Never",
+          "type": "BOOL"
+        },
+        {
+          "id": "31XUIG3A6ON28QNPO5C5KRV1U6AZFY",
+          "name": "Voted in 2012 US Presidential Election",
+          "type": "BOOL"
+        },
+        {
+          "id": "3D9IZUY1O3RFWZKIBE8291QQ82HT1R",
+          "name": "YouTube Account Holder",
+          "type": "BOOL"
+        }
+      ]
+    }
+  ]
+}

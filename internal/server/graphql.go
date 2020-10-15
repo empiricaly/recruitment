@@ -36,7 +36,13 @@ func (s *Server) startGraphqlServer() {
 	})
 
 	// m, _ := storage.NewMapping(s.storeConn)
-	r := &graph.Resolver{MTurk: s.mturk, Store: s.storeConn, Admins: s.config.Admins, SecretKey: s.config.SecretKey}
+	r := &graph.Resolver{
+		MTurk:       s.mturk,
+		MTurkSanbox: s.mturkSandbox,
+		Store:       s.storeConn,
+		Admins:      s.config.Admins,
+		SecretKey:   s.config.SecretKey,
+	}
 
 	// router.Use(MachinesLockMiddleware(r))
 	router.Use(logger.HTTPLogger())

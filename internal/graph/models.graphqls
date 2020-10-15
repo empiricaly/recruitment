@@ -272,6 +272,11 @@ type Template {
   content, for example, nudity.
   """
   adult: Boolean!
+
+  """
+  Use MTurk Sandbox.
+  """
+  sandbox: Boolean!
 }
 
 """

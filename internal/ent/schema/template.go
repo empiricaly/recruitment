@@ -28,6 +28,7 @@ func (Template) Fields() []ent.Field {
 		field.Bytes("internalCriteria"),
 		field.Bytes("mturkCriteria"),
 		field.Bool("adult").Default(false),
+		field.Bool("sandbox").Default(false),
 	}
 }
 

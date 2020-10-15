@@ -225,8 +225,8 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Me                      func(childComplexity int) int
-		MturkLocales            func(childComplexity int) int
-		MturkQualificationTypes func(childComplexity int) int
+		MturkLocales            func(childComplexity int, sandbox *bool) int
+		MturkQualificationTypes func(childComplexity int, sandbox *bool) int
 		Page                    func(childComplexity int, token string, participantID string) int
 		Participants            func(childComplexity int, first *int, after *string) int
 		Project                 func(childComplexity int, id *string, projectID *string) int
@@ -285,6 +285,7 @@ type ComplexityRoot struct {
 		MturkCriteria    func(childComplexity int) int
 		Name             func(childComplexity int) int
 		ParticipantCount func(childComplexity int) int
+		Sandbox          func(childComplexity int) int
 		SelectionType    func(childComplexity int) int
 		Steps            func(childComplexity int) int
 		UpdatedAt        func(childComplexity int) int
@@ -337,8 +338,8 @@ type QueryResolver interface {
 	Participants(ctx context.Context, first *int, after *string) (*model.ParticipantsConnection, error)
 	Me(ctx context.Context) (model.User, error)
 	Page(ctx context.Context, token string, participantID string) (*model.Page, error)
-	MturkQualificationTypes(ctx context.Context) ([]*model.MTurkQulificationType, error)
-	MturkLocales(ctx context.Context) ([]*model.MTurkLocale, error)
+	MturkQualificationTypes(ctx context.Context, sandbox *bool) ([]*model.MTurkQulificationType, error)
+	MturkLocales(ctx context.Context, sandbox *bool) ([]*model.MTurkLocale, error)
 }
 type RunResolver interface {
 	Creator(ctx context.Context, obj *ent.Run) (*ent.Admin, error)
@@ -1199,14 +1200,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.MturkLocales(childComplexity), true
+		args, err := ec.field_Query_mturkLocales_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MturkLocales(childComplexity, args["sandbox"].(*bool)), true
 
 	case "Query.mturkQualificationTypes":
 		if e.complexity.Query.MturkQualificationTypes == nil {
 			break
 		}
 
-		return e.complexity.Query.MturkQualificationTypes(childComplexity), true
+		args, err := ec.field_Query_mturkQualificationTypes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MturkQualificationTypes(childComplexity, args["sandbox"].(*bool)), true
 
 	case "Query.page":
 		if e.complexity.Query.Page == nil {
@@ -1533,6 +1544,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Template.ParticipantCount(childComplexity), true
+
+	case "Template.sandbox":
+		if e.complexity.Template.Sandbox == nil {
+			break
+		}
+
+		return e.complexity.Template.Sandbox(childComplexity), true
 
 	case "Template.selectionType":
 		if e.complexity.Template.SelectionType == nil {
@@ -1927,6 +1945,11 @@ type Template {
   content, for example, nudity.
   """
   adult: Boolean!
+
+  """
+  Use MTurk Sandbox.
+  """
+  sandbox: Boolean!
 }
 
 """
@@ -2624,6 +2647,11 @@ input TemplateInput {
   content, for example, nudity.
   """
   adult: Boolean!
+
+  """
+  Use MTurk Sandbox.
+  """
+  sandbox: Boolean!
 }
 
 input UpdateTemplateInput {
@@ -2859,7 +2887,7 @@ input MTurkQualificationCriteriaInput {
   A Qualification requirement can also test if a Qualification Exists or
   DoesNotExist in the user's profile, regardless of its value.
   """
-  comparator: Comparator!
+  comparator: Comparator
 
   """
   Array of integer values to compare against the Qualification's value.
@@ -3120,8 +3148,7 @@ type Query {
   """
   Participants returns all participants in DB.
   """
-  participants(first: Int, after: ID): ParticipantsConnection!
-    @hasRole(role: ADMIN)
+  participants(first: Int, after: ID): ParticipantsConnection! @hasRole(role: ADMIN)
 
   """
   me returns the current Admin or Participant, depending on whether the user is
@@ -3135,9 +3162,8 @@ type Query {
   """
   page(token: String!, participantID: ID!): Page!
 
-  mturkQualificationTypes: [MTurkQulificationType!]!
-
-  mturkLocales: [MTurkLocale!]!
+  mturkQualificationTypes(sandbox: Boolean): [MTurkQulificationType!]!
+  mturkLocales(sandbox: Boolean): [MTurkLocale!]!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "root.graphqls", Input: `schema {
@@ -3438,6 +3464,34 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_mturkLocales_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *bool
+	if tmp, ok := rawArgs["sandbox"]; ok {
+		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sandbox"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_mturkQualificationTypes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *bool
+	if tmp, ok := rawArgs["sandbox"]; ok {
+		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sandbox"] = arg0
 	return args, nil
 }
 
@@ -7566,9 +7620,16 @@ func (ec *executionContext) _Query_mturkQualificationTypes(ctx context.Context, 
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_mturkQualificationTypes_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MturkQualificationTypes(rctx)
+		return ec.resolvers.Query().MturkQualificationTypes(rctx, args["sandbox"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7600,9 +7661,16 @@ func (ec *executionContext) _Query_mturkLocales(ctx context.Context, field graph
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_mturkLocales_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MturkLocales(rctx)
+		return ec.resolvers.Query().MturkLocales(rctx, args["sandbox"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9095,6 +9163,40 @@ func (ec *executionContext) _Template_adult(ctx context.Context, field graphql.C
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Template_sandbox(ctx context.Context, field graphql.CollectedField, obj *ent.Template) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Template",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sandbox, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -10548,7 +10650,7 @@ func (ec *executionContext) unmarshalInputMTurkQualificationCriteriaInput(ctx co
 			}
 		case "comparator":
 			var err error
-			it.Comparator, err = ec.unmarshalNComparator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx, v)
+			it.Comparator, err = ec.unmarshalOComparator2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10849,6 +10951,12 @@ func (ec *executionContext) unmarshalInputTemplateInput(ctx context.Context, obj
 		case "adult":
 			var err error
 			it.Adult, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "sandbox":
+			var err error
+			it.Sandbox, err = ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -12507,6 +12615,11 @@ func (ec *executionContext) _Template(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._Template_participantCount(ctx, field, obj)
 		case "adult":
 			out.Values[i] = ec._Template_adult(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "sandbox":
+			out.Values[i] = ec._Template_sandbox(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}

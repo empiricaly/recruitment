@@ -142,6 +142,13 @@ func Adult(v bool) predicate.Template {
 	})
 }
 
+// Sandbox applies equality check predicate on the "sandbox" field. It's identical to SandboxEQ.
+func Sandbox(v bool) predicate.Template {
+	return predicate.Template(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldSandbox), v))
+	})
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Template {
 	return predicate.Template(func(s *sql.Selector) {
@@ -692,6 +699,20 @@ func AdultEQ(v bool) predicate.Template {
 func AdultNEQ(v bool) predicate.Template {
 	return predicate.Template(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldAdult), v))
+	})
+}
+
+// SandboxEQ applies the EQ predicate on the "sandbox" field.
+func SandboxEQ(v bool) predicate.Template {
+	return predicate.Template(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldSandbox), v))
+	})
+}
+
+// SandboxNEQ applies the NEQ predicate on the "sandbox" field.
+func SandboxNEQ(v bool) predicate.Template {
+	return predicate.Template(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldSandbox), v))
 	})
 }
 

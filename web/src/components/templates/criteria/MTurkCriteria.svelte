@@ -71,6 +71,9 @@
   }
 
   function mapComparator(selectedQual) {
+    if (!selectedQual) {
+      return [];
+    }
     switch (selectedQual.type) {
       case "CUSTOM":
         return customs;
@@ -109,29 +112,27 @@
   import { createEventDispatcher } from "svelte";
   import { query } from "svelte-apollo";
   import { client } from "../../../lib/apollo";
-  import Select from "../../base/Select.svelte";
-  import Input from "../../base/Input.svelte";
-  import Button from "../../base/Button.svelte";
-
-  const dispatch = createEventDispatcher();
-
   import {
     MTURK_LOCALES,
     MTURK_QUALIFICATION_TYPES,
   } from "../../../lib/queries";
+  import Button from "../../base/Button.svelte";
+  import Select from "../../base/Select.svelte";
 
+  export let sandbox = false;
   export let qualification = {};
   export let index = undefined;
 
   let selectedQual;
 
+  const dispatch = createEventDispatcher();
+
   function handleIdChange(event, quals) {
     const { value: id } = event.detail;
-    qualification.comparator = "";
     qualification.values = [];
     qualification.locales = [];
-
     selectedQual = quals.find((q) => q.id === id);
+    qualification.comparator = mapComparator(selectedQual)[0].value;
   }
 
   function handleComparatorChange(event) {
@@ -151,8 +152,20 @@
     qualification.comparator &&
     (qualification.comparator === "In" || qualification.comparator === "NotIn");
 
-  $: mturkLocales = query(client, { query: MTURK_LOCALES });
-  $: mturkQualTypes = query(client, { query: MTURK_QUALIFICATION_TYPES });
+  $: {
+    if (qualification.values && !Array.isArray(qualification.values)) {
+      qualification.values = [qualification.values];
+    }
+  }
+
+  $: mturkLocales = query(client, {
+    query: MTURK_LOCALES,
+    variables: { sandbox },
+  });
+  $: mturkQualTypes = query(client, {
+    query: MTURK_QUALIFICATION_TYPES,
+    variables: { sandbox },
+  });
 </script>
 
 <li>
@@ -182,7 +195,7 @@
         {#if qualification.id}
           {#if isPremium}
             <Select
-              bind:value={qualification.values}
+              bind:value={qualification.values[0]}
               options={bools}
               placeholder="Select Value" />
           {/if}
@@ -190,7 +203,7 @@
           {#if qualification.comparator && isLocation}
             {#await $mturkLocales then res}
               <Select
-                bind:value={qualification.locales}
+                bind:value={qualification.locales[0]}
                 options={mapLocales(res.data.mturkLocales)}
                 multiple={isMultiSelect}
                 placeholder="Select Locales" />
@@ -200,7 +213,7 @@
           {#if qualification.comparator && qualification.comparator && !isLocation && !isPremium && !isPresence}
             <div class="w-24">
               <Select
-                bind:value={qualification.values}
+                bind:value={qualification.values[0]}
                 options={mapIntegers(qualification.id)}
                 multiple={isMultiSelect}
                 placeholder="Select Value" />
@@ -215,7 +228,8 @@
         </div>
       </div>
     {:catch error}
-      Error loading MTurk qualification types: {error}
+      Error loading MTurk qualification types:
+      {error}
     {/await}
   </div>
 </li>

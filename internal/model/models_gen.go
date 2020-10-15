@@ -357,7 +357,7 @@ type MTurkQualificationCriteriaInput struct {
 	//   values.
 	// A Qualification requirement can also test if a Qualification Exists or
 	// DoesNotExist in the user's profile, regardless of its value.
-	Comparator Comparator `json:"comparator"`
+	Comparator *Comparator `json:"comparator"`
 	// Array of integer values to compare against the Qualification's value.
 	// IntegerValue must not be present if Comparator is Exists or DoesNotExist.
 	// IntegerValue can only be used if the Qualification type has an integer value;
@@ -569,6 +569,8 @@ type TemplateInput struct {
 	// From MTurk: This project may contain potentially explicit or offensive
 	// content, for example, nudity.
 	Adult bool `json:"adult"`
+	// Use MTurk Sandbox.
+	Sandbox bool `json:"sandbox"`
 }
 
 type UnscheduleRunInput struct {

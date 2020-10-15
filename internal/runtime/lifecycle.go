@@ -11,6 +11,7 @@ import (
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	steprunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
 	templateModel "github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/mturk"
 	"github.com/pkg/errors"
 	"github.com/rs/xid"
 	"github.com/rs/zerolog/log"
@@ -136,7 +137,21 @@ func (r *Runtime) startStep(run *ent.Run) {
 
 	switch nextStep.Type {
 	case stepModel.TypeMTURK_HIT, stepModel.TypeMTURK_MESSAGE:
-		err = r.mturk.RunStep(run, nextStepRun, nextStep)
+
+		template, err := run.QueryTemplate().Only(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("start step: get template")
+			break
+		}
+
+		var mturkSession *mturk.Session
+		if template.Sandbox {
+			mturkSession = r.mturkSandbox
+		} else {
+			mturkSession = r.mturk
+		}
+
+		err = mturkSession.RunStep(run, nextStepRun, nextStep)
 		if err != nil {
 			log.Error().Err(err).Msg("start step: run mturk for step")
 		}
@@ -190,7 +205,20 @@ func (r *Runtime) endStep(run *ent.Run, stepRun *ent.StepRun) {
 
 	switch nextStep.Type {
 	case stepModel.TypeMTURK_HIT, stepModel.TypeMTURK_MESSAGE:
-		err = r.mturk.EndStep(run, stepRun, step, nextStepRun, nextStep)
+		template, err := run.QueryTemplate().Only(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("start step: get template")
+			break
+		}
+
+		var mturkSession *mturk.Session
+		if template.Sandbox {
+			mturkSession = r.mturkSandbox
+		} else {
+			mturkSession = r.mturk
+		}
+
+		err = mturkSession.EndStep(run, stepRun, step, nextStepRun, nextStep)
 		if err != nil {
 			log.Error().Err(err).Msg("start step: run mturk for step")
 		}

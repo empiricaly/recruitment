@@ -97,6 +97,20 @@ func (tu *TemplateUpdate) SetNillableAdult(b *bool) *TemplateUpdate {
 	return tu
 }
 
+// SetSandbox sets the sandbox field.
+func (tu *TemplateUpdate) SetSandbox(b bool) *TemplateUpdate {
+	tu.mutation.SetSandbox(b)
+	return tu
+}
+
+// SetNillableSandbox sets the sandbox field if the given value is not nil.
+func (tu *TemplateUpdate) SetNillableSandbox(b *bool) *TemplateUpdate {
+	if b != nil {
+		tu.SetSandbox(*b)
+	}
+	return tu
+}
+
 // AddStepIDs adds the steps edge to Step by ids.
 func (tu *TemplateUpdate) AddStepIDs(ids ...string) *TemplateUpdate {
 	tu.mutation.AddStepIDs(ids...)
@@ -352,6 +366,13 @@ func (tu *TemplateUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: template.FieldAdult,
 		})
 	}
+	if value, ok := tu.mutation.Sandbox(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: template.FieldSandbox,
+		})
+	}
 	if nodes := tu.mutation.RemovedStepsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -574,6 +595,20 @@ func (tuo *TemplateUpdateOne) SetAdult(b bool) *TemplateUpdateOne {
 func (tuo *TemplateUpdateOne) SetNillableAdult(b *bool) *TemplateUpdateOne {
 	if b != nil {
 		tuo.SetAdult(*b)
+	}
+	return tuo
+}
+
+// SetSandbox sets the sandbox field.
+func (tuo *TemplateUpdateOne) SetSandbox(b bool) *TemplateUpdateOne {
+	tuo.mutation.SetSandbox(b)
+	return tuo
+}
+
+// SetNillableSandbox sets the sandbox field if the given value is not nil.
+func (tuo *TemplateUpdateOne) SetNillableSandbox(b *bool) *TemplateUpdateOne {
+	if b != nil {
+		tuo.SetSandbox(*b)
 	}
 	return tuo
 }
@@ -829,6 +864,13 @@ func (tuo *TemplateUpdateOne) sqlSave(ctx context.Context) (t *Template, err err
 			Type:   field.TypeBool,
 			Value:  value,
 			Column: template.FieldAdult,
+		})
+	}
+	if value, ok := tuo.mutation.Sandbox(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: template.FieldSandbox,
 		})
 	}
 	if nodes := tuo.mutation.RemovedStepsIDs(); len(nodes) > 0 {

@@ -18,7 +18,7 @@
         internal database.
       {/if}
     {:else if run.template.selectionType === 'MTURK_QUALIFICATIONS'}
-
+      MTurk selection...
     {:else}Unknow Particpant Selection Type{/if}
     <div>
       <div class="">{run.template.participantCount} Participants requested</div>

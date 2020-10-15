@@ -35,6 +35,8 @@ type Template struct {
 	MturkCriteria []byte `json:"mturkCriteria,omitempty"`
 	// Adult holds the value of the "adult" field.
 	Adult bool `json:"adult,omitempty"`
+	// Sandbox holds the value of the "sandbox" field.
+	Sandbox bool `json:"sandbox,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TemplateQuery when eager-loading is set.
 	Edges             TemplateEdges `json:"edges"`
@@ -121,6 +123,7 @@ func (*Template) scanValues() []interface{} {
 		&[]byte{},         // internalCriteria
 		&[]byte{},         // mturkCriteria
 		&sql.NullBool{},   // adult
+		&sql.NullBool{},   // sandbox
 	}
 }
 
@@ -185,7 +188,12 @@ func (t *Template) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		t.Adult = value.Bool
 	}
-	values = values[8:]
+	if value, ok := values[8].(*sql.NullBool); !ok {
+		return fmt.Errorf("unexpected type %T for field sandbox", values[8])
+	} else if value.Valid {
+		t.Sandbox = value.Bool
+	}
+	values = values[9:]
 	if len(values) == len(template.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullString); !ok {
 			return fmt.Errorf("unexpected type %T for field admin_templates", values[0])
@@ -268,6 +276,8 @@ func (t *Template) String() string {
 	builder.WriteString(fmt.Sprintf("%v", t.MturkCriteria))
 	builder.WriteString(", adult=")
 	builder.WriteString(fmt.Sprintf("%v", t.Adult))
+	builder.WriteString(", sandbox=")
+	builder.WriteString(fmt.Sprintf("%v", t.Sandbox))
 	builder.WriteByte(')')
 	return builder.String()
 }

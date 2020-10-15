@@ -104,6 +104,20 @@ func (tc *TemplateCreate) SetNillableAdult(b *bool) *TemplateCreate {
 	return tc
 }
 
+// SetSandbox sets the sandbox field.
+func (tc *TemplateCreate) SetSandbox(b bool) *TemplateCreate {
+	tc.mutation.SetSandbox(b)
+	return tc
+}
+
+// SetNillableSandbox sets the sandbox field if the given value is not nil.
+func (tc *TemplateCreate) SetNillableSandbox(b *bool) *TemplateCreate {
+	if b != nil {
+		tc.SetSandbox(*b)
+	}
+	return tc
+}
+
 // SetID sets the id field.
 func (tc *TemplateCreate) SetID(s string) *TemplateCreate {
 	tc.mutation.SetID(s)
@@ -272,6 +286,10 @@ func (tc *TemplateCreate) preSave() error {
 		v := template.DefaultAdult
 		tc.mutation.SetAdult(v)
 	}
+	if _, ok := tc.mutation.Sandbox(); !ok {
+		v := template.DefaultSandbox
+		tc.mutation.SetSandbox(v)
+	}
 	if v, ok := tc.mutation.ID(); ok {
 		if err := template.IDValidator(v); err != nil {
 			return &ValidationError{Name: "id", err: fmt.Errorf("ent: validator failed for field \"id\": %w", err)}
@@ -369,6 +387,14 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 			Column: template.FieldAdult,
 		})
 		t.Adult = value
+	}
+	if value, ok := tc.mutation.Sandbox(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: template.FieldSandbox,
+		})
+		t.Sandbox = value
 	}
 	if nodes := tc.mutation.StepsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

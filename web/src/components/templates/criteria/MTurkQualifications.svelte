@@ -1,12 +1,11 @@
 <script>
-  import MTurkCriteria from "./MTurkCriteria.svelte";
-  import Select from "../../base/Select.svelte";
   import Button from "../../base/Button.svelte";
   import Radio from "../../base/Radio.svelte";
-  import Checkbox from "../../base/Checkbox.svelte";
+  import MTurkCriteria from "./MTurkCriteria.svelte";
 
   export let qualifications = [];
   export let useMaster = false;
+  export let sandbox = false;
 
   const maxQualification = 5;
 
@@ -51,6 +50,7 @@
 <ul class="mt-2">
   {#each qualifications as q, i (q)}
     <MTurkCriteria
+      {sandbox}
       bind:qualification={q}
       on:remove={handleQualRemove}
       index={i} />
@@ -62,11 +62,12 @@
     <Button
       secondary
       on:click={() => {
-        qualifications = [...qualifications, { id: '', comparator: '', values: [], locales: [] }];
+        qualifications = [...qualifications, { id: '', comparator: 'EQUAL_TO', values: [], locales: [] }];
       }}
       text="Add Another Criterion" />
     <span class="ml-3 text-orange-600">
-      up to {qualifications.length === 0 ? maxQualification : maxQualification - qualifications.length + ' more'}
+      up to
+      {qualifications.length === 0 ? maxQualification : maxQualification - qualifications.length + ' more'}
     </span>
   {/if}
 </div>

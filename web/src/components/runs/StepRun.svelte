@@ -18,7 +18,7 @@
   import StepRunParticipantFilter from "./StepRunParticipantFilter.svelte";
 
   export let step;
-  export let stepLength;
+  // export let stepLength;
 </script>
 
 <TemplateSection title={stepTypeName[step.type]} header>

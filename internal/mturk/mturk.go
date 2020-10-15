@@ -17,14 +17,15 @@ const awsRegion = "us-east-1"
 type Session struct {
 	quals []*model.MTurkQulificationType
 	*mturk.MTurk
-	config *Config
-	store  *storage.Conn
+	config  *Config
+	store   *storage.Conn
+	sandbox bool
 }
 
 // New create a new session for mTurk
-func New(config *Config, store *storage.Conn) (*Session, error) {
+func New(config *Config, sandbox bool, store *storage.Conn) (*Session, error) {
 	var endpoint string
-	if config.Sandbox {
+	if sandbox {
 		endpoint = sandboxURL
 	} else {
 		endpoint = productionURL
@@ -38,16 +39,17 @@ func New(config *Config, store *storage.Conn) (*Session, error) {
 		return nil, errors.Wrap(err, "create new aws session")
 	}
 
-	quals, err := loadQuals(config.Sandbox)
+	quals, err := loadQuals(sandbox)
 	if err != nil {
 		return nil, errors.Wrap(err, "load json quals")
 	}
 
 	svc := mturk.New(sess)
 	return &Session{
-		config: config,
-		MTurk:  svc,
-		quals:  quals,
-		store:  store,
+		config:  config,
+		sandbox: sandbox,
+		MTurk:   svc,
+		quals:   quals,
+		store:   store,
 	}, nil
 }
