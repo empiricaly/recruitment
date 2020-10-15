@@ -24,6 +24,7 @@ func (StepRun) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int("participantsCount"),
 		field.String("hitID").Optional().Nillable(),
+		field.String("urlToken").Unique(),
 	}
 }
 

@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"math"
+	"math/rand"
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent"
@@ -14,6 +15,21 @@ import (
 	"github.com/rs/xid"
 	"github.com/rs/zerolog/log"
 )
+
+// Returns an int >= min, < max
+func randomInt(min, max int) int {
+	return min + rand.Intn(max-min)
+}
+
+// Generate a random string of A-Z chars with len = l
+func randomString(len int) string {
+	bytes := make([]byte, len)
+	for i := 0; i < len; i++ {
+		// 97, 122 to get lowercase
+		bytes[i] = byte(randomInt(65, 90))
+	}
+	return string(bytes)
+}
 
 func (r *Runtime) filterParticipants(ctx context.Context, tx *ent.Tx, template *ent.Template) ([]*ent.Participant, error) {
 	participants, err := tx.Participant.Query().All(ctx)
@@ -49,6 +65,7 @@ func (r *Runtime) startRun(run *ent.Run) {
 				StepRun.
 				Create().
 				SetID(xid.New().String()).
+				SetUrlToken(randomString(30)).
 				SetRun(run).
 				SetStep(step).
 				SetStatus(steprunModel.StatusCREATED).

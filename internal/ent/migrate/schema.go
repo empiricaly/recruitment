@@ -210,6 +210,7 @@ var (
 		{Name: "ended_at", Type: field.TypeTime, Nullable: true},
 		{Name: "participants_count", Type: field.TypeInt},
 		{Name: "hit_id", Type: field.TypeString, Nullable: true},
+		{Name: "url_token", Type: field.TypeString, Unique: true},
 		{Name: "run_steps", Type: field.TypeString, Nullable: true, Size: 20},
 	}
 	// StepRunsTable holds the schema information for the "step_runs" table.
@@ -220,7 +221,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "step_runs_runs_steps",
-				Columns: []*schema.Column{StepRunsColumns[8]},
+				Columns: []*schema.Column{StepRunsColumns[9]},
 
 				RefColumns: []*schema.Column{RunsColumns[0]},
 				OnDelete:   schema.SetNull,

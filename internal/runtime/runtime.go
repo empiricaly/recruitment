@@ -2,6 +2,8 @@ package runtime
 
 import (
 	"context"
+	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent"
@@ -39,8 +41,14 @@ type Runtime struct {
 	done bool
 }
 
+var initRand sync.Once
+
 // Start the empirica recruitment runtime
 func Start(conn *storage.Conn) (*Runtime, error) {
+	initRand.Do(func() {
+		rand.Seed(time.Now().UnixNano())
+	})
+
 	r := &Runtime{
 		conn:     conn,
 		runs:     make(map[string]*runState),

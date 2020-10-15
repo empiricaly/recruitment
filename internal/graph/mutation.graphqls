@@ -134,10 +134,10 @@ input UpdateTemplateInput {
   template: TemplateInput!
 }
 
-input DuplicateTemplateInput {
-  templateID: ID!
-  projectID: ID!
-  name: String
+input DuplicateRunInput {
+  runID: ID!
+  # If toProjectID is nil, it will duplicate in the same project
+  toProjectID: ID
 }
 
 input StepInput {
@@ -246,9 +246,9 @@ type Mutation {
   updateTemplate(input: UpdateTemplateInput): Template! @hasRole(role: ADMIN)
 
   """
-  Duplicate a Template to a Project.
+  Duplicate a Run.
   """
-  duplicateTemplate(input: DuplicateTemplateInput): Template! @hasRole(role: ADMIN)
+  duplicateRun(input: DuplicateRunInput): Run! @hasRole(role: ADMIN)
 
   """
   Create Run.

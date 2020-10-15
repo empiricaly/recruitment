@@ -118,6 +118,12 @@ func (sru *StepRunUpdate) ClearHitID() *StepRunUpdate {
 	return sru
 }
 
+// SetUrlToken sets the urlToken field.
+func (sru *StepRunUpdate) SetUrlToken(s string) *StepRunUpdate {
+	sru.mutation.SetUrlToken(s)
+	return sru
+}
+
 // AddCreatedParticipantIDs adds the createdParticipants edge to Participant by ids.
 func (sru *StepRunUpdate) AddCreatedParticipantIDs(ids ...string) *StepRunUpdate {
 	sru.mutation.AddCreatedParticipantIDs(ids...)
@@ -403,6 +409,13 @@ func (sru *StepRunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: steprun.FieldHitID,
+		})
+	}
+	if value, ok := sru.mutation.UrlToken(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: steprun.FieldUrlToken,
 		})
 	}
 	if nodes := sru.mutation.RemovedCreatedParticipantsIDs(); len(nodes) > 0 {
@@ -692,6 +705,12 @@ func (sruo *StepRunUpdateOne) ClearHitID() *StepRunUpdateOne {
 	return sruo
 }
 
+// SetUrlToken sets the urlToken field.
+func (sruo *StepRunUpdateOne) SetUrlToken(s string) *StepRunUpdateOne {
+	sruo.mutation.SetUrlToken(s)
+	return sruo
+}
+
 // AddCreatedParticipantIDs adds the createdParticipants edge to Participant by ids.
 func (sruo *StepRunUpdateOne) AddCreatedParticipantIDs(ids ...string) *StepRunUpdateOne {
 	sruo.mutation.AddCreatedParticipantIDs(ids...)
@@ -975,6 +994,13 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: steprun.FieldHitID,
+		})
+	}
+	if value, ok := sruo.mutation.UrlToken(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: steprun.FieldUrlToken,
 		})
 	}
 	if nodes := sruo.mutation.RemovedCreatedParticipantsIDs(); len(nodes) > 0 {

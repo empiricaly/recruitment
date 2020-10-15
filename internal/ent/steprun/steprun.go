@@ -26,6 +26,8 @@ const (
 	FieldParticipantsCount = "participants_count"
 	// FieldHitID holds the string denoting the hitid field in the database.
 	FieldHitID = "hit_id"
+	// FieldUrlToken holds the string denoting the urltoken field in the database.
+	FieldUrlToken = "url_token"
 
 	// EdgeCreatedParticipants holds the string denoting the createdparticipants edge name in mutations.
 	EdgeCreatedParticipants = "createdParticipants"
@@ -85,6 +87,7 @@ var Columns = []string{
 	FieldEndedAt,
 	FieldParticipantsCount,
 	FieldHitID,
+	FieldUrlToken,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the StepRun type.

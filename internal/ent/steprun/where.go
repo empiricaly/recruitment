@@ -135,6 +135,13 @@ func HitID(v string) predicate.StepRun {
 	})
 }
 
+// UrlToken applies equality check predicate on the "urlToken" field. It's identical to UrlTokenEQ.
+func UrlToken(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldUrlToken), v))
+	})
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
@@ -713,6 +720,117 @@ func HitIDEqualFold(v string) predicate.StepRun {
 func HitIDContainsFold(v string) predicate.StepRun {
 	return predicate.StepRun(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldHitID), v))
+	})
+}
+
+// UrlTokenEQ applies the EQ predicate on the "urlToken" field.
+func UrlTokenEQ(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldUrlToken), v))
+	})
+}
+
+// UrlTokenNEQ applies the NEQ predicate on the "urlToken" field.
+func UrlTokenNEQ(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldUrlToken), v))
+	})
+}
+
+// UrlTokenIn applies the In predicate on the "urlToken" field.
+func UrlTokenIn(vs ...string) predicate.StepRun {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.StepRun(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldUrlToken), v...))
+	})
+}
+
+// UrlTokenNotIn applies the NotIn predicate on the "urlToken" field.
+func UrlTokenNotIn(vs ...string) predicate.StepRun {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.StepRun(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldUrlToken), v...))
+	})
+}
+
+// UrlTokenGT applies the GT predicate on the "urlToken" field.
+func UrlTokenGT(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldUrlToken), v))
+	})
+}
+
+// UrlTokenGTE applies the GTE predicate on the "urlToken" field.
+func UrlTokenGTE(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldUrlToken), v))
+	})
+}
+
+// UrlTokenLT applies the LT predicate on the "urlToken" field.
+func UrlTokenLT(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldUrlToken), v))
+	})
+}
+
+// UrlTokenLTE applies the LTE predicate on the "urlToken" field.
+func UrlTokenLTE(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldUrlToken), v))
+	})
+}
+
+// UrlTokenContains applies the Contains predicate on the "urlToken" field.
+func UrlTokenContains(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldUrlToken), v))
+	})
+}
+
+// UrlTokenHasPrefix applies the HasPrefix predicate on the "urlToken" field.
+func UrlTokenHasPrefix(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldUrlToken), v))
+	})
+}
+
+// UrlTokenHasSuffix applies the HasSuffix predicate on the "urlToken" field.
+func UrlTokenHasSuffix(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldUrlToken), v))
+	})
+}
+
+// UrlTokenEqualFold applies the EqualFold predicate on the "urlToken" field.
+func UrlTokenEqualFold(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldUrlToken), v))
+	})
+}
+
+// UrlTokenContainsFold applies the ContainsFold predicate on the "urlToken" field.
+func UrlTokenContainsFold(v string) predicate.StepRun {
+	return predicate.StepRun(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldUrlToken), v))
 	})
 }
 

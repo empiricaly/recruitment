@@ -5209,6 +5209,7 @@ type StepRunMutation struct {
 	participantsCount          *int
 	addparticipantsCount       *int
 	hitID                      *string
+	urlToken                   *string
 	clearedFields              map[string]struct{}
 	createdParticipants        map[string]struct{}
 	removedcreatedParticipants map[string]struct{}
@@ -5627,6 +5628,43 @@ func (m *StepRunMutation) ResetHitID() {
 	delete(m.clearedFields, steprun.FieldHitID)
 }
 
+// SetUrlToken sets the urlToken field.
+func (m *StepRunMutation) SetUrlToken(s string) {
+	m.urlToken = &s
+}
+
+// UrlToken returns the urlToken value in the mutation.
+func (m *StepRunMutation) UrlToken() (r string, exists bool) {
+	v := m.urlToken
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUrlToken returns the old urlToken value of the StepRun.
+// If the StepRun object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepRunMutation) OldUrlToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUrlToken is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUrlToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUrlToken: %w", err)
+	}
+	return oldValue.UrlToken, nil
+}
+
+// ResetUrlToken reset all changes of the "urlToken" field.
+func (m *StepRunMutation) ResetUrlToken() {
+	m.urlToken = nil
+}
+
 // AddCreatedParticipantIDs adds the createdParticipants edge to Participant by ids.
 func (m *StepRunMutation) AddCreatedParticipantIDs(ids ...string) {
 	if m.createdParticipants == nil {
@@ -5845,7 +5883,7 @@ func (m *StepRunMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *StepRunMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, steprun.FieldCreatedAt)
 	}
@@ -5866,6 +5904,9 @@ func (m *StepRunMutation) Fields() []string {
 	}
 	if m.hitID != nil {
 		fields = append(fields, steprun.FieldHitID)
+	}
+	if m.urlToken != nil {
+		fields = append(fields, steprun.FieldUrlToken)
 	}
 	return fields
 }
@@ -5889,6 +5930,8 @@ func (m *StepRunMutation) Field(name string) (ent.Value, bool) {
 		return m.ParticipantsCount()
 	case steprun.FieldHitID:
 		return m.HitID()
+	case steprun.FieldUrlToken:
+		return m.UrlToken()
 	}
 	return nil, false
 }
@@ -5912,6 +5955,8 @@ func (m *StepRunMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldParticipantsCount(ctx)
 	case steprun.FieldHitID:
 		return m.OldHitID(ctx)
+	case steprun.FieldUrlToken:
+		return m.OldUrlToken(ctx)
 	}
 	return nil, fmt.Errorf("unknown StepRun field %s", name)
 }
@@ -5969,6 +6014,13 @@ func (m *StepRunMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetHitID(v)
+		return nil
+	case steprun.FieldUrlToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUrlToken(v)
 		return nil
 	}
 	return fmt.Errorf("unknown StepRun field %s", name)
@@ -6076,6 +6128,9 @@ func (m *StepRunMutation) ResetField(name string) error {
 		return nil
 	case steprun.FieldHitID:
 		m.ResetHitID()
+		return nil
+	case steprun.FieldUrlToken:
+		m.ResetUrlToken()
 		return nil
 	}
 	return fmt.Errorf("unknown StepRun field %s", name)

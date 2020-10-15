@@ -214,8 +214,8 @@
 <div class="mt-4">
   <h3 class="text-lg font-medium leading-6 text-gray-900">Add Step</h3>
   <p class="mt-1 text-sm leading-5 text-gray-600">
-    Steps execute in order a pre-defined time in a Run. TODO: Add Step
-    documentation here.
+    Steps execute in order a pre-defined time in a Run.
+    <!-- TODO: Add Step documentation here. -->
   </p>
 </div>
 

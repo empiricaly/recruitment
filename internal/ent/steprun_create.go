@@ -106,6 +106,12 @@ func (src *StepRunCreate) SetNillableHitID(s *string) *StepRunCreate {
 	return src
 }
 
+// SetUrlToken sets the urlToken field.
+func (src *StepRunCreate) SetUrlToken(s string) *StepRunCreate {
+	src.mutation.SetUrlToken(s)
+	return src
+}
+
 // SetID sets the id field.
 func (src *StepRunCreate) SetID(s string) *StepRunCreate {
 	src.mutation.SetID(s)
@@ -253,6 +259,9 @@ func (src *StepRunCreate) preSave() error {
 	if _, ok := src.mutation.ParticipantsCount(); !ok {
 		return &ValidationError{Name: "participantsCount", err: errors.New("ent: missing required field \"participantsCount\"")}
 	}
+	if _, ok := src.mutation.UrlToken(); !ok {
+		return &ValidationError{Name: "urlToken", err: errors.New("ent: missing required field \"urlToken\"")}
+	}
 	if v, ok := src.mutation.ID(); ok {
 		if err := steprun.IDValidator(v); err != nil {
 			return &ValidationError{Name: "id", err: fmt.Errorf("ent: validator failed for field \"id\": %w", err)}
@@ -345,6 +354,14 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Column: steprun.FieldHitID,
 		})
 		sr.HitID = &value
+	}
+	if value, ok := src.mutation.UrlToken(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: steprun.FieldUrlToken,
+		})
+		sr.UrlToken = value
 	}
 	if nodes := src.mutation.CreatedParticipantsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

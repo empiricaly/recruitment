@@ -32,6 +32,8 @@ type StepRun struct {
 	ParticipantsCount int `json:"participantsCount,omitempty"`
 	// HitID holds the value of the "hitID" field.
 	HitID *string `json:"hitID,omitempty"`
+	// UrlToken holds the value of the "urlToken" field.
+	UrlToken string `json:"urlToken,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StepRunQuery when eager-loading is set.
 	Edges     StepRunEdges `json:"edges"`
@@ -121,6 +123,7 @@ func (*StepRun) scanValues() []interface{} {
 		&sql.NullTime{},   // endedAt
 		&sql.NullInt64{},  // participantsCount
 		&sql.NullString{}, // hitID
+		&sql.NullString{}, // urlToken
 	}
 }
 
@@ -181,7 +184,12 @@ func (sr *StepRun) assignValues(values ...interface{}) error {
 		sr.HitID = new(string)
 		*sr.HitID = value.String
 	}
-	values = values[7:]
+	if value, ok := values[7].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field urlToken", values[7])
+	} else if value.Valid {
+		sr.UrlToken = value.String
+	}
+	values = values[8:]
 	if len(values) == len(steprun.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullString); !ok {
 			return fmt.Errorf("unexpected type %T for field run_steps", values[0])
@@ -261,6 +269,8 @@ func (sr *StepRun) String() string {
 		builder.WriteString(", hitID=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", urlToken=")
+	builder.WriteString(sr.UrlToken)
 	builder.WriteByte(')')
 	return builder.String()
 }

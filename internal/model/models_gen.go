@@ -125,10 +125,9 @@ type Datum struct {
 	Versions []*Datum `json:"versions"`
 }
 
-type DuplicateTemplateInput struct {
-	TemplateID string  `json:"templateID"`
-	ProjectID  string  `json:"projectID"`
-	Name       *string `json:"name"`
+type DuplicateRunInput struct {
+	RunID       string  `json:"runID"`
+	ToProjectID *string `json:"toProjectID"`
 }
 
 // FilterStepArgs are arguments passed to a Pariticipant Filter Step.

@@ -11,7 +11,6 @@ import (
 	adminU "github.com/empiricaly/recruitment/internal/admin"
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/admin"
-	"github.com/empiricaly/recruitment/internal/ent/run"
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/template"
@@ -173,7 +172,7 @@ LOOP:
 	return template, err
 }
 
-func (r *mutationResolver) DuplicateTemplate(ctx context.Context, input *model.DuplicateTemplateInput) (*ent.Template, error) {
+func (r *mutationResolver) DuplicateRun(ctx context.Context, input *model.DuplicateRunInput) (*ent.Run, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -205,7 +204,7 @@ func (r *mutationResolver) CreateRun(ctx context.Context, input *model.CreateRun
 
 	run, err := r.Store.Run.Create().
 		SetID(xid.New().String()).
-		SetStatus(run.StatusCREATED).
+		SetStatus(runModel.StatusCREATED).
 		SetTemplate(template).
 		SetName(input.Template.Name).
 		SetProjectID(input.ProjectID).

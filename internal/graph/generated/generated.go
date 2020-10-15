@@ -160,7 +160,7 @@ type ComplexityRoot struct {
 		CreateProject       func(childComplexity int, input *model.CreateProjectInput) int
 		CreateRun           func(childComplexity int, input *model.CreateRunInput) int
 		CreateTemplate      func(childComplexity int, input *model.CreateTemplateInput) int
-		DuplicateTemplate   func(childComplexity int, input *model.DuplicateTemplateInput) int
+		DuplicateRun        func(childComplexity int, input *model.DuplicateRunInput) int
 		MutateDatum         func(childComplexity int, input *model.MutateDatumInput) int
 		RegisterParticipant func(childComplexity int, input *model.RegisterParticipantInput) int
 		ScheduleRun         func(childComplexity int, input *model.ScheduleRunInput) int
@@ -306,7 +306,7 @@ type MutationResolver interface {
 	CreateProject(ctx context.Context, input *model.CreateProjectInput) (*ent.Project, error)
 	CreateTemplate(ctx context.Context, input *model.CreateTemplateInput) (*ent.Template, error)
 	UpdateTemplate(ctx context.Context, input *model.UpdateTemplateInput) (*ent.Template, error)
-	DuplicateTemplate(ctx context.Context, input *model.DuplicateTemplateInput) (*ent.Template, error)
+	DuplicateRun(ctx context.Context, input *model.DuplicateRunInput) (*ent.Run, error)
 	CreateRun(ctx context.Context, input *model.CreateRunInput) (*ent.Run, error)
 	UpdateRun(ctx context.Context, input *model.UpdateRunInput) (*ent.Run, error)
 	ScheduleRun(ctx context.Context, input *model.ScheduleRunInput) (*ent.Run, error)
@@ -852,17 +852,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateTemplate(childComplexity, args["input"].(*model.CreateTemplateInput)), true
 
-	case "Mutation.duplicateTemplate":
-		if e.complexity.Mutation.DuplicateTemplate == nil {
+	case "Mutation.duplicateRun":
+		if e.complexity.Mutation.DuplicateRun == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_duplicateTemplate_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_duplicateRun_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DuplicateTemplate(childComplexity, args["input"].(*model.DuplicateTemplateInput)), true
+		return e.complexity.Mutation.DuplicateRun(childComplexity, args["input"].(*model.DuplicateRunInput)), true
 
 	case "Mutation.mutateDatum":
 		if e.complexity.Mutation.MutateDatum == nil {
@@ -2632,10 +2632,10 @@ input UpdateTemplateInput {
   template: TemplateInput!
 }
 
-input DuplicateTemplateInput {
-  templateID: ID!
-  projectID: ID!
-  name: String
+input DuplicateRunInput {
+  runID: ID!
+  # If toProjectID is nil, it will duplicate in the same project
+  toProjectID: ID
 }
 
 input StepInput {
@@ -2744,9 +2744,9 @@ type Mutation {
   updateTemplate(input: UpdateTemplateInput): Template! @hasRole(role: ADMIN)
 
   """
-  Duplicate a Template to a Project.
+  Duplicate a Run.
   """
-  duplicateTemplate(input: DuplicateTemplateInput): Template! @hasRole(role: ADMIN)
+  duplicateRun(input: DuplicateRunInput): Run! @hasRole(role: ADMIN)
 
   """
   Create Run.
@@ -3265,12 +3265,12 @@ func (ec *executionContext) field_Mutation_createTemplate_args(ctx context.Conte
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_duplicateTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_duplicateRun_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.DuplicateTemplateInput
+	var arg0 *model.DuplicateRunInput
 	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalODuplicateTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateTemplateInput(ctx, tmp)
+		arg0, err = ec.unmarshalODuplicateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateRunInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5751,7 +5751,7 @@ func (ec *executionContext) _Mutation_updateTemplate(ctx context.Context, field 
 	return ec.marshalNTemplate2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐTemplate(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_duplicateTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_duplicateRun(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5767,7 +5767,7 @@ func (ec *executionContext) _Mutation_duplicateTemplate(ctx context.Context, fie
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_duplicateTemplate_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_duplicateRun_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5776,7 +5776,7 @@ func (ec *executionContext) _Mutation_duplicateTemplate(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DuplicateTemplate(rctx, args["input"].(*model.DuplicateTemplateInput))
+			return ec.resolvers.Mutation().DuplicateRun(rctx, args["input"].(*model.DuplicateRunInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
@@ -5796,10 +5796,10 @@ func (ec *executionContext) _Mutation_duplicateTemplate(ctx context.Context, fie
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*ent.Template); ok {
+		if data, ok := tmp.(*ent.Run); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Template`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/ent.Run`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5811,9 +5811,9 @@ func (ec *executionContext) _Mutation_duplicateTemplate(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*ent.Template)
+	res := resTmp.(*ent.Run)
 	fc.Result = res
-	return ec.marshalNTemplate2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐTemplate(ctx, field.Selections, res)
+	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRun(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_createRun(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -10348,27 +10348,21 @@ func (ec *executionContext) unmarshalInputCreateTemplateInput(ctx context.Contex
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputDuplicateTemplateInput(ctx context.Context, obj interface{}) (model.DuplicateTemplateInput, error) {
-	var it model.DuplicateTemplateInput
+func (ec *executionContext) unmarshalInputDuplicateRunInput(ctx context.Context, obj interface{}) (model.DuplicateRunInput, error) {
+	var it model.DuplicateRunInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "templateID":
+		case "runID":
 			var err error
-			it.TemplateID, err = ec.unmarshalNID2string(ctx, v)
+			it.RunID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "projectID":
+		case "toProjectID":
 			var err error
-			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "name":
-			var err error
-			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.ToProjectID, err = ec.unmarshalOID2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -11534,8 +11528,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "duplicateTemplate":
-			out.Values[i] = ec._Mutation_duplicateTemplate(ctx, field)
+		case "duplicateRun":
+			out.Values[i] = ec._Mutation_duplicateRun(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -14257,15 +14251,15 @@ func (ec *executionContext) marshalODatumOp2ᚖgithubᚗcomᚋempiricalyᚋrecru
 	return v
 }
 
-func (ec *executionContext) unmarshalODuplicateTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateTemplateInput(ctx context.Context, v interface{}) (model.DuplicateTemplateInput, error) {
-	return ec.unmarshalInputDuplicateTemplateInput(ctx, v)
+func (ec *executionContext) unmarshalODuplicateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateRunInput(ctx context.Context, v interface{}) (model.DuplicateRunInput, error) {
+	return ec.unmarshalInputDuplicateRunInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalODuplicateTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateTemplateInput(ctx context.Context, v interface{}) (*model.DuplicateTemplateInput, error) {
+func (ec *executionContext) unmarshalODuplicateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateRunInput(ctx context.Context, v interface{}) (*model.DuplicateRunInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalODuplicateTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateTemplateInput(ctx, v)
+	res, err := ec.unmarshalODuplicateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateRunInput(ctx, v)
 	return &res, err
 }
 
