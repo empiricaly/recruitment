@@ -173,10 +173,88 @@ LOOP:
 }
 
 func (r *mutationResolver) DuplicateRun(ctx context.Context, input *model.DuplicateRunInput) (*ent.Run, error) {
-	panic(fmt.Errorf("not implemented"))
+	var result *ent.Run
+
+	if err := ent.WithTx(ctx, r.Store.Client, func(tx *ent.Tx) error {
+		projectID := input.ToProjectID
+
+		run, err := tx.Run.Get(ctx, input.RunID)
+		if err != nil {
+			return errs.Wrap(err, "query duplicateRun for run")
+		}
+
+		if projectID == nil {
+			project := run.QueryProject().OnlyIDX(ctx)
+			projectID = &project
+		}
+
+		template, err := tx.Run.QueryTemplate(run).Only(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("start run: query template")
+			return errs.Wrap(err, "query duplicateRun for template")
+		}
+
+		steps, err := template.QuerySteps().All(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("start run: query steps")
+			return errs.Wrap(err, "query duplicateRun for steps")
+		}
+
+		creator := adminU.ForContext(ctx)
+
+		newTemplate, err := tx.Template.Create().
+			SetID(xid.New().String()).
+			SetName(template.Name).
+			SetSelectionType(template.SelectionType).
+			SetParticipantCount(template.ParticipantCount).
+			SetInternalCriteria(template.InternalCriteria).
+			SetMturkCriteria(template.MturkCriteria).
+			SetCreator(creator).
+			SetProjectID(*projectID).
+			Save(ctx)
+		if err != nil {
+			return errs.Wrap(err, "create template")
+		}
+
+		for _, step := range steps {
+			_, err := tx.Step.Create().
+				SetID(xid.New().String()).
+				SetType(stepModel.Type(step.Type.String())).
+				SetIndex(step.Index).
+				SetDuration(step.Duration).
+				SetFilterArgs(step.FilterArgs).
+				SetHitArgs(step.HitArgs).
+				SetMsgArgs(step.MsgArgs).
+				SetTemplate(newTemplate).
+				Save(ctx)
+			if err != nil {
+				return errs.Wrap(err, "create step")
+			}
+		}
+
+		newRun, err := tx.Run.Create().
+			SetID(xid.New().String()).
+			SetStatus(runModel.StatusCREATED).
+			SetTemplate(newTemplate).
+			SetName(run.Name + " - copy").
+			SetProjectID(*projectID).
+			Save(ctx)
+
+		result = newRun
+		return nil
+	}); err != nil {
+		log.Error().Err(err).Msg("start run: commit transaction")
+	}
+
+	return result, nil
 }
 
 func (r *mutationResolver) CreateRun(ctx context.Context, input *model.CreateRunInput) (*ent.Run, error) {
+	tx, err := r.Store.Tx(ctx)
+	if err != nil {
+		return nil, errs.Wrap(err, "starting a transaction")
+	}
+
 	creator := adminU.ForContext(ctx)
 
 	internalCriteria, err := json.Marshal(input.Template.InternalCriteria)
@@ -188,7 +266,7 @@ func (r *mutationResolver) CreateRun(ctx context.Context, input *model.CreateRun
 		return nil, errs.Wrap(err, "encode mturk criteria")
 	}
 
-	template, err := r.Store.Template.Create().
+	template, err := tx.Template.Create().
 		SetID(xid.New().String()).
 		SetName(input.Template.Name).
 		SetSelectionType(template.SelectionType(input.Template.SelectionType.String())).
@@ -202,13 +280,18 @@ func (r *mutationResolver) CreateRun(ctx context.Context, input *model.CreateRun
 		return nil, errs.Wrap(err, "create template")
 	}
 
-	run, err := r.Store.Run.Create().
+	run, err := tx.Run.Create().
 		SetID(xid.New().String()).
 		SetStatus(runModel.StatusCREATED).
 		SetTemplate(template).
 		SetName(input.Template.Name).
 		SetProjectID(input.ProjectID).
 		Save(ctx)
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errs.Wrap(err, "commit transaction")
+	}
 
 	return run, err
 }

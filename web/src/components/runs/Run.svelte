@@ -3,7 +3,8 @@
   import { mutate } from "svelte-apollo";
   import Layout from "../../layouts/Layout.svelte";
   import { client } from "../../lib/apollo";
-  import { START_RUN, UPDATE_RUN } from "../../lib/queries";
+  import { START_RUN, UPDATE_RUN, DUPLICATE_RUN } from "../../lib/queries";
+  import { push } from "../../lib/routing";
   import { deepCopy } from "../../utils/copy";
   import { debounce } from "../../utils/timing";
   import StatusBadge from "../misc/StatusBadge.svelte";
@@ -12,6 +13,7 @@
   import RunningRun from "./RunningRun.svelte";
 
   export let project;
+  export let projectName;
   export let run;
 
   let name = run.name;
@@ -21,7 +23,6 @@
     if (name !== initialName) {
       update();
       initialName = name;
-      console.log("wtf");
     }
   }
 
@@ -85,8 +86,6 @@
       notify({
         success: true,
         title: `Run Started`,
-        // body:
-        //   "Something happened on the server, and we could not create a new Run as requested.",
       });
     } catch (error) {
       console.error(error);
@@ -99,6 +98,37 @@
     }
   };
 
+  const duplicateRun = async () => {
+    try {
+      const input = {
+        runID: run.id,
+        toProjectID: project.id,
+      };
+
+      const result = await mutate(client, {
+        mutation: DUPLICATE_RUN,
+        variables: {
+          input,
+        },
+      });
+
+      notify({
+        success: true,
+        title: `Run Duplicated`,
+      });
+
+      push(`/projects/${projectName}/runs/${result.data.duplicateRun.id}`);
+    } catch (error) {
+      console.error(error);
+      notify({
+        failed: true,
+        title: `Could not duplicate Run`,
+        body:
+          "Something happened on the server, and we could not duplicate the Run.",
+      });
+    }
+  };
+
   let template = deepCopy(run.template);
 
   function handleClick(event) {
@@ -106,6 +136,9 @@
     switch (action) {
       case "start":
         startRun();
+        break;
+      case "duplicate":
+        duplicateRun();
         break;
       default:
         break;

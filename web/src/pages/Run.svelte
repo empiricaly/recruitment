@@ -21,9 +21,13 @@
     {#if result.data.project.runs.length === 0}
       Run not found!
     {:else}
-      <Run project={result.data.project} run={result.data.project.runs[0]} />
+      <Run
+        projectName={projectID}
+        project={result.data.project}
+        run={result.data.project.runs[0]} />
     {/if}
   {:catch error}
-    Error loading Run: {error}
+    Error loading Run:
+    {error}
   {/await}
 {/if}
