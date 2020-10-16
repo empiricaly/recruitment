@@ -14,6 +14,16 @@
   export let actions = [];
 
   $: secondaryActions = actions.filter((a) => !a.primary);
+  let prevTitle = title;
+
+  function handleTitleChange() {
+    if (!title) {
+      title = prevTitle;
+      return;
+    }
+
+    prevTitle = title;
+  }
 
   // export let facts = [
   //   {
@@ -88,7 +98,8 @@
           class="font-bold focus:outline-none
             rounded-md bg-transparent focus:bg-white w-full"
           type="text"
-          bind:value={title} />
+          bind:value={title}
+          on:change={handleTitleChange} />
       {:else}
         <div>{title}</div>
       {/if}
