@@ -31,7 +31,8 @@
     <ul>
       {#each result.data.project.runs as run, index (run.id)}
         <RunLine
-          projectID={project.projectID}
+          projectID={project.id}
+          projectName={project.projectID}
           runID={run.id}
           startAt={run.startAt}
           startedAt={run.startedAt}

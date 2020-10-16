@@ -1,12 +1,19 @@
 <script>
+  import { mutate } from "svelte-apollo";
+
   import Link from "../base/Link.svelte";
   import Duration from "../misc/Duration.svelte";
   import OptionsMenu from "../misc/OptionsMenu.svelte";
   import RelativeTime from "../misc/RelativeTime.svelte";
   import StatusBadge from "../misc/StatusBadge.svelte";
+  import { push } from "../../lib/routing";
+  import { DUPLICATE_RUN } from "../../lib/queries";
+  import { client } from "../../lib/apollo";
+  import { notify } from "../overlays/Notification.svelte";
 
   export let index = 0;
   export let projectID;
+  export let projectName;
   export let runID;
   export let name;
   // Can be "created", "running", "done", "terminated", "failed"
@@ -16,16 +23,43 @@
   export let endedAt = null;
   export let stepCount = 0;
 
-  const menuOptions = [{ text: "Duplicate", onClick: handleDuplicate }];
+  const handleDuplicate = async () => {
+    try {
+      const input = {
+        runID: runID,
+        toProjectID: projectID,
+      };
 
-  function handleDuplicate() {
-    console.log("should dup");
-  }
+      const result = await mutate(client, {
+        mutation: DUPLICATE_RUN,
+        variables: {
+          input,
+        },
+      });
+
+      notify({
+        success: true,
+        title: `Run Duplicated`,
+      });
+
+      push(`/projects/${projectName}/runs/${result.data.duplicateRun.id}`);
+    } catch (error) {
+      console.error(error);
+      notify({
+        failed: true,
+        title: `Could not duplicate Run`,
+        body:
+          "Something happened on the server, and we could not duplicate the Run.",
+      });
+    }
+  };
+
+  const menuOptions = [{ text: "Duplicate", onClick: handleDuplicate }];
 </script>
 
 <li class={index !== 0 && 'border-t border-gray-200'}>
   <Link
-    to="/projects/{projectID}/runs/{runID}"
+    to="/projects/{projectName}/runs/{runID}"
     className="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50
     transition duration-150 ease-in-out sm:rounded-md">
     <div class="flex items-center px-4 py-4 sm:px-2">
