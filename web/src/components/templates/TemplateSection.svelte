@@ -1,5 +1,5 @@
 <script>
-  export let title;
+  export let title = "";
   export let description = "";
   export let header = false;
   export let footer = false;
@@ -10,8 +10,11 @@
 <section class="mt-4 md:grid md:grid-cols-10 md:gap-6">
   <div class="md:mt-0 md:col-span-3">
     <div class="px-4 sm:px-0">
-      <h3 class="text-lg font-medium leading-6 text-gray-900">{title}</h3>
-      <p class="mt-1 text-sm leading-5 text-gray-600">
+      <h3 class="text-lg font-medium leading-6 text-gray-900">
+        <slot name="title" />
+        {title}
+      </h3>
+      <p class="mt-1 text-sm leading-5">
         <slot name="description" />
         {description}
       </p>

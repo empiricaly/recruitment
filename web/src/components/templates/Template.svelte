@@ -128,13 +128,18 @@
   }
 </script>
 
-<TemplateSection
-  title="Participant Selection"
-  description="A Template starts with the selection of Participants you want
-    in your experiment. Internal Database selection uses Participant information
+<TemplateSection footer>
+  <div slot="title" class="font-semibold text-mint-800">
+    Participant Selection
+  </div>
+
+  <div slot="description" class="text-gray-600">
+    A Template starts with the selection of Participants you want in your
+    experiment. Internal Database selection uses Participant information
     collected from previous experiments or recruitment runs. MTurk
-    Qualifications uses Worker Qualifications defined on MTurk."
-  footer>
+    Qualifications uses Worker Qualifications defined on MTurk.
+  </div>
+
   <div class="max-w-xs">
     <Label forID="selectionType" text="Participant Selection Type" />
     <Select

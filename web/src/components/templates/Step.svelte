@@ -1,13 +1,8 @@
 <script context="module">
   const stepTypeName = {
-    MTURK_HIT: "MTurk HIT Step",
-    MTURK_MESSAGE: "MTurk Message Step",
-    PARTICIPANT_FILTER: "Participant Filter Step",
-  };
-  const stepTypeDesc = {
-    MTURK_HIT: "TODO: Add Description",
-    MTURK_MESSAGE: "TODO: Add Description",
-    PARTICIPANT_FILTER: "TODO: Add Description",
+    MTURK_HIT: "MTurk HIT",
+    MTURK_MESSAGE: "MTurk Message",
+    PARTICIPANT_FILTER: "Participant Filter",
   };
 </script>
 
@@ -52,7 +47,125 @@
   $: isLastStep = step.index + 1 === stepLength;
 </script>
 
-<TemplateSection title={stepTypeName[step.type]} header invalid={error !== ''}>
+<TemplateSection header invalid={error !== ''}>
+  <div slot="title" class="flex">
+    <div class="font-semibold text-mint-800">Step {step.index + 1}</div>
+    <div class="mx-2 text-mint-300">
+      <!-- ·• -->
+      →
+    </div>
+    <div class="text-mint-700">
+      {#if step.type === 'MTURK_HIT'}
+        MTurk HIT
+      {:else if step.type === 'MTURK_MESSAGE'}
+        MTurk Message
+      {:else if step.type === 'PARTICIPANT_FILTER'}Participant Filter{/if}
+    </div>
+  </div>
+  <div slot="description" class="text-gray-600">
+    {#if step.type === 'MTURK_HIT'}
+      <p>
+        A
+        <em>MTurk HIT Step</em>
+        will publish an Amazon Mechanical Turk HIT. All "HIT" prefixed fields
+        are required, as well as the Message Template.
+      </p>
+      <details class="mt-2">
+        <summary class="mt-2 text-gray-400">Learn more...</summary>
+        <p class="mt-2">
+          If the HIT is the first Step of the Run, it will use the Participant
+          Selection to determine participants. If the Participant Selection is
+          MTurk Qualifications, the HIT publishing works very similarly to how
+          it would work directly from the MTurk Requester UI, where the HIT is
+          shown to all Workers with the given qualifications. If Participant
+          Selection is Internal DB, participants will be pulled from Empirica
+          Recruitment database, and will be assigned a hidden MTurk
+          Qualification. The HIT will published with that particular
+          Qualification, and therefore the HIT will only be visible to Workers
+          from you DB selection.
+        </p>
+        <p class="mt-2">
+          This same process is used for HITs that are not the first Step in the
+          Run. This enables a precise selection of Workers.
+        </p>
+        <p class="mt-2">
+          The Message Template will be rendered and shown to Participants. It
+          can use different markup languages and can contain variables. One of
+          the variables is the URL that is given in the Target URL. The Target
+          URL is where you'd like to ultimately send players to, your
+          experiment. Instead of putting that URL in the Message Template
+          directly, you can put it in the Target URL field, then use it in the
+          Message Template (e.g.
+          <code>{@html '{url}'}</code>). When you do this, we will wrap your URL
+          in an HTTP redirect, which will help track when participants have
+          clicked the URL, and we make this URL unique for each participant in
+          the attempt to block direct sharing or URL. See the
+          <em>variables</em>
+          on the top right of the Message Template field.
+        </p>
+      </details>
+    {:else if step.type === 'MTURK_MESSAGE'}
+      <p>
+        A
+        <em>MTurk Message Step</em>
+        will send a direct message to the MTurk Workers.
+      </p>
+
+      <details class="mt-2">
+        <summary class="mt-2 text-gray-400">Learn more...</summary>
+        <p class="mt-2">
+          If the HIT is the first Step of the Run, it will use the Participant
+          Selection to determine participants. If the Participant Selection is
+          MTurk Qualifications, the HIT publishing works very similarly to how
+          it would work directly from the MTurk Requester UI, where the HIT is
+          shown to all Workers with the given qualifications. If Participant
+          Selection is Internal DB, participants will be pulled from Empirica
+          Recruitment database, and will be assigned a hidden MTurk
+          Qualification. The HIT will published with that particular
+          Qualification, and therefore the HIT will only be visible to Workers
+          from you DB selection.
+        </p>
+        <p class="mt-2">
+          This same process is used for HITs that are not the first Step in the
+          Run. This enables a precise selection of Workers.
+        </p>
+        <p class="mt-2">
+          The Message Template will be rendered and shown to Participants. It
+          can use different markup languages and can contain variables. One of
+          the variables is the URL that is given in the Target URL. The Target
+          URL is where you'd like to ultimately send players to, your
+          experiment. Instead of putting that URL in the Message Template
+          directly, you can put it in the Target URL field, then use it in the
+          Message Template (e.g.
+          <code>{@html '{url}'}</code>). When you do this, we will wrap your URL
+          in an HTTP redirect, which will help track when participants have
+          clicked the URL, and we make this URL unique for each participant in
+          the attempt to block direct sharing or URL. See the
+          <em>variables</em>
+          on the top right of the Message Template field.
+        </p>
+      </details>
+    {:else if step.type === 'PARTICIPANT_FILTER'}
+      <p>
+        A
+        <em>Participant Filter Step</em>
+        allows you to filter and annotate Participants.
+      </p>
+
+      <details class="mt-2">
+        <summary class="mt-2 text-gray-400">Learn more...</summary>
+        <p class="mt-2">
+          It is a simple javascription function that passes in the Participants
+          that have reached this step, and it expects you return a list of
+          players, altered or not. You may pass a subset of players using a
+          simple filtering heristic, as as for example looking at fields on the
+          player. You can also simply limit the number of players getting to the
+          next step. And finally you set arbitrary values on the participants
+          for later use.
+        </p>
+      </details>
+    {/if}
+  </div>
   <div slot="header">
     <div class="flex justify-between">
       <div class="mr-2 flex items-baseline">
@@ -166,7 +279,6 @@
       </div>
     </div>
   </div>
-  <div slot="description">{stepTypeDesc[step.type]}</div>
   {#if step.type === 'MTURK_HIT'}
     <StepMTurkHit bind:step />
   {:else if step.type === 'MTURK_MESSAGE'}
