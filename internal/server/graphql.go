@@ -28,12 +28,15 @@ import (
 func (s *Server) startGraphqlServer() {
 	router := chi.NewRouter()
 
-	c := cors.New(cors.Options{
-		Debug:            true,
+	copts := cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,
 		AllowedHeaders:   []string{"*"},
-	})
+	}
+	if s.config.HTTP.Debug {
+		copts.Debug = true
+	}
+	c := cors.New(copts)
 
 	// m, _ := storage.NewMapping(s.storeConn)
 	r := &graph.Resolver{
@@ -45,7 +48,9 @@ func (s *Server) startGraphqlServer() {
 	}
 
 	// router.Use(MachinesLockMiddleware(r))
-	router.Use(logger.HTTPLogger())
+	if s.config.HTTP.Debug {
+		router.Use(logger.HTTPLogger())
+	}
 	router.Use(admin.Middleware(s.storeConn, []byte(s.config.SecretKey)))
 
 	gconf := generated.Config{Resolvers: r}
@@ -75,11 +80,12 @@ func (s *Server) startGraphqlServer() {
 
 	box := rice.MustFindBox("../../web/public")
 	router.Handle("/*", c.Handler(http.FileServer(MakeSPABox(box))))
+	router.Handle("/q/*", c.Handler(&questionHandler{s}))
 	router.Handle("/play", c.Handler(playground.Handler("Empirica Recruitment GraphQL", "/query")))
 	router.Handle("/query", c.Handler(gqlsrv))
 
 	srv := &http.Server{
-		Addr:    s.config.GQLAddr,
+		Addr:    s.config.HTTP.Addr,
 		Handler: router,
 	}
 
@@ -92,7 +98,7 @@ func (s *Server) startGraphqlServer() {
 	}()
 
 	go func() {
-		log.Debug().Msgf("Started GraphQL server at %s", s.config.GQLAddr)
+		log.Debug().Msgf("Started GraphQL server at %s", s.config.HTTP.Addr)
 
 		<-s.done
 		log.Debug().Msg("stopping graphql server")

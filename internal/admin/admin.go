@@ -2,7 +2,6 @@ package admin
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -91,7 +90,6 @@ func Middleware(conn *storage.Conn, key []byte) func(http.Handler) http.Handler 
 
 // ForContext finds the user from the context. REQUIRES Middleware to have run.
 func getUserByID(ctx context.Context, conn *storage.Conn, userID string) (*ent.Admin, error) {
-	fmt.Println("GET userID", userID)
 	return conn.Admin.Get(ctx, userID)
 }
 
@@ -99,8 +97,6 @@ func getUserByID(ctx context.Context, conn *storage.Conn, userID string) (*ent.A
 func CreateUserIDToken(key []byte, userID string) (string, error) {
 	now := time.Now()
 	exp := now.Add(90 * 24 * time.Hour)
-
-	fmt.Println("ADD userID", userID)
 
 	jsonToken := paseto.JSONToken{
 		Audience:   "recruitment.empirica.app",

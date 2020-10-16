@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/empiricaly/recruitment/internal/admin"
@@ -18,11 +19,11 @@ const minPasswordSize = 8
 
 // Config is `tawon agent` command line configuration
 type Config struct {
-	GQLAddr     string        `mapstructure:"gqladdr"`
-	MTurkConfig *mturk.Config `mapstructure:"mturk"`
-	Admins      []admin.User  `mapstructure:"admins"`
-	SecretKey   string        `mapstructure:"secret"`
-	DevMode     bool          `mapstructure:"dev"`
+	HTTP        HTTPServerConfig `mapstructure:"http"`
+	MTurkConfig *mturk.Config    `mapstructure:"mturk"`
+	Admins      []admin.User     `mapstructure:"admins"`
+	SecretKey   string           `mapstructure:"secret"`
+	DevMode     bool             `mapstructure:"dev"`
 
 	Store   *storage.Config `mapstructure:"store"`
 	Metrics *metrics.Config `mapstructure:"metrics"`
@@ -79,16 +80,62 @@ func ConfigFlags(cmd *cobra.Command) error {
 	metrics.ConfigFlags(cmd, "", "recruitment", ":9999", "")
 	log.ConfigFlags(cmd, "", "")
 	mturk.ConfigFlags(cmd, "")
+	HTTPServerConfigFlags(cmd, "")
 
-	flag := "gqladdr"
-	val := ":8880"
-	cmd.Flags().String(flag, val, "GraQL API server address")
-	viper.SetDefault(flag, val)
-
-	flag = "dev"
+	flag := "dev"
 	bval := false
 	cmd.Flags().Bool(flag, bval, "Run in Developer Mode (enables extra tooling ; do not run in production!)")
 	viper.SetDefault(flag, bval)
+
+	return nil
+}
+
+// HTTPServerConfig is `tawon agent` command line configuration
+type HTTPServerConfig struct {
+	Addr    string `mapstructure:"addr"`
+	RootURL string `mapstructure:"rooturl"`
+	HTTPS   bool   `mapstructure:"https"`
+	AutoTLS bool   `mapstructure:"autotls"`
+	Debug   bool   `mapstructure:"debug"`
+}
+
+// Validate configuration is ok
+func (c *HTTPServerConfig) Validate() error {
+	_, err := url.Parse(c.RootURL)
+	if err != nil {
+		return errors.Wrap(err, "parsing rooturl")
+	}
+
+	return nil
+}
+
+// HTTPServerConfigFlags helps configure cobra and viper flags.
+func HTTPServerConfigFlags(cmd *cobra.Command, prefix string) error {
+	if prefix == "" {
+		prefix = "http"
+	}
+
+	viper.SetDefault(prefix, &HTTPServerConfig{})
+
+	flag := prefix + ".addr"
+	val := ":8880"
+	cmd.Flags().String(flag, val, "HTTP server address to listen on")
+	viper.SetDefault(flag, val)
+
+	flag = prefix + ".rooturl"
+	val = "http://localhost:8880"
+	cmd.Flags().String(flag, val, "HTTP server external root URL")
+	viper.SetDefault(flag, val)
+
+	flag = "debug"
+	bval := false
+	cmd.Flags().Bool(flag, bval, "debug http requests")
+	viper.SetDefault(flag, bval)
+
+	// flag = "autotls"
+	// bval = false
+	// cmd.Flags().Bool(flag, bval, "automatically generate TLS certificates")
+	// viper.SetDefault(flag, bval)
 
 	return nil
 }

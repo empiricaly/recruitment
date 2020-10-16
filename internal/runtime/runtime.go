@@ -6,12 +6,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/hook"
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/mturk"
 	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -40,6 +42,8 @@ type Runtime struct {
 
 	// If done == true, stop running hooks
 	done bool
+
+	logger zerolog.Logger
 }
 
 var initRand sync.Once
@@ -57,6 +61,7 @@ func Start(conn *storage.Conn, mturk, mturkSandbox *mturk.Session) (*Runtime, er
 		runs:         make(map[string]*runState),
 		updates:      make(chan string),
 		triggers:     make(chan *runState),
+		logger:       log.With().Str("pkg", "runtime").Logger(),
 	}
 	go r.processRuns()
 	go r.processEvents()
@@ -66,12 +71,15 @@ func Start(conn *storage.Conn, mturk, mturkSandbox *mturk.Session) (*Runtime, er
 	}
 	r.registerHooks()
 
+	r.logger.Debug().Msg("Runtime started")
+
 	return r, nil
 }
 
 // Stop the empirica recruitment runtime
 func (r *Runtime) Stop() {
 	r.done = true
+	r.logger.Debug().Msg("Runtime stopped")
 	// stop run loop here?
 }
 
@@ -92,16 +100,20 @@ type runState struct {
 }
 
 func (r *Runtime) addRun(run *ent.Run) {
-	// return
+
 	_, ok := r.runs[run.ID]
 	if ok {
-		log.Warn().Msgf("run %s already tracked", run.ID)
+		// r.logger.Warn().Msgf("Run %s already tracked", run.ID)
 		return
 	}
+
+	r.logger.Debug().Msg("Adding run")
+	defer r.logger.Debug().Msg("Run added")
 
 	// If the status is created, and scheduled, set trigger for startAt
 	if run.Status == runModel.StatusCREATED {
 		if run.StartAt != nil {
+			r.logger.Debug().Msg("Scheduling run")
 			r.schedule(run, startRunEvent, time.Until(*run.StartAt))
 		}
 		return
@@ -109,7 +121,7 @@ func (r *Runtime) addRun(run *ent.Run) {
 
 	// Double-check this can only happen on created or running Runs
 	if run.Status != runModel.StatusRUNNING {
-		log.Warn().Msgf("runtime: tried to add run with wrong status: %s", run.ID)
+		r.logger.Warn().Msgf("tried to add run with wrong status: %s", run.ID)
 		return
 	}
 
@@ -117,16 +129,17 @@ func (r *Runtime) addRun(run *ent.Run) {
 	defer cancel()
 	currentStepRun, err := run.QueryCurrentStep().Only(ctx)
 	if err != nil && !ent.IsNotFound(err) {
-		log.Error().Err(err).Msg("query currentStepRun for next event trigger")
+		r.logger.Error().Err(err).Msg("Query currentStepRun for next event trigger")
 		return
 	}
 
 	// Run set to start now
 	if currentStepRun == nil {
 		if run.StartAt == nil {
-			r.startRun(run)
+			// r.startRun(run)
+			r.schedule(run, startRunEvent, time.Duration(0))
 		} else {
-			log.Error().Msg("Run is running but first step hasn't started yet and is scheduled")
+			r.logger.Error().Time("startAt", *run.StartAt).Msg("Run is running but first step hasn't started yet and is scheduled")
 		}
 		return
 	}
@@ -135,12 +148,16 @@ func (r *Runtime) addRun(run *ent.Run) {
 }
 
 func (r *Runtime) scheduleNextStep(run *ent.Run) {
+	r.logger.Debug().Msg("Scheduling next step")
+
 	// Get related objects
 	_, currentStep, _, _, steps, err := run.Relations()
 	if err != nil {
-		log.Error().Err(err).Msg("preparing next event trigger")
+		r.logger.Error().Err(err).Msg("Preparing next event trigger")
 		return
 	}
+
+	spew.Dump(currentStep, steps)
 
 	var next bool
 	var nextStep *ent.Step
@@ -155,9 +172,12 @@ func (r *Runtime) scheduleNextStep(run *ent.Run) {
 
 	// If there is no next step, it's the last step
 	if nextStep == nil {
+		r.logger.Debug().Msg("Scheduling end of run")
+
 		until, err := untilNextStep(run, steps, steps[len(steps)-1], true)
 		if err != nil {
-			log.Error().Err(err).Msg("getting end of run time")
+			r.logger.Error().Err(err).Msg("Getting end of run time")
+			return
 		}
 		r.schedule(run, endRunEvent, until)
 		return
@@ -166,15 +186,18 @@ func (r *Runtime) scheduleNextStep(run *ent.Run) {
 	// Schedule next step
 	until, err := untilNextStep(run, steps, steps[len(steps)-1], false)
 	if err != nil {
-		log.Error().Err(err).Msg("getting next step start")
+		r.logger.Error().Err(err).Msg("getting next step start")
+		return
 	}
+
 	r.schedule(run, nextStepEvent, until)
+	r.logger.Debug().Msg("Next step scheduled")
 }
 
 func (r *Runtime) schedule(run *ent.Run, nextEvent runEvent, wait time.Duration) {
 	_, ok := r.runs[run.ID]
 	if ok {
-		log.Warn().Msgf("run %s already scheduled", run.ID)
+		r.logger.Warn().Msgf("run %s already scheduled", run.ID)
 		return
 	}
 	// Schedule starting the Run
@@ -183,7 +206,14 @@ func (r *Runtime) schedule(run *ent.Run, nextEvent runEvent, wait time.Duration)
 		nextEvent: nextEvent,
 	}
 
+	r.logger.Debug().
+		Dur("wait", wait).
+		Time("at", time.Now().Add(wait)).
+		Interface("event", nextEvent.String()).
+		Msg("scheduling")
+
 	state.timer = time.AfterFunc(wait, func() {
+		r.logger.Debug().Msg("Next step triggered")
 		r.triggers <- state
 	})
 	r.runs[run.ID] = state
@@ -198,7 +228,7 @@ func untilNextStep(run *ent.Run, steps []*ent.Step, step *ent.Step, toEnd bool) 
 		if !toEnd && s.ID == step.ID {
 			break
 		}
-		dur += time.Second * time.Duration(s.Duration)
+		dur += time.Minute * time.Duration(s.Duration)
 		if toEnd && s.ID == step.ID {
 			break
 		}
@@ -208,6 +238,8 @@ func untilNextStep(run *ent.Run, steps []*ent.Step, step *ent.Step, toEnd bool) 
 }
 
 func (r *Runtime) removeRun(run *ent.Run) {
+	r.logger.Debug().Msg("Removing run")
+
 	state, ok := r.runs[run.ID]
 	if !ok {
 		return
@@ -223,16 +255,23 @@ func (r *Runtime) removeRun(run *ent.Run) {
 func (r *Runtime) processEvent(state *runState) {
 	switch state.nextEvent {
 	case startRunEvent:
+		r.logger.Debug().Msg("Processing event: start run")
 		r.startRun(state.run)
+		run, err := r.conn.Run.Get(context.Background(), state.run.ID)
+		if err == nil {
+			state.run = run
+		}
 		r.scheduleNextStep(state.run)
 	case endRunEvent:
+		r.logger.Debug().Msg("Processing event: end run")
 		r.endRun(state.run)
 		r.removeRun(state.run)
 	case nextStepEvent:
+		r.logger.Debug().Msg("Processing event: next step")
 		r.startStep(state.run)
 		r.scheduleNextStep(state.run)
 	default:
-		log.Error().Msgf("connot process next event on %s: %s", state.run.ID, state.nextEvent.String())
+		r.logger.Error().Msgf("connot process next event on %s: %s", state.run.ID, state.nextEvent.String())
 	}
 }
 
@@ -244,9 +283,9 @@ func (r *Runtime) processRun(runID string) {
 		if ent.IsNotFound(err) {
 			r.removeRun(runRecord)
 		} else if ent.IsNotSingular(err) {
-			log.Error().Err(err).Msg("multiple runs with same ID!")
+			r.logger.Error().Err(err).Msg("multiple runs with same ID!")
 		} else {
-			log.Error().Err(err).Msg("updating Run state in runtime")
+			r.logger.Error().Err(err).Msg("updating Run state in runtime")
 		}
 		return
 	}
@@ -257,7 +296,7 @@ func (r *Runtime) processRun(runID string) {
 	case runModel.StatusCREATED, runModel.StatusRUNNING:
 		r.addRun(runRecord)
 	default:
-		log.Error().Msgf("unknown run status: %s", runRecord.Status.String())
+		r.logger.Error().Msgf("unknown run status: %s", runRecord.Status.String())
 	}
 }
 
@@ -279,12 +318,13 @@ func (r *Runtime) registerHooks() {
 	r.conn.Run.Use(hook.On(
 		func(next ent.Mutator) ent.Mutator {
 			return hook.RunFunc(func(ctx context.Context, m *ent.RunMutation) (ent.Value, error) {
+				r.logger.Debug().Msg("hook triggered")
 				if r.done {
 					return next.Mutate(ctx, m)
 				}
 
 				// After the update happened, go ahead and add Run to Runtime
-				defer func() {
+				go func() {
 					ID, exists := m.ID()
 					if exists {
 						r.updates <- ID
@@ -309,7 +349,7 @@ func (r *Runtime) registerExistingSteps() error {
 		return errors.Wrap(err, "initialize exisitng runs")
 	}
 
-	// log.Debug().Interface("runIDs", runIDs).Msg("got runs")
+	// r.logger.Debug().Interface("runIDs", runIDs).Msg("got runs")
 
 	for _, runID := range runIDs {
 		r.updates <- runID

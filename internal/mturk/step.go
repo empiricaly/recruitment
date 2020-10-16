@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -23,7 +24,9 @@ var errStepWithoutParticipants = errors.New("message step without participants")
 var errInvalidInitialMessageStep = errors.New("message step cannot be first with mturk player selection")
 
 // RunStep to run step based on stepType
-func (s *Session) RunStep(run *ent.Run, stepRun *ent.StepRun, step *ent.Step) error {
+func (s *Session) RunStep(run *ent.Run, stepRun *ent.StepRun, step *ent.Step, startTime time.Time) error {
+	s.logger.Debug().Msg("Running step")
+	defer s.logger.Debug().Msg("Step ran")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -38,23 +41,27 @@ func (s *Session) RunStep(run *ent.Run, stepRun *ent.StepRun, step *ent.Step) er
 
 	switch step.Type {
 	case stepModel.TypeMTURK_HIT:
-		return s.runMTurkHITStep(ctx, run, stepRun, template, step)
+		return s.runMTurkHITStep(ctx, run, stepRun, template, step, startTime)
 	case stepModel.TypeMTURK_MESSAGE:
-		return s.runMTurkMessageStep(ctx, run, stepRun, template, step)
+		return s.runMTurkMessageStep(ctx, run, stepRun, template, step, startTime)
 	default:
 		return errors.Errorf("unknown step type for MTurk: %s", step.Type.String())
 	}
 }
 
-func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *ent.StepRun, template *ent.Template, step *ent.Step) error {
+func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *ent.StepRun, template *ent.Template, step *ent.Step, startTime time.Time) error {
 	hitArgs := &model.HITStepArgs{}
 	err := json.Unmarshal(step.HitArgs, hitArgs)
 	if err != nil {
 		return errors.Wrap(err, "unmarshal Step Hit args")
 	}
 
-	// TODO: add correct URL there
-	question, err := getExternalQuestion("some url here")
+	// rootURL is already tested from config options, should never fail to parse
+	addr, err := url.Parse(s.rootURL)
+	if err != nil {
+		addr.Path = "/q/" + stepRun.UrlToken
+	}
+	question, err := getExternalQuestion(addr.String())
 	if err != nil {
 		return errors.Wrap(err, "encode HIT question URL")
 	}
@@ -63,7 +70,9 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 	isMturkSelection := template.SelectionType == templateModel.SelectionTypeMTURK_QUALIFICATIONS
 
 	var quals []*mturk.QualificationRequirement
+	var assignmentCount int
 	if isFirstStep && isMturkSelection {
+		assignmentCount = template.ParticipantCount
 		crit := &model.MTurkCriteria{}
 		err := json.Unmarshal(template.MturkCriteria, crit)
 		if err != nil {
@@ -116,7 +125,7 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 			}
 			err = s.associateQualificationWithWorker(ctx, params)
 			if err != nil {
-				return errors.Wrap(err, "create individual qual")
+				return errors.Wrap(err, "associate individual to qual")
 			}
 		}
 
@@ -124,6 +133,7 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 			QualificationTypeId: aws.String(qualID),
 			Comparator:          aws.String("Exists"),
 		})
+		assignmentCount = len(participants)
 	}
 
 	if template.Adult {
@@ -137,7 +147,7 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 		Question:                    aws.String(question),
 		AssignmentDurationInSeconds: aws.Int64(int64(hitArgs.Duration)),
 		LifetimeInSeconds:           aws.Int64(int64(hitArgs.Duration)),
-		MaxAssignments:              aws.Int64(int64(template.ParticipantCount)),
+		MaxAssignments:              aws.Int64(int64(assignmentCount)),
 		Title:                       aws.String(hitArgs.Title),
 		Description:                 aws.String(hitArgs.Description),
 		Keywords:                    aws.String(hitArgs.Keywords),
@@ -160,7 +170,7 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 	return nil
 }
 
-func (s *Session) runMTurkMessageStep(ctx context.Context, run *ent.Run, stepRun *ent.StepRun, template *ent.Template, step *ent.Step) error {
+func (s *Session) runMTurkMessageStep(ctx context.Context, run *ent.Run, stepRun *ent.StepRun, template *ent.Template, step *ent.Step, startTime time.Time) error {
 	if step.Index == 0 && template.SelectionType == templateModel.SelectionTypeMTURK_QUALIFICATIONS {
 		return errInvalidInitialMessageStep
 	}
@@ -195,6 +205,9 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, run *ent.Run, stepRun
 
 // EndStep to end step based on stepType
 func (s *Session) EndStep(run *ent.Run, stepRun *ent.StepRun, step *ent.Step, nextStepRun *ent.StepRun, nextStep *ent.Step) error {
+	s.logger.Debug().Msg("Ending step")
+	defer s.logger.Debug().Msg("Step ended")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

@@ -162,6 +162,7 @@ func (s *Session) assignmentsForHit(ctx context.Context, hitID string) (chan *mt
 
 	if s.config.Dev {
 		log.Debug().Msg("Getting assignments")
+		close(c)
 	} else {
 		go func() {
 			defer close(c)

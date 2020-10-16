@@ -81,12 +81,12 @@ func Run(ctx context.Context, config *Config) (err error) {
 		return errors.Wrap(err, "init admins")
 	}
 
-	s.mturk, err = mturk.New(config.MTurkConfig, false, s.storeConn)
+	s.mturk, err = mturk.New(config.MTurkConfig, false, config.HTTP.RootURL, s.storeConn)
 	if err != nil {
 		return errors.Wrap(err, "init mturk")
 	}
 
-	s.mturkSandbox, err = mturk.New(config.MTurkConfig, true, s.storeConn)
+	s.mturkSandbox, err = mturk.New(config.MTurkConfig, true, config.HTTP.RootURL, s.storeConn)
 	if err != nil {
 		return errors.Wrap(err, "init mturk")
 	}

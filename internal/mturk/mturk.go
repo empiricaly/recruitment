@@ -7,6 +7,8 @@ import (
 	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 const productionURL = "https://mturk-requester.us-east-1.amazonaws.com"
@@ -17,13 +19,16 @@ const awsRegion = "us-east-1"
 type Session struct {
 	quals []*model.MTurkQulificationType
 	*mturk.MTurk
+	rootURL string
 	config  *Config
 	store   *storage.Conn
 	sandbox bool
+
+	logger zerolog.Logger
 }
 
 // New create a new session for mTurk
-func New(config *Config, sandbox bool, store *storage.Conn) (*Session, error) {
+func New(config *Config, sandbox bool, rootURL string, store *storage.Conn) (*Session, error) {
 	var endpoint string
 	if sandbox {
 		endpoint = sandboxURL
@@ -47,9 +52,11 @@ func New(config *Config, sandbox bool, store *storage.Conn) (*Session, error) {
 	svc := mturk.New(sess)
 	return &Session{
 		config:  config,
+		rootURL: rootURL,
 		sandbox: sandbox,
 		MTurk:   svc,
 		quals:   quals,
 		store:   store,
+		logger:  log.With().Str("pkg", "mturk").Logger(),
 	}, nil
 }

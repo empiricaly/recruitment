@@ -2,10 +2,12 @@ package runtime
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"math/rand"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/empiricaly/recruitment/internal/ent"
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
@@ -59,9 +61,11 @@ func (r *Runtime) startRun(run *ent.Run) {
 		return
 	}
 
-	if err := ent.WithTx(ctx, r.conn.Client, func(tx *ent.Tx) error {
+	spew.Dump("startRun", steps)
 
+	if err := ent.WithTx(ctx, r.conn.Client, func(tx *ent.Tx) error {
 		for i, step := range steps {
+			fmt.Println(run.ID, step.ID)
 			stepRun, err := tx.
 				StepRun.
 				Create().
@@ -91,9 +95,9 @@ func (r *Runtime) startRun(run *ent.Run) {
 			}
 		}
 
-		run, err = tx.Run.UpdateOne(run).
+		_, err = tx.Run.UpdateOneID(run.ID).
 			SetStatus(runModel.StatusRUNNING).
-			SetStartAt(time.Now()).
+			SetStartedAt(time.Now()).
 			Save(ctx)
 		if err != nil {
 			return errors.Wrap(err, "create run")
@@ -117,6 +121,10 @@ func (r *Runtime) startStep(run *ent.Run) {
 		return
 	}
 
+	if currentStepRun != nil {
+		r.endStep(run, currentStepRun)
+	}
+
 	nextStepRun, nextStep, err := r.getNextStep(ctx, run, currentStepRun)
 	if err != nil {
 		log.Error().Err(err).Msg("start step")
@@ -132,6 +140,14 @@ func (r *Runtime) startStep(run *ent.Run) {
 		Save(ctx)
 	if err != nil {
 		log.Error().Err(err).Msgf("start step: update step run", run.ID)
+		return
+	}
+
+	run, err = run.Update().
+		SetCurrentStep(nextStepRun).
+		Save(ctx)
+	if err != nil {
+		log.Error().Err(err).Msgf("start step: update step's current step (%s, %s", run.ID, nextStepRun.ID)
 		return
 	}
 
@@ -151,9 +167,9 @@ func (r *Runtime) startStep(run *ent.Run) {
 			mturkSession = r.mturk
 		}
 
-		err = mturkSession.RunStep(run, nextStepRun, nextStep)
+		err = mturkSession.RunStep(run, nextStepRun, nextStep, now)
 		if err != nil {
-			log.Error().Err(err).Msg("start step: run mturk for step")
+			log.Error().Err(err).Msg("start step: run mturk")
 		}
 	case stepModel.TypePARTICIPANT_FILTER:
 		particpants, err := currentStepRun.QueryParticipants().All(ctx)
@@ -182,7 +198,18 @@ func (r *Runtime) endStep(run *ent.Run, stepRun *ent.StepRun) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	_, err := stepRun.
+	stepRun, err := run.QueryCurrentStep().Only(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("end run: get current step")
+		return
+	}
+
+	if stepRun.Status != steprunModel.StatusRUNNING {
+		log.Warn().Msg("end run: ending steprun that is not running")
+		return
+	}
+
+	_, err = stepRun.
 		Update().
 		SetStatus(steprunModel.StatusDONE).
 		SetEndedAt(time.Now()).
@@ -249,11 +276,11 @@ func (r *Runtime) endRun(run *ent.Run) {
 		_, err = tx.
 			Run.
 			UpdateOne(run).
-			SetStatus(runModel.StatusRUNNING).
-			SetStartAt(now).
+			SetStatus(runModel.StatusDONE).
+			SetEndedAt(now).
 			Save(ctx)
 		if err != nil {
-			return errors.Wrap(err, "update run")
+			return errors.Wrap(err, "end run: update run")
 		}
 
 		return nil
@@ -270,11 +297,7 @@ func (r *Runtime) getNextStep(ctx context.Context, run *ent.Run, currentStepRun 
 	}
 
 	if len(stepRuns) == 0 {
-		return nil, nil, errors.Wrapf(err, "trying to run a Run without Steps! (%s)", run.ID)
-	}
-
-	if currentStepRun != nil {
-		r.endStep(run, currentStepRun)
+		return nil, nil, errors.Errorf("trying to run a Run without Steps! (%s)", run.ID)
 	}
 
 	var nextStepRun *ent.StepRun
@@ -294,8 +317,13 @@ func (r *Runtime) getNextStep(ctx context.Context, run *ent.Run, currentStepRun 
 	} else {
 		// running subsequent step
 
+		currentStep, err := currentStepRun.QueryStep().Only(ctx)
+		if err != nil {
+			return nil, nil, errors.New("getNextStep: could not get step for stepRun")
+		}
+
 		for _, stepRun := range stepRuns {
-			if stepRun.Edges.Step.Index == currentStepRun.Edges.Step.Index {
+			if stepRun.Edges.Step.Index == currentStep.Index {
 				nextStepRun = stepRun
 				break
 			}
@@ -305,6 +333,8 @@ func (r *Runtime) getNextStep(ctx context.Context, run *ent.Run, currentStepRun 
 			return nil, nil, errors.Errorf("could not find next step for run (run: %s, prev step: %s)", run.ID, currentStepRun.ID)
 		}
 	}
+
+	spew.Dump(nextStepRun)
 
 	nextStep, err := nextStepRun.QueryStep().Only(ctx)
 	if err != nil {

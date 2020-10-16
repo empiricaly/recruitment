@@ -9,7 +9,6 @@
   import StatusBadge from "../misc/StatusBadge.svelte";
   import { notify } from "../overlays/Notification.svelte";
   import Template from "../templates/Template.svelte";
-  import RunningRun from "./RunningRun.svelte";
 
   export let project;
   export let run;
@@ -256,10 +255,11 @@
       <StatusBadge large status={run.status} />
     </div>
 
-    {#if run.status === 'RUNNING'}
+    <Template {project} {run} bind:template />
+    <!-- {#if run.status !== 'CREATED'}
       <RunningRun {project} {run} />
     {:else}
       <Template {project} {run} bind:template />
-    {/if}
+    {/if} -->
   </Layout>
 {/if}

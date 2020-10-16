@@ -24,10 +24,8 @@ func init() {
 func getSession() *Session {
 	if sess == nil {
 		var err error
-		config := &Config{
-			Sandbox: true,
-		}
-		sess, err = New(config)
+		config := &Config{}
+		sess, err = New(config, sess.sandbox, "https://www.example.com", nil)
 		if err != nil {
 			panic(err)
 		}

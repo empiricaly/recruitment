@@ -6,6 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.11.3
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/aws/aws-sdk-go v1.33.7
+	github.com/davecgh/go-spew v1.1.1
 	github.com/facebook/ent v0.4.2
 	github.com/go-chi/chi v3.3.2+incompatible
 	github.com/google/uuid v1.1.2 // indirect
@@ -25,6 +26,7 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
 	github.com/vektah/gqlparser/v2 v2.0.1
+	github.com/yuin/goldmark v1.1.27
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c // indirect
 )

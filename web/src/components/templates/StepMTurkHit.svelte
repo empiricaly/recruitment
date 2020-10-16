@@ -75,7 +75,7 @@
         placeholder="0.0" />
     </div>
 
-    <div class="mt-4">
+    <!-- <div class="mt-4">
       <Label
         forID={uniq('timeout')}
         text="HIT Accepted HIT Timeout"
@@ -88,9 +88,9 @@
         inputmode="numeric"
         required
         placeholder="0" />
-    </div>
+    </div> -->
 
-    <div class="mt-4">
+    <!-- <div class="mt-4">
       <Label
         forID={uniq('workersCount')}
         text="Number of HITs to publish"
@@ -103,7 +103,7 @@
         inputmode="numeric"
         required
         placeholder="0" />
-    </div>
+    </div> -->
   </div>
 </div>
 
