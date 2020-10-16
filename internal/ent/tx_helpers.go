@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 )
 
 func WithTx(ctx context.Context, client *Client, fn func(tx *Tx) error) error {
@@ -15,7 +14,6 @@ func WithTx(ctx context.Context, client *Client, fn func(tx *Tx) error) error {
 
 	defer func() {
 		if v := recover(); v != nil {
-			log.Debug().Msg("TX Oh")
 			tx.Rollback()
 			panic(v)
 		}

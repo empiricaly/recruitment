@@ -24,8 +24,8 @@ func (s *Session) stopHit(ctx context.Context, hitID string) error {
 		log.Debug().Interface("hitID", hitID).Msg("Stopping HIT")
 		selectedHit := devHITMap[hitID]
 		if selectedHit == nil {
-			log.Error().Msg("failed to get HIT")
-			return errs.Wrap(fmt.Errorf("stopHit Dev"), "stop Hit")
+			log.Warn().Msg("failed to stop Hit (dev mode)")
+			return nil
 		}
 		delete(devHITMap, hitID)
 	} else {

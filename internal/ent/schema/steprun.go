@@ -22,6 +22,7 @@ func (StepRun) Mixin() []ent.Mixin {
 // Fields of the StepRun.
 func (StepRun) Fields() []ent.Field {
 	return []ent.Field{
+		field.Int("index"),
 		field.Int("participantsCount"),
 		field.String("hitID").Optional().Nillable(),
 		field.String("urlToken").Unique(),

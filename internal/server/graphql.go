@@ -79,10 +79,10 @@ func (s *Server) startGraphqlServer() {
 	gqlsrv.Use(extension.Introspection{})
 
 	box := rice.MustFindBox("../../web/public")
-	router.Handle("/*", c.Handler(http.FileServer(MakeSPABox(box))))
 	router.Handle("/q/*", c.Handler(&questionHandler{s}))
 	router.Handle("/play", c.Handler(playground.Handler("Empirica Recruitment GraphQL", "/query")))
 	router.Handle("/query", c.Handler(gqlsrv))
+	router.Handle("/*", c.Handler(http.FileServer(MakeSPABox(box))))
 
 	srv := &http.Server{
 		Addr:    s.config.HTTP.Addr,

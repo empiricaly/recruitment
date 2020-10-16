@@ -24,7 +24,7 @@ var errStepWithoutParticipants = errors.New("message step without participants")
 var errInvalidInitialMessageStep = errors.New("message step cannot be first with mturk player selection")
 
 // RunStep to run step based on stepType
-func (s *Session) RunStep(run *ent.Run, stepRun *ent.StepRun, step *ent.Step, startTime time.Time) error {
+func (s *Session) RunStep(run *ent.Run, step *ent.Step, stepRun *ent.StepRun, startTime time.Time) error {
 	s.logger.Debug().Msg("Running step")
 	defer s.logger.Debug().Msg("Step ran")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -196,7 +196,7 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, run *ent.Run, stepRun
 		workerIDs = append(workerIDs, *participant.MturkWorkerID)
 	}
 
-	if len(workerIDs) == 0 {
+	if !s.config.Dev && len(workerIDs) == 0 {
 		return errStepWithoutParticipants
 	}
 
@@ -204,7 +204,7 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, run *ent.Run, stepRun
 }
 
 // EndStep to end step based on stepType
-func (s *Session) EndStep(run *ent.Run, stepRun *ent.StepRun, step *ent.Step, nextStepRun *ent.StepRun, nextStep *ent.Step) error {
+func (s *Session) EndStep(run *ent.Run, step *ent.Step, stepRun *ent.StepRun, nextStep *ent.Step, nextStepRun *ent.StepRun) error {
 	s.logger.Debug().Msg("Ending step")
 	defer s.logger.Debug().Msg("Step ended")
 
@@ -323,11 +323,13 @@ func (s *Session) endMTurkMessageStep(ctx context.Context, run *ent.Run, templat
 		return errors.New("get participants for msg step failed")
 	}
 
-	_, err = nextStepRun.Update().
-		AddParticipants(particpants...).
-		Save(ctx)
-	if err != nil {
-		return errors.Wrap(err, "push msg step participants to next run")
+	if nextStepRun != nil {
+		_, err = nextStepRun.Update().
+			AddParticipants(particpants...).
+			Save(ctx)
+		if err != nil {
+			return errors.Wrap(err, "push msg step participants to next run")
+		}
 	}
 
 	return nil

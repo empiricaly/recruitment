@@ -208,6 +208,7 @@ var (
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"CREATED", "RUNNING", "PAUSED", "DONE", "TERMINATED", "FAILED"}},
 		{Name: "started_at", Type: field.TypeTime, Nullable: true},
 		{Name: "ended_at", Type: field.TypeTime, Nullable: true},
+		{Name: "index", Type: field.TypeInt},
 		{Name: "participants_count", Type: field.TypeInt},
 		{Name: "hit_id", Type: field.TypeString, Nullable: true},
 		{Name: "url_token", Type: field.TypeString, Unique: true},
@@ -221,7 +222,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "step_runs_runs_steps",
-				Columns: []*schema.Column{StepRunsColumns[9]},
+				Columns: []*schema.Column{StepRunsColumns[10]},
 
 				RefColumns: []*schema.Column{RunsColumns[0]},
 				OnDelete:   schema.SetNull,

@@ -28,6 +28,8 @@ type StepRun struct {
 	StartedAt *time.Time `json:"startedAt,omitempty"`
 	// EndedAt holds the value of the "endedAt" field.
 	EndedAt *time.Time `json:"endedAt,omitempty"`
+	// Index holds the value of the "index" field.
+	Index int `json:"index,omitempty"`
 	// ParticipantsCount holds the value of the "participantsCount" field.
 	ParticipantsCount int `json:"participantsCount,omitempty"`
 	// HitID holds the value of the "hitID" field.
@@ -121,6 +123,7 @@ func (*StepRun) scanValues() []interface{} {
 		&sql.NullString{}, // status
 		&sql.NullTime{},   // startedAt
 		&sql.NullTime{},   // endedAt
+		&sql.NullInt64{},  // index
 		&sql.NullInt64{},  // participantsCount
 		&sql.NullString{}, // hitID
 		&sql.NullString{}, // urlToken
@@ -174,22 +177,27 @@ func (sr *StepRun) assignValues(values ...interface{}) error {
 		*sr.EndedAt = value.Time
 	}
 	if value, ok := values[5].(*sql.NullInt64); !ok {
-		return fmt.Errorf("unexpected type %T for field participantsCount", values[5])
+		return fmt.Errorf("unexpected type %T for field index", values[5])
+	} else if value.Valid {
+		sr.Index = int(value.Int64)
+	}
+	if value, ok := values[6].(*sql.NullInt64); !ok {
+		return fmt.Errorf("unexpected type %T for field participantsCount", values[6])
 	} else if value.Valid {
 		sr.ParticipantsCount = int(value.Int64)
 	}
-	if value, ok := values[6].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field hitID", values[6])
+	if value, ok := values[7].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field hitID", values[7])
 	} else if value.Valid {
 		sr.HitID = new(string)
 		*sr.HitID = value.String
 	}
-	if value, ok := values[7].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field urlToken", values[7])
+	if value, ok := values[8].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field urlToken", values[8])
 	} else if value.Valid {
 		sr.UrlToken = value.String
 	}
-	values = values[8:]
+	values = values[9:]
 	if len(values) == len(steprun.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullString); !ok {
 			return fmt.Errorf("unexpected type %T for field run_steps", values[0])
@@ -263,6 +271,8 @@ func (sr *StepRun) String() string {
 		builder.WriteString(", endedAt=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
+	builder.WriteString(", index=")
+	builder.WriteString(fmt.Sprintf("%v", sr.Index))
 	builder.WriteString(", participantsCount=")
 	builder.WriteString(fmt.Sprintf("%v", sr.ParticipantsCount))
 	if v := sr.HitID; v != nil {

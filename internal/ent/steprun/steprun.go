@@ -22,6 +22,8 @@ const (
 	FieldStartedAt = "started_at"
 	// FieldEndedAt holds the string denoting the endedat field in the database.
 	FieldEndedAt = "ended_at"
+	// FieldIndex holds the string denoting the index field in the database.
+	FieldIndex = "index"
 	// FieldParticipantsCount holds the string denoting the participantscount field in the database.
 	FieldParticipantsCount = "participants_count"
 	// FieldHitID holds the string denoting the hitid field in the database.
@@ -85,6 +87,7 @@ var Columns = []string{
 	FieldStatus,
 	FieldStartedAt,
 	FieldEndedAt,
+	FieldIndex,
 	FieldParticipantsCount,
 	FieldHitID,
 	FieldUrlToken,

@@ -86,6 +86,12 @@ func (src *StepRunCreate) SetNillableEndedAt(t *time.Time) *StepRunCreate {
 	return src
 }
 
+// SetIndex sets the index field.
+func (src *StepRunCreate) SetIndex(i int) *StepRunCreate {
+	src.mutation.SetIndex(i)
+	return src
+}
+
 // SetParticipantsCount sets the participantsCount field.
 func (src *StepRunCreate) SetParticipantsCount(i int) *StepRunCreate {
 	src.mutation.SetParticipantsCount(i)
@@ -256,6 +262,9 @@ func (src *StepRunCreate) preSave() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
 		}
 	}
+	if _, ok := src.mutation.Index(); !ok {
+		return &ValidationError{Name: "index", err: errors.New("ent: missing required field \"index\"")}
+	}
 	if _, ok := src.mutation.ParticipantsCount(); !ok {
 		return &ValidationError{Name: "participantsCount", err: errors.New("ent: missing required field \"participantsCount\"")}
 	}
@@ -338,6 +347,14 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Column: steprun.FieldEndedAt,
 		})
 		sr.EndedAt = &value
+	}
+	if value, ok := src.mutation.Index(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt,
+			Value:  value,
+			Column: steprun.FieldIndex,
+		})
+		sr.Index = value
 	}
 	if value, ok := src.mutation.ParticipantsCount(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

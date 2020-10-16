@@ -5206,6 +5206,8 @@ type StepRunMutation struct {
 	status                     *steprun.Status
 	startedAt                  *time.Time
 	endedAt                    *time.Time
+	index                      *int
+	addindex                   *int
 	participantsCount          *int
 	addparticipantsCount       *int
 	hitID                      *string
@@ -5519,6 +5521,63 @@ func (m *StepRunMutation) EndedAtCleared() bool {
 func (m *StepRunMutation) ResetEndedAt() {
 	m.endedAt = nil
 	delete(m.clearedFields, steprun.FieldEndedAt)
+}
+
+// SetIndex sets the index field.
+func (m *StepRunMutation) SetIndex(i int) {
+	m.index = &i
+	m.addindex = nil
+}
+
+// Index returns the index value in the mutation.
+func (m *StepRunMutation) Index() (r int, exists bool) {
+	v := m.index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIndex returns the old index value of the StepRun.
+// If the StepRun object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *StepRunMutation) OldIndex(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldIndex is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldIndex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIndex: %w", err)
+	}
+	return oldValue.Index, nil
+}
+
+// AddIndex adds i to index.
+func (m *StepRunMutation) AddIndex(i int) {
+	if m.addindex != nil {
+		*m.addindex += i
+	} else {
+		m.addindex = &i
+	}
+}
+
+// AddedIndex returns the value that was added to the index field in this mutation.
+func (m *StepRunMutation) AddedIndex() (r int, exists bool) {
+	v := m.addindex
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetIndex reset all changes of the "index" field.
+func (m *StepRunMutation) ResetIndex() {
+	m.index = nil
+	m.addindex = nil
 }
 
 // SetParticipantsCount sets the participantsCount field.
@@ -5883,7 +5942,7 @@ func (m *StepRunMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *StepRunMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, steprun.FieldCreatedAt)
 	}
@@ -5898,6 +5957,9 @@ func (m *StepRunMutation) Fields() []string {
 	}
 	if m.endedAt != nil {
 		fields = append(fields, steprun.FieldEndedAt)
+	}
+	if m.index != nil {
+		fields = append(fields, steprun.FieldIndex)
 	}
 	if m.participantsCount != nil {
 		fields = append(fields, steprun.FieldParticipantsCount)
@@ -5926,6 +5988,8 @@ func (m *StepRunMutation) Field(name string) (ent.Value, bool) {
 		return m.StartedAt()
 	case steprun.FieldEndedAt:
 		return m.EndedAt()
+	case steprun.FieldIndex:
+		return m.Index()
 	case steprun.FieldParticipantsCount:
 		return m.ParticipantsCount()
 	case steprun.FieldHitID:
@@ -5951,6 +6015,8 @@ func (m *StepRunMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldStartedAt(ctx)
 	case steprun.FieldEndedAt:
 		return m.OldEndedAt(ctx)
+	case steprun.FieldIndex:
+		return m.OldIndex(ctx)
 	case steprun.FieldParticipantsCount:
 		return m.OldParticipantsCount(ctx)
 	case steprun.FieldHitID:
@@ -6001,6 +6067,13 @@ func (m *StepRunMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEndedAt(v)
 		return nil
+	case steprun.FieldIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIndex(v)
+		return nil
 	case steprun.FieldParticipantsCount:
 		v, ok := value.(int)
 		if !ok {
@@ -6030,6 +6103,9 @@ func (m *StepRunMutation) SetField(name string, value ent.Value) error {
 // or decremented during this mutation.
 func (m *StepRunMutation) AddedFields() []string {
 	var fields []string
+	if m.addindex != nil {
+		fields = append(fields, steprun.FieldIndex)
+	}
 	if m.addparticipantsCount != nil {
 		fields = append(fields, steprun.FieldParticipantsCount)
 	}
@@ -6041,6 +6117,8 @@ func (m *StepRunMutation) AddedFields() []string {
 // that this field was not set, or was not define in the schema.
 func (m *StepRunMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case steprun.FieldIndex:
+		return m.AddedIndex()
 	case steprun.FieldParticipantsCount:
 		return m.AddedParticipantsCount()
 	}
@@ -6052,6 +6130,13 @@ func (m *StepRunMutation) AddedField(name string) (ent.Value, bool) {
 // type mismatch the field type.
 func (m *StepRunMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case steprun.FieldIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddIndex(v)
+		return nil
 	case steprun.FieldParticipantsCount:
 		v, ok := value.(int)
 		if !ok {
@@ -6122,6 +6207,9 @@ func (m *StepRunMutation) ResetField(name string) error {
 		return nil
 	case steprun.FieldEndedAt:
 		m.ResetEndedAt()
+		return nil
+	case steprun.FieldIndex:
+		m.ResetIndex()
 		return nil
 	case steprun.FieldParticipantsCount:
 		m.ResetParticipantsCount()

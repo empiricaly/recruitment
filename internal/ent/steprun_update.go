@@ -85,6 +85,19 @@ func (sru *StepRunUpdate) ClearEndedAt() *StepRunUpdate {
 	return sru
 }
 
+// SetIndex sets the index field.
+func (sru *StepRunUpdate) SetIndex(i int) *StepRunUpdate {
+	sru.mutation.ResetIndex()
+	sru.mutation.SetIndex(i)
+	return sru
+}
+
+// AddIndex adds i to index.
+func (sru *StepRunUpdate) AddIndex(i int) *StepRunUpdate {
+	sru.mutation.AddIndex(i)
+	return sru
+}
+
 // SetParticipantsCount sets the participantsCount field.
 func (sru *StepRunUpdate) SetParticipantsCount(i int) *StepRunUpdate {
 	sru.mutation.ResetParticipantsCount()
@@ -384,6 +397,20 @@ func (sru *StepRunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: steprun.FieldEndedAt,
 		})
 	}
+	if value, ok := sru.mutation.Index(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt,
+			Value:  value,
+			Column: steprun.FieldIndex,
+		})
+	}
+	if value, ok := sru.mutation.AddedIndex(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt,
+			Value:  value,
+			Column: steprun.FieldIndex,
+		})
+	}
 	if value, ok := sru.mutation.ParticipantsCount(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeInt,
@@ -669,6 +696,19 @@ func (sruo *StepRunUpdateOne) SetNillableEndedAt(t *time.Time) *StepRunUpdateOne
 // ClearEndedAt clears the value of endedAt.
 func (sruo *StepRunUpdateOne) ClearEndedAt() *StepRunUpdateOne {
 	sruo.mutation.ClearEndedAt()
+	return sruo
+}
+
+// SetIndex sets the index field.
+func (sruo *StepRunUpdateOne) SetIndex(i int) *StepRunUpdateOne {
+	sruo.mutation.ResetIndex()
+	sruo.mutation.SetIndex(i)
+	return sruo
+}
+
+// AddIndex adds i to index.
+func (sruo *StepRunUpdateOne) AddIndex(i int) *StepRunUpdateOne {
+	sruo.mutation.AddIndex(i)
 	return sruo
 }
 
@@ -967,6 +1007,20 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Column: steprun.FieldEndedAt,
+		})
+	}
+	if value, ok := sruo.mutation.Index(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt,
+			Value:  value,
+			Column: steprun.FieldIndex,
+		})
+	}
+	if value, ok := sruo.mutation.AddedIndex(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt,
+			Value:  value,
+			Column: steprun.FieldIndex,
 		})
 	}
 	if value, ok := sruo.mutation.ParticipantsCount(); ok {

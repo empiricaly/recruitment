@@ -3,13 +3,14 @@
   import { mutate } from "svelte-apollo";
   import Layout from "../../layouts/Layout.svelte";
   import { client } from "../../lib/apollo";
-  import { START_RUN, UPDATE_RUN, DUPLICATE_RUN } from "../../lib/queries";
+  import { DUPLICATE_RUN, START_RUN, UPDATE_RUN } from "../../lib/queries";
   import { push } from "../../lib/routing";
   import { deepCopy } from "../../utils/copy";
   import { debounce } from "../../utils/timing";
   import StatusBadge from "../misc/StatusBadge.svelte";
   import { notify } from "../overlays/Notification.svelte";
   import Template from "../templates/Template.svelte";
+  import RunningRun from "./RunningRun.svelte";
 
   export let project;
   export let projectName;
@@ -288,11 +289,11 @@
       <StatusBadge large status={run.status} />
     </div>
 
-    <Template {project} {run} bind:template />
-    <!-- {#if run.status !== 'CREATED'}
+    <!-- <Template {project} {run} bind:template /> -->
+    {#if run.status !== 'CREATED'}
       <RunningRun {project} {run} />
     {:else}
       <Template {project} {run} bind:template />
-    {/if} -->
+    {/if}
   </Layout>
 {/if}
