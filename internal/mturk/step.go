@@ -307,11 +307,13 @@ func (s *Session) endMTurkHITStep(ctx context.Context, run *ent.Run, template *e
 		}
 	}
 
-	_, err = nextStepRun.Update().
-		AddParticipants(nextParticipants...).
-		Save(ctx)
-	if err != nil {
-		return errors.Wrap(err, "push msg step participants to next run")
+	if nextStepRun != nil {
+		_, err = nextStepRun.Update().
+			AddParticipants(nextParticipants...).
+			Save(ctx)
+		if err != nil {
+			return errors.Wrap(err, "push msg step participants to next run")
+		}
 	}
 
 	return nil

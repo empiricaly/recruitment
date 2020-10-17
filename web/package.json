@@ -35,6 +35,7 @@
     "@apollo/client": "3.2.1",
     "@editorjs/editorjs": "2.18.0",
     "@tailwindcss/ui": "0.6.2",
+    "chrono-node": "2.1.8",
     "codemirror": "5.56.0",
     "dayjs": "1.8.29",
     "graphql": "15.0.0",

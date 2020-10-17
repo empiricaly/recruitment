@@ -12,6 +12,12 @@
     runID &&
     projectID &&
     query(client, { query: GET_RUN, variables: { projectID, runID } });
+
+  function refresh() {
+    if (runs) {
+      runs.refetch();
+    }
+  }
 </script>
 
 {#if runs}
@@ -22,7 +28,7 @@
       Run not found!
     {:else}
       <Run
-        projectName={projectID}
+        on:refresh={refresh}
         project={result.data.project}
         run={result.data.project.runs[0]} />
     {/if}

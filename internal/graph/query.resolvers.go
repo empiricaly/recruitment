@@ -17,6 +17,14 @@ import (
 	errs "github.com/pkg/errors"
 )
 
+func (r *participantsConnectionResolver) Participants(ctx context.Context, obj *model.ParticipantsConnection) ([]*ent.Participant, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *participationsConnectionResolver) Participations(ctx context.Context, obj *model.ParticipationsConnection) ([]*ent.Participation, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *queryResolver) Projects(ctx context.Context) ([]*ent.Project, error) {
 	return r.Store.Project.Query().Order(ent.Desc(project.FieldCreatedAt)).All(ctx)
 }
@@ -77,7 +85,19 @@ func (r *queryResolver) MturkLocales(ctx context.Context, sandbox *bool) ([]*mod
 	return res, nil
 }
 
+// ParticipantsConnection returns generated.ParticipantsConnectionResolver implementation.
+func (r *Resolver) ParticipantsConnection() generated.ParticipantsConnectionResolver {
+	return &participantsConnectionResolver{r}
+}
+
+// ParticipationsConnection returns generated.ParticipationsConnectionResolver implementation.
+func (r *Resolver) ParticipationsConnection() generated.ParticipationsConnectionResolver {
+	return &participationsConnectionResolver{r}
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+type participantsConnectionResolver struct{ *Resolver }
+type participationsConnectionResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

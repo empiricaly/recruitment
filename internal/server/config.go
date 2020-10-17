@@ -9,6 +9,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/log"
 	"github.com/empiricaly/recruitment/internal/metrics"
 	"github.com/empiricaly/recruitment/internal/mturk"
+	"github.com/empiricaly/recruitment/internal/runtime"
 	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -20,6 +21,7 @@ const minPasswordSize = 8
 // Config is `tawon agent` command line configuration
 type Config struct {
 	HTTP        HTTPServerConfig `mapstructure:"http"`
+	Runtime     *runtime.Config  `mapstructure:"runtime"`
 	MTurkConfig *mturk.Config    `mapstructure:"mturk"`
 	Admins      []admin.User     `mapstructure:"admins"`
 	SecretKey   string           `mapstructure:"secret"`
@@ -71,6 +73,10 @@ func (c *Config) Validate() error {
 		return errors.Wrap(err, "mturk config error")
 	}
 
+	if err := c.Runtime.Validate(); err != nil {
+		return errors.Wrap(err, "mturk config error")
+	}
+
 	return nil
 }
 
@@ -80,6 +86,7 @@ func ConfigFlags(cmd *cobra.Command) error {
 	metrics.ConfigFlags(cmd, "", "recruitment", ":9999", "")
 	log.ConfigFlags(cmd, "", "")
 	mturk.ConfigFlags(cmd, "")
+	runtime.ConfigFlags(cmd, "")
 	HTTPServerConfigFlags(cmd, "")
 
 	flag := "dev"

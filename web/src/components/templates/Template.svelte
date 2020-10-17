@@ -44,7 +44,6 @@
       try {
         const input = {
           runID: run.id,
-          projectID: project.id,
           template,
         };
 
@@ -129,11 +128,9 @@
 </script>
 
 <TemplateSection footer>
-  <div slot="title" class="font-semibold text-mint-800">
-    Participant Selection
-  </div>
+  <div slot="title">Participant Selection</div>
 
-  <div slot="description" class="text-gray-600">
+  <div slot="description">
     A Template starts with the selection of Participants you want in your
     experiment. Internal Database selection uses Participant information
     collected from previous experiments or recruitment runs. MTurk

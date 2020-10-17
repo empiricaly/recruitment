@@ -191,18 +191,28 @@ A StepRun is an instance of a Step. It manages status and operations of a given
 Step within a Run.
 """
 type StepRun {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  creator: Admin!
+
   """
   Step this StepRun corresponds to. When a Run is started, an immutable
   copy of the Steps is made at that point in time so that further changes to
   the Steps will not affect the Run.
   """
-  step: Step
+  step: Step! @goField(forceResolver: true)
+
+  """
+  Index is the position of the stepRun in the Run.
+  """
+  index: Int!
 
   """
   Status of the StepRun, indicating if the Run has started, is ongoing,
   finished, or failed.
   """
-  status: Status!
+  status: Status! @goField(forceResolver: true)
 
   """
   Time at which the StepRun started.
@@ -215,15 +225,62 @@ type StepRun {
   endedAt: DateTime
 
   """
-  Participants in this Step. Participants can increase while the Step is on
-  going. After it is finished, participants becomes immutable.
+  Participant Participations in this Step. Participations can increase while the
+  Step is on going.
   """
-  participants(first: Int, after: ID): ParticipantsConnection!
+  participations(first: Int, after: ID): ParticipationsConnection! @goField(forceResolver: true)
 
   """
   Number of Participants in this Step.
   """
-  participantsCount: Int!
+  participantsCount: Int! @goField(forceResolver: true)
+}
+
+"""
+Participation is a Participant participating in a Step. Participants are
+associaciated with the Run, but Participations offer a finer grained
+understanding of when and why Participants joined a Run, and in which Runs they
+participated.
+"""
+type Participation {
+  """
+  StepRun corresponding to this Participation.
+  """
+  step: StepRun!
+
+  """
+  Participant corresponding to this Participation.
+  """
+  participant: Participant!
+
+  """
+  ID of the MTurk Worker corresponding to this Participation.
+  """
+  mturkWorkerId: String
+
+  """
+  ID of the MTurk Assignment corresponding to this Participation.
+  """
+  mturkAssignmentID: String
+
+  """
+  ID of the MTurk Hit corresponding to this Participation.
+  """
+  mturkHitID: String
+
+  """
+   Corresponds to MTurk AcceptTime: The date and time the Worker
+  accepted the assignment.
+  """
+  mturkAcceptedAt: DateTime
+
+  """
+  Corresponds to SubmitTime: If the Worker has submitted results,
+  SubmitTime is the date and time the assignment was submitted.
+  This value is omitted from the assignment if the Worker has not
+  yet submitted results.
+  """
+  mturkSubmittedAt: DateTime
 }
 
 """

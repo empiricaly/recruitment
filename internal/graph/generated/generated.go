@@ -43,6 +43,9 @@ type ResolverRoot interface {
 	MessageStepArgs() MessageStepArgsResolver
 	Mutation() MutationResolver
 	Participant() ParticipantResolver
+	ParticipantsConnection() ParticipantsConnectionResolver
+	Participation() ParticipationResolver
+	ParticipationsConnection() ParticipationsConnectionResolver
 	Project() ProjectResolver
 	ProviderID() ProviderIDResolver
 	Query() QueryResolver
@@ -205,6 +208,28 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	Participation struct {
+		MturkAcceptedAt   func(childComplexity int) int
+		MturkAssignmentID func(childComplexity int) int
+		MturkHitID        func(childComplexity int) int
+		MturkSubmittedAt  func(childComplexity int) int
+		MturkWorkerId     func(childComplexity int) int
+		Participant       func(childComplexity int) int
+		Step              func(childComplexity int) int
+	}
+
+	ParticipationsConnection struct {
+		Edges          func(childComplexity int) int
+		PageInfo       func(childComplexity int) int
+		Participations func(childComplexity int) int
+		TotalCount     func(childComplexity int) int
+	}
+
+	ParticipationsEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	Project struct {
 		CreatedAt func(childComplexity int) int
 		Creator   func(childComplexity int) int
@@ -264,12 +289,17 @@ type ComplexityRoot struct {
 	}
 
 	StepRun struct {
+		CreatedAt         func(childComplexity int) int
+		Creator           func(childComplexity int) int
 		EndedAt           func(childComplexity int) int
-		Participants      func(childComplexity int, first *int, after *string) int
+		ID                func(childComplexity int) int
+		Index             func(childComplexity int) int
 		ParticipantsCount func(childComplexity int) int
+		Participations    func(childComplexity int, first *int, after *string) int
 		StartedAt         func(childComplexity int) int
 		Status            func(childComplexity int) int
 		Step              func(childComplexity int) int
+		UpdatedAt         func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -321,6 +351,16 @@ type ParticipantResolver interface {
 	ProviderIDs(ctx context.Context, obj *ent.Participant) ([]*ent.ProviderID, error)
 	Data(ctx context.Context, obj *ent.Participant, keys []string) ([]*model.Datum, error)
 }
+type ParticipantsConnectionResolver interface {
+	Participants(ctx context.Context, obj *model.ParticipantsConnection) ([]*ent.Participant, error)
+}
+type ParticipationResolver interface {
+	Step(ctx context.Context, obj *ent.Participation) (*ent.StepRun, error)
+	Participant(ctx context.Context, obj *ent.Participation) (*ent.Participant, error)
+}
+type ParticipationsConnectionResolver interface {
+	Participations(ctx context.Context, obj *model.ParticipationsConnection) ([]*ent.Participation, error)
+}
 type ProjectResolver interface {
 	Creator(ctx context.Context, obj *ent.Project) (*ent.Admin, error)
 
@@ -362,10 +402,13 @@ type StepResolver interface {
 	FilterArgs(ctx context.Context, obj *ent.Step) (*model.FilterStepArgs, error)
 }
 type StepRunResolver interface {
+	Creator(ctx context.Context, obj *ent.StepRun) (*ent.Admin, error)
 	Step(ctx context.Context, obj *ent.StepRun) (*ent.Step, error)
+
 	Status(ctx context.Context, obj *ent.StepRun) (model.Status, error)
 
-	Participants(ctx context.Context, obj *ent.StepRun, first *int, after *string) (*model.ParticipantsConnection, error)
+	Participations(ctx context.Context, obj *ent.StepRun, first *int, after *string) (*model.ParticipationsConnection, error)
+	ParticipantsCount(ctx context.Context, obj *ent.StepRun) (int, error)
 }
 type SubscriptionResolver interface {
 	Me(ctx context.Context) (<-chan model.User, error)
@@ -1094,6 +1137,97 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ParticipantsEdge.Node(childComplexity), true
 
+	case "Participation.mturkAcceptedAt":
+		if e.complexity.Participation.MturkAcceptedAt == nil {
+			break
+		}
+
+		return e.complexity.Participation.MturkAcceptedAt(childComplexity), true
+
+	case "Participation.mturkAssignmentID":
+		if e.complexity.Participation.MturkAssignmentID == nil {
+			break
+		}
+
+		return e.complexity.Participation.MturkAssignmentID(childComplexity), true
+
+	case "Participation.mturkHitID":
+		if e.complexity.Participation.MturkHitID == nil {
+			break
+		}
+
+		return e.complexity.Participation.MturkHitID(childComplexity), true
+
+	case "Participation.mturkSubmittedAt":
+		if e.complexity.Participation.MturkSubmittedAt == nil {
+			break
+		}
+
+		return e.complexity.Participation.MturkSubmittedAt(childComplexity), true
+
+	case "Participation.mturkWorkerId":
+		if e.complexity.Participation.MturkWorkerId == nil {
+			break
+		}
+
+		return e.complexity.Participation.MturkWorkerId(childComplexity), true
+
+	case "Participation.participant":
+		if e.complexity.Participation.Participant == nil {
+			break
+		}
+
+		return e.complexity.Participation.Participant(childComplexity), true
+
+	case "Participation.step":
+		if e.complexity.Participation.Step == nil {
+			break
+		}
+
+		return e.complexity.Participation.Step(childComplexity), true
+
+	case "ParticipationsConnection.edges":
+		if e.complexity.ParticipationsConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.ParticipationsConnection.Edges(childComplexity), true
+
+	case "ParticipationsConnection.pageInfo":
+		if e.complexity.ParticipationsConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ParticipationsConnection.PageInfo(childComplexity), true
+
+	case "ParticipationsConnection.participations":
+		if e.complexity.ParticipationsConnection.Participations == nil {
+			break
+		}
+
+		return e.complexity.ParticipationsConnection.Participations(childComplexity), true
+
+	case "ParticipationsConnection.totalCount":
+		if e.complexity.ParticipationsConnection.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.ParticipationsConnection.TotalCount(childComplexity), true
+
+	case "ParticipationsEdge.cursor":
+		if e.complexity.ParticipationsEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.ParticipationsEdge.Cursor(childComplexity), true
+
+	case "ParticipationsEdge.node":
+		if e.complexity.ParticipationsEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.ParticipationsEdge.Node(childComplexity), true
+
 	case "Project.createdAt":
 		if e.complexity.Project.CreatedAt == nil {
 			break
@@ -1435,6 +1569,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Step.UpdatedAt(childComplexity), true
 
+	case "StepRun.createdAt":
+		if e.complexity.StepRun.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.StepRun.CreatedAt(childComplexity), true
+
+	case "StepRun.creator":
+		if e.complexity.StepRun.Creator == nil {
+			break
+		}
+
+		return e.complexity.StepRun.Creator(childComplexity), true
+
 	case "StepRun.endedAt":
 		if e.complexity.StepRun.EndedAt == nil {
 			break
@@ -1442,17 +1590,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.StepRun.EndedAt(childComplexity), true
 
-	case "StepRun.participants":
-		if e.complexity.StepRun.Participants == nil {
+	case "StepRun.id":
+		if e.complexity.StepRun.ID == nil {
 			break
 		}
 
-		args, err := ec.field_StepRun_participants_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
+		return e.complexity.StepRun.ID(childComplexity), true
+
+	case "StepRun.index":
+		if e.complexity.StepRun.Index == nil {
+			break
 		}
 
-		return e.complexity.StepRun.Participants(childComplexity, args["first"].(*int), args["after"].(*string)), true
+		return e.complexity.StepRun.Index(childComplexity), true
 
 	case "StepRun.participantsCount":
 		if e.complexity.StepRun.ParticipantsCount == nil {
@@ -1460,6 +1610,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.StepRun.ParticipantsCount(childComplexity), true
+
+	case "StepRun.participations":
+		if e.complexity.StepRun.Participations == nil {
+			break
+		}
+
+		args, err := ec.field_StepRun_participations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.StepRun.Participations(childComplexity, args["first"].(*int), args["after"].(*string)), true
 
 	case "StepRun.startedAt":
 		if e.complexity.StepRun.StartedAt == nil {
@@ -1481,6 +1643,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.StepRun.Step(childComplexity), true
+
+	case "StepRun.updatedAt":
+		if e.complexity.StepRun.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.StepRun.UpdatedAt(childComplexity), true
 
 	case "Subscription.me":
 		if e.complexity.Subscription.Me == nil {
@@ -1864,18 +2033,28 @@ A StepRun is an instance of a Step. It manages status and operations of a given
 Step within a Run.
 """
 type StepRun {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  creator: Admin!
+
   """
   Step this StepRun corresponds to. When a Run is started, an immutable
   copy of the Steps is made at that point in time so that further changes to
   the Steps will not affect the Run.
   """
-  step: Step
+  step: Step! @goField(forceResolver: true)
+
+  """
+  Index is the position of the stepRun in the Run.
+  """
+  index: Int!
 
   """
   Status of the StepRun, indicating if the Run has started, is ongoing,
   finished, or failed.
   """
-  status: Status!
+  status: Status! @goField(forceResolver: true)
 
   """
   Time at which the StepRun started.
@@ -1888,15 +2067,62 @@ type StepRun {
   endedAt: DateTime
 
   """
-  Participants in this Step. Participants can increase while the Step is on
-  going. After it is finished, participants becomes immutable.
+  Participant Participations in this Step. Participations can increase while the
+  Step is on going.
   """
-  participants(first: Int, after: ID): ParticipantsConnection!
+  participations(first: Int, after: ID): ParticipationsConnection! @goField(forceResolver: true)
 
   """
   Number of Participants in this Step.
   """
-  participantsCount: Int!
+  participantsCount: Int! @goField(forceResolver: true)
+}
+
+"""
+Participation is a Participant participating in a Step. Participants are
+associaciated with the Run, but Participations offer a finer grained
+understanding of when and why Participants joined a Run, and in which Runs they
+participated.
+"""
+type Participation {
+  """
+  StepRun corresponding to this Participation.
+  """
+  step: StepRun!
+
+  """
+  Participant corresponding to this Participation.
+  """
+  participant: Participant!
+
+  """
+  ID of the MTurk Worker corresponding to this Participation.
+  """
+  mturkWorkerId: String
+
+  """
+  ID of the MTurk Assignment corresponding to this Participation.
+  """
+  mturkAssignmentID: String
+
+  """
+  ID of the MTurk Hit corresponding to this Participation.
+  """
+  mturkHitID: String
+
+  """
+   Corresponds to MTurk AcceptTime: The date and time the Worker
+  accepted the assignment.
+  """
+  mturkAcceptedAt: DateTime
+
+  """
+  Corresponds to SubmitTime: If the Worker has submitted results,
+  SubmitTime is the date and time the assignment was submitted.
+  This value is omitted from the assignment if the Worker has not
+  yet submitted results.
+  """
+  mturkSubmittedAt: DateTime
 }
 
 """
@@ -2655,7 +2881,6 @@ input TemplateInput {
 }
 
 input UpdateTemplateInput {
-  projectID: ID!
   runID: ID!
   template: TemplateInput!
 }
@@ -2713,29 +2938,24 @@ input CreateRunInput {
 
 input UpdateRunInput {
   ID: ID!
-  projectID: ID!
   name: String!
 }
 
 input ScheduleRunInput {
   ID: ID!
-  projectID: ID!
   startAt: DateTime!
 }
 
 input UnscheduleRunInput {
   ID: ID!
-  projectID: ID!
 }
 
 input StartRunInput {
   ID: ID!
-  projectID: ID!
 }
 
 input CancelRunInput {
   ID: ID!
-  projectID: ID!
 }
 
 type Mutation {
@@ -3122,10 +3342,22 @@ type PageInfo {
   hasNextPage: Boolean!
 }
 
+type ParticipationsConnection {
+  totalCount: Int!
+  edges: [ParticipationsEdge!]
+  participations: [Participation!]! @goField(forceResolver: true)
+  pageInfo: PageInfo!
+}
+
+type ParticipationsEdge {
+  cursor: ID!
+  node: Participation
+}
+
 type ParticipantsConnection {
   totalCount: Int!
   edges: [ParticipantsEdge!]
-  participants: [Participant!]!
+  participants: [Participant!]! @goField(forceResolver: true)
   pageInfo: PageInfo!
 }
 
@@ -3575,7 +3807,7 @@ func (ec *executionContext) field_Run_data_args(ctx context.Context, rawArgs map
 	return args, nil
 }
 
-func (ec *executionContext) field_StepRun_participants_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_StepRun_participations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *int
@@ -6807,13 +7039,13 @@ func (ec *executionContext) _ParticipantsConnection_participants(ctx context.Con
 		Object:   "ParticipantsConnection",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Participants, nil
+		return ec.resolvers.ParticipantsConnection().Participants(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6927,6 +7159,427 @@ func (ec *executionContext) _ParticipantsEdge_node(ctx context.Context, field gr
 	res := resTmp.(*ent.Participant)
 	fc.Result = res
 	return ec.marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Participation_step(ctx context.Context, field graphql.CollectedField, obj *ent.Participation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Participation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Participation().Step(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.StepRun)
+	fc.Result = res
+	return ec.marshalNStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Participation_participant(ctx context.Context, field graphql.CollectedField, obj *ent.Participation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Participation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Participation().Participant(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Participant)
+	fc.Result = res
+	return ec.marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Participation_mturkWorkerId(ctx context.Context, field graphql.CollectedField, obj *ent.Participation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Participation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MturkWorkerId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Participation_mturkAssignmentID(ctx context.Context, field graphql.CollectedField, obj *ent.Participation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Participation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MturkAssignmentID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Participation_mturkHitID(ctx context.Context, field graphql.CollectedField, obj *ent.Participation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Participation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MturkHitID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Participation_mturkAcceptedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Participation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Participation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MturkAcceptedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalODateTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Participation_mturkSubmittedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Participation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Participation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MturkSubmittedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalODateTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ParticipationsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.ParticipationsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ParticipationsConnection",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ParticipationsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.ParticipationsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ParticipationsConnection",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ParticipationsEdge)
+	fc.Result = res
+	return ec.marshalOParticipationsEdge2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ParticipationsConnection_participations(ctx context.Context, field graphql.CollectedField, obj *model.ParticipationsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ParticipationsConnection",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ParticipationsConnection().Participations(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Participation)
+	fc.Result = res
+	return ec.marshalNParticipation2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ParticipationsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.ParticipationsConnection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ParticipationsConnection",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ParticipationsEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.ParticipationsEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ParticipationsEdge",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ParticipationsEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.ParticipationsEdge) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ParticipationsEdge",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Participation)
+	fc.Result = res
+	return ec.marshalOParticipation2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipation(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Project_id(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
@@ -8555,6 +9208,142 @@ func (ec *executionContext) _Step_filterArgs(ctx context.Context, field graphql.
 	return ec.marshalOFilterStepArgs2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐFilterStepArgs(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _StepRun_id(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "StepRun",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StepRun_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "StepRun",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StepRun_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "StepRun",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StepRun_creator(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "StepRun",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.StepRun().Creator(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Admin)
+	fc.Result = res
+	return ec.marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐAdmin(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _StepRun_step(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -8579,11 +9368,48 @@ func (ec *executionContext) _StepRun_step(ctx context.Context, field graphql.Col
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*ent.Step)
 	fc.Result = res
-	return ec.marshalOStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStep(ctx, field.Selections, res)
+	return ec.marshalNStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStep(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StepRun_index(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "StepRun",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Index, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _StepRun_status(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
@@ -8682,7 +9508,7 @@ func (ec *executionContext) _StepRun_endedAt(ctx context.Context, field graphql.
 	return ec.marshalODateTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _StepRun_participants(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
+func (ec *executionContext) _StepRun_participations(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8698,7 +9524,7 @@ func (ec *executionContext) _StepRun_participants(ctx context.Context, field gra
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_StepRun_participants_args(ctx, rawArgs)
+	args, err := ec.field_StepRun_participations_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -8706,7 +9532,7 @@ func (ec *executionContext) _StepRun_participants(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.StepRun().Participants(rctx, obj, args["first"].(*int), args["after"].(*string))
+		return ec.resolvers.StepRun().Participations(rctx, obj, args["first"].(*int), args["after"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8718,9 +9544,9 @@ func (ec *executionContext) _StepRun_participants(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ParticipantsConnection)
+	res := resTmp.(*model.ParticipationsConnection)
 	fc.Result = res
-	return ec.marshalNParticipantsConnection2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantsConnection(ctx, field.Selections, res)
+	return ec.marshalNParticipationsConnection2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _StepRun_participantsCount(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
@@ -8734,13 +9560,13 @@ func (ec *executionContext) _StepRun_participantsCount(ctx context.Context, fiel
 		Object:   "StepRun",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ParticipantsCount, nil
+		return ec.resolvers.StepRun().ParticipantsCount(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10288,12 +11114,6 @@ func (ec *executionContext) unmarshalInputCancelRunInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "projectID":
-			var err error
-			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -10804,12 +11624,6 @@ func (ec *executionContext) unmarshalInputScheduleRunInput(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
-		case "projectID":
-			var err error
-			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "startAt":
 			var err error
 			it.StartAt, err = ec.unmarshalNDateTime2timeᚐTime(ctx, v)
@@ -10831,12 +11645,6 @@ func (ec *executionContext) unmarshalInputStartRunInput(ctx context.Context, obj
 		case "ID":
 			var err error
 			it.ID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "projectID":
-			var err error
-			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10978,12 +11786,6 @@ func (ec *executionContext) unmarshalInputUnscheduleRunInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "projectID":
-			var err error
-			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -10999,12 +11801,6 @@ func (ec *executionContext) unmarshalInputUpdateRunInput(ctx context.Context, ob
 		case "ID":
 			var err error
 			it.ID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "projectID":
-			var err error
-			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -11026,12 +11822,6 @@ func (ec *executionContext) unmarshalInputUpdateTemplateInput(ctx context.Contex
 
 	for k, v := range asMap {
 		switch k {
-		case "projectID":
-			var err error
-			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "runID":
 			var err error
 			it.RunID, err = ec.unmarshalNID2string(ctx, v)
@@ -11856,19 +12646,28 @@ func (ec *executionContext) _ParticipantsConnection(ctx context.Context, sel ast
 		case "totalCount":
 			out.Values[i] = ec._ParticipantsConnection_totalCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "edges":
 			out.Values[i] = ec._ParticipantsConnection_edges(ctx, field, obj)
 		case "participants":
-			out.Values[i] = ec._ParticipantsConnection_participants(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ParticipantsConnection_participants(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "pageInfo":
 			out.Values[i] = ec._ParticipantsConnection_pageInfo(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -11899,6 +12698,143 @@ func (ec *executionContext) _ParticipantsEdge(ctx context.Context, sel ast.Selec
 			}
 		case "node":
 			out.Values[i] = ec._ParticipantsEdge_node(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var participationImplementors = []string{"Participation"}
+
+func (ec *executionContext) _Participation(ctx context.Context, sel ast.SelectionSet, obj *ent.Participation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, participationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Participation")
+		case "step":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Participation_step(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "participant":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Participation_participant(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "mturkWorkerId":
+			out.Values[i] = ec._Participation_mturkWorkerId(ctx, field, obj)
+		case "mturkAssignmentID":
+			out.Values[i] = ec._Participation_mturkAssignmentID(ctx, field, obj)
+		case "mturkHitID":
+			out.Values[i] = ec._Participation_mturkHitID(ctx, field, obj)
+		case "mturkAcceptedAt":
+			out.Values[i] = ec._Participation_mturkAcceptedAt(ctx, field, obj)
+		case "mturkSubmittedAt":
+			out.Values[i] = ec._Participation_mturkSubmittedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var participationsConnectionImplementors = []string{"ParticipationsConnection"}
+
+func (ec *executionContext) _ParticipationsConnection(ctx context.Context, sel ast.SelectionSet, obj *model.ParticipationsConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, participationsConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ParticipationsConnection")
+		case "totalCount":
+			out.Values[i] = ec._ParticipationsConnection_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "edges":
+			out.Values[i] = ec._ParticipationsConnection_edges(ctx, field, obj)
+		case "participations":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ParticipationsConnection_participations(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "pageInfo":
+			out.Values[i] = ec._ParticipationsConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var participationsEdgeImplementors = []string{"ParticipationsEdge"}
+
+func (ec *executionContext) _ParticipationsEdge(ctx context.Context, sel ast.SelectionSet, obj *model.ParticipationsEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, participationsEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ParticipationsEdge")
+		case "cursor":
+			out.Values[i] = ec._ParticipationsEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "node":
+			out.Values[i] = ec._ParticipationsEdge_node(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12437,6 +13373,35 @@ func (ec *executionContext) _StepRun(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("StepRun")
+		case "id":
+			out.Values[i] = ec._StepRun_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "createdAt":
+			out.Values[i] = ec._StepRun_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._StepRun_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "creator":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StepRun_creator(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "step":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -12446,8 +13411,16 @@ func (ec *executionContext) _StepRun(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._StepRun_step(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
+		case "index":
+			out.Values[i] = ec._StepRun_index(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "status":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -12466,7 +13439,7 @@ func (ec *executionContext) _StepRun(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._StepRun_startedAt(ctx, field, obj)
 		case "endedAt":
 			out.Values[i] = ec._StepRun_endedAt(ctx, field, obj)
-		case "participants":
+		case "participations":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -12474,17 +13447,26 @@ func (ec *executionContext) _StepRun(ctx context.Context, sel ast.SelectionSet, 
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._StepRun_participants(ctx, field, obj)
+				res = ec._StepRun_participations(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
 				return res
 			})
 		case "participantsCount":
-			out.Values[i] = ec._StepRun_participantsCount(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StepRun_participantsCount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13395,6 +14377,85 @@ func (ec *executionContext) marshalNParticipantsEdge2ᚖgithubᚗcomᚋempirical
 		return graphql.Null
 	}
 	return ec._ParticipantsEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNParticipation2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipation(ctx context.Context, sel ast.SelectionSet, v ent.Participation) graphql.Marshaler {
+	return ec._Participation(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNParticipation2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipationᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Participation) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNParticipation2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipation(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNParticipation2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipation(ctx context.Context, sel ast.SelectionSet, v *ent.Participation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Participation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNParticipationsConnection2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsConnection(ctx context.Context, sel ast.SelectionSet, v model.ParticipationsConnection) graphql.Marshaler {
+	return ec._ParticipationsConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNParticipationsConnection2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsConnection(ctx context.Context, sel ast.SelectionSet, v *model.ParticipationsConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ParticipationsConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNParticipationsEdge2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsEdge(ctx context.Context, sel ast.SelectionSet, v model.ParticipationsEdge) graphql.Marshaler {
+	return ec._ParticipationsEdge(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNParticipationsEdge2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsEdge(ctx context.Context, sel ast.SelectionSet, v *model.ParticipationsEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ParticipationsEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNProject2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v ent.Project) graphql.Marshaler {
@@ -14776,6 +15837,57 @@ func (ec *executionContext) marshalOParticipantsEdge2ᚕᚖgithubᚗcomᚋempiri
 	return ret
 }
 
+func (ec *executionContext) marshalOParticipation2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipation(ctx context.Context, sel ast.SelectionSet, v ent.Participation) graphql.Marshaler {
+	return ec._Participation(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOParticipation2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipation(ctx context.Context, sel ast.SelectionSet, v *ent.Participation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Participation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOParticipationsEdge2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ParticipationsEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNParticipationsEdge2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalOProject2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v ent.Project) graphql.Marshaler {
 	return ec._Project(ctx, sel, &v)
 }
@@ -14821,17 +15933,6 @@ func (ec *executionContext) unmarshalOStartRunInput2ᚖgithubᚗcomᚋempiricaly
 	}
 	res, err := ec.unmarshalOStartRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStartRunInput(ctx, v)
 	return &res, err
-}
-
-func (ec *executionContext) marshalOStep2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStep(ctx context.Context, sel ast.SelectionSet, v ent.Step) graphql.Marshaler {
-	return ec._Step(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStep(ctx context.Context, sel ast.SelectionSet, v *ent.Step) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Step(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOStepRun2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx context.Context, sel ast.SelectionSet, v ent.StepRun) graphql.Marshaler {

@@ -32,10 +32,22 @@ type PageInfo {
   hasNextPage: Boolean!
 }
 
+type ParticipationsConnection {
+  totalCount: Int!
+  edges: [ParticipationsEdge!]
+  participations: [Participation!]! @goField(forceResolver: true)
+  pageInfo: PageInfo!
+}
+
+type ParticipationsEdge {
+  cursor: ID!
+  node: Participation
+}
+
 type ParticipantsConnection {
   totalCount: Int!
   edges: [ParticipantsEdge!]
-  participants: [Participant!]!
+  participants: [Participant!]! @goField(forceResolver: true)
   pageInfo: PageInfo!
 }
 

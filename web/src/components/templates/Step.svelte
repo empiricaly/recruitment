@@ -62,7 +62,7 @@
       {:else if step.type === 'PARTICIPANT_FILTER'}Participant Filter{/if}
     </div>
   </div>
-  <div slot="description" class="text-gray-600">
+  <div slot="description">
     {#if step.type === 'MTURK_HIT'}
       <p>
         A

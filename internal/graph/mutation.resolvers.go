@@ -309,7 +309,11 @@ func (r *mutationResolver) UpdateRun(ctx context.Context, input *model.UpdateRun
 }
 
 func (r *mutationResolver) ScheduleRun(ctx context.Context, input *model.ScheduleRunInput) (*ent.Run, error) {
-	panic(fmt.Errorf("not implemented"))
+	run, err := r.Store.Run.UpdateOneID(input.ID).
+		SetStartAt(input.StartAt).
+		Save(ctx)
+
+	return run, err
 }
 
 func (r *mutationResolver) UnscheduleRun(ctx context.Context, input *model.UnscheduleRunInput) (*ent.Run, error) {

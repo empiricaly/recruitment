@@ -19,12 +19,14 @@ import (
 func (r *runState) startRun(ctx context.Context, startTime time.Time) error {
 	if err := ent.WithTx(ctx, r.conn.Client, func(tx *ent.Tx) error {
 		for i, step := range r.steps {
+			urlToken := randomString(30)
+			log.Debug().Str("token", urlToken).Msg("Create URL Token")
 			stepRun, err := tx.
 				StepRun.
 				Create().
 				SetID(xid.New().String()).
 				SetIndex(i).
-				SetUrlToken(randomString(30)).
+				SetUrlToken(urlToken).
 				SetRun(r.run).
 				SetStep(step).
 				SetStatus(steprunModel.StatusCREATED).

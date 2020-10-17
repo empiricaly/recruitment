@@ -26,8 +26,7 @@ type AuthResp struct {
 }
 
 type CancelRunInput struct {
-	ID        string `json:"ID"`
-	ProjectID string `json:"projectID"`
+	ID string `json:"ID"`
 }
 
 // Possible Condition values. Only one of the fields in a CompValue should be
@@ -510,6 +509,18 @@ type ParticipantsEdge struct {
 	Node   *ent.Participant `json:"node"`
 }
 
+type ParticipationsConnection struct {
+	TotalCount     int                   `json:"totalCount"`
+	Edges          []*ParticipationsEdge `json:"edges"`
+	Participations []*ent.Participation  `json:"participations"`
+	PageInfo       *PageInfo             `json:"pageInfo"`
+}
+
+type ParticipationsEdge struct {
+	Cursor string             `json:"cursor"`
+	Node   *ent.Participation `json:"node"`
+}
+
 type RegisterParticipantInput struct {
 	// ID from provider.
 	ID string `json:"id"`
@@ -520,14 +531,12 @@ type RegisterParticipantInput struct {
 }
 
 type ScheduleRunInput struct {
-	ID        string    `json:"ID"`
-	ProjectID string    `json:"projectID"`
-	StartAt   time.Time `json:"startAt"`
+	ID      string    `json:"ID"`
+	StartAt time.Time `json:"startAt"`
 }
 
 type StartRunInput struct {
-	ID        string `json:"ID"`
-	ProjectID string `json:"projectID"`
+	ID string `json:"ID"`
 }
 
 type StepInput struct {
@@ -574,20 +583,17 @@ type TemplateInput struct {
 }
 
 type UnscheduleRunInput struct {
-	ID        string `json:"ID"`
-	ProjectID string `json:"projectID"`
+	ID string `json:"ID"`
 }
 
 type UpdateRunInput struct {
-	ID        string `json:"ID"`
-	ProjectID string `json:"projectID"`
-	Name      string `json:"name"`
+	ID   string `json:"ID"`
+	Name string `json:"name"`
 }
 
 type UpdateTemplateInput struct {
-	ProjectID string         `json:"projectID"`
-	RunID     string         `json:"runID"`
-	Template  *TemplateInput `json:"template"`
+	RunID    string         `json:"runID"`
+	Template *TemplateInput `json:"template"`
 }
 
 // The kind of comparison to make against a value.

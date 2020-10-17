@@ -1,48 +1,99 @@
-<script context="module">
-  const stepTypeName = {
-    MTURK_HIT: "MTurk HIT Step",
-    MTURK_MESSAGE: "MTurk Message Step",
-    PARTICIPANT_FILTER: "Participant Filter Step",
-  };
-  const stepTypeDesc = {
-    MTURK_HIT: "TODO: Add Description",
-    MTURK_MESSAGE: "TODO: Add Description",
-    PARTICIPANT_FILTER: "TODO: Add Description",
-  };
-</script>
-
 <script>
-  import TemplateSection from "../templates/TemplateSection.svelte";
+  import dayjs from "dayjs";
+  import { timer } from "../../utils/timer.js";
   import StepRunMTurkHit from "./StepRunMTurkHit.svelte";
   import StepRunMTurkMessage from "./StepRunMTurkMessage.svelte";
   import StepRunParticipantFilter from "./StepRunParticipantFilter.svelte";
+  import StepRunTemplateSection from "./StepRunTemplateSection.svelte";
 
   export let step;
-  // export let stepLength;
+  export let stepRun;
+  $: current = stepRun && stepRun.status === "RUNNING";
+
+  let finishedAt;
+  let remaining;
+  let remainingPercent = 0;
+  let localTimer;
+
+  $: if (stepRun && stepRun.startedAt && !stepRun.endedAt) {
+    localTimer = $timer;
+  }
+
+  $: if (stepRun && stepRun.endedAt) {
+    remaining = null;
+    remainingPercent = 0;
+    finishedAt = dayjs(stepRun.endedAt).calendar();
+  }
+
+  $: if (localTimer) {
+    remaining = remaining = dayjs.duration(
+      dayjs(stepRun.startedAt).add(step.duration, "minutes").diff(dayjs())
+    );
+    remainingPercent = (100 / (step.duration * 60)) * remaining.as("seconds");
+  }
+
+  let showDetails = false;
+  function handleShowDetails() {
+    console.log("SHOW DETAILS", showDetails);
+    showDetails = !showDetails;
+  }
 </script>
 
-<TemplateSection title={stepTypeName[step.type]} header>
-  <div slot="header">
+<StepRunTemplateSection header {current} progress={remainingPercent}>
+  <div slot="title" class="flex">
+    <div class="font-semibold {current ? 'text-mint-800' : 'text-gray-400'}">
+      Step
+      {step.index + 1}
+    </div>
+    <div class="mx-2 {current ? 'text-mint-300' : 'text-gray-300'}">
+      <!-- ·• -->
+      →
+    </div>
+    <div class={current ? 'text-mint-700' : 'text-gray-400'}>
+      {#if step.type === 'MTURK_HIT'}
+        MTurk HIT
+      {:else if step.type === 'MTURK_MESSAGE'}
+        MTurk Message
+      {:else if step.type === 'PARTICIPANT_FILTER'}Participant Filter{/if}
+    </div>
+  </div>
+  <div slot="description">
+    <!-- Add description -->
+  </div>
+
+  <div slot="header" class="cursor-pointer" on:click={handleShowDetails}>
     <div class="flex justify-between">
       <div class="mr-2 flex items-baseline">
-        <div class="text-mint-300 mr-2">Total Duration</div>
-        {step.duration}
-        minutes
+        {#if finishedAt}
+          <div class="text-gray-500  mr-2">Finished</div>
+          {finishedAt}
+        {:else if remaining}
+          <div class="{current ? 'text-mint-300' : 'text-gray-500'}  mr-2">
+            Remaining
+          </div>
+          {remaining.humanize()}
+        {/if}
       </div>
 
       <div class="ml-2 flex items-center md:justify-end">
-        <div class="text-mint-300 mr-2">Remaining</div>
+        <div class="{current ? 'text-mint-300' : 'text-gray-500'} mr-2">
+          Duration
+        </div>
         {step.duration}
         minutes
       </div>
     </div>
   </div>
-  <div slot="description">{stepTypeDesc[step.type]}</div>
-  {#if step.type === 'MTURK_HIT'}
-    <StepRunMTurkHit bind:step />
-  {:else if step.type === 'MTURK_MESSAGE'}
-    <StepRunMTurkMessage bind:step />
-  {:else if step.type === 'PARTICIPANT_FILTER'}
-    <StepRunParticipantFilter bind:step />
-  {:else}Unknown Step Type?!?{/if}
-</TemplateSection>
+
+  {#if showDetails}
+    <div class="px-4 py-5 sm:p-6">
+      {#if step.type === 'MTURK_HIT'}
+        <StepRunMTurkHit bind:step />
+      {:else if step.type === 'MTURK_MESSAGE'}
+        <StepRunMTurkMessage bind:step />
+      {:else if step.type === 'PARTICIPANT_FILTER'}
+        <StepRunParticipantFilter bind:step />
+      {:else}Unknown Step Type?!?{/if}
+    </div>
+  {/if}
+</StepRunTemplateSection>

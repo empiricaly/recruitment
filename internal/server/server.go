@@ -91,7 +91,7 @@ func Run(ctx context.Context, config *Config) (err error) {
 		return errors.Wrap(err, "init mturk")
 	}
 
-	s.runtime, err = runtime.Start(s.storeConn, s.mturk, s.mturkSandbox)
+	s.runtime, err = runtime.Start(config.Runtime, s.storeConn, s.mturk, s.mturkSandbox)
 	if err != nil {
 		return errors.Wrap(err, "init runtime")
 	}

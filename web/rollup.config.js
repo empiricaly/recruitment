@@ -37,6 +37,16 @@ export default {
     file: "public/build/bundle.js",
     exports: "named" /** Disable warning for default imports */,
   },
+  onwarn(warning, warn) {
+    if (
+      warning.code == "CIRCULAR_DEPENDENCY" &&
+      warning.importer.startsWith("node_modules")
+    ) {
+      return;
+    }
+    // Use default for everything else
+    warn(warning);
+  },
   plugins: [
     replace({
       "process.env.NODE_ENV": JSON.stringify(

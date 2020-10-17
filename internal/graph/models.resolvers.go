@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/run"
@@ -37,7 +36,7 @@ func (r *participantResolver) CreatedBy(ctx context.Context, obj *ent.Participan
 }
 
 func (r *participantResolver) Steps(ctx context.Context, obj *ent.Participant) ([]*ent.StepRun, error) {
-	panic(fmt.Errorf("not implemented"))
+	return obj.QuerySteps().Order(ent.Asc(step.FieldCreatedAt)).All(ctx)
 }
 
 func (r *participantResolver) ProviderIDs(ctx context.Context, obj *ent.Participant) ([]*ent.ProviderID, error) {
@@ -46,6 +45,14 @@ func (r *participantResolver) ProviderIDs(ctx context.Context, obj *ent.Particip
 
 func (r *participantResolver) Data(ctx context.Context, obj *ent.Participant, keys []string) ([]*model.Datum, error) {
 	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *participationResolver) Step(ctx context.Context, obj *ent.Participation) (*ent.StepRun, error) {
+	return obj.QueryStepRun().Only(ctx)
+}
+
+func (r *participationResolver) Participant(ctx context.Context, obj *ent.Participation) (*ent.Participant, error) {
+	return obj.QueryParticipant().Only(ctx)
 }
 
 func (r *projectResolver) Creator(ctx context.Context, obj *ent.Project) (*ent.Admin, error) {
@@ -94,11 +101,11 @@ func (r *runResolver) Status(ctx context.Context, obj *ent.Run) (model.Status, e
 }
 
 func (r *runResolver) Steps(ctx context.Context, obj *ent.Run) ([]*ent.StepRun, error) {
-	panic(fmt.Errorf("not implemented"))
+	return obj.QuerySteps().Order(ent.Asc(step.FieldIndex)).All(ctx)
 }
 
 func (r *runResolver) CurrentStep(ctx context.Context, obj *ent.Run) (*ent.StepRun, error) {
-	panic(fmt.Errorf("not implemented"))
+	return obj.QueryCurrentStep().Only(ctx)
 }
 
 func (r *runResolver) Data(ctx context.Context, obj *ent.Run, keys []string) ([]*model.Datum, error) {
@@ -131,16 +138,24 @@ func (r *stepResolver) FilterArgs(ctx context.Context, obj *ent.Step) (*model.Fi
 	return args, err
 }
 
-func (r *stepRunResolver) Step(ctx context.Context, obj *ent.StepRun) (*ent.Step, error) {
+func (r *stepRunResolver) Creator(ctx context.Context, obj *ent.StepRun) (*ent.Admin, error) {
 	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *stepRunResolver) Step(ctx context.Context, obj *ent.StepRun) (*ent.Step, error) {
+	return obj.QueryStep().Only(ctx)
 }
 
 func (r *stepRunResolver) Status(ctx context.Context, obj *ent.StepRun) (model.Status, error) {
+	return model.Status(obj.Status.String()), nil
+}
+
+func (r *stepRunResolver) Participations(ctx context.Context, obj *ent.StepRun, first *int, after *string) (*model.ParticipationsConnection, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *stepRunResolver) Participants(ctx context.Context, obj *ent.StepRun, first *int, after *string) (*model.ParticipantsConnection, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *stepRunResolver) ParticipantsCount(ctx context.Context, obj *ent.StepRun) (int, error) {
+	return obj.QueryParticipants().Count(ctx)
 }
 
 func (r *templateResolver) Creator(ctx context.Context, obj *ent.Template) (*ent.Admin, error) {
@@ -180,6 +195,9 @@ func (r *Resolver) MessageStepArgs() generated.MessageStepArgsResolver {
 // Participant returns generated.ParticipantResolver implementation.
 func (r *Resolver) Participant() generated.ParticipantResolver { return &participantResolver{r} }
 
+// Participation returns generated.ParticipationResolver implementation.
+func (r *Resolver) Participation() generated.ParticipationResolver { return &participationResolver{r} }
+
 // Project returns generated.ProjectResolver implementation.
 func (r *Resolver) Project() generated.ProjectResolver { return &projectResolver{r} }
 
@@ -201,19 +219,10 @@ func (r *Resolver) Template() generated.TemplateResolver { return &templateResol
 type filterStepArgsResolver struct{ *Resolver }
 type messageStepArgsResolver struct{ *Resolver }
 type participantResolver struct{ *Resolver }
+type participationResolver struct{ *Resolver }
 type projectResolver struct{ *Resolver }
 type providerIDResolver struct{ *Resolver }
 type runResolver struct{ *Resolver }
 type stepResolver struct{ *Resolver }
 type stepRunResolver struct{ *Resolver }
 type templateResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *stepRunResolver) StartedAt(ctx context.Context, obj *ent.StepRun) (*time.Time, error) {
-	panic(fmt.Errorf("not implemented"))
-}

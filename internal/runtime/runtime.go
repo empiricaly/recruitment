@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/hook"
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
@@ -19,6 +20,8 @@ import (
 // Runtime manages the empirica recruitment run loop that will trigger timed
 // events as needed (start run, go to next step, etc.)
 type Runtime struct {
+	conf *Config
+
 	// db conn
 	conn *storage.Conn
 
@@ -48,29 +51,39 @@ type Runtime struct {
 var initRand sync.Once
 
 // Start the empirica recruitment runtime
-func Start(conn *storage.Conn, mturk, mturkSandbox *mturk.Session) (*Runtime, error) {
+func Start(conf *Config, conn *storage.Conn, mturk, mturkSandbox *mturk.Session) (*Runtime, error) {
 	initRand.Do(func() {
 		rand.Seed(time.Now().UnixNano())
 	})
 
+	logger := log.With().Str("pkg", "runtime").Logger()
+
+	if !conf.Debug {
+		logger = logger.Level(zerolog.Disabled)
+	}
+
 	r := &Runtime{
+		conf:         conf,
 		conn:         conn,
 		mturk:        mturk,
 		mturkSandbox: mturkSandbox,
 		runs:         make(map[string]*runState),
 		updates:      make(chan string),
 		triggers:     make(chan *runState),
-		logger:       log.With().Str("pkg", "runtime").Logger(),
+		logger:       logger,
 	}
-	go r.processRuns()
-	// go r.processEvents()
-	err := r.registerExistingSteps()
-	if err != nil {
-		return nil, err
-	}
-	r.registerHooks()
 
-	r.logger.Debug().Msg("Runtime started")
+	if !conf.Disable {
+		go r.processRuns()
+		// go r.processEvents()
+		err := r.registerExistingSteps()
+		if err != nil {
+			return nil, err
+		}
+		r.registerHooks()
+
+		r.logger.Debug().Msg("Runtime started")
+	}
 
 	return r, nil
 }
@@ -83,6 +96,7 @@ func (r *Runtime) Stop() {
 }
 
 func (r *Runtime) addRun(run *ent.Run) {
+	spew.Dump(run)
 	_, ok := r.runs[run.ID]
 	if ok {
 		// r.logger.Warn().Msgf("Run %s already tracked", run.ID)
@@ -171,11 +185,13 @@ func (r *Runtime) registerHooks() {
 				}
 
 				// After the update happened, go ahead and add Run to Runtime
-				go func() {
-					ID, exists := m.ID()
-					if exists {
-						r.updates <- ID
-					}
+				defer func() {
+					go func() {
+						ID, exists := m.ID()
+						if exists {
+							r.updates <- ID
+						}
+					}()
 				}()
 
 				return next.Mutate(ctx, m)

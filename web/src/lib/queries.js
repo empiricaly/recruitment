@@ -144,6 +144,7 @@ export const GET_RUN = gql`
   query getRun($projectID: ID!, $runID: ID!) {
     project(projectID: $projectID) {
       id
+      projectID
       runs(runID: $runID) {
         id
         name
@@ -208,6 +209,25 @@ export const GET_RUN = gql`
           steps {
             id
           }
+        }
+      }
+    }
+  }
+`;
+
+export const GET_RUNNING_RUN = gql`
+  query getRuningRun($projectID: ID!, $runID: ID!) {
+    project(projectID: $projectID) {
+      id
+      runs(runID: $runID) {
+        status
+        steps {
+          id
+          index
+          status
+          startedAt
+          endedAt
+          participantsCount
         }
       }
     }

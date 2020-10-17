@@ -134,7 +134,6 @@ input TemplateInput {
 }
 
 input UpdateTemplateInput {
-  projectID: ID!
   runID: ID!
   template: TemplateInput!
 }
@@ -192,29 +191,24 @@ input CreateRunInput {
 
 input UpdateRunInput {
   ID: ID!
-  projectID: ID!
   name: String!
 }
 
 input ScheduleRunInput {
   ID: ID!
-  projectID: ID!
   startAt: DateTime!
 }
 
 input UnscheduleRunInput {
   ID: ID!
-  projectID: ID!
 }
 
 input StartRunInput {
   ID: ID!
-  projectID: ID!
 }
 
 input CancelRunInput {
   ID: ID!
-  projectID: ID!
 }
 
 type Mutation {
