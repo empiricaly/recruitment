@@ -30,6 +30,7 @@ const authLink = setContext((_, { headers }) => {
 const httpLink = new HttpLink({
   uri, // use https for secure endpoint
   // credentials: "include",
+  useGETForQueries: false,
   fetchOptions: {
     mode: "cors",
   },

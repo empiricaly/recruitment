@@ -9,6 +9,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent"
 	adminT "github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/storage"
+	"github.com/gin-gonic/gin"
 	"github.com/o1egl/paseto/v2"
 	"github.com/pkg/errors"
 	"github.com/rs/xid"
@@ -22,6 +23,7 @@ type User struct {
 	Password string
 }
 
+// Init creates admin object in the DB from the given configuration.
 func Init(ctx context.Context, admins []User, store *storage.Conn) error {
 	for _, a := range admins {
 		ad, err := store.Admin.Query().Where(adminT.UsernameEQ(a.Username)).First(ctx)
@@ -51,7 +53,7 @@ func Init(ctx context.Context, admins []User, store *storage.Conn) error {
 // to prevent collisions between different context uses
 var adminCtxKey = struct{}{}
 
-// AuthMiddleware decodes the share session cookie and packs the session into context
+// Middleware decodes the share session cookie and packs the session into context
 func Middleware(conn *storage.Conn, key []byte) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -85,6 +87,40 @@ func Middleware(conn *storage.Conn, key []byte) func(http.Handler) http.Handler 
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
 		})
+	}
+}
+
+// GinMiddleware decodes the share session cookie and packs the session into context
+func GinMiddleware(conn *storage.Conn, key []byte) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		auth := c.GetHeader("Authorization")
+
+		// Allow unauthenticated users in
+		if auth == "" {
+			c.Next()
+			return
+		}
+
+		userID, err := validateAndGetUserID(key, auth)
+		if err != nil {
+			log.Warn().Err(err).Msg("failed validate user for ID")
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		// Get the user from the database
+		admin, err := getUserByID(c.Request.Context(), conn, userID)
+		if err != nil {
+			log.Warn().Err(err).Msg("failed get user for ID")
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		// Put it in context
+		ctx := context.WithValue(c.Request.Context(), adminCtxKey, admin)
+		c.Request = c.Request.WithContext(ctx)
+
+		c.Next()
 	}
 }
 

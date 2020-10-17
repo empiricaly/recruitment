@@ -14,6 +14,7 @@ import (
 type Config struct {
 	Level    string `mapstructure:"level"`
 	ForceTTY bool   `mapstructure:"forcetty"`
+	ShowLine bool   `mapstructure:"line"`
 }
 
 // ConfigFlags helps configure cobra and viper flags.
@@ -34,6 +35,10 @@ func ConfigFlags(cmd *cobra.Command, prefix, level string) error {
 
 	flag = prefix + ".forcetty"
 	cmd.Flags().Bool(flag, false, "Force behavior of attached TTY (color, human output)")
+	viper.SetDefault(flag, false)
+
+	flag = prefix + ".line"
+	cmd.Flags().Bool(flag, false, "Show file and line number of log call")
 	viper.SetDefault(flag, false)
 
 	return nil
@@ -58,6 +63,10 @@ func Init(config *Config) error {
 
 	if config.ForceTTY || isatty.IsTerminal(os.Stderr.Fd()) {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	}
+
+	if config.ShowLine {
+		log.Logger = log.With().Caller().Logger()
 	}
 
 	return nil

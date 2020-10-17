@@ -10,6 +10,7 @@ import (
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	stepRunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/empiricaly/recruitment/internal/model"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"github.com/yuin/goldmark"
 	mdExtension "github.com/yuin/goldmark/extension"
@@ -22,6 +23,93 @@ const htmlFoot = `</body></html>`
 
 type questionHandler struct {
 	*Server
+}
+
+func ginQuestionsHandler(s *Server) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		id := strings.TrimPrefix(c.Request.URL.Path, "/q/")
+
+		stepRun, err := s.storeConn.StepRun.
+			Query().
+			WithStep(func(step *ent.StepQuery) {
+				step.WithTemplate()
+			}).
+			WithRun().
+			Where(stepRunModel.UrlTokenEQ(id)).
+			First(c.Request.Context())
+		if err != nil {
+			log.Error().Err(err).Msg("get stepRun")
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		step, err := stepRun.Edges.StepOrErr()
+		if err != nil {
+			log.Error().Err(err).Msg("get step")
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		if step.Type != stepModel.TypeMTURK_HIT {
+			log.Error().Err(err).Msg("is mturk HIT step")
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		msgArgs := &model.MessageStepArgs{}
+		err = json.Unmarshal(step.MsgArgs, msgArgs)
+		if err != nil {
+			log.Error().Err(err).Msg("decode mturk HIT step args")
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		switch msgArgs.MessageType {
+		case model.ContentTypeHTML:
+			var out string
+			if strings.Contains(msgArgs.Message, "<html>") {
+				out = msgArgs.Message
+			} else {
+				out = htmlHead + msgArgs.Message + htmlFoot
+			}
+
+			c.Header("Content-Type", "text/html; charset=utf-8")
+			log.Debug().Str("content", out).Msg("html message")
+			c.String(200, out)
+		case model.ContentTypeMarkdown:
+			md := goldmark.New(
+				goldmark.WithExtensions(mdExtension.GFM),
+				goldmark.WithParserOptions(
+					parser.WithAutoHeadingID(),
+				),
+				goldmark.WithRendererOptions(
+					html.WithHardWraps(),
+					html.WithXHTML(),
+					html.WithUnsafe(),
+				),
+			)
+			log.Debug().Str("content", msgArgs.Message).Msg("markdown message")
+			var buf bytes.Buffer
+			if err := md.Convert([]byte(msgArgs.Message), &buf); err != nil {
+				log.Error().Err(err).Msg("convert markdown")
+				c.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+
+			c.Header("Content-Type", "text/html; charset=utf-8")
+			log.Debug().Str("content", buf.String()).Msg("html message")
+			c.String(200, htmlHead+buf.String()+htmlFoot)
+		case model.ContentTypeSvelte:
+			c.Header("Content-Type", "text/html; charset=utf-8")
+			c.String(200, "<html>react not yet supported</html>")
+		case model.ContentTypeReact:
+			c.Header("Content-Type", "text/html; charset=utf-8")
+			c.String(200, "<html>react not yet supported</html>")
+		default:
+			log.Error().Msgf("unknown step message type: %s", msgArgs.MessageType.String())
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+	}
 }
 
 func (q *questionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

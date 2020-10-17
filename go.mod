@@ -8,6 +8,8 @@ require (
 	github.com/aws/aws-sdk-go v1.33.7
 	github.com/davecgh/go-spew v1.1.1
 	github.com/facebook/ent v0.4.2
+	github.com/gin-contrib/logger v0.0.2
+	github.com/gin-gonic/gin v1.6.3
 	github.com/go-chi/chi v3.3.2+incompatible
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/gorilla/websocket v1.4.2
@@ -18,7 +20,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v0.9.3
 	github.com/prometheus/common v0.4.0
-	github.com/rs/cors v1.6.0
+	github.com/rs/cors v1.7.0
 	github.com/rs/xid v1.2.1
 	github.com/rs/zerolog v1.18.0
 	github.com/sirupsen/logrus v1.2.0
