@@ -10,7 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/expfmt"
-	"github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -89,7 +89,7 @@ func New(config *Config) (*Metrics, error) {
 		go func() {
 			http.Handle("/metrics", promhttp.Handler())
 			err := http.ListenAndServe(config.Addr, http.DefaultServeMux)
-			logrus.WithError(err).Error("could not start metrics HTTP server")
+			log.Error().Err(err).Msg("could not start metrics HTTP server")
 		}()
 	}
 

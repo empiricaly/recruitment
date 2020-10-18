@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/datum"
 	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
 	"github.com/empiricaly/recruitment/internal/ent/project"
@@ -40,6 +41,51 @@ func init() {
 	// admin.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	admin.IDValidator = func() func(string) error {
 		validators := adminDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+			validators[2].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	datumMixin := schema.Datum{}.Mixin()
+	datumMixinFields0 := datumMixin[0].Fields()
+	datumFields := schema.Datum{}.Fields()
+	_ = datumFields
+	// datumDescCreatedAt is the schema descriptor for created_at field.
+	datumDescCreatedAt := datumMixinFields0[1].Descriptor()
+	// datum.DefaultCreatedAt holds the default value on creation for the created_at field.
+	datum.DefaultCreatedAt = datumDescCreatedAt.Default.(func() time.Time)
+	// datumDescUpdatedAt is the schema descriptor for updated_at field.
+	datumDescUpdatedAt := datumMixinFields0[2].Descriptor()
+	// datum.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	datum.DefaultUpdatedAt = datumDescUpdatedAt.Default.(func() time.Time)
+	// datum.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	datum.UpdateDefaultUpdatedAt = datumDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// datumDescIndex is the schema descriptor for index field.
+	datumDescIndex := datumFields[2].Descriptor()
+	// datum.DefaultIndex holds the default value on creation for the index field.
+	datum.DefaultIndex = datumDescIndex.Default.(int)
+	// datumDescLatest is the schema descriptor for latest field.
+	datumDescLatest := datumFields[3].Descriptor()
+	// datum.DefaultLatest holds the default value on creation for the latest field.
+	datum.DefaultLatest = datumDescLatest.Default.(bool)
+	// datumDescVersion is the schema descriptor for version field.
+	datumDescVersion := datumFields[4].Descriptor()
+	// datum.DefaultVersion holds the default value on creation for the version field.
+	datum.DefaultVersion = datumDescVersion.Default.(int)
+	// datumDescID is the schema descriptor for id field.
+	datumDescID := datumMixinFields0[0].Descriptor()
+	// datum.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	datum.IDValidator = func() func(string) error {
+		validators := datumDescID.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),

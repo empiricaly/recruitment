@@ -391,6 +391,34 @@ func MturkWorkerIDContainsFold(v string) predicate.Participant {
 	})
 }
 
+// HasData applies the HasEdge predicate on the "data" edge.
+func HasData() predicate.Participant {
+	return predicate.Participant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DataTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, DataTable, DataColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDataWith applies the HasEdge predicate on the "data" edge with a given conditions (other predicates).
+func HasDataWith(preds ...predicate.Datum) predicate.Participant {
+	return predicate.Participant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(DataInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, DataTable, DataColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasProviderIDs applies the HasEdge predicate on the "providerIDs" edge.
 func HasProviderIDs() predicate.Participant {
 	return predicate.Participant(func(s *sql.Selector) {

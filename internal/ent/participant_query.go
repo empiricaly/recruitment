@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/empiricaly/recruitment/internal/ent/datum"
 	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
@@ -28,6 +29,7 @@ type ParticipantQuery struct {
 	unique     []string
 	predicates []predicate.Participant
 	// eager-loading edges.
+	withData           *DatumQuery
 	withProviderIDs    *ProviderIDQuery
 	withParticipations *ParticipationQuery
 	withCreatedBy      *StepRunQuery
@@ -62,6 +64,28 @@ func (pq *ParticipantQuery) Order(o ...OrderFunc) *ParticipantQuery {
 	return pq
 }
 
+// QueryData chains the current query on the data edge.
+func (pq *ParticipantQuery) QueryData() *DatumQuery {
+	query := &DatumQuery{config: pq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(participant.Table, participant.FieldID, selector),
+			sqlgraph.To(datum.Table, datum.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, participant.DataTable, participant.DataColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryProviderIDs chains the current query on the providerIDs edge.
 func (pq *ParticipantQuery) QueryProviderIDs() *ProviderIDQuery {
 	query := &ProviderIDQuery{config: pq.config}
@@ -69,8 +93,12 @@ func (pq *ParticipantQuery) QueryProviderIDs() *ProviderIDQuery {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := pq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(participant.Table, participant.FieldID, pq.sqlQuery()),
+			sqlgraph.From(participant.Table, participant.FieldID, selector),
 			sqlgraph.To(providerid.Table, providerid.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, participant.ProviderIDsTable, participant.ProviderIDsColumn),
 		)
@@ -87,8 +115,12 @@ func (pq *ParticipantQuery) QueryParticipations() *ParticipationQuery {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := pq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(participant.Table, participant.FieldID, pq.sqlQuery()),
+			sqlgraph.From(participant.Table, participant.FieldID, selector),
 			sqlgraph.To(participation.Table, participation.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, participant.ParticipationsTable, participant.ParticipationsColumn),
 		)
@@ -105,8 +137,12 @@ func (pq *ParticipantQuery) QueryCreatedBy() *StepRunQuery {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := pq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(participant.Table, participant.FieldID, pq.sqlQuery()),
+			sqlgraph.From(participant.Table, participant.FieldID, selector),
 			sqlgraph.To(steprun.Table, steprun.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, participant.CreatedByTable, participant.CreatedByColumn),
 		)
@@ -123,8 +159,12 @@ func (pq *ParticipantQuery) QuerySteps() *StepRunQuery {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := pq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(participant.Table, participant.FieldID, pq.sqlQuery()),
+			sqlgraph.From(participant.Table, participant.FieldID, selector),
 			sqlgraph.To(steprun.Table, steprun.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, participant.StepsTable, participant.StepsPrimaryKey...),
 		)
@@ -136,23 +176,23 @@ func (pq *ParticipantQuery) QuerySteps() *StepRunQuery {
 
 // First returns the first Participant entity in the query. Returns *NotFoundError when no participant was found.
 func (pq *ParticipantQuery) First(ctx context.Context) (*Participant, error) {
-	pas, err := pq.Limit(1).All(ctx)
+	nodes, err := pq.Limit(1).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(pas) == 0 {
+	if len(nodes) == 0 {
 		return nil, &NotFoundError{participant.Label}
 	}
-	return pas[0], nil
+	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
 func (pq *ParticipantQuery) FirstX(ctx context.Context) *Participant {
-	pa, err := pq.First(ctx)
+	node, err := pq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
-	return pa
+	return node
 }
 
 // FirstID returns the first Participant id in the query. Returns *NotFoundError when no id was found.
@@ -179,13 +219,13 @@ func (pq *ParticipantQuery) FirstXID(ctx context.Context) string {
 
 // Only returns the only Participant entity in the query, returns an error if not exactly one entity was returned.
 func (pq *ParticipantQuery) Only(ctx context.Context) (*Participant, error) {
-	pas, err := pq.Limit(2).All(ctx)
+	nodes, err := pq.Limit(2).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	switch len(pas) {
+	switch len(nodes) {
 	case 1:
-		return pas[0], nil
+		return nodes[0], nil
 	case 0:
 		return nil, &NotFoundError{participant.Label}
 	default:
@@ -195,11 +235,11 @@ func (pq *ParticipantQuery) Only(ctx context.Context) (*Participant, error) {
 
 // OnlyX is like Only, but panics if an error occurs.
 func (pq *ParticipantQuery) OnlyX(ctx context.Context) *Participant {
-	pa, err := pq.Only(ctx)
+	node, err := pq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pa
+	return node
 }
 
 // OnlyID returns the only Participant id in the query, returns an error if not exactly one id was returned.
@@ -238,11 +278,11 @@ func (pq *ParticipantQuery) All(ctx context.Context) ([]*Participant, error) {
 
 // AllX is like All, but panics if an error occurs.
 func (pq *ParticipantQuery) AllX(ctx context.Context) []*Participant {
-	pas, err := pq.All(ctx)
+	nodes, err := pq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pas
+	return nodes
 }
 
 // IDs executes the query and returns a list of Participant ids.
@@ -311,6 +351,17 @@ func (pq *ParticipantQuery) Clone() *ParticipantQuery {
 		sql:  pq.sql.Clone(),
 		path: pq.path,
 	}
+}
+
+//  WithData tells the query-builder to eager-loads the nodes that are connected to
+// the "data" edge. The optional arguments used to configure the query builder of the edge.
+func (pq *ParticipantQuery) WithData(opts ...func(*DatumQuery)) *ParticipantQuery {
+	query := &DatumQuery{config: pq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withData = query
+	return pq
 }
 
 //  WithProviderIDs tells the query-builder to eager-loads the nodes that are connected to
@@ -424,7 +475,8 @@ func (pq *ParticipantQuery) sqlAll(ctx context.Context) ([]*Participant, error) 
 		nodes       = []*Participant{}
 		withFKs     = pq.withFKs
 		_spec       = pq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
+			pq.withData != nil,
 			pq.withProviderIDs != nil,
 			pq.withParticipations != nil,
 			pq.withCreatedBy != nil,
@@ -459,6 +511,34 @@ func (pq *ParticipantQuery) sqlAll(ctx context.Context) ([]*Participant, error) 
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+
+	if query := pq.withData; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[string]*Participant)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+		}
+		query.withFKs = true
+		query.Where(predicate.Datum(func(s *sql.Selector) {
+			s.Where(sql.InValues(participant.DataColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.participant_data
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "participant_data" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "participant_data" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Data = append(node.Edges.Data, n)
+		}
 	}
 
 	if query := pq.withProviderIDs; query != nil {
@@ -650,7 +730,7 @@ func (pq *ParticipantQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := pq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector)
+				ps[i](selector, participant.ValidColumn)
 			}
 		}
 	}
@@ -669,7 +749,7 @@ func (pq *ParticipantQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range pq.order {
-		p(selector)
+		p(selector, participant.ValidColumn)
 	}
 	if offset := pq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -904,8 +984,17 @@ func (pgb *ParticipantGroupBy) BoolX(ctx context.Context) bool {
 }
 
 func (pgb *ParticipantGroupBy) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range pgb.fields {
+		if !participant.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
+		}
+	}
+	selector := pgb.sqlQuery()
+	if err := selector.Err(); err != nil {
+		return err
+	}
 	rows := &sql.Rows{}
-	query, args := pgb.sqlQuery().Query()
+	query, args := selector.Query()
 	if err := pgb.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
@@ -918,7 +1007,7 @@ func (pgb *ParticipantGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(pgb.fields)+len(pgb.fns))
 	columns = append(columns, pgb.fields...)
 	for _, fn := range pgb.fns {
-		columns = append(columns, fn(selector))
+		columns = append(columns, fn(selector, participant.ValidColumn))
 	}
 	return selector.Select(columns...).GroupBy(pgb.fields...)
 }
@@ -1138,6 +1227,11 @@ func (ps *ParticipantSelect) BoolX(ctx context.Context) bool {
 }
 
 func (ps *ParticipantSelect) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range ps.fields {
+		if !participant.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for selection", f)}
+		}
+	}
 	rows := &sql.Rows{}
 	query, args := ps.sqlQuery().Query()
 	if err := ps.driver.Query(ctx, query, args, rows); err != nil {

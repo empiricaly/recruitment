@@ -147,13 +147,13 @@ func (su *StepUpdate) Mutation() *StepMutation {
 	return su.mutation
 }
 
-// ClearStepRun clears the stepRun edge to StepRun.
+// ClearStepRun clears the "stepRun" edge to type StepRun.
 func (su *StepUpdate) ClearStepRun() *StepUpdate {
 	su.mutation.ClearStepRun()
 	return su
 }
 
-// ClearTemplate clears the template edge to Template.
+// ClearTemplate clears the "template" edge to type Template.
 func (su *StepUpdate) ClearTemplate() *StepUpdate {
 	su.mutation.ClearTemplate()
 	return su
@@ -161,27 +161,24 @@ func (su *StepUpdate) ClearTemplate() *StepUpdate {
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (su *StepUpdate) Save(ctx context.Context) (int, error) {
-	if _, ok := su.mutation.UpdatedAt(); !ok {
-		v := step.UpdateDefaultUpdatedAt()
-		su.mutation.SetUpdatedAt(v)
-	}
-	if v, ok := su.mutation.GetType(); ok {
-		if err := step.TypeValidator(v); err != nil {
-			return 0, &ValidationError{Name: "type", err: fmt.Errorf("ent: validator failed for field \"type\": %w", err)}
-		}
-	}
-
 	var (
 		err      error
 		affected int
 	)
+	su.defaults()
 	if len(su.hooks) == 0 {
+		if err = su.check(); err != nil {
+			return 0, err
+		}
 		affected, err = su.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*StepMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = su.check(); err != nil {
+				return 0, err
 			}
 			su.mutation = mutation
 			affected, err = su.sqlSave(ctx)
@@ -218,6 +215,24 @@ func (su *StepUpdate) ExecX(ctx context.Context) {
 	if err := su.Exec(ctx); err != nil {
 		panic(err)
 	}
+}
+
+// defaults sets the default values of the builder before save.
+func (su *StepUpdate) defaults() {
+	if _, ok := su.mutation.UpdatedAt(); !ok {
+		v := step.UpdateDefaultUpdatedAt()
+		su.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (su *StepUpdate) check() error {
+	if v, ok := su.mutation.GetType(); ok {
+		if err := step.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf("ent: validator failed for field \"type\": %w", err)}
+		}
+	}
+	return nil
 }
 
 func (su *StepUpdate) sqlSave(ctx context.Context) (n int, err error) {
@@ -524,13 +539,13 @@ func (suo *StepUpdateOne) Mutation() *StepMutation {
 	return suo.mutation
 }
 
-// ClearStepRun clears the stepRun edge to StepRun.
+// ClearStepRun clears the "stepRun" edge to type StepRun.
 func (suo *StepUpdateOne) ClearStepRun() *StepUpdateOne {
 	suo.mutation.ClearStepRun()
 	return suo
 }
 
-// ClearTemplate clears the template edge to Template.
+// ClearTemplate clears the "template" edge to type Template.
 func (suo *StepUpdateOne) ClearTemplate() *StepUpdateOne {
 	suo.mutation.ClearTemplate()
 	return suo
@@ -538,27 +553,24 @@ func (suo *StepUpdateOne) ClearTemplate() *StepUpdateOne {
 
 // Save executes the query and returns the updated entity.
 func (suo *StepUpdateOne) Save(ctx context.Context) (*Step, error) {
-	if _, ok := suo.mutation.UpdatedAt(); !ok {
-		v := step.UpdateDefaultUpdatedAt()
-		suo.mutation.SetUpdatedAt(v)
-	}
-	if v, ok := suo.mutation.GetType(); ok {
-		if err := step.TypeValidator(v); err != nil {
-			return nil, &ValidationError{Name: "type", err: fmt.Errorf("ent: validator failed for field \"type\": %w", err)}
-		}
-	}
-
 	var (
 		err  error
 		node *Step
 	)
+	suo.defaults()
 	if len(suo.hooks) == 0 {
+		if err = suo.check(); err != nil {
+			return nil, err
+		}
 		node, err = suo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*StepMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = suo.check(); err != nil {
+				return nil, err
 			}
 			suo.mutation = mutation
 			node, err = suo.sqlSave(ctx)
@@ -577,11 +589,11 @@ func (suo *StepUpdateOne) Save(ctx context.Context) (*Step, error) {
 
 // SaveX is like Save, but panics if an error occurs.
 func (suo *StepUpdateOne) SaveX(ctx context.Context) *Step {
-	s, err := suo.Save(ctx)
+	node, err := suo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return s
+	return node
 }
 
 // Exec executes the query on the entity.
@@ -597,7 +609,25 @@ func (suo *StepUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-func (suo *StepUpdateOne) sqlSave(ctx context.Context) (s *Step, err error) {
+// defaults sets the default values of the builder before save.
+func (suo *StepUpdateOne) defaults() {
+	if _, ok := suo.mutation.UpdatedAt(); !ok {
+		v := step.UpdateDefaultUpdatedAt()
+		suo.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (suo *StepUpdateOne) check() error {
+	if v, ok := suo.mutation.GetType(); ok {
+		if err := step.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf("ent: validator failed for field \"type\": %w", err)}
+		}
+	}
+	return nil
+}
+
+func (suo *StepUpdateOne) sqlSave(ctx context.Context) (_node *Step, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   step.Table,
@@ -764,9 +794,9 @@ func (suo *StepUpdateOne) sqlSave(ctx context.Context) (s *Step, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	s = &Step{config: suo.config}
-	_spec.Assign = s.assignValues
-	_spec.ScanValues = s.scanValues()
+	_node = &Step{config: suo.config}
+	_spec.Assign = _node.assignValues
+	_spec.ScanValues = _node.scanValues()
 	if err = sqlgraph.UpdateNode(ctx, suo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{step.Label}
@@ -775,5 +805,5 @@ func (suo *StepUpdateOne) sqlSave(ctx context.Context) (s *Step, err error) {
 		}
 		return nil, err
 	}
-	return s, nil
+	return _node, nil
 }

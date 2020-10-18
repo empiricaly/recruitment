@@ -22,6 +22,19 @@ func (f AdminFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return f(ctx, mv)
 }
 
+// The DatumFunc type is an adapter to allow the use of ordinary
+// function as Datum mutator.
+type DatumFunc func(context.Context, *ent.DatumMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DatumFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.DatumMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DatumMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The ParticipantFunc type is an adapter to allow the use of ordinary
 // function as Participant mutator.
 type ParticipantFunc func(context.Context, *ent.ParticipantMutation) (ent.Value, error)
@@ -220,7 +233,7 @@ func HasFields(field string, fields ...string) Condition {
 
 // If executes the given hook under condition.
 //
-//	Hook.If(ComputeAverage, And(HasFields(...), HasAddedFields(...)))
+//	hook.If(ComputeAverage, And(HasFields(...), HasAddedFields(...)))
 //
 func If(hk ent.Hook, cond Condition) ent.Hook {
 	return func(next ent.Mutator) ent.Mutator {

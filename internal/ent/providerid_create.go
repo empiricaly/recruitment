@@ -87,20 +87,24 @@ func (pic *ProviderIDCreate) Mutation() *ProviderIDMutation {
 
 // Save creates the ProviderID in the database.
 func (pic *ProviderIDCreate) Save(ctx context.Context) (*ProviderID, error) {
-	if err := pic.preSave(); err != nil {
-		return nil, err
-	}
 	var (
 		err  error
 		node *ProviderID
 	)
+	pic.defaults()
 	if len(pic.hooks) == 0 {
+		if err = pic.check(); err != nil {
+			return nil, err
+		}
 		node, err = pic.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*ProviderIDMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = pic.check(); err != nil {
+				return nil, err
 			}
 			pic.mutation = mutation
 			node, err = pic.sqlSave(ctx)
@@ -126,7 +130,8 @@ func (pic *ProviderIDCreate) SaveX(ctx context.Context) *ProviderID {
 	return v
 }
 
-func (pic *ProviderIDCreate) preSave() error {
+// defaults sets the default values of the builder before save.
+func (pic *ProviderIDCreate) defaults() {
 	if _, ok := pic.mutation.CreatedAt(); !ok {
 		v := providerid.DefaultCreatedAt()
 		pic.mutation.SetCreatedAt(v)
@@ -134,6 +139,16 @@ func (pic *ProviderIDCreate) preSave() error {
 	if _, ok := pic.mutation.UpdatedAt(); !ok {
 		v := providerid.DefaultUpdatedAt()
 		pic.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (pic *ProviderIDCreate) check() error {
+	if _, ok := pic.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+	}
+	if _, ok := pic.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New("ent: missing required field \"updated_at\"")}
 	}
 	if _, ok := pic.mutation.MturkWorkerID(); !ok {
 		return &ValidationError{Name: "mturkWorkerID", err: errors.New("ent: missing required field \"mturkWorkerID\"")}
@@ -147,19 +162,19 @@ func (pic *ProviderIDCreate) preSave() error {
 }
 
 func (pic *ProviderIDCreate) sqlSave(ctx context.Context) (*ProviderID, error) {
-	pi, _spec := pic.createSpec()
+	_node, _spec := pic.createSpec()
 	if err := sqlgraph.CreateNode(ctx, pic.driver, _spec); err != nil {
 		if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
 		}
 		return nil, err
 	}
-	return pi, nil
+	return _node, nil
 }
 
 func (pic *ProviderIDCreate) createSpec() (*ProviderID, *sqlgraph.CreateSpec) {
 	var (
-		pi    = &ProviderID{config: pic.config}
+		_node = &ProviderID{config: pic.config}
 		_spec = &sqlgraph.CreateSpec{
 			Table: providerid.Table,
 			ID: &sqlgraph.FieldSpec{
@@ -169,7 +184,7 @@ func (pic *ProviderIDCreate) createSpec() (*ProviderID, *sqlgraph.CreateSpec) {
 		}
 	)
 	if id, ok := pic.mutation.ID(); ok {
-		pi.ID = id
+		_node.ID = id
 		_spec.ID.Value = id
 	}
 	if value, ok := pic.mutation.CreatedAt(); ok {
@@ -178,7 +193,7 @@ func (pic *ProviderIDCreate) createSpec() (*ProviderID, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: providerid.FieldCreatedAt,
 		})
-		pi.CreatedAt = value
+		_node.CreatedAt = value
 	}
 	if value, ok := pic.mutation.UpdatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -186,7 +201,7 @@ func (pic *ProviderIDCreate) createSpec() (*ProviderID, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: providerid.FieldUpdatedAt,
 		})
-		pi.UpdatedAt = value
+		_node.UpdatedAt = value
 	}
 	if value, ok := pic.mutation.MturkWorkerID(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -194,7 +209,7 @@ func (pic *ProviderIDCreate) createSpec() (*ProviderID, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: providerid.FieldMturkWorkerID,
 		})
-		pi.MturkWorkerID = value
+		_node.MturkWorkerID = value
 	}
 	if nodes := pic.mutation.ParticpantIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -215,7 +230,7 @@ func (pic *ProviderIDCreate) createSpec() (*ProviderID, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	return pi, _spec
+	return _node, _spec
 }
 
 // ProviderIDCreateBulk is the builder for creating a bulk of ProviderID entities.
@@ -232,13 +247,14 @@ func (picb *ProviderIDCreateBulk) Save(ctx context.Context) ([]*ProviderID, erro
 	for i := range picb.builders {
 		func(i int, root context.Context) {
 			builder := picb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				if err := builder.preSave(); err != nil {
-					return nil, err
-				}
 				mutation, ok := m.(*ProviderIDMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
+				}
+				if err := builder.check(); err != nil {
+					return nil, err
 				}
 				builder.mutation = mutation
 				nodes[i], specs[i] = builder.createSpec()

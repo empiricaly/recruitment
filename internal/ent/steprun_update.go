@@ -217,6 +217,12 @@ func (sru *StepRunUpdate) Mutation() *StepRunMutation {
 	return sru.mutation
 }
 
+// ClearCreatedParticipants clears all "createdParticipants" edges to type Participant.
+func (sru *StepRunUpdate) ClearCreatedParticipants() *StepRunUpdate {
+	sru.mutation.ClearCreatedParticipants()
+	return sru
+}
+
 // RemoveCreatedParticipantIDs removes the createdParticipants edge to Participant by ids.
 func (sru *StepRunUpdate) RemoveCreatedParticipantIDs(ids ...string) *StepRunUpdate {
 	sru.mutation.RemoveCreatedParticipantIDs(ids...)
@@ -230,6 +236,12 @@ func (sru *StepRunUpdate) RemoveCreatedParticipants(p ...*Participant) *StepRunU
 		ids[i] = p[i].ID
 	}
 	return sru.RemoveCreatedParticipantIDs(ids...)
+}
+
+// ClearParticipants clears all "participants" edges to type Participant.
+func (sru *StepRunUpdate) ClearParticipants() *StepRunUpdate {
+	sru.mutation.ClearParticipants()
+	return sru
 }
 
 // RemoveParticipantIDs removes the participants edge to Participant by ids.
@@ -247,6 +259,12 @@ func (sru *StepRunUpdate) RemoveParticipants(p ...*Participant) *StepRunUpdate {
 	return sru.RemoveParticipantIDs(ids...)
 }
 
+// ClearParticipations clears all "participations" edges to type Participation.
+func (sru *StepRunUpdate) ClearParticipations() *StepRunUpdate {
+	sru.mutation.ClearParticipations()
+	return sru
+}
+
 // RemoveParticipationIDs removes the participations edge to Participation by ids.
 func (sru *StepRunUpdate) RemoveParticipationIDs(ids ...string) *StepRunUpdate {
 	sru.mutation.RemoveParticipationIDs(ids...)
@@ -262,13 +280,13 @@ func (sru *StepRunUpdate) RemoveParticipations(p ...*Participation) *StepRunUpda
 	return sru.RemoveParticipationIDs(ids...)
 }
 
-// ClearStep clears the step edge to Step.
+// ClearStep clears the "step" edge to type Step.
 func (sru *StepRunUpdate) ClearStep() *StepRunUpdate {
 	sru.mutation.ClearStep()
 	return sru
 }
 
-// ClearRun clears the run edge to Run.
+// ClearRun clears the "run" edge to type Run.
 func (sru *StepRunUpdate) ClearRun() *StepRunUpdate {
 	sru.mutation.ClearRun()
 	return sru
@@ -276,31 +294,24 @@ func (sru *StepRunUpdate) ClearRun() *StepRunUpdate {
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (sru *StepRunUpdate) Save(ctx context.Context) (int, error) {
-	if _, ok := sru.mutation.UpdatedAt(); !ok {
-		v := steprun.UpdateDefaultUpdatedAt()
-		sru.mutation.SetUpdatedAt(v)
-	}
-	if v, ok := sru.mutation.Status(); ok {
-		if err := steprun.StatusValidator(v); err != nil {
-			return 0, &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
-		}
-	}
-
-	if _, ok := sru.mutation.StepID(); sru.mutation.StepCleared() && !ok {
-		return 0, errors.New("ent: clearing a unique edge \"step\"")
-	}
-
 	var (
 		err      error
 		affected int
 	)
+	sru.defaults()
 	if len(sru.hooks) == 0 {
+		if err = sru.check(); err != nil {
+			return 0, err
+		}
 		affected, err = sru.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*StepRunMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = sru.check(); err != nil {
+				return 0, err
 			}
 			sru.mutation = mutation
 			affected, err = sru.sqlSave(ctx)
@@ -337,6 +348,27 @@ func (sru *StepRunUpdate) ExecX(ctx context.Context) {
 	if err := sru.Exec(ctx); err != nil {
 		panic(err)
 	}
+}
+
+// defaults sets the default values of the builder before save.
+func (sru *StepRunUpdate) defaults() {
+	if _, ok := sru.mutation.UpdatedAt(); !ok {
+		v := steprun.UpdateDefaultUpdatedAt()
+		sru.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (sru *StepRunUpdate) check() error {
+	if v, ok := sru.mutation.Status(); ok {
+		if err := steprun.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
+		}
+	}
+	if _, ok := sru.mutation.StepID(); sru.mutation.StepCleared() && !ok {
+		return errors.New("ent: clearing a required unique edge \"step\"")
+	}
+	return nil
 }
 
 func (sru *StepRunUpdate) sqlSave(ctx context.Context) (n int, err error) {
@@ -445,7 +477,23 @@ func (sru *StepRunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: steprun.FieldUrlToken,
 		})
 	}
-	if nodes := sru.mutation.RemovedCreatedParticipantsIDs(); len(nodes) > 0 {
+	if sru.mutation.CreatedParticipantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.CreatedParticipantsTable,
+			Columns: []string{steprun.CreatedParticipantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sru.mutation.RemovedCreatedParticipantsIDs(); len(nodes) > 0 && !sru.mutation.CreatedParticipantsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -483,7 +531,23 @@ func (sru *StepRunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := sru.mutation.RemovedParticipantsIDs(); len(nodes) > 0 {
+	if sru.mutation.ParticipantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   steprun.ParticipantsTable,
+			Columns: steprun.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sru.mutation.RemovedParticipantsIDs(); len(nodes) > 0 && !sru.mutation.ParticipantsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -521,7 +585,23 @@ func (sru *StepRunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := sru.mutation.RemovedParticipationsIDs(); len(nodes) > 0 {
+	if sru.mutation.ParticipationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.ParticipationsTable,
+			Columns: []string{steprun.ParticipationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participation.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sru.mutation.RemovedParticipationsIDs(); len(nodes) > 0 && !sru.mutation.ParticipationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -831,6 +911,12 @@ func (sruo *StepRunUpdateOne) Mutation() *StepRunMutation {
 	return sruo.mutation
 }
 
+// ClearCreatedParticipants clears all "createdParticipants" edges to type Participant.
+func (sruo *StepRunUpdateOne) ClearCreatedParticipants() *StepRunUpdateOne {
+	sruo.mutation.ClearCreatedParticipants()
+	return sruo
+}
+
 // RemoveCreatedParticipantIDs removes the createdParticipants edge to Participant by ids.
 func (sruo *StepRunUpdateOne) RemoveCreatedParticipantIDs(ids ...string) *StepRunUpdateOne {
 	sruo.mutation.RemoveCreatedParticipantIDs(ids...)
@@ -844,6 +930,12 @@ func (sruo *StepRunUpdateOne) RemoveCreatedParticipants(p ...*Participant) *Step
 		ids[i] = p[i].ID
 	}
 	return sruo.RemoveCreatedParticipantIDs(ids...)
+}
+
+// ClearParticipants clears all "participants" edges to type Participant.
+func (sruo *StepRunUpdateOne) ClearParticipants() *StepRunUpdateOne {
+	sruo.mutation.ClearParticipants()
+	return sruo
 }
 
 // RemoveParticipantIDs removes the participants edge to Participant by ids.
@@ -861,6 +953,12 @@ func (sruo *StepRunUpdateOne) RemoveParticipants(p ...*Participant) *StepRunUpda
 	return sruo.RemoveParticipantIDs(ids...)
 }
 
+// ClearParticipations clears all "participations" edges to type Participation.
+func (sruo *StepRunUpdateOne) ClearParticipations() *StepRunUpdateOne {
+	sruo.mutation.ClearParticipations()
+	return sruo
+}
+
 // RemoveParticipationIDs removes the participations edge to Participation by ids.
 func (sruo *StepRunUpdateOne) RemoveParticipationIDs(ids ...string) *StepRunUpdateOne {
 	sruo.mutation.RemoveParticipationIDs(ids...)
@@ -876,13 +974,13 @@ func (sruo *StepRunUpdateOne) RemoveParticipations(p ...*Participation) *StepRun
 	return sruo.RemoveParticipationIDs(ids...)
 }
 
-// ClearStep clears the step edge to Step.
+// ClearStep clears the "step" edge to type Step.
 func (sruo *StepRunUpdateOne) ClearStep() *StepRunUpdateOne {
 	sruo.mutation.ClearStep()
 	return sruo
 }
 
-// ClearRun clears the run edge to Run.
+// ClearRun clears the "run" edge to type Run.
 func (sruo *StepRunUpdateOne) ClearRun() *StepRunUpdateOne {
 	sruo.mutation.ClearRun()
 	return sruo
@@ -890,31 +988,24 @@ func (sruo *StepRunUpdateOne) ClearRun() *StepRunUpdateOne {
 
 // Save executes the query and returns the updated entity.
 func (sruo *StepRunUpdateOne) Save(ctx context.Context) (*StepRun, error) {
-	if _, ok := sruo.mutation.UpdatedAt(); !ok {
-		v := steprun.UpdateDefaultUpdatedAt()
-		sruo.mutation.SetUpdatedAt(v)
-	}
-	if v, ok := sruo.mutation.Status(); ok {
-		if err := steprun.StatusValidator(v); err != nil {
-			return nil, &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
-		}
-	}
-
-	if _, ok := sruo.mutation.StepID(); sruo.mutation.StepCleared() && !ok {
-		return nil, errors.New("ent: clearing a unique edge \"step\"")
-	}
-
 	var (
 		err  error
 		node *StepRun
 	)
+	sruo.defaults()
 	if len(sruo.hooks) == 0 {
+		if err = sruo.check(); err != nil {
+			return nil, err
+		}
 		node, err = sruo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*StepRunMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = sruo.check(); err != nil {
+				return nil, err
 			}
 			sruo.mutation = mutation
 			node, err = sruo.sqlSave(ctx)
@@ -933,11 +1024,11 @@ func (sruo *StepRunUpdateOne) Save(ctx context.Context) (*StepRun, error) {
 
 // SaveX is like Save, but panics if an error occurs.
 func (sruo *StepRunUpdateOne) SaveX(ctx context.Context) *StepRun {
-	sr, err := sruo.Save(ctx)
+	node, err := sruo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return sr
+	return node
 }
 
 // Exec executes the query on the entity.
@@ -953,7 +1044,28 @@ func (sruo *StepRunUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err error) {
+// defaults sets the default values of the builder before save.
+func (sruo *StepRunUpdateOne) defaults() {
+	if _, ok := sruo.mutation.UpdatedAt(); !ok {
+		v := steprun.UpdateDefaultUpdatedAt()
+		sruo.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (sruo *StepRunUpdateOne) check() error {
+	if v, ok := sruo.mutation.Status(); ok {
+		if err := steprun.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
+		}
+	}
+	if _, ok := sruo.mutation.StepID(); sruo.mutation.StepCleared() && !ok {
+		return errors.New("ent: clearing a required unique edge \"step\"")
+	}
+	return nil
+}
+
+func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (_node *StepRun, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   steprun.Table,
@@ -1057,7 +1169,23 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 			Column: steprun.FieldUrlToken,
 		})
 	}
-	if nodes := sruo.mutation.RemovedCreatedParticipantsIDs(); len(nodes) > 0 {
+	if sruo.mutation.CreatedParticipantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.CreatedParticipantsTable,
+			Columns: []string{steprun.CreatedParticipantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sruo.mutation.RemovedCreatedParticipantsIDs(); len(nodes) > 0 && !sruo.mutation.CreatedParticipantsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1095,7 +1223,23 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := sruo.mutation.RemovedParticipantsIDs(); len(nodes) > 0 {
+	if sruo.mutation.ParticipantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   steprun.ParticipantsTable,
+			Columns: steprun.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sruo.mutation.RemovedParticipantsIDs(); len(nodes) > 0 && !sruo.mutation.ParticipantsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
@@ -1133,7 +1277,23 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := sruo.mutation.RemovedParticipationsIDs(); len(nodes) > 0 {
+	if sruo.mutation.ParticipationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   steprun.ParticipationsTable,
+			Columns: []string{steprun.ParticipationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participation.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := sruo.mutation.RemovedParticipationsIDs(); len(nodes) > 0 && !sruo.mutation.ParticipationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1241,9 +1401,9 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	sr = &StepRun{config: sruo.config}
-	_spec.Assign = sr.assignValues
-	_spec.ScanValues = sr.scanValues()
+	_node = &StepRun{config: sruo.config}
+	_spec.Assign = _node.assignValues
+	_spec.ScanValues = _node.scanValues()
 	if err = sqlgraph.UpdateNode(ctx, sruo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{steprun.Label}
@@ -1252,5 +1412,5 @@ func (sruo *StepRunUpdateOne) sqlSave(ctx context.Context) (sr *StepRun, err err
 		}
 		return nil, err
 	}
-	return sr, nil
+	return _node, nil
 }

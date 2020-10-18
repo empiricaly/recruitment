@@ -109,13 +109,13 @@ func (pu *ParticipationUpdate) Mutation() *ParticipationMutation {
 	return pu.mutation
 }
 
-// ClearStepRun clears the stepRun edge to StepRun.
+// ClearStepRun clears the "stepRun" edge to type StepRun.
 func (pu *ParticipationUpdate) ClearStepRun() *ParticipationUpdate {
 	pu.mutation.ClearStepRun()
 	return pu
 }
 
-// ClearParticipant clears the participant edge to Participant.
+// ClearParticipant clears the "participant" edge to type Participant.
 func (pu *ParticipationUpdate) ClearParticipant() *ParticipationUpdate {
 	pu.mutation.ClearParticipant()
 	return pu
@@ -123,15 +123,11 @@ func (pu *ParticipationUpdate) ClearParticipant() *ParticipationUpdate {
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (pu *ParticipationUpdate) Save(ctx context.Context) (int, error) {
-	if _, ok := pu.mutation.UpdatedAt(); !ok {
-		v := participation.UpdateDefaultUpdatedAt()
-		pu.mutation.SetUpdatedAt(v)
-	}
-
 	var (
 		err      error
 		affected int
 	)
+	pu.defaults()
 	if len(pu.hooks) == 0 {
 		affected, err = pu.sqlSave(ctx)
 	} else {
@@ -174,6 +170,14 @@ func (pu *ParticipationUpdate) Exec(ctx context.Context) error {
 func (pu *ParticipationUpdate) ExecX(ctx context.Context) {
 	if err := pu.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (pu *ParticipationUpdate) defaults() {
+	if _, ok := pu.mutation.UpdatedAt(); !ok {
+		v := participation.UpdateDefaultUpdatedAt()
+		pu.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -404,13 +408,13 @@ func (puo *ParticipationUpdateOne) Mutation() *ParticipationMutation {
 	return puo.mutation
 }
 
-// ClearStepRun clears the stepRun edge to StepRun.
+// ClearStepRun clears the "stepRun" edge to type StepRun.
 func (puo *ParticipationUpdateOne) ClearStepRun() *ParticipationUpdateOne {
 	puo.mutation.ClearStepRun()
 	return puo
 }
 
-// ClearParticipant clears the participant edge to Participant.
+// ClearParticipant clears the "participant" edge to type Participant.
 func (puo *ParticipationUpdateOne) ClearParticipant() *ParticipationUpdateOne {
 	puo.mutation.ClearParticipant()
 	return puo
@@ -418,15 +422,11 @@ func (puo *ParticipationUpdateOne) ClearParticipant() *ParticipationUpdateOne {
 
 // Save executes the query and returns the updated entity.
 func (puo *ParticipationUpdateOne) Save(ctx context.Context) (*Participation, error) {
-	if _, ok := puo.mutation.UpdatedAt(); !ok {
-		v := participation.UpdateDefaultUpdatedAt()
-		puo.mutation.SetUpdatedAt(v)
-	}
-
 	var (
 		err  error
 		node *Participation
 	)
+	puo.defaults()
 	if len(puo.hooks) == 0 {
 		node, err = puo.sqlSave(ctx)
 	} else {
@@ -452,11 +452,11 @@ func (puo *ParticipationUpdateOne) Save(ctx context.Context) (*Participation, er
 
 // SaveX is like Save, but panics if an error occurs.
 func (puo *ParticipationUpdateOne) SaveX(ctx context.Context) *Participation {
-	pa, err := puo.Save(ctx)
+	node, err := puo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pa
+	return node
 }
 
 // Exec executes the query on the entity.
@@ -472,7 +472,15 @@ func (puo *ParticipationUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-func (puo *ParticipationUpdateOne) sqlSave(ctx context.Context) (pa *Participation, err error) {
+// defaults sets the default values of the builder before save.
+func (puo *ParticipationUpdateOne) defaults() {
+	if _, ok := puo.mutation.UpdatedAt(); !ok {
+		v := participation.UpdateDefaultUpdatedAt()
+		puo.mutation.SetUpdatedAt(v)
+	}
+}
+
+func (puo *ParticipationUpdateOne) sqlSave(ctx context.Context) (_node *Participation, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   participation.Table,
@@ -600,9 +608,9 @@ func (puo *ParticipationUpdateOne) sqlSave(ctx context.Context) (pa *Participati
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	pa = &Participation{config: puo.config}
-	_spec.Assign = pa.assignValues
-	_spec.ScanValues = pa.scanValues()
+	_node = &Participation{config: puo.config}
+	_spec.Assign = _node.assignValues
+	_spec.ScanValues = _node.scanValues()
 	if err = sqlgraph.UpdateNode(ctx, puo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{participation.Label}
@@ -611,5 +619,5 @@ func (puo *ParticipationUpdateOne) sqlSave(ctx context.Context) (pa *Participati
 		}
 		return nil, err
 	}
-	return pa, nil
+	return _node, nil
 }

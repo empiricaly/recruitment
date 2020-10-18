@@ -18,6 +18,8 @@ const (
 	// FieldMturkWorkerID holds the string denoting the mturkworkerid field in the database.
 	FieldMturkWorkerID = "mturk_worker_id"
 
+	// EdgeData holds the string denoting the data edge name in mutations.
+	EdgeData = "data"
 	// EdgeProviderIDs holds the string denoting the providerids edge name in mutations.
 	EdgeProviderIDs = "providerIDs"
 	// EdgeParticipations holds the string denoting the participations edge name in mutations.
@@ -29,6 +31,13 @@ const (
 
 	// Table holds the table name of the participant in the database.
 	Table = "participants"
+	// DataTable is the table the holds the data relation/edge.
+	DataTable = "data"
+	// DataInverseTable is the table name for the Datum entity.
+	// It exists in this package in order to avoid circular dependency with the "datum" package.
+	DataInverseTable = "data"
+	// DataColumn is the table column denoting the data relation/edge.
+	DataColumn = "participant_data"
 	// ProviderIDsTable is the table the holds the providerIDs relation/edge.
 	ProviderIDsTable = "provider_ids"
 	// ProviderIDsInverseTable is the table name for the ProviderID entity.
@@ -75,6 +84,21 @@ var (
 	// primary key for the steps relation (M2M).
 	StepsPrimaryKey = []string{"step_run_id", "participant_id"}
 )
+
+// ValidColumn reports if the column name is valid (part of the table columns).
+func ValidColumn(column string) bool {
+	for i := range Columns {
+		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
+			return true
+		}
+	}
+	return false
+}
 
 var (
 	// DefaultCreatedAt holds the default value on creation for the created_at field.

@@ -792,19 +792,14 @@ type Datum {
   val: JSON
 
   """
-  next returns the Datum ID of the next value in an array of Datum values.
+  index of the Datum in multi-value Data.
   """
-  next: ID
-
-  """
-  root returns the Datum ID of the root value in an array of Datum values.
-  """
-  root: ID
+  index: Int
 
   """
   versions returns previous versions for the Datum (they all have the same ID).
   """
-  versions: [Datum!]!
+  versions: [Datum!]! @goField(forceResolver: true)
 }
 
 """
@@ -838,9 +833,10 @@ type Participant {
   providerIDs: [ProviderID!]!
 
   """
-  Data returns the custom data that has been set on the Participant.
+  Data returns the custom data that has been set on the Participant. Can be
+  filtered to specific keys. It can also be configured to return deleted keys.
   """
-  data(keys: [String!]): [Datum!]!
+  data(keys: [String!], deleted: Boolean): [Datum!]!
 }
 
 """

@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Admin is the client for interacting with the Admin builders.
 	Admin *AdminClient
+	// Datum is the client for interacting with the Datum builders.
+	Datum *DatumClient
 	// Participant is the client for interacting with the Participant builders.
 	Participant *ParticipantClient
 	// Participation is the client for interacting with the Participation builders.
@@ -166,6 +168,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Admin = NewAdminClient(tx.config)
+	tx.Datum = NewDatumClient(tx.config)
 	tx.Participant = NewParticipantClient(tx.config)
 	tx.Participation = NewParticipationClient(tx.config)
 	tx.Project = NewProjectClient(tx.config)

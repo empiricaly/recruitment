@@ -206,20 +206,24 @@ func (src *StepRunCreate) Mutation() *StepRunMutation {
 
 // Save creates the StepRun in the database.
 func (src *StepRunCreate) Save(ctx context.Context) (*StepRun, error) {
-	if err := src.preSave(); err != nil {
-		return nil, err
-	}
 	var (
 		err  error
 		node *StepRun
 	)
+	src.defaults()
 	if len(src.hooks) == 0 {
+		if err = src.check(); err != nil {
+			return nil, err
+		}
 		node, err = src.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*StepRunMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = src.check(); err != nil {
+				return nil, err
 			}
 			src.mutation = mutation
 			node, err = src.sqlSave(ctx)
@@ -245,7 +249,8 @@ func (src *StepRunCreate) SaveX(ctx context.Context) *StepRun {
 	return v
 }
 
-func (src *StepRunCreate) preSave() error {
+// defaults sets the default values of the builder before save.
+func (src *StepRunCreate) defaults() {
 	if _, ok := src.mutation.CreatedAt(); !ok {
 		v := steprun.DefaultCreatedAt()
 		src.mutation.SetCreatedAt(v)
@@ -253,6 +258,16 @@ func (src *StepRunCreate) preSave() error {
 	if _, ok := src.mutation.UpdatedAt(); !ok {
 		v := steprun.DefaultUpdatedAt()
 		src.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (src *StepRunCreate) check() error {
+	if _, ok := src.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+	}
+	if _, ok := src.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New("ent: missing required field \"updated_at\"")}
 	}
 	if _, ok := src.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New("ent: missing required field \"status\"")}
@@ -283,19 +298,19 @@ func (src *StepRunCreate) preSave() error {
 }
 
 func (src *StepRunCreate) sqlSave(ctx context.Context) (*StepRun, error) {
-	sr, _spec := src.createSpec()
+	_node, _spec := src.createSpec()
 	if err := sqlgraph.CreateNode(ctx, src.driver, _spec); err != nil {
 		if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
 		}
 		return nil, err
 	}
-	return sr, nil
+	return _node, nil
 }
 
 func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 	var (
-		sr    = &StepRun{config: src.config}
+		_node = &StepRun{config: src.config}
 		_spec = &sqlgraph.CreateSpec{
 			Table: steprun.Table,
 			ID: &sqlgraph.FieldSpec{
@@ -305,7 +320,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 		}
 	)
 	if id, ok := src.mutation.ID(); ok {
-		sr.ID = id
+		_node.ID = id
 		_spec.ID.Value = id
 	}
 	if value, ok := src.mutation.CreatedAt(); ok {
@@ -314,7 +329,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: steprun.FieldCreatedAt,
 		})
-		sr.CreatedAt = value
+		_node.CreatedAt = value
 	}
 	if value, ok := src.mutation.UpdatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -322,7 +337,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: steprun.FieldUpdatedAt,
 		})
-		sr.UpdatedAt = value
+		_node.UpdatedAt = value
 	}
 	if value, ok := src.mutation.Status(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -330,7 +345,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: steprun.FieldStatus,
 		})
-		sr.Status = value
+		_node.Status = value
 	}
 	if value, ok := src.mutation.StartedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -338,7 +353,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: steprun.FieldStartedAt,
 		})
-		sr.StartedAt = &value
+		_node.StartedAt = &value
 	}
 	if value, ok := src.mutation.EndedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -346,7 +361,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: steprun.FieldEndedAt,
 		})
-		sr.EndedAt = &value
+		_node.EndedAt = &value
 	}
 	if value, ok := src.mutation.Index(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -354,7 +369,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: steprun.FieldIndex,
 		})
-		sr.Index = value
+		_node.Index = value
 	}
 	if value, ok := src.mutation.ParticipantsCount(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -362,7 +377,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: steprun.FieldParticipantsCount,
 		})
-		sr.ParticipantsCount = value
+		_node.ParticipantsCount = value
 	}
 	if value, ok := src.mutation.HitID(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -370,7 +385,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: steprun.FieldHitID,
 		})
-		sr.HitID = &value
+		_node.HitID = &value
 	}
 	if value, ok := src.mutation.UrlToken(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -378,7 +393,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: steprun.FieldUrlToken,
 		})
-		sr.UrlToken = value
+		_node.UrlToken = value
 	}
 	if nodes := src.mutation.CreatedParticipantsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -475,7 +490,7 @@ func (src *StepRunCreate) createSpec() (*StepRun, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	return sr, _spec
+	return _node, _spec
 }
 
 // StepRunCreateBulk is the builder for creating a bulk of StepRun entities.
@@ -492,13 +507,14 @@ func (srcb *StepRunCreateBulk) Save(ctx context.Context) ([]*StepRun, error) {
 	for i := range srcb.builders {
 		func(i int, root context.Context) {
 			builder := srcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				if err := builder.preSave(); err != nil {
-					return nil, err
-				}
 				mutation, ok := m.(*StepRunMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
+				}
+				if err := builder.check(); err != nil {
+					return nil, err
 				}
 				builder.mutation = mutation
 				nodes[i], specs[i] = builder.createSpec()

@@ -4,9 +4,11 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/empiricaly/recruitment/internal/ent/datum"
 	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
 	"github.com/empiricaly/recruitment/internal/ent/providerid"
@@ -68,6 +70,21 @@ func (pc *ParticipantCreate) SetNillableMturkWorkerID(s *string) *ParticipantCre
 func (pc *ParticipantCreate) SetID(s string) *ParticipantCreate {
 	pc.mutation.SetID(s)
 	return pc
+}
+
+// AddDatumIDs adds the data edge to Datum by ids.
+func (pc *ParticipantCreate) AddDatumIDs(ids ...string) *ParticipantCreate {
+	pc.mutation.AddDatumIDs(ids...)
+	return pc
+}
+
+// AddData adds the data edges to Datum.
+func (pc *ParticipantCreate) AddData(d ...*Datum) *ParticipantCreate {
+	ids := make([]string, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return pc.AddDatumIDs(ids...)
 }
 
 // AddProviderIDIDs adds the providerIDs edge to ProviderID by ids.
@@ -141,20 +158,24 @@ func (pc *ParticipantCreate) Mutation() *ParticipantMutation {
 
 // Save creates the Participant in the database.
 func (pc *ParticipantCreate) Save(ctx context.Context) (*Participant, error) {
-	if err := pc.preSave(); err != nil {
-		return nil, err
-	}
 	var (
 		err  error
 		node *Participant
 	)
+	pc.defaults()
 	if len(pc.hooks) == 0 {
+		if err = pc.check(); err != nil {
+			return nil, err
+		}
 		node, err = pc.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*ParticipantMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = pc.check(); err != nil {
+				return nil, err
 			}
 			pc.mutation = mutation
 			node, err = pc.sqlSave(ctx)
@@ -180,7 +201,8 @@ func (pc *ParticipantCreate) SaveX(ctx context.Context) *Participant {
 	return v
 }
 
-func (pc *ParticipantCreate) preSave() error {
+// defaults sets the default values of the builder before save.
+func (pc *ParticipantCreate) defaults() {
 	if _, ok := pc.mutation.CreatedAt(); !ok {
 		v := participant.DefaultCreatedAt()
 		pc.mutation.SetCreatedAt(v)
@@ -188,6 +210,16 @@ func (pc *ParticipantCreate) preSave() error {
 	if _, ok := pc.mutation.UpdatedAt(); !ok {
 		v := participant.DefaultUpdatedAt()
 		pc.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (pc *ParticipantCreate) check() error {
+	if _, ok := pc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+	}
+	if _, ok := pc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New("ent: missing required field \"updated_at\"")}
 	}
 	if v, ok := pc.mutation.ID(); ok {
 		if err := participant.IDValidator(v); err != nil {
@@ -198,19 +230,19 @@ func (pc *ParticipantCreate) preSave() error {
 }
 
 func (pc *ParticipantCreate) sqlSave(ctx context.Context) (*Participant, error) {
-	pa, _spec := pc.createSpec()
+	_node, _spec := pc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, pc.driver, _spec); err != nil {
 		if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
 		}
 		return nil, err
 	}
-	return pa, nil
+	return _node, nil
 }
 
 func (pc *ParticipantCreate) createSpec() (*Participant, *sqlgraph.CreateSpec) {
 	var (
-		pa    = &Participant{config: pc.config}
+		_node = &Participant{config: pc.config}
 		_spec = &sqlgraph.CreateSpec{
 			Table: participant.Table,
 			ID: &sqlgraph.FieldSpec{
@@ -220,7 +252,7 @@ func (pc *ParticipantCreate) createSpec() (*Participant, *sqlgraph.CreateSpec) {
 		}
 	)
 	if id, ok := pc.mutation.ID(); ok {
-		pa.ID = id
+		_node.ID = id
 		_spec.ID.Value = id
 	}
 	if value, ok := pc.mutation.CreatedAt(); ok {
@@ -229,7 +261,7 @@ func (pc *ParticipantCreate) createSpec() (*Participant, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: participant.FieldCreatedAt,
 		})
-		pa.CreatedAt = value
+		_node.CreatedAt = value
 	}
 	if value, ok := pc.mutation.UpdatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -237,7 +269,7 @@ func (pc *ParticipantCreate) createSpec() (*Participant, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: participant.FieldUpdatedAt,
 		})
-		pa.UpdatedAt = value
+		_node.UpdatedAt = value
 	}
 	if value, ok := pc.mutation.MturkWorkerID(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -245,7 +277,26 @@ func (pc *ParticipantCreate) createSpec() (*Participant, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: participant.FieldMturkWorkerID,
 		})
-		pa.MturkWorkerID = &value
+		_node.MturkWorkerID = &value
+	}
+	if nodes := pc.mutation.DataIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   participant.DataTable,
+			Columns: []string{participant.DataColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: datum.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := pc.mutation.ProviderIDsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -323,7 +374,7 @@ func (pc *ParticipantCreate) createSpec() (*Participant, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	return pa, _spec
+	return _node, _spec
 }
 
 // ParticipantCreateBulk is the builder for creating a bulk of Participant entities.
@@ -340,13 +391,14 @@ func (pcb *ParticipantCreateBulk) Save(ctx context.Context) ([]*Participant, err
 	for i := range pcb.builders {
 		func(i int, root context.Context) {
 			builder := pcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				if err := builder.preSave(); err != nil {
-					return nil, err
-				}
 				mutation, ok := m.(*ParticipantMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
+				}
+				if err := builder.check(); err != nil {
+					return nil, err
 				}
 				builder.mutation = mutation
 				nodes[i], specs[i] = builder.createSpec()

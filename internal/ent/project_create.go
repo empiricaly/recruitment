@@ -125,20 +125,24 @@ func (pc *ProjectCreate) Mutation() *ProjectMutation {
 
 // Save creates the Project in the database.
 func (pc *ProjectCreate) Save(ctx context.Context) (*Project, error) {
-	if err := pc.preSave(); err != nil {
-		return nil, err
-	}
 	var (
 		err  error
 		node *Project
 	)
+	pc.defaults()
 	if len(pc.hooks) == 0 {
+		if err = pc.check(); err != nil {
+			return nil, err
+		}
 		node, err = pc.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*ProjectMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = pc.check(); err != nil {
+				return nil, err
 			}
 			pc.mutation = mutation
 			node, err = pc.sqlSave(ctx)
@@ -164,7 +168,8 @@ func (pc *ProjectCreate) SaveX(ctx context.Context) *Project {
 	return v
 }
 
-func (pc *ProjectCreate) preSave() error {
+// defaults sets the default values of the builder before save.
+func (pc *ProjectCreate) defaults() {
 	if _, ok := pc.mutation.CreatedAt(); !ok {
 		v := project.DefaultCreatedAt()
 		pc.mutation.SetCreatedAt(v)
@@ -172,6 +177,16 @@ func (pc *ProjectCreate) preSave() error {
 	if _, ok := pc.mutation.UpdatedAt(); !ok {
 		v := project.DefaultUpdatedAt()
 		pc.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (pc *ProjectCreate) check() error {
+	if _, ok := pc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+	}
+	if _, ok := pc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New("ent: missing required field \"updated_at\"")}
 	}
 	if _, ok := pc.mutation.ProjectID(); !ok {
 		return &ValidationError{Name: "projectID", err: errors.New("ent: missing required field \"projectID\"")}
@@ -188,19 +203,19 @@ func (pc *ProjectCreate) preSave() error {
 }
 
 func (pc *ProjectCreate) sqlSave(ctx context.Context) (*Project, error) {
-	pr, _spec := pc.createSpec()
+	_node, _spec := pc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, pc.driver, _spec); err != nil {
 		if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
 		}
 		return nil, err
 	}
-	return pr, nil
+	return _node, nil
 }
 
 func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 	var (
-		pr    = &Project{config: pc.config}
+		_node = &Project{config: pc.config}
 		_spec = &sqlgraph.CreateSpec{
 			Table: project.Table,
 			ID: &sqlgraph.FieldSpec{
@@ -210,7 +225,7 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 		}
 	)
 	if id, ok := pc.mutation.ID(); ok {
-		pr.ID = id
+		_node.ID = id
 		_spec.ID.Value = id
 	}
 	if value, ok := pc.mutation.CreatedAt(); ok {
@@ -219,7 +234,7 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: project.FieldCreatedAt,
 		})
-		pr.CreatedAt = value
+		_node.CreatedAt = value
 	}
 	if value, ok := pc.mutation.UpdatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -227,7 +242,7 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: project.FieldUpdatedAt,
 		})
-		pr.UpdatedAt = value
+		_node.UpdatedAt = value
 	}
 	if value, ok := pc.mutation.ProjectID(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -235,7 +250,7 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: project.FieldProjectID,
 		})
-		pr.ProjectID = value
+		_node.ProjectID = value
 	}
 	if value, ok := pc.mutation.Name(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -243,7 +258,7 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: project.FieldName,
 		})
-		pr.Name = value
+		_node.Name = value
 	}
 	if nodes := pc.mutation.RunsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -302,7 +317,7 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	return pr, _spec
+	return _node, _spec
 }
 
 // ProjectCreateBulk is the builder for creating a bulk of Project entities.
@@ -319,13 +334,14 @@ func (pcb *ProjectCreateBulk) Save(ctx context.Context) ([]*Project, error) {
 	for i := range pcb.builders {
 		func(i int, root context.Context) {
 			builder := pcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				if err := builder.preSave(); err != nil {
-					return nil, err
-				}
 				mutation, ok := m.(*ProjectMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
+				}
+				if err := builder.check(); err != nil {
+					return nil, err
 				}
 				builder.mutation = mutation
 				nodes[i], specs[i] = builder.createSpec()

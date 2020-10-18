@@ -10,6 +10,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/migrate"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/datum"
 	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
 	"github.com/empiricaly/recruitment/internal/ent/project"
@@ -31,6 +32,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// Admin is the client for interacting with the Admin builders.
 	Admin *AdminClient
+	// Datum is the client for interacting with the Datum builders.
+	Datum *DatumClient
 	// Participant is the client for interacting with the Participant builders.
 	Participant *ParticipantClient
 	// Participation is the client for interacting with the Participation builders.
@@ -61,6 +64,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Admin = NewAdminClient(c.config)
+	c.Datum = NewDatumClient(c.config)
 	c.Participant = NewParticipantClient(c.config)
 	c.Participation = NewParticipationClient(c.config)
 	c.Project = NewProjectClient(c.config)
@@ -102,6 +106,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:           ctx,
 		config:        cfg,
 		Admin:         NewAdminClient(cfg),
+		Datum:         NewDatumClient(cfg),
 		Participant:   NewParticipantClient(cfg),
 		Participation: NewParticipationClient(cfg),
 		Project:       NewProjectClient(cfg),
@@ -126,6 +131,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		config:        cfg,
 		Admin:         NewAdminClient(cfg),
+		Datum:         NewDatumClient(cfg),
 		Participant:   NewParticipantClient(cfg),
 		Participation: NewParticipationClient(cfg),
 		Project:       NewProjectClient(cfg),
@@ -163,6 +169,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Admin.Use(hooks...)
+	c.Datum.Use(hooks...)
 	c.Participant.Use(hooks...)
 	c.Participation.Use(hooks...)
 	c.Project.Use(hooks...)
@@ -249,11 +256,11 @@ func (c *AdminClient) Get(ctx context.Context, id string) (*Admin, error) {
 
 // GetX is like Get, but panics if an error occurs.
 func (c *AdminClient) GetX(ctx context.Context, id string) *Admin {
-	a, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return a
+	return obj
 }
 
 // QueryProjects queries the projects edge of a Admin.
@@ -291,6 +298,110 @@ func (c *AdminClient) QueryTemplates(a *Admin) *TemplateQuery {
 // Hooks returns the client hooks.
 func (c *AdminClient) Hooks() []Hook {
 	return c.hooks.Admin
+}
+
+// DatumClient is a client for the Datum schema.
+type DatumClient struct {
+	config
+}
+
+// NewDatumClient returns a client for the Datum from the given config.
+func NewDatumClient(c config) *DatumClient {
+	return &DatumClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `datum.Hooks(f(g(h())))`.
+func (c *DatumClient) Use(hooks ...Hook) {
+	c.hooks.Datum = append(c.hooks.Datum, hooks...)
+}
+
+// Create returns a create builder for Datum.
+func (c *DatumClient) Create() *DatumCreate {
+	mutation := newDatumMutation(c.config, OpCreate)
+	return &DatumCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// BulkCreate returns a builder for creating a bulk of Datum entities.
+func (c *DatumClient) CreateBulk(builders ...*DatumCreate) *DatumCreateBulk {
+	return &DatumCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Datum.
+func (c *DatumClient) Update() *DatumUpdate {
+	mutation := newDatumMutation(c.config, OpUpdate)
+	return &DatumUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DatumClient) UpdateOne(d *Datum) *DatumUpdateOne {
+	mutation := newDatumMutation(c.config, OpUpdateOne, withDatum(d))
+	return &DatumUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DatumClient) UpdateOneID(id string) *DatumUpdateOne {
+	mutation := newDatumMutation(c.config, OpUpdateOne, withDatumID(id))
+	return &DatumUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Datum.
+func (c *DatumClient) Delete() *DatumDelete {
+	mutation := newDatumMutation(c.config, OpDelete)
+	return &DatumDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *DatumClient) DeleteOne(d *Datum) *DatumDeleteOne {
+	return c.DeleteOneID(d.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *DatumClient) DeleteOneID(id string) *DatumDeleteOne {
+	builder := c.Delete().Where(datum.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DatumDeleteOne{builder}
+}
+
+// Query returns a query builder for Datum.
+func (c *DatumClient) Query() *DatumQuery {
+	return &DatumQuery{config: c.config}
+}
+
+// Get returns a Datum entity by its id.
+func (c *DatumClient) Get(ctx context.Context, id string) (*Datum, error) {
+	return c.Query().Where(datum.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DatumClient) GetX(ctx context.Context, id string) *Datum {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryParticipant queries the participant edge of a Datum.
+func (c *DatumClient) QueryParticipant(d *Datum) *ParticipantQuery {
+	query := &ParticipantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := d.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(datum.Table, datum.FieldID, id),
+			sqlgraph.To(participant.Table, participant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, datum.ParticipantTable, datum.ParticipantColumn),
+		)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *DatumClient) Hooks() []Hook {
+	return c.hooks.Datum
 }
 
 // ParticipantClient is a client for the Participant schema.
@@ -369,11 +480,27 @@ func (c *ParticipantClient) Get(ctx context.Context, id string) (*Participant, e
 
 // GetX is like Get, but panics if an error occurs.
 func (c *ParticipantClient) GetX(ctx context.Context, id string) *Participant {
-	pa, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return pa
+	return obj
+}
+
+// QueryData queries the data edge of a Participant.
+func (c *ParticipantClient) QueryData(pa *Participant) *DatumQuery {
+	query := &DatumQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(participant.Table, participant.FieldID, id),
+			sqlgraph.To(datum.Table, datum.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, participant.DataTable, participant.DataColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryProviderIDs queries the providerIDs edge of a Participant.
@@ -521,11 +648,11 @@ func (c *ParticipationClient) Get(ctx context.Context, id string) (*Participatio
 
 // GetX is like Get, but panics if an error occurs.
 func (c *ParticipationClient) GetX(ctx context.Context, id string) *Participation {
-	pa, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return pa
+	return obj
 }
 
 // QueryStepRun queries the stepRun edge of a Participation.
@@ -641,11 +768,11 @@ func (c *ProjectClient) Get(ctx context.Context, id string) (*Project, error) {
 
 // GetX is like Get, but panics if an error occurs.
 func (c *ProjectClient) GetX(ctx context.Context, id string) *Project {
-	pr, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return pr
+	return obj
 }
 
 // QueryRuns queries the runs edge of a Project.
@@ -777,11 +904,11 @@ func (c *ProviderIDClient) Get(ctx context.Context, id string) (*ProviderID, err
 
 // GetX is like Get, but panics if an error occurs.
 func (c *ProviderIDClient) GetX(ctx context.Context, id string) *ProviderID {
-	pi, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return pi
+	return obj
 }
 
 // QueryParticpant queries the particpant edge of a ProviderID.
@@ -881,11 +1008,11 @@ func (c *RunClient) Get(ctx context.Context, id string) (*Run, error) {
 
 // GetX is like Get, but panics if an error occurs.
 func (c *RunClient) GetX(ctx context.Context, id string) *Run {
-	r, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return r
+	return obj
 }
 
 // QueryProject queries the project edge of a Run.
@@ -1033,11 +1160,11 @@ func (c *StepClient) Get(ctx context.Context, id string) (*Step, error) {
 
 // GetX is like Get, but panics if an error occurs.
 func (c *StepClient) GetX(ctx context.Context, id string) *Step {
-	s, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return s
+	return obj
 }
 
 // QueryStepRun queries the stepRun edge of a Step.
@@ -1153,11 +1280,11 @@ func (c *StepRunClient) Get(ctx context.Context, id string) (*StepRun, error) {
 
 // GetX is like Get, but panics if an error occurs.
 func (c *StepRunClient) GetX(ctx context.Context, id string) *StepRun {
-	sr, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return sr
+	return obj
 }
 
 // QueryCreatedParticipants queries the createdParticipants edge of a StepRun.
@@ -1321,11 +1448,11 @@ func (c *TemplateClient) Get(ctx context.Context, id string) (*Template, error) 
 
 // GetX is like Get, but panics if an error occurs.
 func (c *TemplateClient) GetX(ctx context.Context, id string) *Template {
-	t, err := c.Get(ctx, id)
+	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
-	return t
+	return obj
 }
 
 // QuerySteps queries the steps edge of a Template.

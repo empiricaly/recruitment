@@ -28,6 +28,7 @@ func (Participant) Fields() []ent.Field {
 // Edges of the Participant.
 func (Participant) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.To("data", Datum.Type),
 		edge.To("providerIDs", ProviderID.Type),
 		edge.To("participations", Participation.Type),
 		edge.From("createdBy", StepRun.Type).

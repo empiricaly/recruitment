@@ -203,20 +203,24 @@ func (tc *TemplateCreate) Mutation() *TemplateMutation {
 
 // Save creates the Template in the database.
 func (tc *TemplateCreate) Save(ctx context.Context) (*Template, error) {
-	if err := tc.preSave(); err != nil {
-		return nil, err
-	}
 	var (
 		err  error
 		node *Template
 	)
+	tc.defaults()
 	if len(tc.hooks) == 0 {
+		if err = tc.check(); err != nil {
+			return nil, err
+		}
 		node, err = tc.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*TemplateMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = tc.check(); err != nil {
+				return nil, err
 			}
 			tc.mutation = mutation
 			node, err = tc.sqlSave(ctx)
@@ -242,7 +246,8 @@ func (tc *TemplateCreate) SaveX(ctx context.Context) *Template {
 	return v
 }
 
-func (tc *TemplateCreate) preSave() error {
+// defaults sets the default values of the builder before save.
+func (tc *TemplateCreate) defaults() {
 	if _, ok := tc.mutation.CreatedAt(); !ok {
 		v := template.DefaultCreatedAt()
 		tc.mutation.SetCreatedAt(v)
@@ -250,6 +255,28 @@ func (tc *TemplateCreate) preSave() error {
 	if _, ok := tc.mutation.UpdatedAt(); !ok {
 		v := template.DefaultUpdatedAt()
 		tc.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := tc.mutation.ParticipantCount(); !ok {
+		v := template.DefaultParticipantCount
+		tc.mutation.SetParticipantCount(v)
+	}
+	if _, ok := tc.mutation.Adult(); !ok {
+		v := template.DefaultAdult
+		tc.mutation.SetAdult(v)
+	}
+	if _, ok := tc.mutation.Sandbox(); !ok {
+		v := template.DefaultSandbox
+		tc.mutation.SetSandbox(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (tc *TemplateCreate) check() error {
+	if _, ok := tc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+	}
+	if _, ok := tc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New("ent: missing required field \"updated_at\"")}
 	}
 	if _, ok := tc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
@@ -268,8 +295,7 @@ func (tc *TemplateCreate) preSave() error {
 		}
 	}
 	if _, ok := tc.mutation.ParticipantCount(); !ok {
-		v := template.DefaultParticipantCount
-		tc.mutation.SetParticipantCount(v)
+		return &ValidationError{Name: "participantCount", err: errors.New("ent: missing required field \"participantCount\"")}
 	}
 	if v, ok := tc.mutation.ParticipantCount(); ok {
 		if err := template.ParticipantCountValidator(v); err != nil {
@@ -283,12 +309,10 @@ func (tc *TemplateCreate) preSave() error {
 		return &ValidationError{Name: "mturkCriteria", err: errors.New("ent: missing required field \"mturkCriteria\"")}
 	}
 	if _, ok := tc.mutation.Adult(); !ok {
-		v := template.DefaultAdult
-		tc.mutation.SetAdult(v)
+		return &ValidationError{Name: "adult", err: errors.New("ent: missing required field \"adult\"")}
 	}
 	if _, ok := tc.mutation.Sandbox(); !ok {
-		v := template.DefaultSandbox
-		tc.mutation.SetSandbox(v)
+		return &ValidationError{Name: "sandbox", err: errors.New("ent: missing required field \"sandbox\"")}
 	}
 	if v, ok := tc.mutation.ID(); ok {
 		if err := template.IDValidator(v); err != nil {
@@ -299,19 +323,19 @@ func (tc *TemplateCreate) preSave() error {
 }
 
 func (tc *TemplateCreate) sqlSave(ctx context.Context) (*Template, error) {
-	t, _spec := tc.createSpec()
+	_node, _spec := tc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, tc.driver, _spec); err != nil {
 		if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
 		}
 		return nil, err
 	}
-	return t, nil
+	return _node, nil
 }
 
 func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 	var (
-		t     = &Template{config: tc.config}
+		_node = &Template{config: tc.config}
 		_spec = &sqlgraph.CreateSpec{
 			Table: template.Table,
 			ID: &sqlgraph.FieldSpec{
@@ -321,7 +345,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 		}
 	)
 	if id, ok := tc.mutation.ID(); ok {
-		t.ID = id
+		_node.ID = id
 		_spec.ID.Value = id
 	}
 	if value, ok := tc.mutation.CreatedAt(); ok {
@@ -330,7 +354,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: template.FieldCreatedAt,
 		})
-		t.CreatedAt = value
+		_node.CreatedAt = value
 	}
 	if value, ok := tc.mutation.UpdatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -338,7 +362,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: template.FieldUpdatedAt,
 		})
-		t.UpdatedAt = value
+		_node.UpdatedAt = value
 	}
 	if value, ok := tc.mutation.Name(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -346,7 +370,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: template.FieldName,
 		})
-		t.Name = value
+		_node.Name = value
 	}
 	if value, ok := tc.mutation.SelectionType(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -354,7 +378,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: template.FieldSelectionType,
 		})
-		t.SelectionType = value
+		_node.SelectionType = value
 	}
 	if value, ok := tc.mutation.ParticipantCount(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -362,7 +386,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: template.FieldParticipantCount,
 		})
-		t.ParticipantCount = value
+		_node.ParticipantCount = value
 	}
 	if value, ok := tc.mutation.InternalCriteria(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -370,7 +394,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: template.FieldInternalCriteria,
 		})
-		t.InternalCriteria = value
+		_node.InternalCriteria = value
 	}
 	if value, ok := tc.mutation.MturkCriteria(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -378,7 +402,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: template.FieldMturkCriteria,
 		})
-		t.MturkCriteria = value
+		_node.MturkCriteria = value
 	}
 	if value, ok := tc.mutation.Adult(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -386,7 +410,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: template.FieldAdult,
 		})
-		t.Adult = value
+		_node.Adult = value
 	}
 	if value, ok := tc.mutation.Sandbox(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -394,7 +418,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: template.FieldSandbox,
 		})
-		t.Sandbox = value
+		_node.Sandbox = value
 	}
 	if nodes := tc.mutation.StepsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -472,7 +496,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	return t, _spec
+	return _node, _spec
 }
 
 // TemplateCreateBulk is the builder for creating a bulk of Template entities.
@@ -489,13 +513,14 @@ func (tcb *TemplateCreateBulk) Save(ctx context.Context) ([]*Template, error) {
 	for i := range tcb.builders {
 		func(i int, root context.Context) {
 			builder := tcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				if err := builder.preSave(); err != nil {
-					return nil, err
-				}
 				mutation, ok := m.(*TemplateMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
+				}
+				if err := builder.check(); err != nil {
+					return nil, err
 				}
 				builder.mutation = mutation
 				nodes[i], specs[i] = builder.createSpec()

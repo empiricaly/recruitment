@@ -69,8 +69,12 @@ func (rq *RunQuery) QueryProject() *ProjectQuery {
 		if err := rq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := rq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(run.Table, run.FieldID, rq.sqlQuery()),
+			sqlgraph.From(run.Table, run.FieldID, selector),
 			sqlgraph.To(project.Table, project.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, run.ProjectTable, run.ProjectColumn),
 		)
@@ -87,8 +91,12 @@ func (rq *RunQuery) QueryTemplate() *TemplateQuery {
 		if err := rq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := rq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(run.Table, run.FieldID, rq.sqlQuery()),
+			sqlgraph.From(run.Table, run.FieldID, selector),
 			sqlgraph.To(template.Table, template.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, run.TemplateTable, run.TemplateColumn),
 		)
@@ -105,8 +113,12 @@ func (rq *RunQuery) QueryCurrentStep() *StepRunQuery {
 		if err := rq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := rq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(run.Table, run.FieldID, rq.sqlQuery()),
+			sqlgraph.From(run.Table, run.FieldID, selector),
 			sqlgraph.To(steprun.Table, steprun.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, run.CurrentStepTable, run.CurrentStepColumn),
 		)
@@ -123,8 +135,12 @@ func (rq *RunQuery) QuerySteps() *StepRunQuery {
 		if err := rq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := rq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(run.Table, run.FieldID, rq.sqlQuery()),
+			sqlgraph.From(run.Table, run.FieldID, selector),
 			sqlgraph.To(steprun.Table, steprun.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, run.StepsTable, run.StepsColumn),
 		)
@@ -136,23 +152,23 @@ func (rq *RunQuery) QuerySteps() *StepRunQuery {
 
 // First returns the first Run entity in the query. Returns *NotFoundError when no run was found.
 func (rq *RunQuery) First(ctx context.Context) (*Run, error) {
-	rs, err := rq.Limit(1).All(ctx)
+	nodes, err := rq.Limit(1).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(rs) == 0 {
+	if len(nodes) == 0 {
 		return nil, &NotFoundError{run.Label}
 	}
-	return rs[0], nil
+	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
 func (rq *RunQuery) FirstX(ctx context.Context) *Run {
-	r, err := rq.First(ctx)
+	node, err := rq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
-	return r
+	return node
 }
 
 // FirstID returns the first Run id in the query. Returns *NotFoundError when no id was found.
@@ -179,13 +195,13 @@ func (rq *RunQuery) FirstXID(ctx context.Context) string {
 
 // Only returns the only Run entity in the query, returns an error if not exactly one entity was returned.
 func (rq *RunQuery) Only(ctx context.Context) (*Run, error) {
-	rs, err := rq.Limit(2).All(ctx)
+	nodes, err := rq.Limit(2).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	switch len(rs) {
+	switch len(nodes) {
 	case 1:
-		return rs[0], nil
+		return nodes[0], nil
 	case 0:
 		return nil, &NotFoundError{run.Label}
 	default:
@@ -195,11 +211,11 @@ func (rq *RunQuery) Only(ctx context.Context) (*Run, error) {
 
 // OnlyX is like Only, but panics if an error occurs.
 func (rq *RunQuery) OnlyX(ctx context.Context) *Run {
-	r, err := rq.Only(ctx)
+	node, err := rq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return r
+	return node
 }
 
 // OnlyID returns the only Run id in the query, returns an error if not exactly one id was returned.
@@ -238,11 +254,11 @@ func (rq *RunQuery) All(ctx context.Context) ([]*Run, error) {
 
 // AllX is like All, but panics if an error occurs.
 func (rq *RunQuery) AllX(ctx context.Context) []*Run {
-	rs, err := rq.All(ctx)
+	nodes, err := rq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return rs
+	return nodes
 }
 
 // IDs executes the query and returns a list of Run ids.
@@ -612,7 +628,7 @@ func (rq *RunQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := rq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector)
+				ps[i](selector, run.ValidColumn)
 			}
 		}
 	}
@@ -631,7 +647,7 @@ func (rq *RunQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range rq.order {
-		p(selector)
+		p(selector, run.ValidColumn)
 	}
 	if offset := rq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -866,8 +882,17 @@ func (rgb *RunGroupBy) BoolX(ctx context.Context) bool {
 }
 
 func (rgb *RunGroupBy) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range rgb.fields {
+		if !run.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
+		}
+	}
+	selector := rgb.sqlQuery()
+	if err := selector.Err(); err != nil {
+		return err
+	}
 	rows := &sql.Rows{}
-	query, args := rgb.sqlQuery().Query()
+	query, args := selector.Query()
 	if err := rgb.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
@@ -880,7 +905,7 @@ func (rgb *RunGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(rgb.fields)+len(rgb.fns))
 	columns = append(columns, rgb.fields...)
 	for _, fn := range rgb.fns {
-		columns = append(columns, fn(selector))
+		columns = append(columns, fn(selector, run.ValidColumn))
 	}
 	return selector.Select(columns...).GroupBy(rgb.fields...)
 }
@@ -1100,6 +1125,11 @@ func (rs *RunSelect) BoolX(ctx context.Context) bool {
 }
 
 func (rs *RunSelect) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range rs.fields {
+		if !run.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for selection", f)}
+		}
+	}
 	rows := &sql.Rows{}
 	query, args := rs.sqlQuery().Query()
 	if err := rs.driver.Query(ctx, query, args, rows); err != nil {

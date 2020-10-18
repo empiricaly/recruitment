@@ -71,8 +71,12 @@ func (srq *StepRunQuery) QueryCreatedParticipants() *ParticipantQuery {
 		if err := srq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := srq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(steprun.Table, steprun.FieldID, srq.sqlQuery()),
+			sqlgraph.From(steprun.Table, steprun.FieldID, selector),
 			sqlgraph.To(participant.Table, participant.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, steprun.CreatedParticipantsTable, steprun.CreatedParticipantsColumn),
 		)
@@ -89,8 +93,12 @@ func (srq *StepRunQuery) QueryParticipants() *ParticipantQuery {
 		if err := srq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := srq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(steprun.Table, steprun.FieldID, srq.sqlQuery()),
+			sqlgraph.From(steprun.Table, steprun.FieldID, selector),
 			sqlgraph.To(participant.Table, participant.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, steprun.ParticipantsTable, steprun.ParticipantsPrimaryKey...),
 		)
@@ -107,8 +115,12 @@ func (srq *StepRunQuery) QueryParticipations() *ParticipationQuery {
 		if err := srq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := srq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(steprun.Table, steprun.FieldID, srq.sqlQuery()),
+			sqlgraph.From(steprun.Table, steprun.FieldID, selector),
 			sqlgraph.To(participation.Table, participation.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, steprun.ParticipationsTable, steprun.ParticipationsColumn),
 		)
@@ -125,8 +137,12 @@ func (srq *StepRunQuery) QueryStep() *StepQuery {
 		if err := srq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := srq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(steprun.Table, steprun.FieldID, srq.sqlQuery()),
+			sqlgraph.From(steprun.Table, steprun.FieldID, selector),
 			sqlgraph.To(step.Table, step.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, steprun.StepTable, steprun.StepColumn),
 		)
@@ -143,8 +159,12 @@ func (srq *StepRunQuery) QueryRun() *RunQuery {
 		if err := srq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := srq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(steprun.Table, steprun.FieldID, srq.sqlQuery()),
+			sqlgraph.From(steprun.Table, steprun.FieldID, selector),
 			sqlgraph.To(run.Table, run.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, steprun.RunTable, steprun.RunColumn),
 		)
@@ -156,23 +176,23 @@ func (srq *StepRunQuery) QueryRun() *RunQuery {
 
 // First returns the first StepRun entity in the query. Returns *NotFoundError when no steprun was found.
 func (srq *StepRunQuery) First(ctx context.Context) (*StepRun, error) {
-	srs, err := srq.Limit(1).All(ctx)
+	nodes, err := srq.Limit(1).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(srs) == 0 {
+	if len(nodes) == 0 {
 		return nil, &NotFoundError{steprun.Label}
 	}
-	return srs[0], nil
+	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
 func (srq *StepRunQuery) FirstX(ctx context.Context) *StepRun {
-	sr, err := srq.First(ctx)
+	node, err := srq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
-	return sr
+	return node
 }
 
 // FirstID returns the first StepRun id in the query. Returns *NotFoundError when no id was found.
@@ -199,13 +219,13 @@ func (srq *StepRunQuery) FirstXID(ctx context.Context) string {
 
 // Only returns the only StepRun entity in the query, returns an error if not exactly one entity was returned.
 func (srq *StepRunQuery) Only(ctx context.Context) (*StepRun, error) {
-	srs, err := srq.Limit(2).All(ctx)
+	nodes, err := srq.Limit(2).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	switch len(srs) {
+	switch len(nodes) {
 	case 1:
-		return srs[0], nil
+		return nodes[0], nil
 	case 0:
 		return nil, &NotFoundError{steprun.Label}
 	default:
@@ -215,11 +235,11 @@ func (srq *StepRunQuery) Only(ctx context.Context) (*StepRun, error) {
 
 // OnlyX is like Only, but panics if an error occurs.
 func (srq *StepRunQuery) OnlyX(ctx context.Context) *StepRun {
-	sr, err := srq.Only(ctx)
+	node, err := srq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return sr
+	return node
 }
 
 // OnlyID returns the only StepRun id in the query, returns an error if not exactly one id was returned.
@@ -258,11 +278,11 @@ func (srq *StepRunQuery) All(ctx context.Context) ([]*StepRun, error) {
 
 // AllX is like All, but panics if an error occurs.
 func (srq *StepRunQuery) AllX(ctx context.Context) []*StepRun {
-	srs, err := srq.All(ctx)
+	nodes, err := srq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return srs
+	return nodes
 }
 
 // IDs executes the query and returns a list of StepRun ids.
@@ -710,7 +730,7 @@ func (srq *StepRunQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := srq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector)
+				ps[i](selector, steprun.ValidColumn)
 			}
 		}
 	}
@@ -729,7 +749,7 @@ func (srq *StepRunQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range srq.order {
-		p(selector)
+		p(selector, steprun.ValidColumn)
 	}
 	if offset := srq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -964,8 +984,17 @@ func (srgb *StepRunGroupBy) BoolX(ctx context.Context) bool {
 }
 
 func (srgb *StepRunGroupBy) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range srgb.fields {
+		if !steprun.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
+		}
+	}
+	selector := srgb.sqlQuery()
+	if err := selector.Err(); err != nil {
+		return err
+	}
 	rows := &sql.Rows{}
-	query, args := srgb.sqlQuery().Query()
+	query, args := selector.Query()
 	if err := srgb.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
@@ -978,7 +1007,7 @@ func (srgb *StepRunGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(srgb.fields)+len(srgb.fns))
 	columns = append(columns, srgb.fields...)
 	for _, fn := range srgb.fns {
-		columns = append(columns, fn(selector))
+		columns = append(columns, fn(selector, steprun.ValidColumn))
 	}
 	return selector.Select(columns...).GroupBy(srgb.fields...)
 }
@@ -1198,6 +1227,11 @@ func (srs *StepRunSelect) BoolX(ctx context.Context) bool {
 }
 
 func (srs *StepRunSelect) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range srs.fields {
+		if !steprun.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for selection", f)}
+		}
+	}
 	rows := &sql.Rows{}
 	query, args := srs.sqlQuery().Query()
 	if err := srs.driver.Query(ctx, query, args, rows); err != nil {

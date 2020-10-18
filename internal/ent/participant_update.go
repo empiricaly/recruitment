@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/empiricaly/recruitment/internal/ent/datum"
 	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
@@ -55,6 +56,21 @@ func (pu *ParticipantUpdate) SetNillableMturkWorkerID(s *string) *ParticipantUpd
 func (pu *ParticipantUpdate) ClearMturkWorkerID() *ParticipantUpdate {
 	pu.mutation.ClearMturkWorkerID()
 	return pu
+}
+
+// AddDatumIDs adds the data edge to Datum by ids.
+func (pu *ParticipantUpdate) AddDatumIDs(ids ...string) *ParticipantUpdate {
+	pu.mutation.AddDatumIDs(ids...)
+	return pu
+}
+
+// AddData adds the data edges to Datum.
+func (pu *ParticipantUpdate) AddData(d ...*Datum) *ParticipantUpdate {
+	ids := make([]string, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return pu.AddDatumIDs(ids...)
 }
 
 // AddProviderIDIDs adds the providerIDs edge to ProviderID by ids.
@@ -126,6 +142,33 @@ func (pu *ParticipantUpdate) Mutation() *ParticipantMutation {
 	return pu.mutation
 }
 
+// ClearData clears all "data" edges to type Datum.
+func (pu *ParticipantUpdate) ClearData() *ParticipantUpdate {
+	pu.mutation.ClearData()
+	return pu
+}
+
+// RemoveDatumIDs removes the data edge to Datum by ids.
+func (pu *ParticipantUpdate) RemoveDatumIDs(ids ...string) *ParticipantUpdate {
+	pu.mutation.RemoveDatumIDs(ids...)
+	return pu
+}
+
+// RemoveData removes data edges to Datum.
+func (pu *ParticipantUpdate) RemoveData(d ...*Datum) *ParticipantUpdate {
+	ids := make([]string, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return pu.RemoveDatumIDs(ids...)
+}
+
+// ClearProviderIDs clears all "providerIDs" edges to type ProviderID.
+func (pu *ParticipantUpdate) ClearProviderIDs() *ParticipantUpdate {
+	pu.mutation.ClearProviderIDs()
+	return pu
+}
+
 // RemoveProviderIDIDs removes the providerIDs edge to ProviderID by ids.
 func (pu *ParticipantUpdate) RemoveProviderIDIDs(ids ...string) *ParticipantUpdate {
 	pu.mutation.RemoveProviderIDIDs(ids...)
@@ -139,6 +182,12 @@ func (pu *ParticipantUpdate) RemoveProviderIDs(p ...*ProviderID) *ParticipantUpd
 		ids[i] = p[i].ID
 	}
 	return pu.RemoveProviderIDIDs(ids...)
+}
+
+// ClearParticipations clears all "participations" edges to type Participation.
+func (pu *ParticipantUpdate) ClearParticipations() *ParticipantUpdate {
+	pu.mutation.ClearParticipations()
+	return pu
 }
 
 // RemoveParticipationIDs removes the participations edge to Participation by ids.
@@ -156,9 +205,15 @@ func (pu *ParticipantUpdate) RemoveParticipations(p ...*Participation) *Particip
 	return pu.RemoveParticipationIDs(ids...)
 }
 
-// ClearCreatedBy clears the createdBy edge to StepRun.
+// ClearCreatedBy clears the "createdBy" edge to type StepRun.
 func (pu *ParticipantUpdate) ClearCreatedBy() *ParticipantUpdate {
 	pu.mutation.ClearCreatedBy()
+	return pu
+}
+
+// ClearSteps clears all "steps" edges to type StepRun.
+func (pu *ParticipantUpdate) ClearSteps() *ParticipantUpdate {
+	pu.mutation.ClearSteps()
 	return pu
 }
 
@@ -179,15 +234,11 @@ func (pu *ParticipantUpdate) RemoveSteps(s ...*StepRun) *ParticipantUpdate {
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (pu *ParticipantUpdate) Save(ctx context.Context) (int, error) {
-	if _, ok := pu.mutation.UpdatedAt(); !ok {
-		v := participant.UpdateDefaultUpdatedAt()
-		pu.mutation.SetUpdatedAt(v)
-	}
-
 	var (
 		err      error
 		affected int
 	)
+	pu.defaults()
 	if len(pu.hooks) == 0 {
 		affected, err = pu.sqlSave(ctx)
 	} else {
@@ -233,6 +284,14 @@ func (pu *ParticipantUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (pu *ParticipantUpdate) defaults() {
+	if _, ok := pu.mutation.UpdatedAt(); !ok {
+		v := participant.UpdateDefaultUpdatedAt()
+		pu.mutation.SetUpdatedAt(v)
+	}
+}
+
 func (pu *ParticipantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
@@ -271,7 +330,77 @@ func (pu *ParticipantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: participant.FieldMturkWorkerID,
 		})
 	}
-	if nodes := pu.mutation.RemovedProviderIDsIDs(); len(nodes) > 0 {
+	if pu.mutation.DataCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   participant.DataTable,
+			Columns: []string{participant.DataColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: datum.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedDataIDs(); len(nodes) > 0 && !pu.mutation.DataCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   participant.DataTable,
+			Columns: []string{participant.DataColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: datum.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.DataIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   participant.DataTable,
+			Columns: []string{participant.DataColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: datum.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.ProviderIDsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   participant.ProviderIDsTable,
+			Columns: []string{participant.ProviderIDsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: providerid.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedProviderIDsIDs(); len(nodes) > 0 && !pu.mutation.ProviderIDsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -309,7 +438,23 @@ func (pu *ParticipantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := pu.mutation.RemovedParticipationsIDs(); len(nodes) > 0 {
+	if pu.mutation.ParticipationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   participant.ParticipationsTable,
+			Columns: []string{participant.ParticipationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participation.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedParticipationsIDs(); len(nodes) > 0 && !pu.mutation.ParticipationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -382,7 +527,23 @@ func (pu *ParticipantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := pu.mutation.RemovedStepsIDs(); len(nodes) > 0 {
+	if pu.mutation.StepsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   participant.StepsTable,
+			Columns: participant.StepsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedStepsIDs(); len(nodes) > 0 && !pu.mutation.StepsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
@@ -464,6 +625,21 @@ func (puo *ParticipantUpdateOne) ClearMturkWorkerID() *ParticipantUpdateOne {
 	return puo
 }
 
+// AddDatumIDs adds the data edge to Datum by ids.
+func (puo *ParticipantUpdateOne) AddDatumIDs(ids ...string) *ParticipantUpdateOne {
+	puo.mutation.AddDatumIDs(ids...)
+	return puo
+}
+
+// AddData adds the data edges to Datum.
+func (puo *ParticipantUpdateOne) AddData(d ...*Datum) *ParticipantUpdateOne {
+	ids := make([]string, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return puo.AddDatumIDs(ids...)
+}
+
 // AddProviderIDIDs adds the providerIDs edge to ProviderID by ids.
 func (puo *ParticipantUpdateOne) AddProviderIDIDs(ids ...string) *ParticipantUpdateOne {
 	puo.mutation.AddProviderIDIDs(ids...)
@@ -533,6 +709,33 @@ func (puo *ParticipantUpdateOne) Mutation() *ParticipantMutation {
 	return puo.mutation
 }
 
+// ClearData clears all "data" edges to type Datum.
+func (puo *ParticipantUpdateOne) ClearData() *ParticipantUpdateOne {
+	puo.mutation.ClearData()
+	return puo
+}
+
+// RemoveDatumIDs removes the data edge to Datum by ids.
+func (puo *ParticipantUpdateOne) RemoveDatumIDs(ids ...string) *ParticipantUpdateOne {
+	puo.mutation.RemoveDatumIDs(ids...)
+	return puo
+}
+
+// RemoveData removes data edges to Datum.
+func (puo *ParticipantUpdateOne) RemoveData(d ...*Datum) *ParticipantUpdateOne {
+	ids := make([]string, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return puo.RemoveDatumIDs(ids...)
+}
+
+// ClearProviderIDs clears all "providerIDs" edges to type ProviderID.
+func (puo *ParticipantUpdateOne) ClearProviderIDs() *ParticipantUpdateOne {
+	puo.mutation.ClearProviderIDs()
+	return puo
+}
+
 // RemoveProviderIDIDs removes the providerIDs edge to ProviderID by ids.
 func (puo *ParticipantUpdateOne) RemoveProviderIDIDs(ids ...string) *ParticipantUpdateOne {
 	puo.mutation.RemoveProviderIDIDs(ids...)
@@ -546,6 +749,12 @@ func (puo *ParticipantUpdateOne) RemoveProviderIDs(p ...*ProviderID) *Participan
 		ids[i] = p[i].ID
 	}
 	return puo.RemoveProviderIDIDs(ids...)
+}
+
+// ClearParticipations clears all "participations" edges to type Participation.
+func (puo *ParticipantUpdateOne) ClearParticipations() *ParticipantUpdateOne {
+	puo.mutation.ClearParticipations()
+	return puo
 }
 
 // RemoveParticipationIDs removes the participations edge to Participation by ids.
@@ -563,9 +772,15 @@ func (puo *ParticipantUpdateOne) RemoveParticipations(p ...*Participation) *Part
 	return puo.RemoveParticipationIDs(ids...)
 }
 
-// ClearCreatedBy clears the createdBy edge to StepRun.
+// ClearCreatedBy clears the "createdBy" edge to type StepRun.
 func (puo *ParticipantUpdateOne) ClearCreatedBy() *ParticipantUpdateOne {
 	puo.mutation.ClearCreatedBy()
+	return puo
+}
+
+// ClearSteps clears all "steps" edges to type StepRun.
+func (puo *ParticipantUpdateOne) ClearSteps() *ParticipantUpdateOne {
+	puo.mutation.ClearSteps()
 	return puo
 }
 
@@ -586,15 +801,11 @@ func (puo *ParticipantUpdateOne) RemoveSteps(s ...*StepRun) *ParticipantUpdateOn
 
 // Save executes the query and returns the updated entity.
 func (puo *ParticipantUpdateOne) Save(ctx context.Context) (*Participant, error) {
-	if _, ok := puo.mutation.UpdatedAt(); !ok {
-		v := participant.UpdateDefaultUpdatedAt()
-		puo.mutation.SetUpdatedAt(v)
-	}
-
 	var (
 		err  error
 		node *Participant
 	)
+	puo.defaults()
 	if len(puo.hooks) == 0 {
 		node, err = puo.sqlSave(ctx)
 	} else {
@@ -620,11 +831,11 @@ func (puo *ParticipantUpdateOne) Save(ctx context.Context) (*Participant, error)
 
 // SaveX is like Save, but panics if an error occurs.
 func (puo *ParticipantUpdateOne) SaveX(ctx context.Context) *Participant {
-	pa, err := puo.Save(ctx)
+	node, err := puo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pa
+	return node
 }
 
 // Exec executes the query on the entity.
@@ -640,7 +851,15 @@ func (puo *ParticipantUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-func (puo *ParticipantUpdateOne) sqlSave(ctx context.Context) (pa *Participant, err error) {
+// defaults sets the default values of the builder before save.
+func (puo *ParticipantUpdateOne) defaults() {
+	if _, ok := puo.mutation.UpdatedAt(); !ok {
+		v := participant.UpdateDefaultUpdatedAt()
+		puo.mutation.SetUpdatedAt(v)
+	}
+}
+
+func (puo *ParticipantUpdateOne) sqlSave(ctx context.Context) (_node *Participant, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   participant.Table,
@@ -676,7 +895,77 @@ func (puo *ParticipantUpdateOne) sqlSave(ctx context.Context) (pa *Participant, 
 			Column: participant.FieldMturkWorkerID,
 		})
 	}
-	if nodes := puo.mutation.RemovedProviderIDsIDs(); len(nodes) > 0 {
+	if puo.mutation.DataCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   participant.DataTable,
+			Columns: []string{participant.DataColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: datum.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedDataIDs(); len(nodes) > 0 && !puo.mutation.DataCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   participant.DataTable,
+			Columns: []string{participant.DataColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: datum.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.DataIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   participant.DataTable,
+			Columns: []string{participant.DataColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: datum.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.ProviderIDsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   participant.ProviderIDsTable,
+			Columns: []string{participant.ProviderIDsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: providerid.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedProviderIDsIDs(); len(nodes) > 0 && !puo.mutation.ProviderIDsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -714,7 +1003,23 @@ func (puo *ParticipantUpdateOne) sqlSave(ctx context.Context) (pa *Participant, 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := puo.mutation.RemovedParticipationsIDs(); len(nodes) > 0 {
+	if puo.mutation.ParticipationsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   participant.ParticipationsTable,
+			Columns: []string{participant.ParticipationsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participation.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedParticipationsIDs(); len(nodes) > 0 && !puo.mutation.ParticipationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -787,7 +1092,23 @@ func (puo *ParticipantUpdateOne) sqlSave(ctx context.Context) (pa *Participant, 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := puo.mutation.RemovedStepsIDs(); len(nodes) > 0 {
+	if puo.mutation.StepsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   participant.StepsTable,
+			Columns: participant.StepsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedStepsIDs(); len(nodes) > 0 && !puo.mutation.StepsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
@@ -825,9 +1146,9 @@ func (puo *ParticipantUpdateOne) sqlSave(ctx context.Context) (pa *Participant, 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	pa = &Participant{config: puo.config}
-	_spec.Assign = pa.assignValues
-	_spec.ScanValues = pa.scanValues()
+	_node = &Participant{config: puo.config}
+	_spec.Assign = _node.assignValues
+	_spec.ScanValues = _node.scanValues()
 	if err = sqlgraph.UpdateNode(ctx, puo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{participant.Label}
@@ -836,5 +1157,5 @@ func (puo *ParticipantUpdateOne) sqlSave(ctx context.Context) (pa *Participant, 
 		}
 		return nil, err
 	}
-	return pa, nil
+	return _node, nil
 }

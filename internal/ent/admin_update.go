@@ -83,6 +83,12 @@ func (au *AdminUpdate) Mutation() *AdminMutation {
 	return au.mutation
 }
 
+// ClearProjects clears all "projects" edges to type Project.
+func (au *AdminUpdate) ClearProjects() *AdminUpdate {
+	au.mutation.ClearProjects()
+	return au
+}
+
 // RemoveProjectIDs removes the projects edge to Project by ids.
 func (au *AdminUpdate) RemoveProjectIDs(ids ...string) *AdminUpdate {
 	au.mutation.RemoveProjectIDs(ids...)
@@ -96,6 +102,12 @@ func (au *AdminUpdate) RemoveProjects(p ...*Project) *AdminUpdate {
 		ids[i] = p[i].ID
 	}
 	return au.RemoveProjectIDs(ids...)
+}
+
+// ClearTemplates clears all "templates" edges to type Template.
+func (au *AdminUpdate) ClearTemplates() *AdminUpdate {
+	au.mutation.ClearTemplates()
+	return au
 }
 
 // RemoveTemplateIDs removes the templates edge to Template by ids.
@@ -115,15 +127,11 @@ func (au *AdminUpdate) RemoveTemplates(t ...*Template) *AdminUpdate {
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (au *AdminUpdate) Save(ctx context.Context) (int, error) {
-	if _, ok := au.mutation.UpdatedAt(); !ok {
-		v := admin.UpdateDefaultUpdatedAt()
-		au.mutation.SetUpdatedAt(v)
-	}
-
 	var (
 		err      error
 		affected int
 	)
+	au.defaults()
 	if len(au.hooks) == 0 {
 		affected, err = au.sqlSave(ctx)
 	} else {
@@ -169,6 +177,14 @@ func (au *AdminUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (au *AdminUpdate) defaults() {
+	if _, ok := au.mutation.UpdatedAt(); !ok {
+		v := admin.UpdateDefaultUpdatedAt()
+		au.mutation.SetUpdatedAt(v)
+	}
+}
+
 func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
@@ -208,7 +224,23 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: admin.FieldUsername,
 		})
 	}
-	if nodes := au.mutation.RemovedProjectsIDs(); len(nodes) > 0 {
+	if au.mutation.ProjectsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.ProjectsTable,
+			Columns: []string{admin.ProjectsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: project.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedProjectsIDs(); len(nodes) > 0 && !au.mutation.ProjectsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -246,7 +278,23 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := au.mutation.RemovedTemplatesIDs(); len(nodes) > 0 {
+	if au.mutation.TemplatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.TemplatesTable,
+			Columns: []string{admin.TemplatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: template.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedTemplatesIDs(); len(nodes) > 0 && !au.mutation.TemplatesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -355,6 +403,12 @@ func (auo *AdminUpdateOne) Mutation() *AdminMutation {
 	return auo.mutation
 }
 
+// ClearProjects clears all "projects" edges to type Project.
+func (auo *AdminUpdateOne) ClearProjects() *AdminUpdateOne {
+	auo.mutation.ClearProjects()
+	return auo
+}
+
 // RemoveProjectIDs removes the projects edge to Project by ids.
 func (auo *AdminUpdateOne) RemoveProjectIDs(ids ...string) *AdminUpdateOne {
 	auo.mutation.RemoveProjectIDs(ids...)
@@ -368,6 +422,12 @@ func (auo *AdminUpdateOne) RemoveProjects(p ...*Project) *AdminUpdateOne {
 		ids[i] = p[i].ID
 	}
 	return auo.RemoveProjectIDs(ids...)
+}
+
+// ClearTemplates clears all "templates" edges to type Template.
+func (auo *AdminUpdateOne) ClearTemplates() *AdminUpdateOne {
+	auo.mutation.ClearTemplates()
+	return auo
 }
 
 // RemoveTemplateIDs removes the templates edge to Template by ids.
@@ -387,15 +447,11 @@ func (auo *AdminUpdateOne) RemoveTemplates(t ...*Template) *AdminUpdateOne {
 
 // Save executes the query and returns the updated entity.
 func (auo *AdminUpdateOne) Save(ctx context.Context) (*Admin, error) {
-	if _, ok := auo.mutation.UpdatedAt(); !ok {
-		v := admin.UpdateDefaultUpdatedAt()
-		auo.mutation.SetUpdatedAt(v)
-	}
-
 	var (
 		err  error
 		node *Admin
 	)
+	auo.defaults()
 	if len(auo.hooks) == 0 {
 		node, err = auo.sqlSave(ctx)
 	} else {
@@ -421,11 +477,11 @@ func (auo *AdminUpdateOne) Save(ctx context.Context) (*Admin, error) {
 
 // SaveX is like Save, but panics if an error occurs.
 func (auo *AdminUpdateOne) SaveX(ctx context.Context) *Admin {
-	a, err := auo.Save(ctx)
+	node, err := auo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return a
+	return node
 }
 
 // Exec executes the query on the entity.
@@ -441,7 +497,15 @@ func (auo *AdminUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (a *Admin, err error) {
+// defaults sets the default values of the builder before save.
+func (auo *AdminUpdateOne) defaults() {
+	if _, ok := auo.mutation.UpdatedAt(); !ok {
+		v := admin.UpdateDefaultUpdatedAt()
+		auo.mutation.SetUpdatedAt(v)
+	}
+}
+
+func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   admin.Table,
@@ -478,7 +542,23 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (a *Admin, err error) {
 			Column: admin.FieldUsername,
 		})
 	}
-	if nodes := auo.mutation.RemovedProjectsIDs(); len(nodes) > 0 {
+	if auo.mutation.ProjectsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.ProjectsTable,
+			Columns: []string{admin.ProjectsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: project.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedProjectsIDs(); len(nodes) > 0 && !auo.mutation.ProjectsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -516,7 +596,23 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (a *Admin, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := auo.mutation.RemovedTemplatesIDs(); len(nodes) > 0 {
+	if auo.mutation.TemplatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.TemplatesTable,
+			Columns: []string{admin.TemplatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: template.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedTemplatesIDs(); len(nodes) > 0 && !auo.mutation.TemplatesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -554,9 +650,9 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (a *Admin, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	a = &Admin{config: auo.config}
-	_spec.Assign = a.assignValues
-	_spec.ScanValues = a.scanValues()
+	_node = &Admin{config: auo.config}
+	_spec.Assign = _node.assignValues
+	_spec.ScanValues = _node.scanValues()
 	if err = sqlgraph.UpdateNode(ctx, auo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{admin.Label}
@@ -565,5 +661,5 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (a *Admin, err error) {
 		}
 		return nil, err
 	}
-	return a, nil
+	return _node, nil
 }

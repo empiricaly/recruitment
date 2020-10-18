@@ -199,21 +199,27 @@ func (ru *RunUpdate) Mutation() *RunMutation {
 	return ru.mutation
 }
 
-// ClearProject clears the project edge to Project.
+// ClearProject clears the "project" edge to type Project.
 func (ru *RunUpdate) ClearProject() *RunUpdate {
 	ru.mutation.ClearProject()
 	return ru
 }
 
-// ClearTemplate clears the template edge to Template.
+// ClearTemplate clears the "template" edge to type Template.
 func (ru *RunUpdate) ClearTemplate() *RunUpdate {
 	ru.mutation.ClearTemplate()
 	return ru
 }
 
-// ClearCurrentStep clears the currentStep edge to StepRun.
+// ClearCurrentStep clears the "currentStep" edge to type StepRun.
 func (ru *RunUpdate) ClearCurrentStep() *RunUpdate {
 	ru.mutation.ClearCurrentStep()
+	return ru
+}
+
+// ClearSteps clears all "steps" edges to type StepRun.
+func (ru *RunUpdate) ClearSteps() *RunUpdate {
+	ru.mutation.ClearSteps()
 	return ru
 }
 
@@ -234,31 +240,24 @@ func (ru *RunUpdate) RemoveSteps(s ...*StepRun) *RunUpdate {
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (ru *RunUpdate) Save(ctx context.Context) (int, error) {
-	if _, ok := ru.mutation.UpdatedAt(); !ok {
-		v := run.UpdateDefaultUpdatedAt()
-		ru.mutation.SetUpdatedAt(v)
-	}
-	if v, ok := ru.mutation.Status(); ok {
-		if err := run.StatusValidator(v); err != nil {
-			return 0, &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
-		}
-	}
-
-	if _, ok := ru.mutation.TemplateID(); ru.mutation.TemplateCleared() && !ok {
-		return 0, errors.New("ent: clearing a unique edge \"template\"")
-	}
-
 	var (
 		err      error
 		affected int
 	)
+	ru.defaults()
 	if len(ru.hooks) == 0 {
+		if err = ru.check(); err != nil {
+			return 0, err
+		}
 		affected, err = ru.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*RunMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = ru.check(); err != nil {
+				return 0, err
 			}
 			ru.mutation = mutation
 			affected, err = ru.sqlSave(ctx)
@@ -295,6 +294,27 @@ func (ru *RunUpdate) ExecX(ctx context.Context) {
 	if err := ru.Exec(ctx); err != nil {
 		panic(err)
 	}
+}
+
+// defaults sets the default values of the builder before save.
+func (ru *RunUpdate) defaults() {
+	if _, ok := ru.mutation.UpdatedAt(); !ok {
+		v := run.UpdateDefaultUpdatedAt()
+		ru.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (ru *RunUpdate) check() error {
+	if v, ok := ru.mutation.Status(); ok {
+		if err := run.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
+		}
+	}
+	if _, ok := ru.mutation.TemplateID(); ru.mutation.TemplateCleared() && !ok {
+		return errors.New("ent: clearing a required unique edge \"template\"")
+	}
+	return nil
 }
 
 func (ru *RunUpdate) sqlSave(ctx context.Context) (n int, err error) {
@@ -493,7 +513,23 @@ func (ru *RunUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := ru.mutation.RemovedStepsIDs(); len(nodes) > 0 {
+	if ru.mutation.StepsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   run.StepsTable,
+			Columns: []string{run.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.RemovedStepsIDs(); len(nodes) > 0 && !ru.mutation.StepsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -716,21 +752,27 @@ func (ruo *RunUpdateOne) Mutation() *RunMutation {
 	return ruo.mutation
 }
 
-// ClearProject clears the project edge to Project.
+// ClearProject clears the "project" edge to type Project.
 func (ruo *RunUpdateOne) ClearProject() *RunUpdateOne {
 	ruo.mutation.ClearProject()
 	return ruo
 }
 
-// ClearTemplate clears the template edge to Template.
+// ClearTemplate clears the "template" edge to type Template.
 func (ruo *RunUpdateOne) ClearTemplate() *RunUpdateOne {
 	ruo.mutation.ClearTemplate()
 	return ruo
 }
 
-// ClearCurrentStep clears the currentStep edge to StepRun.
+// ClearCurrentStep clears the "currentStep" edge to type StepRun.
 func (ruo *RunUpdateOne) ClearCurrentStep() *RunUpdateOne {
 	ruo.mutation.ClearCurrentStep()
+	return ruo
+}
+
+// ClearSteps clears all "steps" edges to type StepRun.
+func (ruo *RunUpdateOne) ClearSteps() *RunUpdateOne {
+	ruo.mutation.ClearSteps()
 	return ruo
 }
 
@@ -751,31 +793,24 @@ func (ruo *RunUpdateOne) RemoveSteps(s ...*StepRun) *RunUpdateOne {
 
 // Save executes the query and returns the updated entity.
 func (ruo *RunUpdateOne) Save(ctx context.Context) (*Run, error) {
-	if _, ok := ruo.mutation.UpdatedAt(); !ok {
-		v := run.UpdateDefaultUpdatedAt()
-		ruo.mutation.SetUpdatedAt(v)
-	}
-	if v, ok := ruo.mutation.Status(); ok {
-		if err := run.StatusValidator(v); err != nil {
-			return nil, &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
-		}
-	}
-
-	if _, ok := ruo.mutation.TemplateID(); ruo.mutation.TemplateCleared() && !ok {
-		return nil, errors.New("ent: clearing a unique edge \"template\"")
-	}
-
 	var (
 		err  error
 		node *Run
 	)
+	ruo.defaults()
 	if len(ruo.hooks) == 0 {
+		if err = ruo.check(); err != nil {
+			return nil, err
+		}
 		node, err = ruo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*RunMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = ruo.check(); err != nil {
+				return nil, err
 			}
 			ruo.mutation = mutation
 			node, err = ruo.sqlSave(ctx)
@@ -794,11 +829,11 @@ func (ruo *RunUpdateOne) Save(ctx context.Context) (*Run, error) {
 
 // SaveX is like Save, but panics if an error occurs.
 func (ruo *RunUpdateOne) SaveX(ctx context.Context) *Run {
-	r, err := ruo.Save(ctx)
+	node, err := ruo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return r
+	return node
 }
 
 // Exec executes the query on the entity.
@@ -814,7 +849,28 @@ func (ruo *RunUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
+// defaults sets the default values of the builder before save.
+func (ruo *RunUpdateOne) defaults() {
+	if _, ok := ruo.mutation.UpdatedAt(); !ok {
+		v := run.UpdateDefaultUpdatedAt()
+		ruo.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (ruo *RunUpdateOne) check() error {
+	if v, ok := ruo.mutation.Status(); ok {
+		if err := run.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf("ent: validator failed for field \"status\": %w", err)}
+		}
+	}
+	if _, ok := ruo.mutation.TemplateID(); ruo.mutation.TemplateCleared() && !ok {
+		return errors.New("ent: clearing a required unique edge \"template\"")
+	}
+	return nil
+}
+
+func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (_node *Run, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   run.Table,
@@ -1008,7 +1064,23 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := ruo.mutation.RemovedStepsIDs(); len(nodes) > 0 {
+	if ruo.mutation.StepsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   run.StepsTable,
+			Columns: []string{run.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: steprun.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.RemovedStepsIDs(); len(nodes) > 0 && !ruo.mutation.StepsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1046,9 +1118,9 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	r = &Run{config: ruo.config}
-	_spec.Assign = r.assignValues
-	_spec.ScanValues = r.scanValues()
+	_node = &Run{config: ruo.config}
+	_spec.Assign = _node.assignValues
+	_spec.ScanValues = _node.scanValues()
 	if err = sqlgraph.UpdateNode(ctx, ruo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{run.Label}
@@ -1057,5 +1129,5 @@ func (ruo *RunUpdateOne) sqlSave(ctx context.Context) (r *Run, err error) {
 		}
 		return nil, err
 	}
-	return r, nil
+	return _node, nil
 }

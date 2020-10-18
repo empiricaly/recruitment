@@ -25,7 +25,7 @@ func (r *mutationResolver) RegisterParticipant(ctx context.Context, input *model
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) MutateDatum(ctx context.Context, input *model.MutateDatumInput) (*model.Datum, error) {
+func (r *mutationResolver) MutateDatum(ctx context.Context, input *model.MutateDatumInput) (*ent.Datum, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 

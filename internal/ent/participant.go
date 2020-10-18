@@ -31,6 +31,8 @@ type Participant struct {
 
 // ParticipantEdges holds the relations/edges for other nodes in the graph.
 type ParticipantEdges struct {
+	// Data holds the value of the data edge.
+	Data []*Datum
 	// ProviderIDs holds the value of the providerIDs edge.
 	ProviderIDs []*ProviderID
 	// Participations holds the value of the participations edge.
@@ -41,13 +43,22 @@ type ParticipantEdges struct {
 	Steps []*StepRun
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
+}
+
+// DataOrErr returns the Data value or an error if the edge
+// was not loaded in eager-loading.
+func (e ParticipantEdges) DataOrErr() ([]*Datum, error) {
+	if e.loadedTypes[0] {
+		return e.Data, nil
+	}
+	return nil, &NotLoadedError{edge: "data"}
 }
 
 // ProviderIDsOrErr returns the ProviderIDs value or an error if the edge
 // was not loaded in eager-loading.
 func (e ParticipantEdges) ProviderIDsOrErr() ([]*ProviderID, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.ProviderIDs, nil
 	}
 	return nil, &NotLoadedError{edge: "providerIDs"}
@@ -56,7 +67,7 @@ func (e ParticipantEdges) ProviderIDsOrErr() ([]*ProviderID, error) {
 // ParticipationsOrErr returns the Participations value or an error if the edge
 // was not loaded in eager-loading.
 func (e ParticipantEdges) ParticipationsOrErr() ([]*Participation, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Participations, nil
 	}
 	return nil, &NotLoadedError{edge: "participations"}
@@ -65,7 +76,7 @@ func (e ParticipantEdges) ParticipationsOrErr() ([]*Participation, error) {
 // CreatedByOrErr returns the CreatedBy value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ParticipantEdges) CreatedByOrErr() (*StepRun, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		if e.CreatedBy == nil {
 			// The edge createdBy was loaded in eager-loading,
 			// but was not found.
@@ -79,7 +90,7 @@ func (e ParticipantEdges) CreatedByOrErr() (*StepRun, error) {
 // StepsOrErr returns the Steps value or an error if the edge
 // was not loaded in eager-loading.
 func (e ParticipantEdges) StepsOrErr() ([]*StepRun, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Steps, nil
 	}
 	return nil, &NotLoadedError{edge: "steps"}
@@ -140,6 +151,11 @@ func (pa *Participant) assignValues(values ...interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryData queries the data edge of the Participant.
+func (pa *Participant) QueryData() *DatumQuery {
+	return (&ParticipantClient{config: pa.config}).QueryData(pa)
 }
 
 // QueryProviderIDs queries the providerIDs edge of the Participant.

@@ -15,6 +15,18 @@ import (
 	"github.com/empiricaly/recruitment/internal/model"
 )
 
+func (r *datumResolver) Creator(ctx context.Context, obj *ent.Datum) (model.User, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *datumResolver) Val(ctx context.Context, obj *ent.Datum) (*string, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *datumResolver) Versions(ctx context.Context, obj *ent.Datum) ([]*ent.Datum, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *filterStepArgsResolver) Type(ctx context.Context, obj *model.FilterStepArgs) (model.ParticipantFilterType, error) {
 	return model.ParticipantFilterType(obj.Type.String()), nil
 }
@@ -43,7 +55,7 @@ func (r *participantResolver) ProviderIDs(ctx context.Context, obj *ent.Particip
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *participantResolver) Data(ctx context.Context, obj *ent.Participant, keys []string) ([]*model.Datum, error) {
+func (r *participantResolver) Data(ctx context.Context, obj *ent.Participant, keys []string, deleted *bool) ([]*ent.Datum, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -76,7 +88,7 @@ func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project, runID *str
 	return q.All(ctx)
 }
 
-func (r *projectResolver) Data(ctx context.Context, obj *ent.Project, keys []string) ([]*model.Datum, error) {
+func (r *projectResolver) Data(ctx context.Context, obj *ent.Project, keys []string) ([]*ent.Datum, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -108,7 +120,7 @@ func (r *runResolver) CurrentStep(ctx context.Context, obj *ent.Run) (*ent.StepR
 	return obj.QueryCurrentStep().Only(ctx)
 }
 
-func (r *runResolver) Data(ctx context.Context, obj *ent.Run, keys []string) ([]*model.Datum, error) {
+func (r *runResolver) Data(ctx context.Context, obj *ent.Run, keys []string) ([]*ent.Datum, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -182,6 +194,9 @@ func (r *templateResolver) Steps(ctx context.Context, obj *ent.Template) ([]*ent
 	return obj.QuerySteps().Order(ent.Asc(step.FieldIndex)).All(ctx)
 }
 
+// Datum returns generated.DatumResolver implementation.
+func (r *Resolver) Datum() generated.DatumResolver { return &datumResolver{r} }
+
 // FilterStepArgs returns generated.FilterStepArgsResolver implementation.
 func (r *Resolver) FilterStepArgs() generated.FilterStepArgsResolver {
 	return &filterStepArgsResolver{r}
@@ -216,6 +231,7 @@ func (r *Resolver) StepRun() generated.StepRunResolver { return &stepRunResolver
 // Template returns generated.TemplateResolver implementation.
 func (r *Resolver) Template() generated.TemplateResolver { return &templateResolver{r} }
 
+type datumResolver struct{ *Resolver }
 type filterStepArgsResolver struct{ *Resolver }
 type messageStepArgsResolver struct{ *Resolver }
 type participantResolver struct{ *Resolver }

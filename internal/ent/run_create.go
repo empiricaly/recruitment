@@ -196,20 +196,24 @@ func (rc *RunCreate) Mutation() *RunMutation {
 
 // Save creates the Run in the database.
 func (rc *RunCreate) Save(ctx context.Context) (*Run, error) {
-	if err := rc.preSave(); err != nil {
-		return nil, err
-	}
 	var (
 		err  error
 		node *Run
 	)
+	rc.defaults()
 	if len(rc.hooks) == 0 {
+		if err = rc.check(); err != nil {
+			return nil, err
+		}
 		node, err = rc.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*RunMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = rc.check(); err != nil {
+				return nil, err
 			}
 			rc.mutation = mutation
 			node, err = rc.sqlSave(ctx)
@@ -235,7 +239,8 @@ func (rc *RunCreate) SaveX(ctx context.Context) *Run {
 	return v
 }
 
-func (rc *RunCreate) preSave() error {
+// defaults sets the default values of the builder before save.
+func (rc *RunCreate) defaults() {
 	if _, ok := rc.mutation.CreatedAt(); !ok {
 		v := run.DefaultCreatedAt()
 		rc.mutation.SetCreatedAt(v)
@@ -243,6 +248,16 @@ func (rc *RunCreate) preSave() error {
 	if _, ok := rc.mutation.UpdatedAt(); !ok {
 		v := run.DefaultUpdatedAt()
 		rc.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (rc *RunCreate) check() error {
+	if _, ok := rc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+	}
+	if _, ok := rc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New("ent: missing required field \"updated_at\"")}
 	}
 	if _, ok := rc.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New("ent: missing required field \"status\"")}
@@ -267,19 +282,19 @@ func (rc *RunCreate) preSave() error {
 }
 
 func (rc *RunCreate) sqlSave(ctx context.Context) (*Run, error) {
-	r, _spec := rc.createSpec()
+	_node, _spec := rc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, rc.driver, _spec); err != nil {
 		if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
 		}
 		return nil, err
 	}
-	return r, nil
+	return _node, nil
 }
 
 func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 	var (
-		r     = &Run{config: rc.config}
+		_node = &Run{config: rc.config}
 		_spec = &sqlgraph.CreateSpec{
 			Table: run.Table,
 			ID: &sqlgraph.FieldSpec{
@@ -289,7 +304,7 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 		}
 	)
 	if id, ok := rc.mutation.ID(); ok {
-		r.ID = id
+		_node.ID = id
 		_spec.ID.Value = id
 	}
 	if value, ok := rc.mutation.CreatedAt(); ok {
@@ -298,7 +313,7 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: run.FieldCreatedAt,
 		})
-		r.CreatedAt = value
+		_node.CreatedAt = value
 	}
 	if value, ok := rc.mutation.UpdatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -306,7 +321,7 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: run.FieldUpdatedAt,
 		})
-		r.UpdatedAt = value
+		_node.UpdatedAt = value
 	}
 	if value, ok := rc.mutation.Status(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -314,7 +329,7 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: run.FieldStatus,
 		})
-		r.Status = value
+		_node.Status = value
 	}
 	if value, ok := rc.mutation.StartedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -322,7 +337,7 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: run.FieldStartedAt,
 		})
-		r.StartedAt = &value
+		_node.StartedAt = &value
 	}
 	if value, ok := rc.mutation.EndedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -330,7 +345,7 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: run.FieldEndedAt,
 		})
-		r.EndedAt = &value
+		_node.EndedAt = &value
 	}
 	if value, ok := rc.mutation.Name(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -338,7 +353,7 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: run.FieldName,
 		})
-		r.Name = value
+		_node.Name = value
 	}
 	if value, ok := rc.mutation.StartAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -346,7 +361,7 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: run.FieldStartAt,
 		})
-		r.StartAt = &value
+		_node.StartAt = &value
 	}
 	if value, ok := rc.mutation.Error(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -354,7 +369,7 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: run.FieldError,
 		})
-		r.Error = &value
+		_node.Error = &value
 	}
 	if nodes := rc.mutation.ProjectIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -432,7 +447,7 @@ func (rc *RunCreate) createSpec() (*Run, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	return r, _spec
+	return _node, _spec
 }
 
 // RunCreateBulk is the builder for creating a bulk of Run entities.
@@ -449,13 +464,14 @@ func (rcb *RunCreateBulk) Save(ctx context.Context) ([]*Run, error) {
 	for i := range rcb.builders {
 		func(i int, root context.Context) {
 			builder := rcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				if err := builder.preSave(); err != nil {
-					return nil, err
-				}
 				mutation, ok := m.(*RunMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
+				}
+				if err := builder.check(); err != nil {
+					return nil, err
 				}
 				builder.mutation = mutation
 				nodes[i], specs[i] = builder.createSpec()

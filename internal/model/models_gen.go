@@ -98,32 +98,6 @@ type CreateTemplateInput struct {
 	Template  *TemplateInput `json:"template"`
 }
 
-// Datum is a single piece of custom data.
-type Datum struct {
-	// id is the unique globally identifier for the record.
-	ID string `json:"id"`
-	// createdAt is the time of creation of the record.
-	CreatedAt time.Time `json:"createdAt"`
-	// updatedAt is the time of last update of the record.
-	UpdatedAt time.Time `json:"updatedAt"`
-	// Creator is the user or participant that created the Datum.
-	Creator User `json:"creator"`
-	// deletedAt is the time when the Datum was deleted. If null, the Datum was not
-	// deleted.
-	DeletedAt *time.Time `json:"deletedAt"`
-	// key identifies the unique key of the Datum.
-	Key string `json:"key"`
-	// val is the value of the Datum. It can be any JSON encodable value.
-	// Passing null will delete the Datum.
-	Val *string `json:"val"`
-	// next returns the Datum ID of the next value in an array of Datum values.
-	Next *string `json:"next"`
-	// root returns the Datum ID of the root value in an array of Datum values.
-	Root *string `json:"root"`
-	// versions returns previous versions for the Datum (they all have the same ID).
-	Versions []*Datum `json:"versions"`
-}
-
 type DuplicateRunInput struct {
 	RunID       string  `json:"runID"`
 	ToProjectID *string `json:"toProjectID"`

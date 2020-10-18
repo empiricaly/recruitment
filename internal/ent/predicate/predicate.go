@@ -9,6 +9,9 @@ import (
 // Admin is the predicate function for admin builders.
 type Admin func(*sql.Selector)
 
+// Datum is the predicate function for datum builders.
+type Datum func(*sql.Selector)
+
 // Participant is the predicate function for participant builders.
 type Participant func(*sql.Selector)
 

@@ -63,8 +63,12 @@ func (piq *ProviderIDQuery) QueryParticpant() *ParticipantQuery {
 		if err := piq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := piq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(providerid.Table, providerid.FieldID, piq.sqlQuery()),
+			sqlgraph.From(providerid.Table, providerid.FieldID, selector),
 			sqlgraph.To(participant.Table, participant.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, providerid.ParticpantTable, providerid.ParticpantColumn),
 		)
@@ -76,23 +80,23 @@ func (piq *ProviderIDQuery) QueryParticpant() *ParticipantQuery {
 
 // First returns the first ProviderID entity in the query. Returns *NotFoundError when no providerid was found.
 func (piq *ProviderIDQuery) First(ctx context.Context) (*ProviderID, error) {
-	pis, err := piq.Limit(1).All(ctx)
+	nodes, err := piq.Limit(1).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(pis) == 0 {
+	if len(nodes) == 0 {
 		return nil, &NotFoundError{providerid.Label}
 	}
-	return pis[0], nil
+	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
 func (piq *ProviderIDQuery) FirstX(ctx context.Context) *ProviderID {
-	pi, err := piq.First(ctx)
+	node, err := piq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
-	return pi
+	return node
 }
 
 // FirstID returns the first ProviderID id in the query. Returns *NotFoundError when no id was found.
@@ -119,13 +123,13 @@ func (piq *ProviderIDQuery) FirstXID(ctx context.Context) string {
 
 // Only returns the only ProviderID entity in the query, returns an error if not exactly one entity was returned.
 func (piq *ProviderIDQuery) Only(ctx context.Context) (*ProviderID, error) {
-	pis, err := piq.Limit(2).All(ctx)
+	nodes, err := piq.Limit(2).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	switch len(pis) {
+	switch len(nodes) {
 	case 1:
-		return pis[0], nil
+		return nodes[0], nil
 	case 0:
 		return nil, &NotFoundError{providerid.Label}
 	default:
@@ -135,11 +139,11 @@ func (piq *ProviderIDQuery) Only(ctx context.Context) (*ProviderID, error) {
 
 // OnlyX is like Only, but panics if an error occurs.
 func (piq *ProviderIDQuery) OnlyX(ctx context.Context) *ProviderID {
-	pi, err := piq.Only(ctx)
+	node, err := piq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pi
+	return node
 }
 
 // OnlyID returns the only ProviderID id in the query, returns an error if not exactly one id was returned.
@@ -178,11 +182,11 @@ func (piq *ProviderIDQuery) All(ctx context.Context) ([]*ProviderID, error) {
 
 // AllX is like All, but panics if an error occurs.
 func (piq *ProviderIDQuery) AllX(ctx context.Context) []*ProviderID {
-	pis, err := piq.All(ctx)
+	nodes, err := piq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pis
+	return nodes
 }
 
 // IDs executes the query and returns a list of ProviderID ids.
@@ -435,7 +439,7 @@ func (piq *ProviderIDQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := piq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector)
+				ps[i](selector, providerid.ValidColumn)
 			}
 		}
 	}
@@ -454,7 +458,7 @@ func (piq *ProviderIDQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range piq.order {
-		p(selector)
+		p(selector, providerid.ValidColumn)
 	}
 	if offset := piq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -689,8 +693,17 @@ func (pigb *ProviderIDGroupBy) BoolX(ctx context.Context) bool {
 }
 
 func (pigb *ProviderIDGroupBy) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range pigb.fields {
+		if !providerid.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
+		}
+	}
+	selector := pigb.sqlQuery()
+	if err := selector.Err(); err != nil {
+		return err
+	}
 	rows := &sql.Rows{}
-	query, args := pigb.sqlQuery().Query()
+	query, args := selector.Query()
 	if err := pigb.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
@@ -703,7 +716,7 @@ func (pigb *ProviderIDGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(pigb.fields)+len(pigb.fns))
 	columns = append(columns, pigb.fields...)
 	for _, fn := range pigb.fns {
-		columns = append(columns, fn(selector))
+		columns = append(columns, fn(selector, providerid.ValidColumn))
 	}
 	return selector.Select(columns...).GroupBy(pigb.fields...)
 }
@@ -923,6 +936,11 @@ func (pis *ProviderIDSelect) BoolX(ctx context.Context) bool {
 }
 
 func (pis *ProviderIDSelect) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range pis.fields {
+		if !providerid.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for selection", f)}
+		}
+	}
 	rows := &sql.Rows{}
 	query, args := pis.sqlQuery().Query()
 	if err := pis.driver.Query(ctx, query, args, rows); err != nil {

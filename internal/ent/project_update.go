@@ -103,6 +103,12 @@ func (pu *ProjectUpdate) Mutation() *ProjectMutation {
 	return pu.mutation
 }
 
+// ClearRuns clears all "runs" edges to type Run.
+func (pu *ProjectUpdate) ClearRuns() *ProjectUpdate {
+	pu.mutation.ClearRuns()
+	return pu
+}
+
 // RemoveRunIDs removes the runs edge to Run by ids.
 func (pu *ProjectUpdate) RemoveRunIDs(ids ...string) *ProjectUpdate {
 	pu.mutation.RemoveRunIDs(ids...)
@@ -116,6 +122,12 @@ func (pu *ProjectUpdate) RemoveRuns(r ...*Run) *ProjectUpdate {
 		ids[i] = r[i].ID
 	}
 	return pu.RemoveRunIDs(ids...)
+}
+
+// ClearTemplates clears all "templates" edges to type Template.
+func (pu *ProjectUpdate) ClearTemplates() *ProjectUpdate {
+	pu.mutation.ClearTemplates()
+	return pu
 }
 
 // RemoveTemplateIDs removes the templates edge to Template by ids.
@@ -133,7 +145,7 @@ func (pu *ProjectUpdate) RemoveTemplates(t ...*Template) *ProjectUpdate {
 	return pu.RemoveTemplateIDs(ids...)
 }
 
-// ClearOwner clears the owner edge to Admin.
+// ClearOwner clears the "owner" edge to type Admin.
 func (pu *ProjectUpdate) ClearOwner() *ProjectUpdate {
 	pu.mutation.ClearOwner()
 	return pu
@@ -141,15 +153,11 @@ func (pu *ProjectUpdate) ClearOwner() *ProjectUpdate {
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (pu *ProjectUpdate) Save(ctx context.Context) (int, error) {
-	if _, ok := pu.mutation.UpdatedAt(); !ok {
-		v := project.UpdateDefaultUpdatedAt()
-		pu.mutation.SetUpdatedAt(v)
-	}
-
 	var (
 		err      error
 		affected int
 	)
+	pu.defaults()
 	if len(pu.hooks) == 0 {
 		affected, err = pu.sqlSave(ctx)
 	} else {
@@ -195,6 +203,14 @@ func (pu *ProjectUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (pu *ProjectUpdate) defaults() {
+	if _, ok := pu.mutation.UpdatedAt(); !ok {
+		v := project.UpdateDefaultUpdatedAt()
+		pu.mutation.SetUpdatedAt(v)
+	}
+}
+
 func (pu *ProjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
@@ -234,7 +250,23 @@ func (pu *ProjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: project.FieldName,
 		})
 	}
-	if nodes := pu.mutation.RemovedRunsIDs(); len(nodes) > 0 {
+	if pu.mutation.RunsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.RunsTable,
+			Columns: []string{project.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedRunsIDs(); len(nodes) > 0 && !pu.mutation.RunsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -272,7 +304,23 @@ func (pu *ProjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := pu.mutation.RemovedTemplatesIDs(); len(nodes) > 0 {
+	if pu.mutation.TemplatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.TemplatesTable,
+			Columns: []string{project.TemplatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: template.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedTemplatesIDs(); len(nodes) > 0 && !pu.mutation.TemplatesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -435,6 +483,12 @@ func (puo *ProjectUpdateOne) Mutation() *ProjectMutation {
 	return puo.mutation
 }
 
+// ClearRuns clears all "runs" edges to type Run.
+func (puo *ProjectUpdateOne) ClearRuns() *ProjectUpdateOne {
+	puo.mutation.ClearRuns()
+	return puo
+}
+
 // RemoveRunIDs removes the runs edge to Run by ids.
 func (puo *ProjectUpdateOne) RemoveRunIDs(ids ...string) *ProjectUpdateOne {
 	puo.mutation.RemoveRunIDs(ids...)
@@ -448,6 +502,12 @@ func (puo *ProjectUpdateOne) RemoveRuns(r ...*Run) *ProjectUpdateOne {
 		ids[i] = r[i].ID
 	}
 	return puo.RemoveRunIDs(ids...)
+}
+
+// ClearTemplates clears all "templates" edges to type Template.
+func (puo *ProjectUpdateOne) ClearTemplates() *ProjectUpdateOne {
+	puo.mutation.ClearTemplates()
+	return puo
 }
 
 // RemoveTemplateIDs removes the templates edge to Template by ids.
@@ -465,7 +525,7 @@ func (puo *ProjectUpdateOne) RemoveTemplates(t ...*Template) *ProjectUpdateOne {
 	return puo.RemoveTemplateIDs(ids...)
 }
 
-// ClearOwner clears the owner edge to Admin.
+// ClearOwner clears the "owner" edge to type Admin.
 func (puo *ProjectUpdateOne) ClearOwner() *ProjectUpdateOne {
 	puo.mutation.ClearOwner()
 	return puo
@@ -473,15 +533,11 @@ func (puo *ProjectUpdateOne) ClearOwner() *ProjectUpdateOne {
 
 // Save executes the query and returns the updated entity.
 func (puo *ProjectUpdateOne) Save(ctx context.Context) (*Project, error) {
-	if _, ok := puo.mutation.UpdatedAt(); !ok {
-		v := project.UpdateDefaultUpdatedAt()
-		puo.mutation.SetUpdatedAt(v)
-	}
-
 	var (
 		err  error
 		node *Project
 	)
+	puo.defaults()
 	if len(puo.hooks) == 0 {
 		node, err = puo.sqlSave(ctx)
 	} else {
@@ -507,11 +563,11 @@ func (puo *ProjectUpdateOne) Save(ctx context.Context) (*Project, error) {
 
 // SaveX is like Save, but panics if an error occurs.
 func (puo *ProjectUpdateOne) SaveX(ctx context.Context) *Project {
-	pr, err := puo.Save(ctx)
+	node, err := puo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pr
+	return node
 }
 
 // Exec executes the query on the entity.
@@ -527,7 +583,15 @@ func (puo *ProjectUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (pr *Project, err error) {
+// defaults sets the default values of the builder before save.
+func (puo *ProjectUpdateOne) defaults() {
+	if _, ok := puo.mutation.UpdatedAt(); !ok {
+		v := project.UpdateDefaultUpdatedAt()
+		puo.mutation.SetUpdatedAt(v)
+	}
+}
+
+func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (_node *Project, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   project.Table,
@@ -564,7 +628,23 @@ func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (pr *Project, err erro
 			Column: project.FieldName,
 		})
 	}
-	if nodes := puo.mutation.RemovedRunsIDs(); len(nodes) > 0 {
+	if puo.mutation.RunsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.RunsTable,
+			Columns: []string{project.RunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: run.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedRunsIDs(); len(nodes) > 0 && !puo.mutation.RunsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -602,7 +682,23 @@ func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (pr *Project, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if nodes := puo.mutation.RemovedTemplatesIDs(); len(nodes) > 0 {
+	if puo.mutation.TemplatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   project.TemplatesTable,
+			Columns: []string{project.TemplatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: template.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedTemplatesIDs(); len(nodes) > 0 && !puo.mutation.TemplatesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -675,9 +771,9 @@ func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (pr *Project, err erro
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	pr = &Project{config: puo.config}
-	_spec.Assign = pr.assignValues
-	_spec.ScanValues = pr.scanValues()
+	_node = &Project{config: puo.config}
+	_spec.Assign = _node.assignValues
+	_spec.ScanValues = _node.scanValues()
 	if err = sqlgraph.UpdateNode(ctx, puo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{project.Label}
@@ -686,5 +782,5 @@ func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (pr *Project, err erro
 		}
 		return nil, err
 	}
-	return pr, nil
+	return _node, nil
 }

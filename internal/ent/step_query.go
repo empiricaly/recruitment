@@ -65,8 +65,12 @@ func (sq *StepQuery) QueryStepRun() *StepRunQuery {
 		if err := sq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := sq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(step.Table, step.FieldID, sq.sqlQuery()),
+			sqlgraph.From(step.Table, step.FieldID, selector),
 			sqlgraph.To(steprun.Table, steprun.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, true, step.StepRunTable, step.StepRunColumn),
 		)
@@ -83,8 +87,12 @@ func (sq *StepQuery) QueryTemplate() *TemplateQuery {
 		if err := sq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := sq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(step.Table, step.FieldID, sq.sqlQuery()),
+			sqlgraph.From(step.Table, step.FieldID, selector),
 			sqlgraph.To(template.Table, template.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, step.TemplateTable, step.TemplateColumn),
 		)
@@ -96,23 +104,23 @@ func (sq *StepQuery) QueryTemplate() *TemplateQuery {
 
 // First returns the first Step entity in the query. Returns *NotFoundError when no step was found.
 func (sq *StepQuery) First(ctx context.Context) (*Step, error) {
-	sSlice, err := sq.Limit(1).All(ctx)
+	nodes, err := sq.Limit(1).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(sSlice) == 0 {
+	if len(nodes) == 0 {
 		return nil, &NotFoundError{step.Label}
 	}
-	return sSlice[0], nil
+	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
 func (sq *StepQuery) FirstX(ctx context.Context) *Step {
-	s, err := sq.First(ctx)
+	node, err := sq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
-	return s
+	return node
 }
 
 // FirstID returns the first Step id in the query. Returns *NotFoundError when no id was found.
@@ -139,13 +147,13 @@ func (sq *StepQuery) FirstXID(ctx context.Context) string {
 
 // Only returns the only Step entity in the query, returns an error if not exactly one entity was returned.
 func (sq *StepQuery) Only(ctx context.Context) (*Step, error) {
-	sSlice, err := sq.Limit(2).All(ctx)
+	nodes, err := sq.Limit(2).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	switch len(sSlice) {
+	switch len(nodes) {
 	case 1:
-		return sSlice[0], nil
+		return nodes[0], nil
 	case 0:
 		return nil, &NotFoundError{step.Label}
 	default:
@@ -155,11 +163,11 @@ func (sq *StepQuery) Only(ctx context.Context) (*Step, error) {
 
 // OnlyX is like Only, but panics if an error occurs.
 func (sq *StepQuery) OnlyX(ctx context.Context) *Step {
-	s, err := sq.Only(ctx)
+	node, err := sq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return s
+	return node
 }
 
 // OnlyID returns the only Step id in the query, returns an error if not exactly one id was returned.
@@ -198,11 +206,11 @@ func (sq *StepQuery) All(ctx context.Context) ([]*Step, error) {
 
 // AllX is like All, but panics if an error occurs.
 func (sq *StepQuery) AllX(ctx context.Context) []*Step {
-	sSlice, err := sq.All(ctx)
+	nodes, err := sq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return sSlice
+	return nodes
 }
 
 // IDs executes the query and returns a list of Step ids.
@@ -492,7 +500,7 @@ func (sq *StepQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := sq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector)
+				ps[i](selector, step.ValidColumn)
 			}
 		}
 	}
@@ -511,7 +519,7 @@ func (sq *StepQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range sq.order {
-		p(selector)
+		p(selector, step.ValidColumn)
 	}
 	if offset := sq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -746,8 +754,17 @@ func (sgb *StepGroupBy) BoolX(ctx context.Context) bool {
 }
 
 func (sgb *StepGroupBy) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range sgb.fields {
+		if !step.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
+		}
+	}
+	selector := sgb.sqlQuery()
+	if err := selector.Err(); err != nil {
+		return err
+	}
 	rows := &sql.Rows{}
-	query, args := sgb.sqlQuery().Query()
+	query, args := selector.Query()
 	if err := sgb.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
@@ -760,7 +777,7 @@ func (sgb *StepGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(sgb.fields)+len(sgb.fns))
 	columns = append(columns, sgb.fields...)
 	for _, fn := range sgb.fns {
-		columns = append(columns, fn(selector))
+		columns = append(columns, fn(selector, step.ValidColumn))
 	}
 	return selector.Select(columns...).GroupBy(sgb.fields...)
 }
@@ -980,6 +997,11 @@ func (ss *StepSelect) BoolX(ctx context.Context) bool {
 }
 
 func (ss *StepSelect) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range ss.fields {
+		if !step.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for selection", f)}
+		}
+	}
 	rows := &sql.Rows{}
 	query, args := ss.sqlQuery().Query()
 	if err := ss.driver.Query(ctx, query, args, rows); err != nil {

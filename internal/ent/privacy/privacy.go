@@ -234,6 +234,30 @@ func (f AdminMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation)
 	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.AdminMutation", m)
 }
 
+// The DatumQueryRuleFunc type is an adapter to allow the use of ordinary
+// functions as a query rule.
+type DatumQueryRuleFunc func(context.Context, *ent.DatumQuery) error
+
+// EvalQuery return f(ctx, q).
+func (f DatumQueryRuleFunc) EvalQuery(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.DatumQuery); ok {
+		return f(ctx, q)
+	}
+	return Denyf("ent/privacy: unexpected query type %T, expect *ent.DatumQuery", q)
+}
+
+// The DatumMutationRuleFunc type is an adapter to allow the use of ordinary
+// functions as a mutation rule.
+type DatumMutationRuleFunc func(context.Context, *ent.DatumMutation) error
+
+// EvalMutation calls f(ctx, m).
+func (f DatumMutationRuleFunc) EvalMutation(ctx context.Context, m ent.Mutation) error {
+	if m, ok := m.(*ent.DatumMutation); ok {
+		return f(ctx, m)
+	}
+	return Denyf("ent/privacy: unexpected mutation type %T, expect *ent.DatumMutation", m)
+}
+
 // The ParticipantQueryRuleFunc type is an adapter to allow the use of ordinary
 // functions as a query rule.
 type ParticipantQueryRuleFunc func(context.Context, *ent.ParticipantQuery) error

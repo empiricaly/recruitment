@@ -20,7 +20,6 @@ func (Template) Mixin() []ent.Mixin {
 
 // Fields of the Template.
 func (Template) Fields() []ent.Field {
-	// TODO field : creator, selectionType, internalCriteria, mturkCriteria, steps
 	return []ent.Field{
 		field.String("name").MaxLen(255).MinLen(1),
 		field.Enum("selectionType").Values("INTERNAL_DB", "MTURK_QUALIFICATIONS"),

@@ -105,20 +105,24 @@ func (ac *AdminCreate) Mutation() *AdminMutation {
 
 // Save creates the Admin in the database.
 func (ac *AdminCreate) Save(ctx context.Context) (*Admin, error) {
-	if err := ac.preSave(); err != nil {
-		return nil, err
-	}
 	var (
 		err  error
 		node *Admin
 	)
+	ac.defaults()
 	if len(ac.hooks) == 0 {
+		if err = ac.check(); err != nil {
+			return nil, err
+		}
 		node, err = ac.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*AdminMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = ac.check(); err != nil {
+				return nil, err
 			}
 			ac.mutation = mutation
 			node, err = ac.sqlSave(ctx)
@@ -144,7 +148,8 @@ func (ac *AdminCreate) SaveX(ctx context.Context) *Admin {
 	return v
 }
 
-func (ac *AdminCreate) preSave() error {
+// defaults sets the default values of the builder before save.
+func (ac *AdminCreate) defaults() {
 	if _, ok := ac.mutation.CreatedAt(); !ok {
 		v := admin.DefaultCreatedAt()
 		ac.mutation.SetCreatedAt(v)
@@ -152,6 +157,16 @@ func (ac *AdminCreate) preSave() error {
 	if _, ok := ac.mutation.UpdatedAt(); !ok {
 		v := admin.DefaultUpdatedAt()
 		ac.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (ac *AdminCreate) check() error {
+	if _, ok := ac.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+	}
+	if _, ok := ac.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New("ent: missing required field \"updated_at\"")}
 	}
 	if _, ok := ac.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
@@ -168,19 +183,19 @@ func (ac *AdminCreate) preSave() error {
 }
 
 func (ac *AdminCreate) sqlSave(ctx context.Context) (*Admin, error) {
-	a, _spec := ac.createSpec()
+	_node, _spec := ac.createSpec()
 	if err := sqlgraph.CreateNode(ctx, ac.driver, _spec); err != nil {
 		if cerr, ok := isSQLConstraintError(err); ok {
 			err = cerr
 		}
 		return nil, err
 	}
-	return a, nil
+	return _node, nil
 }
 
 func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 	var (
-		a     = &Admin{config: ac.config}
+		_node = &Admin{config: ac.config}
 		_spec = &sqlgraph.CreateSpec{
 			Table: admin.Table,
 			ID: &sqlgraph.FieldSpec{
@@ -190,7 +205,7 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 		}
 	)
 	if id, ok := ac.mutation.ID(); ok {
-		a.ID = id
+		_node.ID = id
 		_spec.ID.Value = id
 	}
 	if value, ok := ac.mutation.CreatedAt(); ok {
@@ -199,7 +214,7 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: admin.FieldCreatedAt,
 		})
-		a.CreatedAt = value
+		_node.CreatedAt = value
 	}
 	if value, ok := ac.mutation.UpdatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -207,7 +222,7 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: admin.FieldUpdatedAt,
 		})
-		a.UpdatedAt = value
+		_node.UpdatedAt = value
 	}
 	if value, ok := ac.mutation.Name(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -215,7 +230,7 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: admin.FieldName,
 		})
-		a.Name = value
+		_node.Name = value
 	}
 	if value, ok := ac.mutation.Username(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -223,7 +238,7 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 			Value:  value,
 			Column: admin.FieldUsername,
 		})
-		a.Username = value
+		_node.Username = value
 	}
 	if nodes := ac.mutation.ProjectsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -263,7 +278,7 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	return a, _spec
+	return _node, _spec
 }
 
 // AdminCreateBulk is the builder for creating a bulk of Admin entities.
@@ -280,13 +295,14 @@ func (acb *AdminCreateBulk) Save(ctx context.Context) ([]*Admin, error) {
 	for i := range acb.builders {
 		func(i int, root context.Context) {
 			builder := acb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				if err := builder.preSave(); err != nil {
-					return nil, err
-				}
 				mutation, ok := m.(*AdminMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
+				}
+				if err := builder.check(); err != nil {
+					return nil, err
 				}
 				builder.mutation = mutation
 				nodes[i], specs[i] = builder.createSpec()

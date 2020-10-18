@@ -65,7 +65,7 @@ func (piu *ProviderIDUpdate) Mutation() *ProviderIDMutation {
 	return piu.mutation
 }
 
-// ClearParticpant clears the particpant edge to Participant.
+// ClearParticpant clears the "particpant" edge to type Participant.
 func (piu *ProviderIDUpdate) ClearParticpant() *ProviderIDUpdate {
 	piu.mutation.ClearParticpant()
 	return piu
@@ -73,15 +73,11 @@ func (piu *ProviderIDUpdate) ClearParticpant() *ProviderIDUpdate {
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (piu *ProviderIDUpdate) Save(ctx context.Context) (int, error) {
-	if _, ok := piu.mutation.UpdatedAt(); !ok {
-		v := providerid.UpdateDefaultUpdatedAt()
-		piu.mutation.SetUpdatedAt(v)
-	}
-
 	var (
 		err      error
 		affected int
 	)
+	piu.defaults()
 	if len(piu.hooks) == 0 {
 		affected, err = piu.sqlSave(ctx)
 	} else {
@@ -124,6 +120,14 @@ func (piu *ProviderIDUpdate) Exec(ctx context.Context) error {
 func (piu *ProviderIDUpdate) ExecX(ctx context.Context) {
 	if err := piu.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (piu *ProviderIDUpdate) defaults() {
+	if _, ok := piu.mutation.UpdatedAt(); !ok {
+		v := providerid.UpdateDefaultUpdatedAt()
+		piu.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -248,7 +252,7 @@ func (piuo *ProviderIDUpdateOne) Mutation() *ProviderIDMutation {
 	return piuo.mutation
 }
 
-// ClearParticpant clears the particpant edge to Participant.
+// ClearParticpant clears the "particpant" edge to type Participant.
 func (piuo *ProviderIDUpdateOne) ClearParticpant() *ProviderIDUpdateOne {
 	piuo.mutation.ClearParticpant()
 	return piuo
@@ -256,15 +260,11 @@ func (piuo *ProviderIDUpdateOne) ClearParticpant() *ProviderIDUpdateOne {
 
 // Save executes the query and returns the updated entity.
 func (piuo *ProviderIDUpdateOne) Save(ctx context.Context) (*ProviderID, error) {
-	if _, ok := piuo.mutation.UpdatedAt(); !ok {
-		v := providerid.UpdateDefaultUpdatedAt()
-		piuo.mutation.SetUpdatedAt(v)
-	}
-
 	var (
 		err  error
 		node *ProviderID
 	)
+	piuo.defaults()
 	if len(piuo.hooks) == 0 {
 		node, err = piuo.sqlSave(ctx)
 	} else {
@@ -290,11 +290,11 @@ func (piuo *ProviderIDUpdateOne) Save(ctx context.Context) (*ProviderID, error) 
 
 // SaveX is like Save, but panics if an error occurs.
 func (piuo *ProviderIDUpdateOne) SaveX(ctx context.Context) *ProviderID {
-	pi, err := piuo.Save(ctx)
+	node, err := piuo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pi
+	return node
 }
 
 // Exec executes the query on the entity.
@@ -310,7 +310,15 @@ func (piuo *ProviderIDUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-func (piuo *ProviderIDUpdateOne) sqlSave(ctx context.Context) (pi *ProviderID, err error) {
+// defaults sets the default values of the builder before save.
+func (piuo *ProviderIDUpdateOne) defaults() {
+	if _, ok := piuo.mutation.UpdatedAt(); !ok {
+		v := providerid.UpdateDefaultUpdatedAt()
+		piuo.mutation.SetUpdatedAt(v)
+	}
+}
+
+func (piuo *ProviderIDUpdateOne) sqlSave(ctx context.Context) (_node *ProviderID, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   providerid.Table,
@@ -375,9 +383,9 @@ func (piuo *ProviderIDUpdateOne) sqlSave(ctx context.Context) (pi *ProviderID, e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	pi = &ProviderID{config: piuo.config}
-	_spec.Assign = pi.assignValues
-	_spec.ScanValues = pi.scanValues()
+	_node = &ProviderID{config: piuo.config}
+	_spec.Assign = _node.assignValues
+	_spec.ScanValues = _node.scanValues()
 	if err = sqlgraph.UpdateNode(ctx, piuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{providerid.Label}
@@ -386,5 +394,5 @@ func (piuo *ProviderIDUpdateOne) sqlSave(ctx context.Context) (pi *ProviderID, e
 		}
 		return nil, err
 	}
-	return pi, nil
+	return _node, nil
 }

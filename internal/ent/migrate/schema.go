@@ -23,6 +23,34 @@ var (
 		PrimaryKey:  []*schema.Column{AdminsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{},
 	}
+	// DataColumns holds the columns for the "data" table.
+	DataColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "key", Type: field.TypeString},
+		{Name: "val", Type: field.TypeBytes},
+		{Name: "index", Type: field.TypeInt},
+		{Name: "latest", Type: field.TypeBool, Default: true},
+		{Name: "version", Type: field.TypeInt},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "participant_data", Type: field.TypeString, Nullable: true, Size: 20},
+	}
+	// DataTable holds the schema information for the "data" table.
+	DataTable = &schema.Table{
+		Name:       "data",
+		Columns:    DataColumns,
+		PrimaryKey: []*schema.Column{DataColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "data_participants_data",
+				Columns: []*schema.Column{DataColumns[9]},
+
+				RefColumns: []*schema.Column{ParticipantsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// ParticipantsColumns holds the columns for the "participants" table.
 	ParticipantsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
@@ -304,6 +332,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AdminsTable,
+		DataTable,
 		ParticipantsTable,
 		ParticipationsTable,
 		ProjectsTable,
@@ -317,6 +346,7 @@ var (
 )
 
 func init() {
+	DataTable.ForeignKeys[0].RefTable = ParticipantsTable
 	ParticipantsTable.ForeignKeys[0].RefTable = StepRunsTable
 	ParticipationsTable.ForeignKeys[0].RefTable = ParticipantsTable
 	ParticipationsTable.ForeignKeys[1].RefTable = StepRunsTable

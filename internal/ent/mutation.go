@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/datum"
 	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
 	"github.com/empiricaly/recruitment/internal/ent/project"
@@ -31,6 +32,7 @@ const (
 
 	// Node types.
 	TypeAdmin         = "Admin"
+	TypeDatum         = "Datum"
 	TypeParticipant   = "Participant"
 	TypeParticipation = "Participation"
 	TypeProject       = "Project"
@@ -55,8 +57,10 @@ type AdminMutation struct {
 	clearedFields    map[string]struct{}
 	projects         map[string]struct{}
 	removedprojects  map[string]struct{}
+	clearedprojects  bool
 	templates        map[string]struct{}
 	removedtemplates map[string]struct{}
+	clearedtemplates bool
 	done             bool
 	oldValue         func(context.Context) (*Admin, error)
 }
@@ -304,6 +308,16 @@ func (m *AdminMutation) AddProjectIDs(ids ...string) {
 	}
 }
 
+// ClearProjects clears the projects edge to Project.
+func (m *AdminMutation) ClearProjects() {
+	m.clearedprojects = true
+}
+
+// ProjectsCleared returns if the edge projects was cleared.
+func (m *AdminMutation) ProjectsCleared() bool {
+	return m.clearedprojects
+}
+
 // RemoveProjectIDs removes the projects edge to Project by ids.
 func (m *AdminMutation) RemoveProjectIDs(ids ...string) {
 	if m.removedprojects == nil {
@@ -333,6 +347,7 @@ func (m *AdminMutation) ProjectsIDs() (ids []string) {
 // ResetProjects reset all changes of the "projects" edge.
 func (m *AdminMutation) ResetProjects() {
 	m.projects = nil
+	m.clearedprojects = false
 	m.removedprojects = nil
 }
 
@@ -344,6 +359,16 @@ func (m *AdminMutation) AddTemplateIDs(ids ...string) {
 	for i := range ids {
 		m.templates[ids[i]] = struct{}{}
 	}
+}
+
+// ClearTemplates clears the templates edge to Template.
+func (m *AdminMutation) ClearTemplates() {
+	m.clearedtemplates = true
+}
+
+// TemplatesCleared returns if the edge templates was cleared.
+func (m *AdminMutation) TemplatesCleared() bool {
+	return m.clearedtemplates
 }
 
 // RemoveTemplateIDs removes the templates edge to Template by ids.
@@ -375,6 +400,7 @@ func (m *AdminMutation) TemplatesIDs() (ids []string) {
 // ResetTemplates reset all changes of the "templates" edge.
 func (m *AdminMutation) ResetTemplates() {
 	m.templates = nil
+	m.clearedtemplates = false
 	m.removedtemplates = nil
 }
 
@@ -611,6 +637,12 @@ func (m *AdminMutation) RemovedIDs(name string) []ent.Value {
 // mutation.
 func (m *AdminMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
+	if m.clearedprojects {
+		edges = append(edges, admin.EdgeProjects)
+	}
+	if m.clearedtemplates {
+		edges = append(edges, admin.EdgeTemplates)
+	}
 	return edges
 }
 
@@ -618,6 +650,10 @@ func (m *AdminMutation) ClearedEdges() []string {
 // cleared in this mutation.
 func (m *AdminMutation) EdgeCleared(name string) bool {
 	switch name {
+	case admin.EdgeProjects:
+		return m.clearedprojects
+	case admin.EdgeTemplates:
+		return m.clearedtemplates
 	}
 	return false
 }
@@ -645,6 +681,850 @@ func (m *AdminMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Admin edge %s", name)
 }
 
+// DatumMutation represents an operation that mutate the Data
+// nodes in the graph.
+type DatumMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *string
+	created_at         *time.Time
+	updated_at         *time.Time
+	key                *string
+	val                *[]byte
+	index              *int
+	addindex           *int
+	latest             *bool
+	version            *int
+	addversion         *int
+	deletedAt          *time.Time
+	clearedFields      map[string]struct{}
+	participant        *string
+	clearedparticipant bool
+	done               bool
+	oldValue           func(context.Context) (*Datum, error)
+}
+
+var _ ent.Mutation = (*DatumMutation)(nil)
+
+// datumOption allows to manage the mutation configuration using functional options.
+type datumOption func(*DatumMutation)
+
+// newDatumMutation creates new mutation for $n.Name.
+func newDatumMutation(c config, op Op, opts ...datumOption) *DatumMutation {
+	m := &DatumMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeDatum,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withDatumID sets the id field of the mutation.
+func withDatumID(id string) datumOption {
+	return func(m *DatumMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Datum
+		)
+		m.oldValue = func(ctx context.Context) (*Datum, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Datum.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withDatum sets the old Datum of the mutation.
+func withDatum(node *Datum) datumOption {
+	return func(m *DatumMutation) {
+		m.oldValue = func(context.Context) (*Datum, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m DatumMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m DatumMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that, this
+// operation is accepted only on Datum creation.
+func (m *DatumMutation) SetID(id string) {
+	m.id = &id
+}
+
+// ID returns the id value in the mutation. Note that, the id
+// is available only if it was provided to the builder.
+func (m *DatumMutation) ID() (id string, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetCreatedAt sets the created_at field.
+func (m *DatumMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the created_at value in the mutation.
+func (m *DatumMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old created_at value of the Datum.
+// If the Datum object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *DatumMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt reset all changes of the "created_at" field.
+func (m *DatumMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the updated_at field.
+func (m *DatumMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the updated_at value in the mutation.
+func (m *DatumMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old updated_at value of the Datum.
+// If the Datum object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *DatumMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdatedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt reset all changes of the "updated_at" field.
+func (m *DatumMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetKey sets the key field.
+func (m *DatumMutation) SetKey(s string) {
+	m.key = &s
+}
+
+// Key returns the key value in the mutation.
+func (m *DatumMutation) Key() (r string, exists bool) {
+	v := m.key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKey returns the old key value of the Datum.
+// If the Datum object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *DatumMutation) OldKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldKey is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKey: %w", err)
+	}
+	return oldValue.Key, nil
+}
+
+// ResetKey reset all changes of the "key" field.
+func (m *DatumMutation) ResetKey() {
+	m.key = nil
+}
+
+// SetVal sets the val field.
+func (m *DatumMutation) SetVal(b []byte) {
+	m.val = &b
+}
+
+// Val returns the val value in the mutation.
+func (m *DatumMutation) Val() (r []byte, exists bool) {
+	v := m.val
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVal returns the old val value of the Datum.
+// If the Datum object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *DatumMutation) OldVal(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldVal is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldVal requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVal: %w", err)
+	}
+	return oldValue.Val, nil
+}
+
+// ResetVal reset all changes of the "val" field.
+func (m *DatumMutation) ResetVal() {
+	m.val = nil
+}
+
+// SetIndex sets the index field.
+func (m *DatumMutation) SetIndex(i int) {
+	m.index = &i
+	m.addindex = nil
+}
+
+// Index returns the index value in the mutation.
+func (m *DatumMutation) Index() (r int, exists bool) {
+	v := m.index
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIndex returns the old index value of the Datum.
+// If the Datum object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *DatumMutation) OldIndex(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldIndex is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldIndex requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIndex: %w", err)
+	}
+	return oldValue.Index, nil
+}
+
+// AddIndex adds i to index.
+func (m *DatumMutation) AddIndex(i int) {
+	if m.addindex != nil {
+		*m.addindex += i
+	} else {
+		m.addindex = &i
+	}
+}
+
+// AddedIndex returns the value that was added to the index field in this mutation.
+func (m *DatumMutation) AddedIndex() (r int, exists bool) {
+	v := m.addindex
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetIndex reset all changes of the "index" field.
+func (m *DatumMutation) ResetIndex() {
+	m.index = nil
+	m.addindex = nil
+}
+
+// SetLatest sets the latest field.
+func (m *DatumMutation) SetLatest(b bool) {
+	m.latest = &b
+}
+
+// Latest returns the latest value in the mutation.
+func (m *DatumMutation) Latest() (r bool, exists bool) {
+	v := m.latest
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLatest returns the old latest value of the Datum.
+// If the Datum object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *DatumMutation) OldLatest(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldLatest is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldLatest requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLatest: %w", err)
+	}
+	return oldValue.Latest, nil
+}
+
+// ResetLatest reset all changes of the "latest" field.
+func (m *DatumMutation) ResetLatest() {
+	m.latest = nil
+}
+
+// SetVersion sets the version field.
+func (m *DatumMutation) SetVersion(i int) {
+	m.version = &i
+	m.addversion = nil
+}
+
+// Version returns the version value in the mutation.
+func (m *DatumMutation) Version() (r int, exists bool) {
+	v := m.version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVersion returns the old version value of the Datum.
+// If the Datum object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *DatumMutation) OldVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldVersion is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVersion: %w", err)
+	}
+	return oldValue.Version, nil
+}
+
+// AddVersion adds i to version.
+func (m *DatumMutation) AddVersion(i int) {
+	if m.addversion != nil {
+		*m.addversion += i
+	} else {
+		m.addversion = &i
+	}
+}
+
+// AddedVersion returns the value that was added to the version field in this mutation.
+func (m *DatumMutation) AddedVersion() (r int, exists bool) {
+	v := m.addversion
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetVersion reset all changes of the "version" field.
+func (m *DatumMutation) ResetVersion() {
+	m.version = nil
+	m.addversion = nil
+}
+
+// SetDeletedAt sets the deletedAt field.
+func (m *DatumMutation) SetDeletedAt(t time.Time) {
+	m.deletedAt = &t
+}
+
+// DeletedAt returns the deletedAt value in the mutation.
+func (m *DatumMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deletedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old deletedAt value of the Datum.
+// If the Datum object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *DatumMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldDeletedAt is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of deletedAt.
+func (m *DatumMutation) ClearDeletedAt() {
+	m.deletedAt = nil
+	m.clearedFields[datum.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the field deletedAt was cleared in this mutation.
+func (m *DatumMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[datum.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt reset all changes of the "deletedAt" field.
+func (m *DatumMutation) ResetDeletedAt() {
+	m.deletedAt = nil
+	delete(m.clearedFields, datum.FieldDeletedAt)
+}
+
+// SetParticipantID sets the participant edge to Participant by id.
+func (m *DatumMutation) SetParticipantID(id string) {
+	m.participant = &id
+}
+
+// ClearParticipant clears the participant edge to Participant.
+func (m *DatumMutation) ClearParticipant() {
+	m.clearedparticipant = true
+}
+
+// ParticipantCleared returns if the edge participant was cleared.
+func (m *DatumMutation) ParticipantCleared() bool {
+	return m.clearedparticipant
+}
+
+// ParticipantID returns the participant id in the mutation.
+func (m *DatumMutation) ParticipantID() (id string, exists bool) {
+	if m.participant != nil {
+		return *m.participant, true
+	}
+	return
+}
+
+// ParticipantIDs returns the participant ids in the mutation.
+// Note that ids always returns len(ids) <= 1 for unique edges, and you should use
+// ParticipantID instead. It exists only for internal usage by the builders.
+func (m *DatumMutation) ParticipantIDs() (ids []string) {
+	if id := m.participant; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetParticipant reset all changes of the "participant" edge.
+func (m *DatumMutation) ResetParticipant() {
+	m.participant = nil
+	m.clearedparticipant = false
+}
+
+// Op returns the operation name.
+func (m *DatumMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Datum).
+func (m *DatumMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during
+// this mutation. Note that, in order to get all numeric
+// fields that were in/decremented, call AddedFields().
+func (m *DatumMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, datum.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, datum.FieldUpdatedAt)
+	}
+	if m.key != nil {
+		fields = append(fields, datum.FieldKey)
+	}
+	if m.val != nil {
+		fields = append(fields, datum.FieldVal)
+	}
+	if m.index != nil {
+		fields = append(fields, datum.FieldIndex)
+	}
+	if m.latest != nil {
+		fields = append(fields, datum.FieldLatest)
+	}
+	if m.version != nil {
+		fields = append(fields, datum.FieldVersion)
+	}
+	if m.deletedAt != nil {
+		fields = append(fields, datum.FieldDeletedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name.
+// The second boolean value indicates that this field was
+// not set, or was not define in the schema.
+func (m *DatumMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case datum.FieldCreatedAt:
+		return m.CreatedAt()
+	case datum.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case datum.FieldKey:
+		return m.Key()
+	case datum.FieldVal:
+		return m.Val()
+	case datum.FieldIndex:
+		return m.Index()
+	case datum.FieldLatest:
+		return m.Latest()
+	case datum.FieldVersion:
+		return m.Version()
+	case datum.FieldDeletedAt:
+		return m.DeletedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database.
+// An error is returned if the mutation operation is not UpdateOne,
+// or the query to the database was failed.
+func (m *DatumMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case datum.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case datum.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case datum.FieldKey:
+		return m.OldKey(ctx)
+	case datum.FieldVal:
+		return m.OldVal(ctx)
+	case datum.FieldIndex:
+		return m.OldIndex(ctx)
+	case datum.FieldLatest:
+		return m.OldLatest(ctx)
+	case datum.FieldVersion:
+		return m.OldVersion(ctx)
+	case datum.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Datum field %s", name)
+}
+
+// SetField sets the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *DatumMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case datum.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case datum.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case datum.FieldKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKey(v)
+		return nil
+	case datum.FieldVal:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVal(v)
+		return nil
+	case datum.FieldIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIndex(v)
+		return nil
+	case datum.FieldLatest:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLatest(v)
+		return nil
+	case datum.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVersion(v)
+		return nil
+	case datum.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Datum field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented
+// or decremented during this mutation.
+func (m *DatumMutation) AddedFields() []string {
+	var fields []string
+	if m.addindex != nil {
+		fields = append(fields, datum.FieldIndex)
+	}
+	if m.addversion != nil {
+		fields = append(fields, datum.FieldVersion)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was in/decremented
+// from a field with the given name. The second value indicates
+// that this field was not set, or was not define in the schema.
+func (m *DatumMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case datum.FieldIndex:
+		return m.AddedIndex()
+	case datum.FieldVersion:
+		return m.AddedVersion()
+	}
+	return nil, false
+}
+
+// AddField adds the value for the given name. It returns an
+// error if the field is not defined in the schema, or if the
+// type mismatch the field type.
+func (m *DatumMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case datum.FieldIndex:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddIndex(v)
+		return nil
+	case datum.FieldVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddVersion(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Datum numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared
+// during this mutation.
+func (m *DatumMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(datum.FieldDeletedAt) {
+		fields = append(fields, datum.FieldDeletedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicates if this field was
+// cleared in this mutation.
+func (m *DatumMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value for the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *DatumMutation) ClearField(name string) error {
+	switch name {
+	case datum.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Datum nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation regarding the
+// given field name. It returns an error if the field is not
+// defined in the schema.
+func (m *DatumMutation) ResetField(name string) error {
+	switch name {
+	case datum.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case datum.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case datum.FieldKey:
+		m.ResetKey()
+		return nil
+	case datum.FieldVal:
+		m.ResetVal()
+		return nil
+	case datum.FieldIndex:
+		m.ResetIndex()
+		return nil
+	case datum.FieldLatest:
+		m.ResetLatest()
+		return nil
+	case datum.FieldVersion:
+		m.ResetVersion()
+		return nil
+	case datum.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Datum field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this
+// mutation.
+func (m *DatumMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.participant != nil {
+		edges = append(edges, datum.EdgeParticipant)
+	}
+	return edges
+}
+
+// AddedIDs returns all ids (to other nodes) that were added for
+// the given edge name.
+func (m *DatumMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case datum.EdgeParticipant:
+		if id := m.participant; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this
+// mutation.
+func (m *DatumMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all ids (to other nodes) that were removed for
+// the given edge name.
+func (m *DatumMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this
+// mutation.
+func (m *DatumMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedparticipant {
+		edges = append(edges, datum.EdgeParticipant)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean indicates if this edge was
+// cleared in this mutation.
+func (m *DatumMutation) EdgeCleared(name string) bool {
+	switch name {
+	case datum.EdgeParticipant:
+		return m.clearedparticipant
+	}
+	return false
+}
+
+// ClearEdge clears the value for the given name. It returns an
+// error if the edge name is not defined in the schema.
+func (m *DatumMutation) ClearEdge(name string) error {
+	switch name {
+	case datum.EdgeParticipant:
+		m.ClearParticipant()
+		return nil
+	}
+	return fmt.Errorf("unknown Datum unique edge %s", name)
+}
+
+// ResetEdge resets all changes in the mutation regarding the
+// given edge name. It returns an error if the edge is not
+// defined in the schema.
+func (m *DatumMutation) ResetEdge(name string) error {
+	switch name {
+	case datum.EdgeParticipant:
+		m.ResetParticipant()
+		return nil
+	}
+	return fmt.Errorf("unknown Datum edge %s", name)
+}
+
 // ParticipantMutation represents an operation that mutate the Participants
 // nodes in the graph.
 type ParticipantMutation struct {
@@ -656,14 +1536,20 @@ type ParticipantMutation struct {
 	updated_at            *time.Time
 	mturkWorkerID         *string
 	clearedFields         map[string]struct{}
+	data                  map[string]struct{}
+	removeddata           map[string]struct{}
+	cleareddata           bool
 	providerIDs           map[string]struct{}
 	removedproviderIDs    map[string]struct{}
+	clearedproviderIDs    bool
 	participations        map[string]struct{}
 	removedparticipations map[string]struct{}
+	clearedparticipations bool
 	createdBy             *string
 	clearedcreatedBy      bool
 	steps                 map[string]struct{}
 	removedsteps          map[string]struct{}
+	clearedsteps          bool
 	done                  bool
 	oldValue              func(context.Context) (*Participant, error)
 }
@@ -877,6 +1763,59 @@ func (m *ParticipantMutation) ResetMturkWorkerID() {
 	delete(m.clearedFields, participant.FieldMturkWorkerID)
 }
 
+// AddDatumIDs adds the data edge to Datum by ids.
+func (m *ParticipantMutation) AddDatumIDs(ids ...string) {
+	if m.data == nil {
+		m.data = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.data[ids[i]] = struct{}{}
+	}
+}
+
+// ClearData clears the data edge to Datum.
+func (m *ParticipantMutation) ClearData() {
+	m.cleareddata = true
+}
+
+// DataCleared returns if the edge data was cleared.
+func (m *ParticipantMutation) DataCleared() bool {
+	return m.cleareddata
+}
+
+// RemoveDatumIDs removes the data edge to Datum by ids.
+func (m *ParticipantMutation) RemoveDatumIDs(ids ...string) {
+	if m.removeddata == nil {
+		m.removeddata = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removeddata[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedData returns the removed ids of data.
+func (m *ParticipantMutation) RemovedDataIDs() (ids []string) {
+	for id := range m.removeddata {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// DataIDs returns the data ids in the mutation.
+func (m *ParticipantMutation) DataIDs() (ids []string) {
+	for id := range m.data {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetData reset all changes of the "data" edge.
+func (m *ParticipantMutation) ResetData() {
+	m.data = nil
+	m.cleareddata = false
+	m.removeddata = nil
+}
+
 // AddProviderIDIDs adds the providerIDs edge to ProviderID by ids.
 func (m *ParticipantMutation) AddProviderIDIDs(ids ...string) {
 	if m.providerIDs == nil {
@@ -885,6 +1824,16 @@ func (m *ParticipantMutation) AddProviderIDIDs(ids ...string) {
 	for i := range ids {
 		m.providerIDs[ids[i]] = struct{}{}
 	}
+}
+
+// ClearProviderIDs clears the providerIDs edge to ProviderID.
+func (m *ParticipantMutation) ClearProviderIDs() {
+	m.clearedproviderIDs = true
+}
+
+// ProviderIDsCleared returns if the edge providerIDs was cleared.
+func (m *ParticipantMutation) ProviderIDsCleared() bool {
+	return m.clearedproviderIDs
 }
 
 // RemoveProviderIDIDs removes the providerIDs edge to ProviderID by ids.
@@ -916,6 +1865,7 @@ func (m *ParticipantMutation) ProviderIDsIDs() (ids []string) {
 // ResetProviderIDs reset all changes of the "providerIDs" edge.
 func (m *ParticipantMutation) ResetProviderIDs() {
 	m.providerIDs = nil
+	m.clearedproviderIDs = false
 	m.removedproviderIDs = nil
 }
 
@@ -927,6 +1877,16 @@ func (m *ParticipantMutation) AddParticipationIDs(ids ...string) {
 	for i := range ids {
 		m.participations[ids[i]] = struct{}{}
 	}
+}
+
+// ClearParticipations clears the participations edge to Participation.
+func (m *ParticipantMutation) ClearParticipations() {
+	m.clearedparticipations = true
+}
+
+// ParticipationsCleared returns if the edge participations was cleared.
+func (m *ParticipantMutation) ParticipationsCleared() bool {
+	return m.clearedparticipations
 }
 
 // RemoveParticipationIDs removes the participations edge to Participation by ids.
@@ -958,6 +1918,7 @@ func (m *ParticipantMutation) ParticipationsIDs() (ids []string) {
 // ResetParticipations reset all changes of the "participations" edge.
 func (m *ParticipantMutation) ResetParticipations() {
 	m.participations = nil
+	m.clearedparticipations = false
 	m.removedparticipations = nil
 }
 
@@ -1010,6 +1971,16 @@ func (m *ParticipantMutation) AddStepIDs(ids ...string) {
 	}
 }
 
+// ClearSteps clears the steps edge to StepRun.
+func (m *ParticipantMutation) ClearSteps() {
+	m.clearedsteps = true
+}
+
+// StepsCleared returns if the edge steps was cleared.
+func (m *ParticipantMutation) StepsCleared() bool {
+	return m.clearedsteps
+}
+
 // RemoveStepIDs removes the steps edge to StepRun by ids.
 func (m *ParticipantMutation) RemoveStepIDs(ids ...string) {
 	if m.removedsteps == nil {
@@ -1039,6 +2010,7 @@ func (m *ParticipantMutation) StepsIDs() (ids []string) {
 // ResetSteps reset all changes of the "steps" edge.
 func (m *ParticipantMutation) ResetSteps() {
 	m.steps = nil
+	m.clearedsteps = false
 	m.removedsteps = nil
 }
 
@@ -1200,7 +2172,10 @@ func (m *ParticipantMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *ParticipantMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
+	if m.data != nil {
+		edges = append(edges, participant.EdgeData)
+	}
 	if m.providerIDs != nil {
 		edges = append(edges, participant.EdgeProviderIDs)
 	}
@@ -1220,6 +2195,12 @@ func (m *ParticipantMutation) AddedEdges() []string {
 // the given edge name.
 func (m *ParticipantMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case participant.EdgeData:
+		ids := make([]ent.Value, 0, len(m.data))
+		for id := range m.data {
+			ids = append(ids, id)
+		}
+		return ids
 	case participant.EdgeProviderIDs:
 		ids := make([]ent.Value, 0, len(m.providerIDs))
 		for id := range m.providerIDs {
@@ -1249,7 +2230,10 @@ func (m *ParticipantMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *ParticipantMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
+	if m.removeddata != nil {
+		edges = append(edges, participant.EdgeData)
+	}
 	if m.removedproviderIDs != nil {
 		edges = append(edges, participant.EdgeProviderIDs)
 	}
@@ -1266,6 +2250,12 @@ func (m *ParticipantMutation) RemovedEdges() []string {
 // the given edge name.
 func (m *ParticipantMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case participant.EdgeData:
+		ids := make([]ent.Value, 0, len(m.removeddata))
+		for id := range m.removeddata {
+			ids = append(ids, id)
+		}
+		return ids
 	case participant.EdgeProviderIDs:
 		ids := make([]ent.Value, 0, len(m.removedproviderIDs))
 		for id := range m.removedproviderIDs {
@@ -1291,9 +2281,21 @@ func (m *ParticipantMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *ParticipantMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
+	if m.cleareddata {
+		edges = append(edges, participant.EdgeData)
+	}
+	if m.clearedproviderIDs {
+		edges = append(edges, participant.EdgeProviderIDs)
+	}
+	if m.clearedparticipations {
+		edges = append(edges, participant.EdgeParticipations)
+	}
 	if m.clearedcreatedBy {
 		edges = append(edges, participant.EdgeCreatedBy)
+	}
+	if m.clearedsteps {
+		edges = append(edges, participant.EdgeSteps)
 	}
 	return edges
 }
@@ -1302,8 +2304,16 @@ func (m *ParticipantMutation) ClearedEdges() []string {
 // cleared in this mutation.
 func (m *ParticipantMutation) EdgeCleared(name string) bool {
 	switch name {
+	case participant.EdgeData:
+		return m.cleareddata
+	case participant.EdgeProviderIDs:
+		return m.clearedproviderIDs
+	case participant.EdgeParticipations:
+		return m.clearedparticipations
 	case participant.EdgeCreatedBy:
 		return m.clearedcreatedBy
+	case participant.EdgeSteps:
+		return m.clearedsteps
 	}
 	return false
 }
@@ -1324,6 +2334,9 @@ func (m *ParticipantMutation) ClearEdge(name string) error {
 // defined in the schema.
 func (m *ParticipantMutation) ResetEdge(name string) error {
 	switch name {
+	case participant.EdgeData:
+		m.ResetData()
+		return nil
 	case participant.EdgeProviderIDs:
 		m.ResetProviderIDs()
 		return nil
@@ -2111,8 +3124,10 @@ type ProjectMutation struct {
 	clearedFields    map[string]struct{}
 	runs             map[string]struct{}
 	removedruns      map[string]struct{}
+	clearedruns      bool
 	templates        map[string]struct{}
 	removedtemplates map[string]struct{}
+	clearedtemplates bool
 	owner            *string
 	clearedowner     bool
 	done             bool
@@ -2362,6 +3377,16 @@ func (m *ProjectMutation) AddRunIDs(ids ...string) {
 	}
 }
 
+// ClearRuns clears the runs edge to Run.
+func (m *ProjectMutation) ClearRuns() {
+	m.clearedruns = true
+}
+
+// RunsCleared returns if the edge runs was cleared.
+func (m *ProjectMutation) RunsCleared() bool {
+	return m.clearedruns
+}
+
 // RemoveRunIDs removes the runs edge to Run by ids.
 func (m *ProjectMutation) RemoveRunIDs(ids ...string) {
 	if m.removedruns == nil {
@@ -2391,6 +3416,7 @@ func (m *ProjectMutation) RunsIDs() (ids []string) {
 // ResetRuns reset all changes of the "runs" edge.
 func (m *ProjectMutation) ResetRuns() {
 	m.runs = nil
+	m.clearedruns = false
 	m.removedruns = nil
 }
 
@@ -2402,6 +3428,16 @@ func (m *ProjectMutation) AddTemplateIDs(ids ...string) {
 	for i := range ids {
 		m.templates[ids[i]] = struct{}{}
 	}
+}
+
+// ClearTemplates clears the templates edge to Template.
+func (m *ProjectMutation) ClearTemplates() {
+	m.clearedtemplates = true
+}
+
+// TemplatesCleared returns if the edge templates was cleared.
+func (m *ProjectMutation) TemplatesCleared() bool {
+	return m.clearedtemplates
 }
 
 // RemoveTemplateIDs removes the templates edge to Template by ids.
@@ -2433,6 +3469,7 @@ func (m *ProjectMutation) TemplatesIDs() (ids []string) {
 // ResetTemplates reset all changes of the "templates" edge.
 func (m *ProjectMutation) ResetTemplates() {
 	m.templates = nil
+	m.clearedtemplates = false
 	m.removedtemplates = nil
 }
 
@@ -2715,6 +3752,12 @@ func (m *ProjectMutation) RemovedIDs(name string) []ent.Value {
 // mutation.
 func (m *ProjectMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 3)
+	if m.clearedruns {
+		edges = append(edges, project.EdgeRuns)
+	}
+	if m.clearedtemplates {
+		edges = append(edges, project.EdgeTemplates)
+	}
 	if m.clearedowner {
 		edges = append(edges, project.EdgeOwner)
 	}
@@ -2725,6 +3768,10 @@ func (m *ProjectMutation) ClearedEdges() []string {
 // cleared in this mutation.
 func (m *ProjectMutation) EdgeCleared(name string) bool {
 	switch name {
+	case project.EdgeRuns:
+		return m.clearedruns
+	case project.EdgeTemplates:
+		return m.clearedtemplates
 	case project.EdgeOwner:
 		return m.clearedowner
 	}
@@ -3262,6 +4309,7 @@ type RunMutation struct {
 	clearedcurrentStep bool
 	steps              map[string]struct{}
 	removedsteps       map[string]struct{}
+	clearedsteps       bool
 	done               bool
 	oldValue           func(context.Context) (*Run, error)
 }
@@ -3826,6 +4874,16 @@ func (m *RunMutation) AddStepIDs(ids ...string) {
 	}
 }
 
+// ClearSteps clears the steps edge to StepRun.
+func (m *RunMutation) ClearSteps() {
+	m.clearedsteps = true
+}
+
+// StepsCleared returns if the edge steps was cleared.
+func (m *RunMutation) StepsCleared() bool {
+	return m.clearedsteps
+}
+
 // RemoveStepIDs removes the steps edge to StepRun by ids.
 func (m *RunMutation) RemoveStepIDs(ids ...string) {
 	if m.removedsteps == nil {
@@ -3855,6 +4913,7 @@ func (m *RunMutation) StepsIDs() (ids []string) {
 // ResetSteps reset all changes of the "steps" edge.
 func (m *RunMutation) ResetSteps() {
 	m.steps = nil
+	m.clearedsteps = false
 	m.removedsteps = nil
 }
 
@@ -4198,6 +5257,9 @@ func (m *RunMutation) ClearedEdges() []string {
 	if m.clearedcurrentStep {
 		edges = append(edges, run.EdgeCurrentStep)
 	}
+	if m.clearedsteps {
+		edges = append(edges, run.EdgeSteps)
+	}
 	return edges
 }
 
@@ -4211,6 +5273,8 @@ func (m *RunMutation) EdgeCleared(name string) bool {
 		return m.clearedtemplate
 	case run.EdgeCurrentStep:
 		return m.clearedcurrentStep
+	case run.EdgeSteps:
+		return m.clearedsteps
 	}
 	return false
 }
@@ -5215,10 +6279,13 @@ type StepRunMutation struct {
 	clearedFields              map[string]struct{}
 	createdParticipants        map[string]struct{}
 	removedcreatedParticipants map[string]struct{}
+	clearedcreatedParticipants bool
 	participants               map[string]struct{}
 	removedparticipants        map[string]struct{}
+	clearedparticipants        bool
 	participations             map[string]struct{}
 	removedparticipations      map[string]struct{}
+	clearedparticipations      bool
 	step                       *string
 	clearedstep                bool
 	run                        *string
@@ -5734,6 +6801,16 @@ func (m *StepRunMutation) AddCreatedParticipantIDs(ids ...string) {
 	}
 }
 
+// ClearCreatedParticipants clears the createdParticipants edge to Participant.
+func (m *StepRunMutation) ClearCreatedParticipants() {
+	m.clearedcreatedParticipants = true
+}
+
+// CreatedParticipantsCleared returns if the edge createdParticipants was cleared.
+func (m *StepRunMutation) CreatedParticipantsCleared() bool {
+	return m.clearedcreatedParticipants
+}
+
 // RemoveCreatedParticipantIDs removes the createdParticipants edge to Participant by ids.
 func (m *StepRunMutation) RemoveCreatedParticipantIDs(ids ...string) {
 	if m.removedcreatedParticipants == nil {
@@ -5763,6 +6840,7 @@ func (m *StepRunMutation) CreatedParticipantsIDs() (ids []string) {
 // ResetCreatedParticipants reset all changes of the "createdParticipants" edge.
 func (m *StepRunMutation) ResetCreatedParticipants() {
 	m.createdParticipants = nil
+	m.clearedcreatedParticipants = false
 	m.removedcreatedParticipants = nil
 }
 
@@ -5774,6 +6852,16 @@ func (m *StepRunMutation) AddParticipantIDs(ids ...string) {
 	for i := range ids {
 		m.participants[ids[i]] = struct{}{}
 	}
+}
+
+// ClearParticipants clears the participants edge to Participant.
+func (m *StepRunMutation) ClearParticipants() {
+	m.clearedparticipants = true
+}
+
+// ParticipantsCleared returns if the edge participants was cleared.
+func (m *StepRunMutation) ParticipantsCleared() bool {
+	return m.clearedparticipants
 }
 
 // RemoveParticipantIDs removes the participants edge to Participant by ids.
@@ -5805,6 +6893,7 @@ func (m *StepRunMutation) ParticipantsIDs() (ids []string) {
 // ResetParticipants reset all changes of the "participants" edge.
 func (m *StepRunMutation) ResetParticipants() {
 	m.participants = nil
+	m.clearedparticipants = false
 	m.removedparticipants = nil
 }
 
@@ -5816,6 +6905,16 @@ func (m *StepRunMutation) AddParticipationIDs(ids ...string) {
 	for i := range ids {
 		m.participations[ids[i]] = struct{}{}
 	}
+}
+
+// ClearParticipations clears the participations edge to Participation.
+func (m *StepRunMutation) ClearParticipations() {
+	m.clearedparticipations = true
+}
+
+// ParticipationsCleared returns if the edge participations was cleared.
+func (m *StepRunMutation) ParticipationsCleared() bool {
+	return m.clearedparticipations
 }
 
 // RemoveParticipationIDs removes the participations edge to Participation by ids.
@@ -5847,6 +6946,7 @@ func (m *StepRunMutation) ParticipationsIDs() (ids []string) {
 // ResetParticipations reset all changes of the "participations" edge.
 func (m *StepRunMutation) ResetParticipations() {
 	m.participations = nil
+	m.clearedparticipations = false
 	m.removedparticipations = nil
 }
 
@@ -6326,6 +7426,15 @@ func (m *StepRunMutation) RemovedIDs(name string) []ent.Value {
 // mutation.
 func (m *StepRunMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 5)
+	if m.clearedcreatedParticipants {
+		edges = append(edges, steprun.EdgeCreatedParticipants)
+	}
+	if m.clearedparticipants {
+		edges = append(edges, steprun.EdgeParticipants)
+	}
+	if m.clearedparticipations {
+		edges = append(edges, steprun.EdgeParticipations)
+	}
 	if m.clearedstep {
 		edges = append(edges, steprun.EdgeStep)
 	}
@@ -6339,6 +7448,12 @@ func (m *StepRunMutation) ClearedEdges() []string {
 // cleared in this mutation.
 func (m *StepRunMutation) EdgeCleared(name string) bool {
 	switch name {
+	case steprun.EdgeCreatedParticipants:
+		return m.clearedcreatedParticipants
+	case steprun.EdgeParticipants:
+		return m.clearedparticipants
+	case steprun.EdgeParticipations:
+		return m.clearedparticipations
 	case steprun.EdgeStep:
 		return m.clearedstep
 	case steprun.EdgeRun:
@@ -6405,6 +7520,7 @@ type TemplateMutation struct {
 	clearedFields       map[string]struct{}
 	steps               map[string]struct{}
 	removedsteps        map[string]struct{}
+	clearedsteps        bool
 	project             *string
 	clearedproject      bool
 	creator             *string
@@ -6863,6 +7979,16 @@ func (m *TemplateMutation) AddStepIDs(ids ...string) {
 	}
 }
 
+// ClearSteps clears the steps edge to Step.
+func (m *TemplateMutation) ClearSteps() {
+	m.clearedsteps = true
+}
+
+// StepsCleared returns if the edge steps was cleared.
+func (m *TemplateMutation) StepsCleared() bool {
+	return m.clearedsteps
+}
+
 // RemoveStepIDs removes the steps edge to Step by ids.
 func (m *TemplateMutation) RemoveStepIDs(ids ...string) {
 	if m.removedsteps == nil {
@@ -6892,6 +8018,7 @@ func (m *TemplateMutation) StepsIDs() (ids []string) {
 // ResetSteps reset all changes of the "steps" edge.
 func (m *TemplateMutation) ResetSteps() {
 	m.steps = nil
+	m.clearedsteps = false
 	m.removedsteps = nil
 }
 
@@ -7348,6 +8475,9 @@ func (m *TemplateMutation) RemovedIDs(name string) []ent.Value {
 // mutation.
 func (m *TemplateMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 4)
+	if m.clearedsteps {
+		edges = append(edges, template.EdgeSteps)
+	}
 	if m.clearedproject {
 		edges = append(edges, template.EdgeProject)
 	}
@@ -7364,6 +8494,8 @@ func (m *TemplateMutation) ClearedEdges() []string {
 // cleared in this mutation.
 func (m *TemplateMutation) EdgeCleared(name string) bool {
 	switch name {
+	case template.EdgeSteps:
+		return m.clearedsteps
 	case template.EdgeProject:
 		return m.clearedproject
 	case template.EdgeCreator:

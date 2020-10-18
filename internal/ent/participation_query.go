@@ -65,8 +65,12 @@ func (pq *ParticipationQuery) QueryStepRun() *StepRunQuery {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := pq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(participation.Table, participation.FieldID, pq.sqlQuery()),
+			sqlgraph.From(participation.Table, participation.FieldID, selector),
 			sqlgraph.To(steprun.Table, steprun.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, participation.StepRunTable, participation.StepRunColumn),
 		)
@@ -83,8 +87,12 @@ func (pq *ParticipationQuery) QueryParticipant() *ParticipantQuery {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
+		selector := pq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(participation.Table, participation.FieldID, pq.sqlQuery()),
+			sqlgraph.From(participation.Table, participation.FieldID, selector),
 			sqlgraph.To(participant.Table, participant.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, participation.ParticipantTable, participation.ParticipantColumn),
 		)
@@ -96,23 +104,23 @@ func (pq *ParticipationQuery) QueryParticipant() *ParticipantQuery {
 
 // First returns the first Participation entity in the query. Returns *NotFoundError when no participation was found.
 func (pq *ParticipationQuery) First(ctx context.Context) (*Participation, error) {
-	pas, err := pq.Limit(1).All(ctx)
+	nodes, err := pq.Limit(1).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(pas) == 0 {
+	if len(nodes) == 0 {
 		return nil, &NotFoundError{participation.Label}
 	}
-	return pas[0], nil
+	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
 func (pq *ParticipationQuery) FirstX(ctx context.Context) *Participation {
-	pa, err := pq.First(ctx)
+	node, err := pq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
 	}
-	return pa
+	return node
 }
 
 // FirstID returns the first Participation id in the query. Returns *NotFoundError when no id was found.
@@ -139,13 +147,13 @@ func (pq *ParticipationQuery) FirstXID(ctx context.Context) string {
 
 // Only returns the only Participation entity in the query, returns an error if not exactly one entity was returned.
 func (pq *ParticipationQuery) Only(ctx context.Context) (*Participation, error) {
-	pas, err := pq.Limit(2).All(ctx)
+	nodes, err := pq.Limit(2).All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	switch len(pas) {
+	switch len(nodes) {
 	case 1:
-		return pas[0], nil
+		return nodes[0], nil
 	case 0:
 		return nil, &NotFoundError{participation.Label}
 	default:
@@ -155,11 +163,11 @@ func (pq *ParticipationQuery) Only(ctx context.Context) (*Participation, error) 
 
 // OnlyX is like Only, but panics if an error occurs.
 func (pq *ParticipationQuery) OnlyX(ctx context.Context) *Participation {
-	pa, err := pq.Only(ctx)
+	node, err := pq.Only(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pa
+	return node
 }
 
 // OnlyID returns the only Participation id in the query, returns an error if not exactly one id was returned.
@@ -198,11 +206,11 @@ func (pq *ParticipationQuery) All(ctx context.Context) ([]*Participation, error)
 
 // AllX is like All, but panics if an error occurs.
 func (pq *ParticipationQuery) AllX(ctx context.Context) []*Participation {
-	pas, err := pq.All(ctx)
+	nodes, err := pq.All(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return pas
+	return nodes
 }
 
 // IDs executes the query and returns a list of Participation ids.
@@ -492,7 +500,7 @@ func (pq *ParticipationQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := pq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector)
+				ps[i](selector, participation.ValidColumn)
 			}
 		}
 	}
@@ -511,7 +519,7 @@ func (pq *ParticipationQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range pq.order {
-		p(selector)
+		p(selector, participation.ValidColumn)
 	}
 	if offset := pq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -746,8 +754,17 @@ func (pgb *ParticipationGroupBy) BoolX(ctx context.Context) bool {
 }
 
 func (pgb *ParticipationGroupBy) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range pgb.fields {
+		if !participation.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for group-by", f)}
+		}
+	}
+	selector := pgb.sqlQuery()
+	if err := selector.Err(); err != nil {
+		return err
+	}
 	rows := &sql.Rows{}
-	query, args := pgb.sqlQuery().Query()
+	query, args := selector.Query()
 	if err := pgb.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
@@ -760,7 +777,7 @@ func (pgb *ParticipationGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(pgb.fields)+len(pgb.fns))
 	columns = append(columns, pgb.fields...)
 	for _, fn := range pgb.fns {
-		columns = append(columns, fn(selector))
+		columns = append(columns, fn(selector, participation.ValidColumn))
 	}
 	return selector.Select(columns...).GroupBy(pgb.fields...)
 }
@@ -980,6 +997,11 @@ func (ps *ParticipationSelect) BoolX(ctx context.Context) bool {
 }
 
 func (ps *ParticipationSelect) sqlScan(ctx context.Context, v interface{}) error {
+	for _, f := range ps.fields {
+		if !participation.ValidColumn(f) {
+			return &ValidationError{Name: f, err: fmt.Errorf("invalid field %q for selection", f)}
+		}
+	}
 	rows := &sql.Rows{}
 	query, args := ps.sqlQuery().Query()
 	if err := ps.driver.Query(ctx, query, args, rows); err != nil {

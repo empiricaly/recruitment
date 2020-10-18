@@ -39,6 +39,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Datum() DatumResolver
 	FilterStepArgs() FilterStepArgsResolver
 	MessageStepArgs() MessageStepArgsResolver
 	Mutation() MutationResolver
@@ -93,9 +94,8 @@ type ComplexityRoot struct {
 		Creator   func(childComplexity int) int
 		DeletedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
+		Index     func(childComplexity int) int
 		Key       func(childComplexity int) int
-		Next      func(childComplexity int) int
-		Root      func(childComplexity int) int
 		UpdatedAt func(childComplexity int) int
 		Val       func(childComplexity int) int
 		Versions  func(childComplexity int) int
@@ -189,7 +189,7 @@ type ComplexityRoot struct {
 	Participant struct {
 		CreatedAt   func(childComplexity int) int
 		CreatedBy   func(childComplexity int) int
-		Data        func(childComplexity int, keys []string) int
+		Data        func(childComplexity int, keys []string, deleted *bool) int
 		ID          func(childComplexity int) int
 		ProviderIDs func(childComplexity int) int
 		Steps       func(childComplexity int) int
@@ -322,6 +322,13 @@ type ComplexityRoot struct {
 	}
 }
 
+type DatumResolver interface {
+	Creator(ctx context.Context, obj *ent.Datum) (model.User, error)
+
+	Val(ctx context.Context, obj *ent.Datum) (*string, error)
+
+	Versions(ctx context.Context, obj *ent.Datum) ([]*ent.Datum, error)
+}
 type FilterStepArgsResolver interface {
 	Type(ctx context.Context, obj *model.FilterStepArgs) (model.ParticipantFilterType, error)
 }
@@ -332,7 +339,7 @@ type MessageStepArgsResolver interface {
 }
 type MutationResolver interface {
 	RegisterParticipant(ctx context.Context, input *model.RegisterParticipantInput) (*ent.Participant, error)
-	MutateDatum(ctx context.Context, input *model.MutateDatumInput) (*model.Datum, error)
+	MutateDatum(ctx context.Context, input *model.MutateDatumInput) (*ent.Datum, error)
 	Auth(ctx context.Context, input *model.AuthInput) (*model.AuthResp, error)
 	CreateProject(ctx context.Context, input *model.CreateProjectInput) (*ent.Project, error)
 	CreateTemplate(ctx context.Context, input *model.CreateTemplateInput) (*ent.Template, error)
@@ -349,7 +356,7 @@ type ParticipantResolver interface {
 	CreatedBy(ctx context.Context, obj *ent.Participant) (*ent.StepRun, error)
 	Steps(ctx context.Context, obj *ent.Participant) ([]*ent.StepRun, error)
 	ProviderIDs(ctx context.Context, obj *ent.Participant) ([]*ent.ProviderID, error)
-	Data(ctx context.Context, obj *ent.Participant, keys []string) ([]*model.Datum, error)
+	Data(ctx context.Context, obj *ent.Participant, keys []string, deleted *bool) ([]*ent.Datum, error)
 }
 type ParticipantsConnectionResolver interface {
 	Participants(ctx context.Context, obj *model.ParticipantsConnection) ([]*ent.Participant, error)
@@ -366,7 +373,7 @@ type ProjectResolver interface {
 
 	Templates(ctx context.Context, obj *ent.Project) ([]*ent.Template, error)
 	Runs(ctx context.Context, obj *ent.Project, runID *string, limit *int) ([]*ent.Run, error)
-	Data(ctx context.Context, obj *ent.Project, keys []string) ([]*model.Datum, error)
+	Data(ctx context.Context, obj *ent.Project, keys []string) ([]*ent.Datum, error)
 }
 type ProviderIDResolver interface {
 	ProviderID(ctx context.Context, obj *ent.ProviderID) (string, error)
@@ -390,7 +397,7 @@ type RunResolver interface {
 	Steps(ctx context.Context, obj *ent.Run) ([]*ent.StepRun, error)
 	CurrentStep(ctx context.Context, obj *ent.Run) (*ent.StepRun, error)
 
-	Data(ctx context.Context, obj *ent.Run, keys []string) ([]*model.Datum, error)
+	Data(ctx context.Context, obj *ent.Run, keys []string) ([]*ent.Datum, error)
 }
 type StepResolver interface {
 	Creator(ctx context.Context, obj *ent.Step) (*ent.Admin, error)
@@ -570,26 +577,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Datum.ID(childComplexity), true
 
+	case "Datum.index":
+		if e.complexity.Datum.Index == nil {
+			break
+		}
+
+		return e.complexity.Datum.Index(childComplexity), true
+
 	case "Datum.key":
 		if e.complexity.Datum.Key == nil {
 			break
 		}
 
 		return e.complexity.Datum.Key(childComplexity), true
-
-	case "Datum.next":
-		if e.complexity.Datum.Next == nil {
-			break
-		}
-
-		return e.complexity.Datum.Next(childComplexity), true
-
-	case "Datum.root":
-		if e.complexity.Datum.Root == nil {
-			break
-		}
-
-		return e.complexity.Datum.Root(childComplexity), true
 
 	case "Datum.updatedAt":
 		if e.complexity.Datum.UpdatedAt == nil {
@@ -1065,7 +1065,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Participant.Data(childComplexity, args["keys"].([]string)), true
+		return e.complexity.Participant.Data(childComplexity, args["keys"].([]string), args["deleted"].(*bool)), true
 
 	case "Participant.id":
 		if e.complexity.Participant.ID == nil {
@@ -1823,7 +1823,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	&ast.Source{Name: "directives.graphqls", Input: `directive @hasRole(role: Role!) on FIELD_DEFINITION
+	{Name: "directives.graphqls", Input: `directive @hasRole(role: Role!) on FIELD_DEFINITION
 
 enum Role {
   ADMIN
@@ -1840,7 +1840,7 @@ directive @goField(
   name: String
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 `, BuiltIn: false},
-	&ast.Source{Name: "models.graphqls", Input: `"""
+	{Name: "models.graphqls", Input: `"""
 Type of a Step.
 """
 enum StepType {
@@ -2634,19 +2634,14 @@ type Datum {
   val: JSON
 
   """
-  next returns the Datum ID of the next value in an array of Datum values.
+  index of the Datum in multi-value Data.
   """
-  next: ID
-
-  """
-  root returns the Datum ID of the root value in an array of Datum values.
-  """
-  root: ID
+  index: Int
 
   """
   versions returns previous versions for the Datum (they all have the same ID).
   """
-  versions: [Datum!]!
+  versions: [Datum!]! @goField(forceResolver: true)
 }
 
 """
@@ -2680,9 +2675,10 @@ type Participant {
   providerIDs: [ProviderID!]!
 
   """
-  Data returns the custom data that has been set on the Participant.
+  Data returns the custom data that has been set on the Participant. Can be
+  filtered to specific keys. It can also be configured to return deleted keys.
   """
-  data(keys: [String!]): [Datum!]!
+  data(keys: [String!], deleted: Boolean): [Datum!]!
 }
 
 """
@@ -2745,7 +2741,7 @@ type Admin {
   username: String
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "mutation.graphqls", Input: `input AuthInput {
+	{Name: "mutation.graphqls", Input: `input AuthInput {
   username: String!
   password: String!
 }
@@ -3028,7 +3024,7 @@ type Mutation {
   cancelRun(input: CancelRunInput): Run! @hasRole(role: ADMIN)
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "mutation_selection.graphqls", Input: `"""
+	{Name: "mutation_selection.graphqls", Input: `"""
 InternalCriteria is the criteria for internal database participant selection.
 """
 input InternalCriteriaInput {
@@ -3156,7 +3152,7 @@ input MTurkLocaleInput {
   subdivision: String
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "mutation_steps.graphqls", Input: `"""
+	{Name: "mutation_steps.graphqls", Input: `"""
 FilterStepArgs are arguments passed to a Pariticipant Filter Step.
 It must contains **either** JS code or the name of pre-defined filtering function.
 This is only valid for an PARTICIPANT_FILTER Step.
@@ -3308,7 +3304,7 @@ input MessageStepArgsInput {
   lobbyExpiration: Int
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "query.graphqls", Input: `"""
+	{Name: "query.graphqls", Input: `"""
 Page returns everything needed to display a page to Participants or redirect
 them, depending on the Step, whether it's a message, or a lobby, and the token
 used to acquire the page.
@@ -3398,13 +3394,13 @@ type Query {
   mturkLocales(sandbox: Boolean): [MTurkLocale!]!
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "root.graphqls", Input: `schema {
+	{Name: "root.graphqls", Input: `schema {
   query: Query
   mutation: Mutation
   subscription: Subscription
 }
 `, BuiltIn: false},
-	&ast.Source{Name: "scalars.graphqls", Input: `"""
+	{Name: "scalars.graphqls", Input: `"""
 DateTime is a Date + Time value given in Epoch to ns precision.
 """
 scalar DateTime @goModel(model: "time.Time")
@@ -3424,7 +3420,7 @@ Map is an opaque key-value Map.
 """
 scalar Map
 `, BuiltIn: false},
-	&ast.Source{Name: "subscription.graphqls", Input: `type Subscription {
+	{Name: "subscription.graphqls", Input: `type Subscription {
   """
   me returns the current Admin or Participant, depending on whether the user is
   logged in.
@@ -3444,6 +3440,7 @@ func (ec *executionContext) dir_hasRole_args(ctx context.Context, rawArgs map[st
 	args := map[string]interface{}{}
 	var arg0 model.Role
 	if tmp, ok := rawArgs["role"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
 		arg0, err = ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3458,6 +3455,7 @@ func (ec *executionContext) field_Mutation_auth_args(ctx context.Context, rawArg
 	args := map[string]interface{}{}
 	var arg0 *model.AuthInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOAuthInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3472,6 +3470,7 @@ func (ec *executionContext) field_Mutation_cancelRun_args(ctx context.Context, r
 	args := map[string]interface{}{}
 	var arg0 *model.CancelRunInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOCancelRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCancelRunInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3486,6 +3485,7 @@ func (ec *executionContext) field_Mutation_createProject_args(ctx context.Contex
 	args := map[string]interface{}{}
 	var arg0 *model.CreateProjectInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOCreateProjectInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProjectInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3500,6 +3500,7 @@ func (ec *executionContext) field_Mutation_createRun_args(ctx context.Context, r
 	args := map[string]interface{}{}
 	var arg0 *model.CreateRunInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOCreateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateRunInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3514,6 +3515,7 @@ func (ec *executionContext) field_Mutation_createTemplate_args(ctx context.Conte
 	args := map[string]interface{}{}
 	var arg0 *model.CreateTemplateInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOCreateTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateTemplateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3528,6 +3530,7 @@ func (ec *executionContext) field_Mutation_duplicateRun_args(ctx context.Context
 	args := map[string]interface{}{}
 	var arg0 *model.DuplicateRunInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalODuplicateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateRunInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3542,6 +3545,7 @@ func (ec *executionContext) field_Mutation_mutateDatum_args(ctx context.Context,
 	args := map[string]interface{}{}
 	var arg0 *model.MutateDatumInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOMutateDatumInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMutateDatumInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3556,6 +3560,7 @@ func (ec *executionContext) field_Mutation_registerParticipant_args(ctx context.
 	args := map[string]interface{}{}
 	var arg0 *model.RegisterParticipantInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalORegisterParticipantInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRegisterParticipantInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3570,6 +3575,7 @@ func (ec *executionContext) field_Mutation_scheduleRun_args(ctx context.Context,
 	args := map[string]interface{}{}
 	var arg0 *model.ScheduleRunInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOScheduleRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐScheduleRunInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3584,6 +3590,7 @@ func (ec *executionContext) field_Mutation_startRun_args(ctx context.Context, ra
 	args := map[string]interface{}{}
 	var arg0 *model.StartRunInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOStartRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStartRunInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3598,6 +3605,7 @@ func (ec *executionContext) field_Mutation_unscheduleRun_args(ctx context.Contex
 	args := map[string]interface{}{}
 	var arg0 *model.UnscheduleRunInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOUnscheduleRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUnscheduleRunInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3612,6 +3620,7 @@ func (ec *executionContext) field_Mutation_updateRun_args(ctx context.Context, r
 	args := map[string]interface{}{}
 	var arg0 *model.UpdateRunInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOUpdateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateRunInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3626,6 +3635,7 @@ func (ec *executionContext) field_Mutation_updateTemplate_args(ctx context.Conte
 	args := map[string]interface{}{}
 	var arg0 *model.UpdateTemplateInput
 	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOUpdateTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateTemplateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3640,12 +3650,22 @@ func (ec *executionContext) field_Participant_data_args(ctx context.Context, raw
 	args := map[string]interface{}{}
 	var arg0 []string
 	if tmp, ok := rawArgs["keys"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keys"))
 		arg0, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["keys"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["deleted"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("deleted"))
+		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["deleted"] = arg1
 	return args, nil
 }
 
@@ -3654,6 +3674,7 @@ func (ec *executionContext) field_Project_data_args(ctx context.Context, rawArgs
 	args := map[string]interface{}{}
 	var arg0 []string
 	if tmp, ok := rawArgs["keys"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keys"))
 		arg0, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3668,6 +3689,7 @@ func (ec *executionContext) field_Project_runs_args(ctx context.Context, rawArgs
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["runID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("runID"))
 		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3676,6 +3698,7 @@ func (ec *executionContext) field_Project_runs_args(ctx context.Context, rawArgs
 	args["runID"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3690,6 +3713,7 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3704,6 +3728,7 @@ func (ec *executionContext) field_Query_mturkLocales_args(ctx context.Context, r
 	args := map[string]interface{}{}
 	var arg0 *bool
 	if tmp, ok := rawArgs["sandbox"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sandbox"))
 		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3718,6 +3743,7 @@ func (ec *executionContext) field_Query_mturkQualificationTypes_args(ctx context
 	args := map[string]interface{}{}
 	var arg0 *bool
 	if tmp, ok := rawArgs["sandbox"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sandbox"))
 		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3732,6 +3758,7 @@ func (ec *executionContext) field_Query_page_args(ctx context.Context, rawArgs m
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["token"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("token"))
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3740,6 +3767,7 @@ func (ec *executionContext) field_Query_page_args(ctx context.Context, rawArgs m
 	args["token"] = arg0
 	var arg1 string
 	if tmp, ok := rawArgs["participantID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("participantID"))
 		arg1, err = ec.unmarshalNID2string(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3754,6 +3782,7 @@ func (ec *executionContext) field_Query_participants_args(ctx context.Context, r
 	args := map[string]interface{}{}
 	var arg0 *int
 	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
 		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3762,6 +3791,7 @@ func (ec *executionContext) field_Query_participants_args(ctx context.Context, r
 	args["first"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
 		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3776,6 +3806,7 @@ func (ec *executionContext) field_Query_project_args(ctx context.Context, rawArg
 	args := map[string]interface{}{}
 	var arg0 *string
 	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3784,6 +3815,7 @@ func (ec *executionContext) field_Query_project_args(ctx context.Context, rawArg
 	args["id"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["projectID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectID"))
 		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3798,6 +3830,7 @@ func (ec *executionContext) field_Run_data_args(ctx context.Context, rawArgs map
 	args := map[string]interface{}{}
 	var arg0 []string
 	if tmp, ok := rawArgs["keys"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keys"))
 		arg0, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3812,6 +3845,7 @@ func (ec *executionContext) field_StepRun_participations_args(ctx context.Contex
 	args := map[string]interface{}{}
 	var arg0 *int
 	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
 		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3820,6 +3854,7 @@ func (ec *executionContext) field_StepRun_participations_args(ctx context.Contex
 	args["first"] = arg0
 	var arg1 *string
 	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
 		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3834,6 +3869,7 @@ func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, ra
 	args := map[string]interface{}{}
 	var arg0 bool
 	if tmp, ok := rawArgs["includeDeprecated"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
 		arg0, err = ec.unmarshalOBoolean2bool(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3848,6 +3884,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 	args := map[string]interface{}{}
 	var arg0 bool
 	if tmp, ok := rawArgs["includeDeprecated"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
 		arg0, err = ec.unmarshalOBoolean2bool(ctx, tmp)
 		if err != nil {
 			return nil, err
@@ -3873,10 +3910,11 @@ func (ec *executionContext) _Admin_id(ctx context.Context, field graphql.Collect
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Admin",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Admin",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -3907,10 +3945,11 @@ func (ec *executionContext) _Admin_createdAt(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Admin",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Admin",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -3941,10 +3980,11 @@ func (ec *executionContext) _Admin_updatedAt(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Admin",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Admin",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -3975,10 +4015,11 @@ func (ec *executionContext) _Admin_name(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Admin",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Admin",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4006,10 +4047,11 @@ func (ec *executionContext) _Admin_username(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Admin",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Admin",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4037,10 +4079,11 @@ func (ec *executionContext) _AuthResp_token(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "AuthResp",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "AuthResp",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4071,10 +4114,11 @@ func (ec *executionContext) _CompValue_int(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "CompValue",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "CompValue",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4102,10 +4146,11 @@ func (ec *executionContext) _CompValue_float(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "CompValue",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "CompValue",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4133,10 +4178,11 @@ func (ec *executionContext) _CompValue_string(ctx context.Context, field graphql
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "CompValue",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "CompValue",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4164,10 +4210,11 @@ func (ec *executionContext) _CompValue_boolean(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "CompValue",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "CompValue",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4195,10 +4242,11 @@ func (ec *executionContext) _Condition_and(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Condition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Condition",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4226,10 +4274,11 @@ func (ec *executionContext) _Condition_or(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Condition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Condition",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4257,10 +4306,11 @@ func (ec *executionContext) _Condition_key(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Condition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Condition",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4288,10 +4338,11 @@ func (ec *executionContext) _Condition_comparator(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Condition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Condition",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4319,10 +4370,11 @@ func (ec *executionContext) _Condition_values(ctx context.Context, field graphql
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Condition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Condition",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4342,7 +4394,7 @@ func (ec *executionContext) _Condition_values(ctx context.Context, field graphql
 	return ec.marshalOCompValue2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValueᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Datum_id(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
+func (ec *executionContext) _Datum_id(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4350,10 +4402,11 @@ func (ec *executionContext) _Datum_id(ctx context.Context, field graphql.Collect
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Datum",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Datum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4376,7 +4429,7 @@ func (ec *executionContext) _Datum_id(ctx context.Context, field graphql.Collect
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Datum_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
+func (ec *executionContext) _Datum_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4384,10 +4437,11 @@ func (ec *executionContext) _Datum_createdAt(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Datum",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Datum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4410,7 +4464,7 @@ func (ec *executionContext) _Datum_createdAt(ctx context.Context, field graphql.
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Datum_updatedAt(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
+func (ec *executionContext) _Datum_updatedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4418,10 +4472,11 @@ func (ec *executionContext) _Datum_updatedAt(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Datum",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Datum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4444,7 +4499,7 @@ func (ec *executionContext) _Datum_updatedAt(ctx context.Context, field graphql.
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Datum_creator(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
+func (ec *executionContext) _Datum_creator(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4452,16 +4507,17 @@ func (ec *executionContext) _Datum_creator(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Datum",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Datum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Creator, nil
+		return ec.resolvers.Datum().Creator(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4475,7 +4531,7 @@ func (ec *executionContext) _Datum_creator(ctx context.Context, field graphql.Co
 	return ec.marshalOUser2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Datum_deletedAt(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
+func (ec *executionContext) _Datum_deletedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4483,10 +4539,11 @@ func (ec *executionContext) _Datum_deletedAt(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Datum",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Datum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4506,7 +4563,7 @@ func (ec *executionContext) _Datum_deletedAt(ctx context.Context, field graphql.
 	return ec.marshalODateTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Datum_key(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
+func (ec *executionContext) _Datum_key(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4514,10 +4571,11 @@ func (ec *executionContext) _Datum_key(ctx context.Context, field graphql.Collec
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Datum",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Datum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4540,7 +4598,7 @@ func (ec *executionContext) _Datum_key(ctx context.Context, field graphql.Collec
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Datum_val(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
+func (ec *executionContext) _Datum_val(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4548,16 +4606,17 @@ func (ec *executionContext) _Datum_val(ctx context.Context, field graphql.Collec
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Datum",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Datum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Val, nil
+		return ec.resolvers.Datum().Val(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4571,7 +4630,7 @@ func (ec *executionContext) _Datum_val(ctx context.Context, field graphql.Collec
 	return ec.marshalOJSON2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Datum_next(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
+func (ec *executionContext) _Datum_index(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4579,16 +4638,17 @@ func (ec *executionContext) _Datum_next(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Datum",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Datum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Next, nil
+		return obj.Index, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4597,12 +4657,12 @@ func (ec *executionContext) _Datum_next(ctx context.Context, field graphql.Colle
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Datum_root(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
+func (ec *executionContext) _Datum_versions(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4610,47 +4670,17 @@ func (ec *executionContext) _Datum_root(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Datum",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Datum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Root, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Datum_versions(ctx context.Context, field graphql.CollectedField, obj *model.Datum) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Datum",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Versions, nil
+		return ec.resolvers.Datum().Versions(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4662,9 +4692,9 @@ func (ec *executionContext) _Datum_versions(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Datum)
+	res := resTmp.([]*ent.Datum)
 	fc.Result = res
-	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumᚄ(ctx, field.Selections, res)
+	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatumᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FilterStepArgs_type(ctx context.Context, field graphql.CollectedField, obj *model.FilterStepArgs) (ret graphql.Marshaler) {
@@ -4675,10 +4705,11 @@ func (ec *executionContext) _FilterStepArgs_type(ctx context.Context, field grap
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "FilterStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "FilterStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4709,10 +4740,11 @@ func (ec *executionContext) _FilterStepArgs_filter(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "FilterStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "FilterStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4740,10 +4772,11 @@ func (ec *executionContext) _FilterStepArgs_js(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "FilterStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "FilterStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4771,10 +4804,11 @@ func (ec *executionContext) _FilterStepArgs_condition(ctx context.Context, field
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "FilterStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "FilterStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4802,10 +4836,11 @@ func (ec *executionContext) _HITStepArgs_title(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "HITStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "HITStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4836,10 +4871,11 @@ func (ec *executionContext) _HITStepArgs_description(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "HITStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "HITStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4870,10 +4906,11 @@ func (ec *executionContext) _HITStepArgs_keywords(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "HITStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "HITStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4904,10 +4941,11 @@ func (ec *executionContext) _HITStepArgs_microbatch(ctx context.Context, field g
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "HITStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "HITStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4938,10 +4976,11 @@ func (ec *executionContext) _HITStepArgs_reward(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "HITStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "HITStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -4972,10 +5011,11 @@ func (ec *executionContext) _HITStepArgs_timeout(ctx context.Context, field grap
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "HITStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "HITStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5006,10 +5046,11 @@ func (ec *executionContext) _HITStepArgs_duration(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "HITStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "HITStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5040,10 +5081,11 @@ func (ec *executionContext) _HITStepArgs_workersCount(ctx context.Context, field
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "HITStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "HITStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5074,10 +5116,11 @@ func (ec *executionContext) _InternalCriteria_all(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "InternalCriteria",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "InternalCriteria",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5108,10 +5151,11 @@ func (ec *executionContext) _InternalCriteria_condition(ctx context.Context, fie
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "InternalCriteria",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "InternalCriteria",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5142,10 +5186,11 @@ func (ec *executionContext) _MTurkCriteria_qualifications(ctx context.Context, f
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MTurkCriteria",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MTurkCriteria",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5176,10 +5221,11 @@ func (ec *executionContext) _MTurkLocale_country(ctx context.Context, field grap
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MTurkLocale",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MTurkLocale",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5210,10 +5256,11 @@ func (ec *executionContext) _MTurkLocale_subdivision(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MTurkLocale",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MTurkLocale",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5241,10 +5288,11 @@ func (ec *executionContext) _MTurkQualificationCriteria_id(ctx context.Context, 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MTurkQualificationCriteria",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MTurkQualificationCriteria",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5275,10 +5323,11 @@ func (ec *executionContext) _MTurkQualificationCriteria_comparator(ctx context.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MTurkQualificationCriteria",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MTurkQualificationCriteria",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5309,10 +5358,11 @@ func (ec *executionContext) _MTurkQualificationCriteria_values(ctx context.Conte
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MTurkQualificationCriteria",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MTurkQualificationCriteria",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5340,10 +5390,11 @@ func (ec *executionContext) _MTurkQualificationCriteria_locales(ctx context.Cont
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MTurkQualificationCriteria",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MTurkQualificationCriteria",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5371,10 +5422,11 @@ func (ec *executionContext) _MTurkQulificationType_id(ctx context.Context, field
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MTurkQulificationType",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MTurkQulificationType",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5405,10 +5457,11 @@ func (ec *executionContext) _MTurkQulificationType_name(ctx context.Context, fie
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MTurkQulificationType",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MTurkQulificationType",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5439,10 +5492,11 @@ func (ec *executionContext) _MTurkQulificationType_description(ctx context.Conte
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MTurkQulificationType",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MTurkQulificationType",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5473,10 +5527,11 @@ func (ec *executionContext) _MTurkQulificationType_type(ctx context.Context, fie
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MTurkQulificationType",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MTurkQulificationType",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5507,10 +5562,11 @@ func (ec *executionContext) _MessageStepArgs_subject(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MessageStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MessageStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5538,10 +5594,11 @@ func (ec *executionContext) _MessageStepArgs_url(ctx context.Context, field grap
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MessageStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MessageStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5569,10 +5626,11 @@ func (ec *executionContext) _MessageStepArgs_message(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MessageStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MessageStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5603,10 +5661,11 @@ func (ec *executionContext) _MessageStepArgs_messageType(ctx context.Context, fi
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MessageStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "MessageStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5637,10 +5696,11 @@ func (ec *executionContext) _MessageStepArgs_lobby(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MessageStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MessageStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5668,10 +5728,11 @@ func (ec *executionContext) _MessageStepArgs_lobbyType(ctx context.Context, fiel
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MessageStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "MessageStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5699,10 +5760,11 @@ func (ec *executionContext) _MessageStepArgs_lobbyExpiration(ctx context.Context
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "MessageStepArgs",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "MessageStepArgs",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5730,10 +5792,11 @@ func (ec *executionContext) _Mutation_registerParticipant(ctx context.Context, f
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5771,10 +5834,11 @@ func (ec *executionContext) _Mutation_mutateDatum(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5799,9 +5863,9 @@ func (ec *executionContext) _Mutation_mutateDatum(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Datum)
+	res := resTmp.(*ent.Datum)
 	fc.Result = res
-	return ec.marshalNDatum2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatum(ctx, field.Selections, res)
+	return ec.marshalNDatum2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatum(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_auth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5812,10 +5876,11 @@ func (ec *executionContext) _Mutation_auth(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5850,10 +5915,11 @@ func (ec *executionContext) _Mutation_createProject(ctx context.Context, field g
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5882,7 +5948,7 @@ func (ec *executionContext) _Mutation_createProject(ctx context.Context, field g
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -5915,10 +5981,11 @@ func (ec *executionContext) _Mutation_createTemplate(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -5947,7 +6014,7 @@ func (ec *executionContext) _Mutation_createTemplate(ctx context.Context, field 
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -5980,10 +6047,11 @@ func (ec *executionContext) _Mutation_updateTemplate(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6012,7 +6080,7 @@ func (ec *executionContext) _Mutation_updateTemplate(ctx context.Context, field 
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -6045,10 +6113,11 @@ func (ec *executionContext) _Mutation_duplicateRun(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6077,7 +6146,7 @@ func (ec *executionContext) _Mutation_duplicateRun(ctx context.Context, field gr
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -6110,10 +6179,11 @@ func (ec *executionContext) _Mutation_createRun(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6142,7 +6212,7 @@ func (ec *executionContext) _Mutation_createRun(ctx context.Context, field graph
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -6175,10 +6245,11 @@ func (ec *executionContext) _Mutation_updateRun(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6207,7 +6278,7 @@ func (ec *executionContext) _Mutation_updateRun(ctx context.Context, field graph
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -6240,10 +6311,11 @@ func (ec *executionContext) _Mutation_scheduleRun(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6272,7 +6344,7 @@ func (ec *executionContext) _Mutation_scheduleRun(ctx context.Context, field gra
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -6305,10 +6377,11 @@ func (ec *executionContext) _Mutation_unscheduleRun(ctx context.Context, field g
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6337,7 +6410,7 @@ func (ec *executionContext) _Mutation_unscheduleRun(ctx context.Context, field g
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -6370,10 +6443,11 @@ func (ec *executionContext) _Mutation_startRun(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6402,7 +6476,7 @@ func (ec *executionContext) _Mutation_startRun(ctx context.Context, field graphq
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -6435,10 +6509,11 @@ func (ec *executionContext) _Mutation_cancelRun(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6467,7 +6542,7 @@ func (ec *executionContext) _Mutation_cancelRun(ctx context.Context, field graph
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -6500,10 +6575,11 @@ func (ec *executionContext) _Page_redirect(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Page",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Page",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6531,10 +6607,11 @@ func (ec *executionContext) _Page_props(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Page",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Page",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6562,10 +6639,11 @@ func (ec *executionContext) _Page_content(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Page",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Page",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6593,10 +6671,11 @@ func (ec *executionContext) _Page_contentType(ctx context.Context, field graphql
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Page",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Page",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6627,10 +6706,11 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "PageInfo",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "PageInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6661,10 +6741,11 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "PageInfo",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "PageInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6695,10 +6776,11 @@ func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "PageInfo",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "PageInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6729,10 +6811,11 @@ func (ec *executionContext) _Participant_id(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participant",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Participant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6763,10 +6846,11 @@ func (ec *executionContext) _Participant_createdAt(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participant",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Participant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6797,10 +6881,11 @@ func (ec *executionContext) _Participant_updatedAt(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participant",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Participant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6831,10 +6916,11 @@ func (ec *executionContext) _Participant_createdBy(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participant",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Participant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6862,10 +6948,11 @@ func (ec *executionContext) _Participant_steps(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participant",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Participant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6896,10 +6983,11 @@ func (ec *executionContext) _Participant_providerIDs(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participant",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Participant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6930,10 +7018,11 @@ func (ec *executionContext) _Participant_data(ctx context.Context, field graphql
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participant",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Participant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -6946,7 +7035,7 @@ func (ec *executionContext) _Participant_data(ctx context.Context, field graphql
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Participant().Data(rctx, obj, args["keys"].([]string))
+		return ec.resolvers.Participant().Data(rctx, obj, args["keys"].([]string), args["deleted"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6958,9 +7047,9 @@ func (ec *executionContext) _Participant_data(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Datum)
+	res := resTmp.([]*ent.Datum)
 	fc.Result = res
-	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumᚄ(ctx, field.Selections, res)
+	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatumᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ParticipantsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.ParticipantsConnection) (ret graphql.Marshaler) {
@@ -6971,10 +7060,11 @@ func (ec *executionContext) _ParticipantsConnection_totalCount(ctx context.Conte
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ParticipantsConnection",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "ParticipantsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7005,10 +7095,11 @@ func (ec *executionContext) _ParticipantsConnection_edges(ctx context.Context, f
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ParticipantsConnection",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "ParticipantsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7036,10 +7127,11 @@ func (ec *executionContext) _ParticipantsConnection_participants(ctx context.Con
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ParticipantsConnection",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "ParticipantsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7070,10 +7162,11 @@ func (ec *executionContext) _ParticipantsConnection_pageInfo(ctx context.Context
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ParticipantsConnection",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "ParticipantsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7104,10 +7197,11 @@ func (ec *executionContext) _ParticipantsEdge_cursor(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ParticipantsEdge",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "ParticipantsEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7138,10 +7232,11 @@ func (ec *executionContext) _ParticipantsEdge_node(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ParticipantsEdge",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "ParticipantsEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7169,10 +7264,11 @@ func (ec *executionContext) _Participation_step(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Participation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7203,10 +7299,11 @@ func (ec *executionContext) _Participation_participant(ctx context.Context, fiel
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Participation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7237,10 +7334,11 @@ func (ec *executionContext) _Participation_mturkWorkerId(ctx context.Context, fi
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Participation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7268,10 +7366,11 @@ func (ec *executionContext) _Participation_mturkAssignmentID(ctx context.Context
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Participation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7299,10 +7398,11 @@ func (ec *executionContext) _Participation_mturkHitID(ctx context.Context, field
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Participation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7330,10 +7430,11 @@ func (ec *executionContext) _Participation_mturkAcceptedAt(ctx context.Context, 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Participation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7361,10 +7462,11 @@ func (ec *executionContext) _Participation_mturkSubmittedAt(ctx context.Context,
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Participation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Participation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7392,10 +7494,11 @@ func (ec *executionContext) _ParticipationsConnection_totalCount(ctx context.Con
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ParticipationsConnection",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "ParticipationsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7426,10 +7529,11 @@ func (ec *executionContext) _ParticipationsConnection_edges(ctx context.Context,
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ParticipationsConnection",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "ParticipationsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7457,10 +7561,11 @@ func (ec *executionContext) _ParticipationsConnection_participations(ctx context
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ParticipationsConnection",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "ParticipationsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7491,10 +7596,11 @@ func (ec *executionContext) _ParticipationsConnection_pageInfo(ctx context.Conte
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ParticipationsConnection",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "ParticipationsConnection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7525,10 +7631,11 @@ func (ec *executionContext) _ParticipationsEdge_cursor(ctx context.Context, fiel
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ParticipationsEdge",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "ParticipationsEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7559,10 +7666,11 @@ func (ec *executionContext) _ParticipationsEdge_node(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ParticipationsEdge",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "ParticipationsEdge",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7590,10 +7698,11 @@ func (ec *executionContext) _Project_id(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Project",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7624,10 +7733,11 @@ func (ec *executionContext) _Project_createdAt(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Project",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7658,10 +7768,11 @@ func (ec *executionContext) _Project_updatedAt(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Project",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7692,10 +7803,11 @@ func (ec *executionContext) _Project_creator(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Project",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7726,10 +7838,11 @@ func (ec *executionContext) _Project_projectID(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Project",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7760,10 +7873,11 @@ func (ec *executionContext) _Project_name(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Project",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7794,10 +7908,11 @@ func (ec *executionContext) _Project_templates(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Project",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7828,10 +7943,11 @@ func (ec *executionContext) _Project_runs(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Project",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7869,10 +7985,11 @@ func (ec *executionContext) _Project_data(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Project",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7897,9 +8014,9 @@ func (ec *executionContext) _Project_data(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Datum)
+	res := resTmp.([]*ent.Datum)
 	fc.Result = res
-	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumᚄ(ctx, field.Selections, res)
+	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatumᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProviderID_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.ProviderID) (ret graphql.Marshaler) {
@@ -7910,10 +8027,11 @@ func (ec *executionContext) _ProviderID_createdAt(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ProviderID",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "ProviderID",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7944,10 +8062,11 @@ func (ec *executionContext) _ProviderID_providerID(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ProviderID",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "ProviderID",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -7978,10 +8097,11 @@ func (ec *executionContext) _ProviderID_provider(ctx context.Context, field grap
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "ProviderID",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "ProviderID",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8009,10 +8129,11 @@ func (ec *executionContext) _Query_projects(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8034,7 +8155,7 @@ func (ec *executionContext) _Query_projects(ctx context.Context, field graphql.C
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -8067,10 +8188,11 @@ func (ec *executionContext) _Query_project(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8099,7 +8221,7 @@ func (ec *executionContext) _Query_project(ctx context.Context, field graphql.Co
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -8129,10 +8251,11 @@ func (ec *executionContext) _Query_participants(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8161,7 +8284,7 @@ func (ec *executionContext) _Query_participants(ctx context.Context, field graph
 
 		tmp, err := directive1(rctx)
 		if err != nil {
-			return nil, err
+			return nil, graphql.ErrorOnPath(ctx, err)
 		}
 		if tmp == nil {
 			return nil, nil
@@ -8194,10 +8317,11 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8225,10 +8349,11 @@ func (ec *executionContext) _Query_page(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8266,10 +8391,11 @@ func (ec *executionContext) _Query_mturkQualificationTypes(ctx context.Context, 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8307,10 +8433,11 @@ func (ec *executionContext) _Query_mturkLocales(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8348,10 +8475,11 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8386,10 +8514,11 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8417,10 +8546,11 @@ func (ec *executionContext) _Run_id(ctx context.Context, field graphql.Collected
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8451,10 +8581,11 @@ func (ec *executionContext) _Run_createdAt(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8485,10 +8616,11 @@ func (ec *executionContext) _Run_updatedAt(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8519,10 +8651,11 @@ func (ec *executionContext) _Run_creator(ctx context.Context, field graphql.Coll
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8553,10 +8686,11 @@ func (ec *executionContext) _Run_name(ctx context.Context, field graphql.Collect
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8587,10 +8721,11 @@ func (ec *executionContext) _Run_template(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8621,10 +8756,11 @@ func (ec *executionContext) _Run_status(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8655,10 +8791,11 @@ func (ec *executionContext) _Run_startAt(ctx context.Context, field graphql.Coll
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8686,10 +8823,11 @@ func (ec *executionContext) _Run_startedAt(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8717,10 +8855,11 @@ func (ec *executionContext) _Run_endedAt(ctx context.Context, field graphql.Coll
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8748,10 +8887,11 @@ func (ec *executionContext) _Run_steps(ctx context.Context, field graphql.Collec
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8782,10 +8922,11 @@ func (ec *executionContext) _Run_currentStep(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8813,10 +8954,11 @@ func (ec *executionContext) _Run_error(ctx context.Context, field graphql.Collec
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8844,10 +8986,11 @@ func (ec *executionContext) _Run_data(ctx context.Context, field graphql.Collect
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Run",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Run",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8872,9 +9015,9 @@ func (ec *executionContext) _Run_data(ctx context.Context, field graphql.Collect
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Datum)
+	res := resTmp.([]*ent.Datum)
 	fc.Result = res
-	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumᚄ(ctx, field.Selections, res)
+	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatumᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Step_id(ctx context.Context, field graphql.CollectedField, obj *ent.Step) (ret graphql.Marshaler) {
@@ -8885,10 +9028,11 @@ func (ec *executionContext) _Step_id(ctx context.Context, field graphql.Collecte
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Step",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Step",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8919,10 +9063,11 @@ func (ec *executionContext) _Step_createdAt(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Step",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Step",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8953,10 +9098,11 @@ func (ec *executionContext) _Step_updatedAt(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Step",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Step",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -8987,10 +9133,11 @@ func (ec *executionContext) _Step_creator(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Step",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Step",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9021,10 +9168,11 @@ func (ec *executionContext) _Step_index(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Step",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Step",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9055,10 +9203,11 @@ func (ec *executionContext) _Step_type(ctx context.Context, field graphql.Collec
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Step",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Step",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9089,10 +9238,11 @@ func (ec *executionContext) _Step_duration(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Step",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Step",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9123,10 +9273,11 @@ func (ec *executionContext) _Step_msgArgs(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Step",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Step",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9154,10 +9305,11 @@ func (ec *executionContext) _Step_hitArgs(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Step",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Step",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9185,10 +9337,11 @@ func (ec *executionContext) _Step_filterArgs(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Step",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Step",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9216,10 +9369,11 @@ func (ec *executionContext) _StepRun_id(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "StepRun",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "StepRun",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9250,10 +9404,11 @@ func (ec *executionContext) _StepRun_createdAt(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "StepRun",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "StepRun",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9284,10 +9439,11 @@ func (ec *executionContext) _StepRun_updatedAt(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "StepRun",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "StepRun",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9318,10 +9474,11 @@ func (ec *executionContext) _StepRun_creator(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "StepRun",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "StepRun",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9352,10 +9509,11 @@ func (ec *executionContext) _StepRun_step(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "StepRun",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "StepRun",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9386,10 +9544,11 @@ func (ec *executionContext) _StepRun_index(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "StepRun",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "StepRun",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9420,10 +9579,11 @@ func (ec *executionContext) _StepRun_status(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "StepRun",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "StepRun",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9454,10 +9614,11 @@ func (ec *executionContext) _StepRun_startedAt(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "StepRun",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "StepRun",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9485,10 +9646,11 @@ func (ec *executionContext) _StepRun_endedAt(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "StepRun",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "StepRun",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9516,10 +9678,11 @@ func (ec *executionContext) _StepRun_participations(ctx context.Context, field g
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "StepRun",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "StepRun",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9557,10 +9720,11 @@ func (ec *executionContext) _StepRun_participantsCount(ctx context.Context, fiel
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "StepRun",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "StepRun",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9591,10 +9755,11 @@ func (ec *executionContext) _Subscription_me(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Subscription",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Subscription",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9632,10 +9797,11 @@ func (ec *executionContext) _Template_id(ctx context.Context, field graphql.Coll
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Template",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Template",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9666,10 +9832,11 @@ func (ec *executionContext) _Template_createdAt(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Template",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Template",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9700,10 +9867,11 @@ func (ec *executionContext) _Template_updatedAt(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Template",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Template",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9734,10 +9902,11 @@ func (ec *executionContext) _Template_creator(ctx context.Context, field graphql
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Template",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Template",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9768,10 +9937,11 @@ func (ec *executionContext) _Template_name(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Template",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Template",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9802,10 +9972,11 @@ func (ec *executionContext) _Template_selectionType(ctx context.Context, field g
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Template",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Template",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9836,10 +10007,11 @@ func (ec *executionContext) _Template_internalCriteria(ctx context.Context, fiel
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Template",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Template",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9867,10 +10039,11 @@ func (ec *executionContext) _Template_mturkCriteria(ctx context.Context, field g
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Template",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Template",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9898,10 +10071,11 @@ func (ec *executionContext) _Template_steps(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Template",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "Template",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9932,10 +10106,11 @@ func (ec *executionContext) _Template_participantCount(ctx context.Context, fiel
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Template",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Template",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9963,10 +10138,11 @@ func (ec *executionContext) _Template_adult(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Template",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Template",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -9997,10 +10173,11 @@ func (ec *executionContext) _Template_sandbox(ctx context.Context, field graphql
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Template",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "Template",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10031,10 +10208,11 @@ func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Directive",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__Directive",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10065,10 +10243,11 @@ func (ec *executionContext) ___Directive_description(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Directive",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__Directive",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10096,10 +10275,11 @@ func (ec *executionContext) ___Directive_locations(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Directive",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__Directive",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10130,10 +10310,11 @@ func (ec *executionContext) ___Directive_args(ctx context.Context, field graphql
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Directive",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__Directive",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10164,10 +10345,11 @@ func (ec *executionContext) ___EnumValue_name(ctx context.Context, field graphql
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__EnumValue",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__EnumValue",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10198,10 +10380,11 @@ func (ec *executionContext) ___EnumValue_description(ctx context.Context, field 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__EnumValue",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__EnumValue",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10229,10 +10412,11 @@ func (ec *executionContext) ___EnumValue_isDeprecated(ctx context.Context, field
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__EnumValue",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__EnumValue",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10263,10 +10447,11 @@ func (ec *executionContext) ___EnumValue_deprecationReason(ctx context.Context, 
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__EnumValue",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__EnumValue",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10294,10 +10479,11 @@ func (ec *executionContext) ___Field_name(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Field",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__Field",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10328,10 +10514,11 @@ func (ec *executionContext) ___Field_description(ctx context.Context, field grap
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Field",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__Field",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10359,10 +10546,11 @@ func (ec *executionContext) ___Field_args(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Field",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__Field",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10393,10 +10581,11 @@ func (ec *executionContext) ___Field_type(ctx context.Context, field graphql.Col
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Field",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__Field",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10427,10 +10616,11 @@ func (ec *executionContext) ___Field_isDeprecated(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Field",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Field",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10461,10 +10651,11 @@ func (ec *executionContext) ___Field_deprecationReason(ctx context.Context, fiel
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Field",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Field",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10492,10 +10683,11 @@ func (ec *executionContext) ___InputValue_name(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__InputValue",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__InputValue",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10526,10 +10718,11 @@ func (ec *executionContext) ___InputValue_description(ctx context.Context, field
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__InputValue",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__InputValue",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10557,10 +10750,11 @@ func (ec *executionContext) ___InputValue_type(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__InputValue",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__InputValue",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10591,10 +10785,11 @@ func (ec *executionContext) ___InputValue_defaultValue(ctx context.Context, fiel
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__InputValue",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
+		Object:     "__InputValue",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10622,10 +10817,11 @@ func (ec *executionContext) ___Schema_types(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Schema",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Schema",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10656,10 +10852,11 @@ func (ec *executionContext) ___Schema_queryType(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Schema",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Schema",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10690,10 +10887,11 @@ func (ec *executionContext) ___Schema_mutationType(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Schema",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Schema",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10721,10 +10919,11 @@ func (ec *executionContext) ___Schema_subscriptionType(ctx context.Context, fiel
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Schema",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Schema",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10752,10 +10951,11 @@ func (ec *executionContext) ___Schema_directives(ctx context.Context, field grap
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Schema",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Schema",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10786,10 +10986,11 @@ func (ec *executionContext) ___Type_kind(ctx context.Context, field graphql.Coll
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Type",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Type",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10820,10 +11021,11 @@ func (ec *executionContext) ___Type_name(ctx context.Context, field graphql.Coll
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Type",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Type",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10851,10 +11053,11 @@ func (ec *executionContext) ___Type_description(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Type",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Type",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10882,10 +11085,11 @@ func (ec *executionContext) ___Type_fields(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Type",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Type",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10920,10 +11124,11 @@ func (ec *executionContext) ___Type_interfaces(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Type",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Type",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10951,10 +11156,11 @@ func (ec *executionContext) ___Type_possibleTypes(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Type",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Type",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -10982,10 +11188,11 @@ func (ec *executionContext) ___Type_enumValues(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Type",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Type",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -11020,10 +11227,11 @@ func (ec *executionContext) ___Type_inputFields(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Type",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Type",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -11051,10 +11259,11 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "__Type",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
+		Object:     "__Type",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -11086,12 +11295,16 @@ func (ec *executionContext) unmarshalInputAuthInput(ctx context.Context, obj int
 		switch k {
 		case "username":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
 			it.Username, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "password":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
 			it.Password, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
@@ -11110,6 +11323,8 @@ func (ec *executionContext) unmarshalInputCancelRunInput(ctx context.Context, ob
 		switch k {
 		case "ID":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ID"))
 			it.ID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
@@ -11128,24 +11343,32 @@ func (ec *executionContext) unmarshalInputCompValueInput(ctx context.Context, ob
 		switch k {
 		case "int":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("int"))
 			it.Int, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "float":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("float"))
 			it.Float, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "string":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("string"))
 			it.String, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "boolean":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("boolean"))
 			it.Boolean, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
@@ -11164,30 +11387,40 @@ func (ec *executionContext) unmarshalInputConditionInput(ctx context.Context, ob
 		switch k {
 		case "and":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
 			it.And, err = ec.unmarshalOConditionInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "or":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
 			it.Or, err = ec.unmarshalOConditionInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "key":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
 			it.Key, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "comparator":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comparator"))
 			it.Comparator, err = ec.unmarshalOComparator2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "values":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("values"))
 			it.Values, err = ec.unmarshalOCompValueInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValueInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
@@ -11206,12 +11439,16 @@ func (ec *executionContext) unmarshalInputCreateProjectInput(ctx context.Context
 		switch k {
 		case "projectID":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectID"))
 			it.ProjectID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "name":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
@@ -11230,12 +11467,16 @@ func (ec *executionContext) unmarshalInputCreateRunInput(ctx context.Context, ob
 		switch k {
 		case "projectID":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectID"))
 			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "template":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("template"))
 			it.Template, err = ec.unmarshalNTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐTemplateInput(ctx, v)
 			if err != nil {
 				return it, err
@@ -11254,12 +11495,16 @@ func (ec *executionContext) unmarshalInputCreateTemplateInput(ctx context.Contex
 		switch k {
 		case "projectID":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectID"))
 			it.ProjectID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "template":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("template"))
 			it.Template, err = ec.unmarshalNTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐTemplateInput(ctx, v)
 			if err != nil {
 				return it, err
@@ -11278,12 +11523,16 @@ func (ec *executionContext) unmarshalInputDuplicateRunInput(ctx context.Context,
 		switch k {
 		case "runID":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("runID"))
 			it.RunID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "toProjectID":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toProjectID"))
 			it.ToProjectID, err = ec.unmarshalOID2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
@@ -11302,24 +11551,32 @@ func (ec *executionContext) unmarshalInputFilterStepArgsInput(ctx context.Contex
 		switch k {
 		case "type":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
 			it.Type, err = ec.unmarshalNParticipantFilterType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "js":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("js"))
 			it.Js, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "filter":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
 			it.Filter, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "condition":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("condition"))
 			it.Condition, err = ec.unmarshalOConditionInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInput(ctx, v)
 			if err != nil {
 				return it, err
@@ -11338,48 +11595,64 @@ func (ec *executionContext) unmarshalInputHITStepArgsInput(ctx context.Context, 
 		switch k {
 		case "title":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
 			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "description":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
 			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "keywords":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keywords"))
 			it.Keywords, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "microbatch":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("microbatch"))
 			it.Microbatch, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "reward":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reward"))
 			it.Reward, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "timeout":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timeout"))
 			it.Timeout, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "duration":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("duration"))
 			it.Duration, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "workersCount":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("workersCount"))
 			it.WorkersCount, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
@@ -11398,12 +11671,16 @@ func (ec *executionContext) unmarshalInputInternalCriteriaInput(ctx context.Cont
 		switch k {
 		case "all":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("all"))
 			it.All, err = ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "condition":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("condition"))
 			it.Condition, err = ec.unmarshalNConditionInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInput(ctx, v)
 			if err != nil {
 				return it, err
@@ -11422,6 +11699,8 @@ func (ec *executionContext) unmarshalInputMTurkCriteriaInput(ctx context.Context
 		switch k {
 		case "qualifications":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("qualifications"))
 			it.Qualifications, err = ec.unmarshalNMTurkQualificationCriteriaInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteriaInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
@@ -11440,12 +11719,16 @@ func (ec *executionContext) unmarshalInputMTurkLocaleInput(ctx context.Context, 
 		switch k {
 		case "country":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("country"))
 			it.Country, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "subdivision":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subdivision"))
 			it.Subdivision, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
@@ -11464,24 +11747,32 @@ func (ec *executionContext) unmarshalInputMTurkQualificationCriteriaInput(ctx co
 		switch k {
 		case "id":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 			it.ID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "comparator":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comparator"))
 			it.Comparator, err = ec.unmarshalOComparator2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "values":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("values"))
 			it.Values, err = ec.unmarshalOInt2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "locales":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("locales"))
 			it.Locales, err = ec.unmarshalOMTurkLocaleInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocaleInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
@@ -11500,42 +11791,56 @@ func (ec *executionContext) unmarshalInputMessageStepArgsInput(ctx context.Conte
 		switch k {
 		case "subject":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subject"))
 			it.Subject, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "url":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("url"))
 			it.URL, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "message":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("message"))
 			it.Message, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "messageType":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageType"))
 			it.MessageType, err = ec.unmarshalOContentType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "lobby":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lobby"))
 			it.Lobby, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "lobbyType":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lobbyType"))
 			it.LobbyType, err = ec.unmarshalOContentType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "lobbyExpiration":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lobbyExpiration"))
 			it.LobbyExpiration, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
@@ -11554,24 +11859,32 @@ func (ec *executionContext) unmarshalInputMutateDatumInput(ctx context.Context, 
 		switch k {
 		case "operation":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operation"))
 			it.Operation, err = ec.unmarshalODatumOp2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumOp(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "key":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
 			it.Key, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "val":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("val"))
 			it.Val, err = ec.unmarshalOJSON2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "nodeID":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
 			it.NodeID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
@@ -11590,18 +11903,24 @@ func (ec *executionContext) unmarshalInputRegisterParticipantInput(ctx context.C
 		switch k {
 		case "id":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 			it.ID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "provider":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("provider"))
 			it.Provider, err = ec.unmarshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "data":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
 			it.Data, err = ec.unmarshalOMap2map(ctx, v)
 			if err != nil {
 				return it, err
@@ -11620,12 +11939,16 @@ func (ec *executionContext) unmarshalInputScheduleRunInput(ctx context.Context, 
 		switch k {
 		case "ID":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ID"))
 			it.ID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "startAt":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startAt"))
 			it.StartAt, err = ec.unmarshalNDateTime2timeᚐTime(ctx, v)
 			if err != nil {
 				return it, err
@@ -11644,6 +11967,8 @@ func (ec *executionContext) unmarshalInputStartRunInput(ctx context.Context, obj
 		switch k {
 		case "ID":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ID"))
 			it.ID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
@@ -11662,42 +11987,56 @@ func (ec *executionContext) unmarshalInputStepInput(ctx context.Context, obj int
 		switch k {
 		case "id":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 			it.ID, err = ec.unmarshalOID2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "index":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("index"))
 			it.Index, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "type":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
 			it.Type, err = ec.unmarshalNStepType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepType(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "duration":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("duration"))
 			it.Duration, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "msgArgs":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("msgArgs"))
 			it.MsgArgs, err = ec.unmarshalOMessageStepArgsInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMessageStepArgsInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "hitArgs":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hitArgs"))
 			it.HitArgs, err = ec.unmarshalOHITStepArgsInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐHITStepArgsInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "filterArgs":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filterArgs"))
 			it.FilterArgs, err = ec.unmarshalOFilterStepArgsInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐFilterStepArgsInput(ctx, v)
 			if err != nil {
 				return it, err
@@ -11716,54 +12055,72 @@ func (ec *executionContext) unmarshalInputTemplateInput(ctx context.Context, obj
 		switch k {
 		case "id":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 			it.ID, err = ec.unmarshalOID2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "name":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "steps":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("steps"))
 			it.Steps, err = ec.unmarshalNStepInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepInputᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "selectionType":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("selectionType"))
 			it.SelectionType, err = ec.unmarshalNSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "internalCriteria":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("internalCriteria"))
 			it.InternalCriteria, err = ec.unmarshalOInternalCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteriaInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "mturkCriteria":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("mturkCriteria"))
 			it.MturkCriteria, err = ec.unmarshalOMTurkCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteriaInput(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "participantCount":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("participantCount"))
 			it.ParticipantCount, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "adult":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("adult"))
 			it.Adult, err = ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "sandbox":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sandbox"))
 			it.Sandbox, err = ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
@@ -11782,6 +12139,8 @@ func (ec *executionContext) unmarshalInputUnscheduleRunInput(ctx context.Context
 		switch k {
 		case "ID":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ID"))
 			it.ID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
@@ -11800,12 +12159,16 @@ func (ec *executionContext) unmarshalInputUpdateRunInput(ctx context.Context, ob
 		switch k {
 		case "ID":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ID"))
 			it.ID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "name":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
@@ -11824,12 +12187,16 @@ func (ec *executionContext) unmarshalInputUpdateTemplateInput(ctx context.Contex
 		switch k {
 		case "runID":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("runID"))
 			it.RunID, err = ec.unmarshalNID2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "template":
 			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("template"))
 			it.Template, err = ec.unmarshalNTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐTemplateInput(ctx, v)
 			if err != nil {
 				return it, err
@@ -11999,7 +12366,7 @@ func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet
 
 var datumImplementors = []string{"Datum"}
 
-func (ec *executionContext) _Datum(ctx context.Context, sel ast.SelectionSet, obj *model.Datum) graphql.Marshaler {
+func (ec *executionContext) _Datum(ctx context.Context, sel ast.SelectionSet, obj *ent.Datum) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, datumImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -12011,38 +12378,63 @@ func (ec *executionContext) _Datum(ctx context.Context, sel ast.SelectionSet, ob
 		case "id":
 			out.Values[i] = ec._Datum_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._Datum_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._Datum_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "creator":
-			out.Values[i] = ec._Datum_creator(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Datum_creator(ctx, field, obj)
+				return res
+			})
 		case "deletedAt":
 			out.Values[i] = ec._Datum_deletedAt(ctx, field, obj)
 		case "key":
 			out.Values[i] = ec._Datum_key(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "val":
-			out.Values[i] = ec._Datum_val(ctx, field, obj)
-		case "next":
-			out.Values[i] = ec._Datum_next(ctx, field, obj)
-		case "root":
-			out.Values[i] = ec._Datum_root(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Datum_val(ctx, field, obj)
+				return res
+			})
+		case "index":
+			out.Values[i] = ec._Datum_index(ctx, field, obj)
 		case "versions":
-			out.Values[i] = ec._Datum_versions(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Datum_versions(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13876,7 +14268,8 @@ func (ec *executionContext) marshalNAdmin2ᚖgithubᚗcomᚋempiricalyᚋrecruit
 }
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
-	return graphql.UnmarshalBoolean(v)
+	res, err := graphql.UnmarshalBoolean(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
@@ -13889,10 +14282,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNCompValue2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValue(ctx context.Context, sel ast.SelectionSet, v model.CompValue) graphql.Marshaler {
-	return ec._CompValue(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNCompValue2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValue(ctx context.Context, sel ast.SelectionSet, v *model.CompValue) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -13903,29 +14292,19 @@ func (ec *executionContext) marshalNCompValue2ᚖgithubᚗcomᚋempiricalyᚋrec
 	return ec._CompValue(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNCompValueInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValueInput(ctx context.Context, v interface{}) (model.CompValueInput, error) {
-	return ec.unmarshalInputCompValueInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalNCompValueInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValueInput(ctx context.Context, v interface{}) (*model.CompValueInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNCompValueInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValueInput(ctx, v)
-	return &res, err
+	res, err := ec.unmarshalInputCompValueInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNComparator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx context.Context, v interface{}) (model.Comparator, error) {
 	var res model.Comparator
-	return res, res.UnmarshalGQL(v)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNComparator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx context.Context, sel ast.SelectionSet, v model.Comparator) graphql.Marshaler {
 	return v
-}
-
-func (ec *executionContext) marshalNCondition2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCondition(ctx context.Context, sel ast.SelectionSet, v model.Condition) graphql.Marshaler {
-	return ec._Condition(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNCondition2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCondition(ctx context.Context, sel ast.SelectionSet, v *model.Condition) graphql.Marshaler {
@@ -13938,21 +14317,15 @@ func (ec *executionContext) marshalNCondition2ᚖgithubᚗcomᚋempiricalyᚋrec
 	return ec._Condition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNConditionInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInput(ctx context.Context, v interface{}) (model.ConditionInput, error) {
-	return ec.unmarshalInputConditionInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalNConditionInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInput(ctx context.Context, v interface{}) (*model.ConditionInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNConditionInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInput(ctx, v)
-	return &res, err
+	res, err := ec.unmarshalInputConditionInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, v interface{}) (model.ContentType, error) {
 	var res model.ContentType
-	return res, res.UnmarshalGQL(v)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, sel ast.SelectionSet, v model.ContentType) graphql.Marshaler {
@@ -13960,7 +14333,8 @@ func (ec *executionContext) marshalNContentType2githubᚗcomᚋempiricalyᚋrecr
 }
 
 func (ec *executionContext) unmarshalNDateTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
-	return graphql.UnmarshalTime(v)
+	res, err := graphql.UnmarshalTime(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNDateTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
@@ -13973,11 +14347,11 @@ func (ec *executionContext) marshalNDateTime2timeᚐTime(ctx context.Context, se
 	return res
 }
 
-func (ec *executionContext) marshalNDatum2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatum(ctx context.Context, sel ast.SelectionSet, v model.Datum) graphql.Marshaler {
+func (ec *executionContext) marshalNDatum2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatum(ctx context.Context, sel ast.SelectionSet, v ent.Datum) graphql.Marshaler {
 	return ec._Datum(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Datum) graphql.Marshaler {
+func (ec *executionContext) marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatumᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Datum) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -14001,7 +14375,7 @@ func (ec *executionContext) marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecr
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNDatum2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatum(ctx, sel, v[i])
+			ret[i] = ec.marshalNDatum2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatum(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -14014,7 +14388,7 @@ func (ec *executionContext) marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecr
 	return ret
 }
 
-func (ec *executionContext) marshalNDatum2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatum(ctx context.Context, sel ast.SelectionSet, v *model.Datum) graphql.Marshaler {
+func (ec *executionContext) marshalNDatum2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatum(ctx context.Context, sel ast.SelectionSet, v *ent.Datum) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -14025,7 +14399,8 @@ func (ec *executionContext) marshalNDatum2ᚖgithubᚗcomᚋempiricalyᚋrecruit
 }
 
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
-	return graphql.UnmarshalFloat(v)
+	res, err := graphql.UnmarshalFloat(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
@@ -14039,7 +14414,8 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalID(v)
+	res, err := graphql.UnmarshalID(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
@@ -14053,7 +14429,8 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
-	return graphql.UnmarshalInt(v)
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
@@ -14064,10 +14441,6 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNMTurkLocale2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocale(ctx context.Context, sel ast.SelectionSet, v model.MTurkLocale) graphql.Marshaler {
-	return ec._MTurkLocale(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNMTurkLocale2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocaleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MTurkLocale) graphql.Marshaler {
@@ -14117,20 +14490,9 @@ func (ec *executionContext) marshalNMTurkLocale2ᚖgithubᚗcomᚋempiricalyᚋr
 	return ec._MTurkLocale(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNMTurkLocaleInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocaleInput(ctx context.Context, v interface{}) (model.MTurkLocaleInput, error) {
-	return ec.unmarshalInputMTurkLocaleInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalNMTurkLocaleInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocaleInput(ctx context.Context, v interface{}) (*model.MTurkLocaleInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNMTurkLocaleInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocaleInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalNMTurkQualificationCriteria2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteria(ctx context.Context, sel ast.SelectionSet, v model.MTurkQualificationCriteria) graphql.Marshaler {
-	return ec._MTurkQualificationCriteria(ctx, sel, &v)
+	res, err := ec.unmarshalInputMTurkLocaleInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNMTurkQualificationCriteria2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteriaᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MTurkQualificationCriteria) graphql.Marshaler {
@@ -14180,10 +14542,6 @@ func (ec *executionContext) marshalNMTurkQualificationCriteria2ᚖgithubᚗcom�
 	return ec._MTurkQualificationCriteria(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNMTurkQualificationCriteriaInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteriaInput(ctx context.Context, v interface{}) (model.MTurkQualificationCriteriaInput, error) {
-	return ec.unmarshalInputMTurkQualificationCriteriaInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalNMTurkQualificationCriteriaInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteriaInputᚄ(ctx context.Context, v interface{}) ([]*model.MTurkQualificationCriteriaInput, error) {
 	var vSlice []interface{}
 	if v != nil {
@@ -14196,6 +14554,7 @@ func (ec *executionContext) unmarshalNMTurkQualificationCriteriaInput2ᚕᚖgith
 	var err error
 	res := make([]*model.MTurkQualificationCriteriaInput, len(vSlice))
 	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNMTurkQualificationCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteriaInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
@@ -14205,15 +14564,8 @@ func (ec *executionContext) unmarshalNMTurkQualificationCriteriaInput2ᚕᚖgith
 }
 
 func (ec *executionContext) unmarshalNMTurkQualificationCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteriaInput(ctx context.Context, v interface{}) (*model.MTurkQualificationCriteriaInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNMTurkQualificationCriteriaInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQualificationCriteriaInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalNMTurkQulificationType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQulificationType(ctx context.Context, sel ast.SelectionSet, v model.MTurkQulificationType) graphql.Marshaler {
-	return ec._MTurkQulificationType(ctx, sel, &v)
+	res, err := ec.unmarshalInputMTurkQualificationCriteriaInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNMTurkQulificationType2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkQulificationTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MTurkQulificationType) graphql.Marshaler {
@@ -14275,10 +14627,6 @@ func (ec *executionContext) marshalNPage2ᚖgithubᚗcomᚋempiricalyᚋrecruitm
 		return graphql.Null
 	}
 	return ec._Page(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNPageInfo2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v model.PageInfo) graphql.Marshaler {
-	return ec._PageInfo(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
@@ -14344,7 +14692,8 @@ func (ec *executionContext) marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋr
 
 func (ec *executionContext) unmarshalNParticipantFilterType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx context.Context, v interface{}) (model.ParticipantFilterType, error) {
 	var res model.ParticipantFilterType
-	return res, res.UnmarshalGQL(v)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNParticipantFilterType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx context.Context, sel ast.SelectionSet, v model.ParticipantFilterType) graphql.Marshaler {
@@ -14365,10 +14714,6 @@ func (ec *executionContext) marshalNParticipantsConnection2ᚖgithubᚗcomᚋemp
 	return ec._ParticipantsConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNParticipantsEdge2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantsEdge(ctx context.Context, sel ast.SelectionSet, v model.ParticipantsEdge) graphql.Marshaler {
-	return ec._ParticipantsEdge(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNParticipantsEdge2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantsEdge(ctx context.Context, sel ast.SelectionSet, v *model.ParticipantsEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -14377,10 +14722,6 @@ func (ec *executionContext) marshalNParticipantsEdge2ᚖgithubᚗcomᚋempirical
 		return graphql.Null
 	}
 	return ec._ParticipantsEdge(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNParticipation2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipation(ctx context.Context, sel ast.SelectionSet, v ent.Participation) graphql.Marshaler {
-	return ec._Participation(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNParticipation2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipationᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Participation) graphql.Marshaler {
@@ -14444,10 +14785,6 @@ func (ec *executionContext) marshalNParticipationsConnection2ᚖgithubᚗcomᚋe
 	return ec._ParticipationsConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNParticipationsEdge2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsEdge(ctx context.Context, sel ast.SelectionSet, v model.ParticipationsEdge) graphql.Marshaler {
-	return ec._ParticipationsEdge(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNParticipationsEdge2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsEdge(ctx context.Context, sel ast.SelectionSet, v *model.ParticipationsEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -14509,10 +14846,6 @@ func (ec *executionContext) marshalNProject2ᚖgithubᚗcomᚋempiricalyᚋrecru
 	return ec._Project(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNProviderID2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProviderID(ctx context.Context, sel ast.SelectionSet, v ent.ProviderID) graphql.Marshaler {
-	return ec._ProviderID(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNProviderID2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProviderIDᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.ProviderID) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -14562,7 +14895,8 @@ func (ec *executionContext) marshalNProviderID2ᚖgithubᚗcomᚋempiricalyᚋre
 
 func (ec *executionContext) unmarshalNQualType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐQualType(ctx context.Context, v interface{}) (model.QualType, error) {
 	var res model.QualType
-	return res, res.UnmarshalGQL(v)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNQualType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐQualType(ctx context.Context, sel ast.SelectionSet, v model.QualType) graphql.Marshaler {
@@ -14571,7 +14905,8 @@ func (ec *executionContext) marshalNQualType2githubᚗcomᚋempiricalyᚋrecruit
 
 func (ec *executionContext) unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx context.Context, v interface{}) (model.Role, error) {
 	var res model.Role
-	return res, res.UnmarshalGQL(v)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx context.Context, sel ast.SelectionSet, v model.Role) graphql.Marshaler {
@@ -14631,7 +14966,8 @@ func (ec *executionContext) marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitme
 
 func (ec *executionContext) unmarshalNSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx context.Context, v interface{}) (model.SelectionType, error) {
 	var res model.SelectionType
-	return res, res.UnmarshalGQL(v)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNSelectionType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐSelectionType(ctx context.Context, sel ast.SelectionSet, v model.SelectionType) graphql.Marshaler {
@@ -14640,7 +14976,8 @@ func (ec *executionContext) marshalNSelectionType2githubᚗcomᚋempiricalyᚋre
 
 func (ec *executionContext) unmarshalNStatus2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStatus(ctx context.Context, v interface{}) (model.Status, error) {
 	var res model.Status
-	return res, res.UnmarshalGQL(v)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNStatus2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStatus(ctx context.Context, sel ast.SelectionSet, v model.Status) graphql.Marshaler {
@@ -14698,10 +15035,6 @@ func (ec *executionContext) marshalNStep2ᚖgithubᚗcomᚋempiricalyᚋrecruitm
 	return ec._Step(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNStepInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepInput(ctx context.Context, v interface{}) (model.StepInput, error) {
-	return ec.unmarshalInputStepInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalNStepInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepInputᚄ(ctx context.Context, v interface{}) ([]*model.StepInput, error) {
 	var vSlice []interface{}
 	if v != nil {
@@ -14714,6 +15047,7 @@ func (ec *executionContext) unmarshalNStepInput2ᚕᚖgithubᚗcomᚋempiricaly�
 	var err error
 	res := make([]*model.StepInput, len(vSlice))
 	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNStepInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
@@ -14723,11 +15057,8 @@ func (ec *executionContext) unmarshalNStepInput2ᚕᚖgithubᚗcomᚋempiricaly�
 }
 
 func (ec *executionContext) unmarshalNStepInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepInput(ctx context.Context, v interface{}) (*model.StepInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNStepInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepInput(ctx, v)
-	return &res, err
+	res, err := ec.unmarshalInputStepInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNStepRun2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx context.Context, sel ast.SelectionSet, v ent.StepRun) graphql.Marshaler {
@@ -14783,7 +15114,8 @@ func (ec *executionContext) marshalNStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecru
 
 func (ec *executionContext) unmarshalNStepType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepType(ctx context.Context, v interface{}) (model.StepType, error) {
 	var res model.StepType
-	return res, res.UnmarshalGQL(v)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNStepType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStepType(ctx context.Context, sel ast.SelectionSet, v model.StepType) graphql.Marshaler {
@@ -14791,7 +15123,8 @@ func (ec *executionContext) marshalNStepType2githubᚗcomᚋempiricalyᚋrecruit
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
@@ -14855,16 +15188,9 @@ func (ec *executionContext) marshalNTemplate2ᚖgithubᚗcomᚋempiricalyᚋrecr
 	return ec._Template(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐTemplateInput(ctx context.Context, v interface{}) (model.TemplateInput, error) {
-	return ec.unmarshalInputTemplateInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalNTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐTemplateInput(ctx context.Context, v interface{}) (*model.TemplateInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalNTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐTemplateInput(ctx, v)
-	return &res, err
+	res, err := ec.unmarshalInputTemplateInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -14909,7 +15235,8 @@ func (ec *executionContext) marshalN__Directive2ᚕgithubᚗcomᚋ99designsᚋgq
 }
 
 func (ec *executionContext) unmarshalN__DirectiveLocation2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__DirectiveLocation2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
@@ -14934,6 +15261,7 @@ func (ec *executionContext) unmarshalN__DirectiveLocation2ᚕstringᚄ(ctx conte
 	var err error
 	res := make([]string, len(vSlice))
 	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalN__DirectiveLocation2string(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
@@ -15080,7 +15408,8 @@ func (ec *executionContext) marshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgen�
 }
 
 func (ec *executionContext) unmarshalN__TypeKind2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
@@ -15093,20 +15422,12 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) unmarshalOAuthInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthInput(ctx context.Context, v interface{}) (model.AuthInput, error) {
-	return ec.unmarshalInputAuthInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalOAuthInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthInput(ctx context.Context, v interface{}) (*model.AuthInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOAuthInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOAuthResp2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthResp(ctx context.Context, sel ast.SelectionSet, v model.AuthResp) graphql.Marshaler {
-	return ec._AuthResp(ctx, sel, &v)
+	res, err := ec.unmarshalInputAuthInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOAuthResp2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthResp(ctx context.Context, sel ast.SelectionSet, v *model.AuthResp) graphql.Marshaler {
@@ -15117,7 +15438,8 @@ func (ec *executionContext) marshalOAuthResp2ᚖgithubᚗcomᚋempiricalyᚋrecr
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
-	return graphql.UnmarshalBoolean(v)
+	res, err := graphql.UnmarshalBoolean(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
@@ -15128,27 +15450,23 @@ func (ec *executionContext) unmarshalOBoolean2ᚖbool(ctx context.Context, v int
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOBoolean2bool(ctx, v)
-	return &res, err
+	res, err := graphql.UnmarshalBoolean(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast.SelectionSet, v *bool) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOBoolean2bool(ctx, sel, *v)
-}
-
-func (ec *executionContext) unmarshalOCancelRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCancelRunInput(ctx context.Context, v interface{}) (model.CancelRunInput, error) {
-	return ec.unmarshalInputCancelRunInput(ctx, v)
+	return graphql.MarshalBoolean(*v)
 }
 
 func (ec *executionContext) unmarshalOCancelRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCancelRunInput(ctx context.Context, v interface{}) (*model.CancelRunInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOCancelRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCancelRunInput(ctx, v)
-	return &res, err
+	res, err := ec.unmarshalInputCancelRunInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOCompValue2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValueᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CompValue) graphql.Marshaler {
@@ -15192,6 +15510,9 @@ func (ec *executionContext) marshalOCompValue2ᚕᚖgithubᚗcomᚋempiricalyᚋ
 }
 
 func (ec *executionContext) unmarshalOCompValueInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValueInputᚄ(ctx context.Context, v interface{}) ([]*model.CompValueInput, error) {
+	if v == nil {
+		return nil, nil
+	}
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -15203,6 +15524,7 @@ func (ec *executionContext) unmarshalOCompValueInput2ᚕᚖgithubᚗcomᚋempiri
 	var err error
 	res := make([]*model.CompValueInput, len(vSlice))
 	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNCompValueInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCompValueInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
@@ -15211,21 +15533,13 @@ func (ec *executionContext) unmarshalOCompValueInput2ᚕᚖgithubᚗcomᚋempiri
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOComparator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx context.Context, v interface{}) (model.Comparator, error) {
-	var res model.Comparator
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOComparator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx context.Context, sel ast.SelectionSet, v model.Comparator) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) unmarshalOComparator2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx context.Context, v interface{}) (*model.Comparator, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOComparator2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx, v)
-	return &res, err
+	var res = new(model.Comparator)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOComparator2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐComparator(ctx context.Context, sel ast.SelectionSet, v *model.Comparator) graphql.Marshaler {
@@ -15233,10 +15547,6 @@ func (ec *executionContext) marshalOComparator2ᚖgithubᚗcomᚋempiricalyᚋre
 		return graphql.Null
 	}
 	return v
-}
-
-func (ec *executionContext) marshalOCondition2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCondition(ctx context.Context, sel ast.SelectionSet, v model.Condition) graphql.Marshaler {
-	return ec._Condition(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalOCondition2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Condition) graphql.Marshaler {
@@ -15286,11 +15596,10 @@ func (ec *executionContext) marshalOCondition2ᚖgithubᚗcomᚋempiricalyᚋrec
 	return ec._Condition(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOConditionInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInput(ctx context.Context, v interface{}) (model.ConditionInput, error) {
-	return ec.unmarshalInputConditionInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalOConditionInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInputᚄ(ctx context.Context, v interface{}) ([]*model.ConditionInput, error) {
+	if v == nil {
+		return nil, nil
+	}
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -15302,6 +15611,7 @@ func (ec *executionContext) unmarshalOConditionInput2ᚕᚖgithubᚗcomᚋempiri
 	var err error
 	res := make([]*model.ConditionInput, len(vSlice))
 	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNConditionInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
@@ -15314,25 +15624,17 @@ func (ec *executionContext) unmarshalOConditionInput2ᚖgithubᚗcomᚋempirical
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOConditionInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐConditionInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, v interface{}) (model.ContentType, error) {
-	var res model.ContentType
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, sel ast.SelectionSet, v model.ContentType) graphql.Marshaler {
-	return v
+	res, err := ec.unmarshalInputConditionInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOContentType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, v interface{}) (*model.ContentType, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx, v)
-	return &res, err
+	var res = new(model.ContentType)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOContentType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx context.Context, sel ast.SelectionSet, v *model.ContentType) graphql.Marshaler {
@@ -15342,44 +15644,33 @@ func (ec *executionContext) marshalOContentType2ᚖgithubᚗcomᚋempiricalyᚋr
 	return v
 }
 
-func (ec *executionContext) unmarshalOCreateProjectInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProjectInput(ctx context.Context, v interface{}) (model.CreateProjectInput, error) {
-	return ec.unmarshalInputCreateProjectInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalOCreateProjectInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProjectInput(ctx context.Context, v interface{}) (*model.CreateProjectInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOCreateProjectInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateProjectInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOCreateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateRunInput(ctx context.Context, v interface{}) (model.CreateRunInput, error) {
-	return ec.unmarshalInputCreateRunInput(ctx, v)
+	res, err := ec.unmarshalInputCreateProjectInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOCreateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateRunInput(ctx context.Context, v interface{}) (*model.CreateRunInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOCreateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateRunInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOCreateTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateTemplateInput(ctx context.Context, v interface{}) (model.CreateTemplateInput, error) {
-	return ec.unmarshalInputCreateTemplateInput(ctx, v)
+	res, err := ec.unmarshalInputCreateRunInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOCreateTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateTemplateInput(ctx context.Context, v interface{}) (*model.CreateTemplateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOCreateTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐCreateTemplateInput(ctx, v)
-	return &res, err
+	res, err := ec.unmarshalInputCreateTemplateInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalODateTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
-	return graphql.UnmarshalTime(v)
+	res, err := graphql.UnmarshalTime(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalODateTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
@@ -15390,32 +15681,24 @@ func (ec *executionContext) unmarshalODateTime2ᚖtimeᚐTime(ctx context.Contex
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalODateTime2timeᚐTime(ctx, v)
-	return &res, err
+	res, err := graphql.UnmarshalTime(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalODateTime2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalODateTime2timeᚐTime(ctx, sel, *v)
-}
-
-func (ec *executionContext) unmarshalODatumOp2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumOp(ctx context.Context, v interface{}) (model.DatumOp, error) {
-	var res model.DatumOp
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalODatumOp2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumOp(ctx context.Context, sel ast.SelectionSet, v model.DatumOp) graphql.Marshaler {
-	return v
+	return graphql.MarshalTime(*v)
 }
 
 func (ec *executionContext) unmarshalODatumOp2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumOp(ctx context.Context, v interface{}) (*model.DatumOp, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalODatumOp2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumOp(ctx, v)
-	return &res, err
+	var res = new(model.DatumOp)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalODatumOp2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumOp(ctx context.Context, sel ast.SelectionSet, v *model.DatumOp) graphql.Marshaler {
@@ -15425,20 +15708,12 @@ func (ec *executionContext) marshalODatumOp2ᚖgithubᚗcomᚋempiricalyᚋrecru
 	return v
 }
 
-func (ec *executionContext) unmarshalODuplicateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateRunInput(ctx context.Context, v interface{}) (model.DuplicateRunInput, error) {
-	return ec.unmarshalInputDuplicateRunInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalODuplicateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateRunInput(ctx context.Context, v interface{}) (*model.DuplicateRunInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalODuplicateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateRunInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOFilterStepArgs2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐFilterStepArgs(ctx context.Context, sel ast.SelectionSet, v model.FilterStepArgs) graphql.Marshaler {
-	return ec._FilterStepArgs(ctx, sel, &v)
+	res, err := ec.unmarshalInputDuplicateRunInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOFilterStepArgs2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐFilterStepArgs(ctx context.Context, sel ast.SelectionSet, v *model.FilterStepArgs) graphql.Marshaler {
@@ -15448,43 +15723,27 @@ func (ec *executionContext) marshalOFilterStepArgs2ᚖgithubᚗcomᚋempiricaly�
 	return ec._FilterStepArgs(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOFilterStepArgsInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐFilterStepArgsInput(ctx context.Context, v interface{}) (model.FilterStepArgsInput, error) {
-	return ec.unmarshalInputFilterStepArgsInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalOFilterStepArgsInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐFilterStepArgsInput(ctx context.Context, v interface{}) (*model.FilterStepArgsInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOFilterStepArgsInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐFilterStepArgsInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOFloat2float64(ctx context.Context, v interface{}) (float64, error) {
-	return graphql.UnmarshalFloat(v)
-}
-
-func (ec *executionContext) marshalOFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
-	return graphql.MarshalFloat(v)
+	res, err := ec.unmarshalInputFilterStepArgsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOFloat2float64(ctx, v)
-	return &res, err
+	res, err := graphql.UnmarshalFloat(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOFloat2float64(ctx, sel, *v)
-}
-
-func (ec *executionContext) marshalOHITStepArgs2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐHITStepArgs(ctx context.Context, sel ast.SelectionSet, v model.HITStepArgs) graphql.Marshaler {
-	return ec._HITStepArgs(ctx, sel, &v)
+	return graphql.MarshalFloat(*v)
 }
 
 func (ec *executionContext) marshalOHITStepArgs2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐHITStepArgs(ctx context.Context, sel ast.SelectionSet, v *model.HITStepArgs) graphql.Marshaler {
@@ -15494,43 +15753,32 @@ func (ec *executionContext) marshalOHITStepArgs2ᚖgithubᚗcomᚋempiricalyᚋr
 	return ec._HITStepArgs(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOHITStepArgsInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐHITStepArgsInput(ctx context.Context, v interface{}) (model.HITStepArgsInput, error) {
-	return ec.unmarshalInputHITStepArgsInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalOHITStepArgsInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐHITStepArgsInput(ctx context.Context, v interface{}) (*model.HITStepArgsInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOHITStepArgsInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐHITStepArgsInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalID(v)
-}
-
-func (ec *executionContext) marshalOID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	return graphql.MarshalID(v)
+	res, err := ec.unmarshalInputHITStepArgsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOID2string(ctx, v)
-	return &res, err
+	res, err := graphql.UnmarshalID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOID2string(ctx, sel, *v)
+	return graphql.MarshalID(*v)
 }
 
 func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
-	return graphql.UnmarshalInt(v)
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
@@ -15538,6 +15786,9 @@ func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.Selecti
 }
 
 func (ec *executionContext) unmarshalOInt2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
+	if v == nil {
+		return nil, nil
+	}
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -15549,6 +15800,7 @@ func (ec *executionContext) unmarshalOInt2ᚕintᚄ(ctx context.Context, v inter
 	var err error
 	res := make([]int, len(vSlice))
 	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
@@ -15573,19 +15825,15 @@ func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interfac
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOInt2int(ctx, v)
-	return &res, err
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOInt2int(ctx, sel, *v)
-}
-
-func (ec *executionContext) marshalOInternalCriteria2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteria(ctx context.Context, sel ast.SelectionSet, v model.InternalCriteria) graphql.Marshaler {
-	return ec._InternalCriteria(ctx, sel, &v)
+	return graphql.MarshalInt(*v)
 }
 
 func (ec *executionContext) marshalOInternalCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteria(ctx context.Context, sel ast.SelectionSet, v *model.InternalCriteria) graphql.Marshaler {
@@ -15595,43 +15843,27 @@ func (ec *executionContext) marshalOInternalCriteria2ᚖgithubᚗcomᚋempirical
 	return ec._InternalCriteria(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOInternalCriteriaInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteriaInput(ctx context.Context, v interface{}) (model.InternalCriteriaInput, error) {
-	return ec.unmarshalInputInternalCriteriaInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalOInternalCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteriaInput(ctx context.Context, v interface{}) (*model.InternalCriteriaInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOInternalCriteriaInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐInternalCriteriaInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOJSON2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
-}
-
-func (ec *executionContext) marshalOJSON2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	return graphql.MarshalString(v)
+	res, err := ec.unmarshalInputInternalCriteriaInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOJSON2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOJSON2string(ctx, v)
-	return &res, err
+	res, err := graphql.UnmarshalString(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOJSON2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOJSON2string(ctx, sel, *v)
-}
-
-func (ec *executionContext) marshalOMTurkCriteria2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteria(ctx context.Context, sel ast.SelectionSet, v model.MTurkCriteria) graphql.Marshaler {
-	return ec._MTurkCriteria(ctx, sel, &v)
+	return graphql.MarshalString(*v)
 }
 
 func (ec *executionContext) marshalOMTurkCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteria(ctx context.Context, sel ast.SelectionSet, v *model.MTurkCriteria) graphql.Marshaler {
@@ -15641,16 +15873,12 @@ func (ec *executionContext) marshalOMTurkCriteria2ᚖgithubᚗcomᚋempiricaly�
 	return ec._MTurkCriteria(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOMTurkCriteriaInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteriaInput(ctx context.Context, v interface{}) (model.MTurkCriteriaInput, error) {
-	return ec.unmarshalInputMTurkCriteriaInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalOMTurkCriteriaInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteriaInput(ctx context.Context, v interface{}) (*model.MTurkCriteriaInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOMTurkCriteriaInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteriaInput(ctx, v)
-	return &res, err
+	res, err := ec.unmarshalInputMTurkCriteriaInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOMTurkLocale2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocaleᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MTurkLocale) graphql.Marshaler {
@@ -15694,6 +15922,9 @@ func (ec *executionContext) marshalOMTurkLocale2ᚕᚖgithubᚗcomᚋempiricaly�
 }
 
 func (ec *executionContext) unmarshalOMTurkLocaleInput2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocaleInputᚄ(ctx context.Context, v interface{}) ([]*model.MTurkLocaleInput, error) {
+	if v == nil {
+		return nil, nil
+	}
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -15705,6 +15936,7 @@ func (ec *executionContext) unmarshalOMTurkLocaleInput2ᚕᚖgithubᚗcomᚋempi
 	var err error
 	res := make([]*model.MTurkLocaleInput, len(vSlice))
 	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNMTurkLocaleInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkLocaleInput(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
@@ -15717,7 +15949,8 @@ func (ec *executionContext) unmarshalOMap2map(ctx context.Context, v interface{}
 	if v == nil {
 		return nil, nil
 	}
-	return graphql.UnmarshalMap(v)
+	res, err := graphql.UnmarshalMap(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.SelectionSet, v map[string]interface{}) graphql.Marshaler {
@@ -15727,10 +15960,6 @@ func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.Selecti
 	return graphql.MarshalMap(v)
 }
 
-func (ec *executionContext) marshalOMessageStepArgs2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMessageStepArgs(ctx context.Context, sel ast.SelectionSet, v model.MessageStepArgs) graphql.Marshaler {
-	return ec._MessageStepArgs(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalOMessageStepArgs2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMessageStepArgs(ctx context.Context, sel ast.SelectionSet, v *model.MessageStepArgs) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -15738,45 +15967,29 @@ func (ec *executionContext) marshalOMessageStepArgs2ᚖgithubᚗcomᚋempiricaly
 	return ec._MessageStepArgs(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOMessageStepArgsInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMessageStepArgsInput(ctx context.Context, v interface{}) (model.MessageStepArgsInput, error) {
-	return ec.unmarshalInputMessageStepArgsInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalOMessageStepArgsInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMessageStepArgsInput(ctx context.Context, v interface{}) (*model.MessageStepArgsInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOMessageStepArgsInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMessageStepArgsInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOMutateDatumInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMutateDatumInput(ctx context.Context, v interface{}) (model.MutateDatumInput, error) {
-	return ec.unmarshalInputMutateDatumInput(ctx, v)
+	res, err := ec.unmarshalInputMessageStepArgsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOMutateDatumInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMutateDatumInput(ctx context.Context, v interface{}) (*model.MutateDatumInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOMutateDatumInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMutateDatumInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOPROVIDER2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx context.Context, v interface{}) (model.Provider, error) {
-	var res model.Provider
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalOPROVIDER2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx context.Context, sel ast.SelectionSet, v model.Provider) graphql.Marshaler {
-	return v
+	res, err := ec.unmarshalInputMutateDatumInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx context.Context, v interface{}) (*model.Provider, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOPROVIDER2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx, v)
-	return &res, err
+	var res = new(model.Provider)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx context.Context, sel ast.SelectionSet, v *model.Provider) graphql.Marshaler {
@@ -15784,10 +15997,6 @@ func (ec *executionContext) marshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecr
 		return graphql.Null
 	}
 	return v
-}
-
-func (ec *executionContext) marshalOParticipant2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx context.Context, sel ast.SelectionSet, v ent.Participant) graphql.Marshaler {
-	return ec._Participant(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx context.Context, sel ast.SelectionSet, v *ent.Participant) graphql.Marshaler {
@@ -15837,10 +16046,6 @@ func (ec *executionContext) marshalOParticipantsEdge2ᚕᚖgithubᚗcomᚋempiri
 	return ret
 }
 
-func (ec *executionContext) marshalOParticipation2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipation(ctx context.Context, sel ast.SelectionSet, v ent.Participation) graphql.Marshaler {
-	return ec._Participation(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalOParticipation2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipation(ctx context.Context, sel ast.SelectionSet, v *ent.Participation) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -15888,10 +16093,6 @@ func (ec *executionContext) marshalOParticipationsEdge2ᚕᚖgithubᚗcomᚋempi
 	return ret
 }
 
-func (ec *executionContext) marshalOProject2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v ent.Project) graphql.Marshaler {
-	return ec._Project(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v *ent.Project) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -15899,44 +16100,28 @@ func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋempiricalyᚋrecru
 	return ec._Project(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalORegisterParticipantInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRegisterParticipantInput(ctx context.Context, v interface{}) (model.RegisterParticipantInput, error) {
-	return ec.unmarshalInputRegisterParticipantInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalORegisterParticipantInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRegisterParticipantInput(ctx context.Context, v interface{}) (*model.RegisterParticipantInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalORegisterParticipantInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRegisterParticipantInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOScheduleRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐScheduleRunInput(ctx context.Context, v interface{}) (model.ScheduleRunInput, error) {
-	return ec.unmarshalInputScheduleRunInput(ctx, v)
+	res, err := ec.unmarshalInputRegisterParticipantInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOScheduleRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐScheduleRunInput(ctx context.Context, v interface{}) (*model.ScheduleRunInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOScheduleRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐScheduleRunInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOStartRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStartRunInput(ctx context.Context, v interface{}) (model.StartRunInput, error) {
-	return ec.unmarshalInputStartRunInput(ctx, v)
+	res, err := ec.unmarshalInputScheduleRunInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOStartRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStartRunInput(ctx context.Context, v interface{}) (*model.StartRunInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOStartRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStartRunInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOStepRun2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx context.Context, sel ast.SelectionSet, v ent.StepRun) graphql.Marshaler {
-	return ec._StepRun(ctx, sel, &v)
+	res, err := ec.unmarshalInputStartRunInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx context.Context, sel ast.SelectionSet, v *ent.StepRun) graphql.Marshaler {
@@ -15947,7 +16132,8 @@ func (ec *executionContext) marshalOStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecru
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
-	return graphql.UnmarshalString(v)
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
@@ -15955,6 +16141,9 @@ func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.S
 }
 
 func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -15966,6 +16155,7 @@ func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v
 	var err error
 	res := make([]string, len(vSlice))
 	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
@@ -15990,51 +16180,39 @@ func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v in
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOString2string(ctx, v)
-	return &res, err
+	res, err := graphql.UnmarshalString(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec.marshalOString2string(ctx, sel, *v)
-}
-
-func (ec *executionContext) unmarshalOUnscheduleRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUnscheduleRunInput(ctx context.Context, v interface{}) (model.UnscheduleRunInput, error) {
-	return ec.unmarshalInputUnscheduleRunInput(ctx, v)
+	return graphql.MarshalString(*v)
 }
 
 func (ec *executionContext) unmarshalOUnscheduleRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUnscheduleRunInput(ctx context.Context, v interface{}) (*model.UnscheduleRunInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOUnscheduleRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUnscheduleRunInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOUpdateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateRunInput(ctx context.Context, v interface{}) (model.UpdateRunInput, error) {
-	return ec.unmarshalInputUpdateRunInput(ctx, v)
+	res, err := ec.unmarshalInputUnscheduleRunInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOUpdateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateRunInput(ctx context.Context, v interface{}) (*model.UpdateRunInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOUpdateRunInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateRunInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) unmarshalOUpdateTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateTemplateInput(ctx context.Context, v interface{}) (model.UpdateTemplateInput, error) {
-	return ec.unmarshalInputUpdateTemplateInput(ctx, v)
+	res, err := ec.unmarshalInputUpdateRunInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOUpdateTemplateInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateTemplateInput(ctx context.Context, v interface{}) (*model.UpdateTemplateInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOUpdateTemplateInput2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateTemplateInput(ctx, v)
-	return &res, err
+	res, err := ec.unmarshalInputUpdateTemplateInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOUser2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
@@ -16164,19 +16342,11 @@ func (ec *executionContext) marshalO__InputValue2ᚕgithubᚗcomᚋ99designsᚋg
 	return ret
 }
 
-func (ec *executionContext) marshalO__Schema2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx context.Context, sel ast.SelectionSet, v introspection.Schema) graphql.Marshaler {
-	return ec.___Schema(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx context.Context, sel ast.SelectionSet, v *introspection.Schema) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec.___Schema(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalO__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx context.Context, sel ast.SelectionSet, v introspection.Type) graphql.Marshaler {
-	return ec.___Type(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Type) graphql.Marshaler {

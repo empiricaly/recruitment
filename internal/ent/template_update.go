@@ -188,6 +188,12 @@ func (tu *TemplateUpdate) Mutation() *TemplateMutation {
 	return tu.mutation
 }
 
+// ClearSteps clears all "steps" edges to type Step.
+func (tu *TemplateUpdate) ClearSteps() *TemplateUpdate {
+	tu.mutation.ClearSteps()
+	return tu
+}
+
 // RemoveStepIDs removes the steps edge to Step by ids.
 func (tu *TemplateUpdate) RemoveStepIDs(ids ...string) *TemplateUpdate {
 	tu.mutation.RemoveStepIDs(ids...)
@@ -203,19 +209,19 @@ func (tu *TemplateUpdate) RemoveSteps(s ...*Step) *TemplateUpdate {
 	return tu.RemoveStepIDs(ids...)
 }
 
-// ClearProject clears the project edge to Project.
+// ClearProject clears the "project" edge to type Project.
 func (tu *TemplateUpdate) ClearProject() *TemplateUpdate {
 	tu.mutation.ClearProject()
 	return tu
 }
 
-// ClearCreator clears the creator edge to Admin.
+// ClearCreator clears the "creator" edge to type Admin.
 func (tu *TemplateUpdate) ClearCreator() *TemplateUpdate {
 	tu.mutation.ClearCreator()
 	return tu
 }
 
-// ClearRun clears the run edge to Run.
+// ClearRun clears the "run" edge to type Run.
 func (tu *TemplateUpdate) ClearRun() *TemplateUpdate {
 	tu.mutation.ClearRun()
 	return tu
@@ -223,37 +229,24 @@ func (tu *TemplateUpdate) ClearRun() *TemplateUpdate {
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (tu *TemplateUpdate) Save(ctx context.Context) (int, error) {
-	if _, ok := tu.mutation.UpdatedAt(); !ok {
-		v := template.UpdateDefaultUpdatedAt()
-		tu.mutation.SetUpdatedAt(v)
-	}
-	if v, ok := tu.mutation.Name(); ok {
-		if err := template.NameValidator(v); err != nil {
-			return 0, &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
-		}
-	}
-	if v, ok := tu.mutation.SelectionType(); ok {
-		if err := template.SelectionTypeValidator(v); err != nil {
-			return 0, &ValidationError{Name: "selectionType", err: fmt.Errorf("ent: validator failed for field \"selectionType\": %w", err)}
-		}
-	}
-	if v, ok := tu.mutation.ParticipantCount(); ok {
-		if err := template.ParticipantCountValidator(v); err != nil {
-			return 0, &ValidationError{Name: "participantCount", err: fmt.Errorf("ent: validator failed for field \"participantCount\": %w", err)}
-		}
-	}
-
 	var (
 		err      error
 		affected int
 	)
+	tu.defaults()
 	if len(tu.hooks) == 0 {
+		if err = tu.check(); err != nil {
+			return 0, err
+		}
 		affected, err = tu.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*TemplateMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = tu.check(); err != nil {
+				return 0, err
 			}
 			tu.mutation = mutation
 			affected, err = tu.sqlSave(ctx)
@@ -290,6 +283,34 @@ func (tu *TemplateUpdate) ExecX(ctx context.Context) {
 	if err := tu.Exec(ctx); err != nil {
 		panic(err)
 	}
+}
+
+// defaults sets the default values of the builder before save.
+func (tu *TemplateUpdate) defaults() {
+	if _, ok := tu.mutation.UpdatedAt(); !ok {
+		v := template.UpdateDefaultUpdatedAt()
+		tu.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (tu *TemplateUpdate) check() error {
+	if v, ok := tu.mutation.Name(); ok {
+		if err := template.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
+		}
+	}
+	if v, ok := tu.mutation.SelectionType(); ok {
+		if err := template.SelectionTypeValidator(v); err != nil {
+			return &ValidationError{Name: "selectionType", err: fmt.Errorf("ent: validator failed for field \"selectionType\": %w", err)}
+		}
+	}
+	if v, ok := tu.mutation.ParticipantCount(); ok {
+		if err := template.ParticipantCountValidator(v); err != nil {
+			return &ValidationError{Name: "participantCount", err: fmt.Errorf("ent: validator failed for field \"participantCount\": %w", err)}
+		}
+	}
+	return nil
 }
 
 func (tu *TemplateUpdate) sqlSave(ctx context.Context) (n int, err error) {
@@ -373,7 +394,23 @@ func (tu *TemplateUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: template.FieldSandbox,
 		})
 	}
-	if nodes := tu.mutation.RemovedStepsIDs(); len(nodes) > 0 {
+	if tu.mutation.StepsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   template.StepsTable,
+			Columns: []string{template.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: step.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tu.mutation.RemovedStepsIDs(); len(nodes) > 0 && !tu.mutation.StepsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -690,6 +727,12 @@ func (tuo *TemplateUpdateOne) Mutation() *TemplateMutation {
 	return tuo.mutation
 }
 
+// ClearSteps clears all "steps" edges to type Step.
+func (tuo *TemplateUpdateOne) ClearSteps() *TemplateUpdateOne {
+	tuo.mutation.ClearSteps()
+	return tuo
+}
+
 // RemoveStepIDs removes the steps edge to Step by ids.
 func (tuo *TemplateUpdateOne) RemoveStepIDs(ids ...string) *TemplateUpdateOne {
 	tuo.mutation.RemoveStepIDs(ids...)
@@ -705,19 +748,19 @@ func (tuo *TemplateUpdateOne) RemoveSteps(s ...*Step) *TemplateUpdateOne {
 	return tuo.RemoveStepIDs(ids...)
 }
 
-// ClearProject clears the project edge to Project.
+// ClearProject clears the "project" edge to type Project.
 func (tuo *TemplateUpdateOne) ClearProject() *TemplateUpdateOne {
 	tuo.mutation.ClearProject()
 	return tuo
 }
 
-// ClearCreator clears the creator edge to Admin.
+// ClearCreator clears the "creator" edge to type Admin.
 func (tuo *TemplateUpdateOne) ClearCreator() *TemplateUpdateOne {
 	tuo.mutation.ClearCreator()
 	return tuo
 }
 
-// ClearRun clears the run edge to Run.
+// ClearRun clears the "run" edge to type Run.
 func (tuo *TemplateUpdateOne) ClearRun() *TemplateUpdateOne {
 	tuo.mutation.ClearRun()
 	return tuo
@@ -725,37 +768,24 @@ func (tuo *TemplateUpdateOne) ClearRun() *TemplateUpdateOne {
 
 // Save executes the query and returns the updated entity.
 func (tuo *TemplateUpdateOne) Save(ctx context.Context) (*Template, error) {
-	if _, ok := tuo.mutation.UpdatedAt(); !ok {
-		v := template.UpdateDefaultUpdatedAt()
-		tuo.mutation.SetUpdatedAt(v)
-	}
-	if v, ok := tuo.mutation.Name(); ok {
-		if err := template.NameValidator(v); err != nil {
-			return nil, &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
-		}
-	}
-	if v, ok := tuo.mutation.SelectionType(); ok {
-		if err := template.SelectionTypeValidator(v); err != nil {
-			return nil, &ValidationError{Name: "selectionType", err: fmt.Errorf("ent: validator failed for field \"selectionType\": %w", err)}
-		}
-	}
-	if v, ok := tuo.mutation.ParticipantCount(); ok {
-		if err := template.ParticipantCountValidator(v); err != nil {
-			return nil, &ValidationError{Name: "participantCount", err: fmt.Errorf("ent: validator failed for field \"participantCount\": %w", err)}
-		}
-	}
-
 	var (
 		err  error
 		node *Template
 	)
+	tuo.defaults()
 	if len(tuo.hooks) == 0 {
+		if err = tuo.check(); err != nil {
+			return nil, err
+		}
 		node, err = tuo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*TemplateMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = tuo.check(); err != nil {
+				return nil, err
 			}
 			tuo.mutation = mutation
 			node, err = tuo.sqlSave(ctx)
@@ -774,11 +804,11 @@ func (tuo *TemplateUpdateOne) Save(ctx context.Context) (*Template, error) {
 
 // SaveX is like Save, but panics if an error occurs.
 func (tuo *TemplateUpdateOne) SaveX(ctx context.Context) *Template {
-	t, err := tuo.Save(ctx)
+	node, err := tuo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
-	return t
+	return node
 }
 
 // Exec executes the query on the entity.
@@ -794,7 +824,35 @@ func (tuo *TemplateUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-func (tuo *TemplateUpdateOne) sqlSave(ctx context.Context) (t *Template, err error) {
+// defaults sets the default values of the builder before save.
+func (tuo *TemplateUpdateOne) defaults() {
+	if _, ok := tuo.mutation.UpdatedAt(); !ok {
+		v := template.UpdateDefaultUpdatedAt()
+		tuo.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (tuo *TemplateUpdateOne) check() error {
+	if v, ok := tuo.mutation.Name(); ok {
+		if err := template.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
+		}
+	}
+	if v, ok := tuo.mutation.SelectionType(); ok {
+		if err := template.SelectionTypeValidator(v); err != nil {
+			return &ValidationError{Name: "selectionType", err: fmt.Errorf("ent: validator failed for field \"selectionType\": %w", err)}
+		}
+	}
+	if v, ok := tuo.mutation.ParticipantCount(); ok {
+		if err := template.ParticipantCountValidator(v); err != nil {
+			return &ValidationError{Name: "participantCount", err: fmt.Errorf("ent: validator failed for field \"participantCount\": %w", err)}
+		}
+	}
+	return nil
+}
+
+func (tuo *TemplateUpdateOne) sqlSave(ctx context.Context) (_node *Template, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   template.Table,
@@ -873,7 +931,23 @@ func (tuo *TemplateUpdateOne) sqlSave(ctx context.Context) (t *Template, err err
 			Column: template.FieldSandbox,
 		})
 	}
-	if nodes := tuo.mutation.RemovedStepsIDs(); len(nodes) > 0 {
+	if tuo.mutation.StepsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   template.StepsTable,
+			Columns: []string{template.StepsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: step.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tuo.mutation.RemovedStepsIDs(); len(nodes) > 0 && !tuo.mutation.StepsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
@@ -1016,9 +1090,9 @@ func (tuo *TemplateUpdateOne) sqlSave(ctx context.Context) (t *Template, err err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	t = &Template{config: tuo.config}
-	_spec.Assign = t.assignValues
-	_spec.ScanValues = t.scanValues()
+	_node = &Template{config: tuo.config}
+	_spec.Assign = _node.assignValues
+	_spec.ScanValues = _node.scanValues()
 	if err = sqlgraph.UpdateNode(ctx, tuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{template.Label}
@@ -1027,5 +1101,5 @@ func (tuo *TemplateUpdateOne) sqlSave(ctx context.Context) (t *Template, err err
 		}
 		return nil, err
 	}
-	return t, nil
+	return _node, nil
 }
