@@ -95,12 +95,17 @@
       });
       dispatch("refresh");
     } catch (error) {
-      console.error(error);
+      console.error(JSON.stringify(error, "", 2));
+
+      const message =
+        error.message === "internal system error"
+          ? "Something happened on the server, and we could not start the Run."
+          : error.message;
+
       notify({
         failed: true,
         title: `Could not start Run`,
-        body:
-          "Something happened on the server, and we could not start the Run.",
+        body: message,
       });
     }
   };

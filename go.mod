@@ -13,6 +13,7 @@ require (
 	github.com/go-chi/chi v3.3.2+incompatible
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/gorilla/websocket v1.4.2
+	github.com/hashicorp/go-multierror v1.0.0
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-sqlite3 v1.14.1
@@ -28,7 +29,6 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
 	github.com/vektah/gqlparser/v2 v2.0.1
-	github.com/yuin/goldmark v1.1.27
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c // indirect
 )
