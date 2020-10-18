@@ -694,7 +694,7 @@ type DatumMutation struct {
 	val                *[]byte
 	index              *int
 	addindex           *int
-	latest             *bool
+	current            *bool
 	version            *int
 	addversion         *int
 	deletedAt          *time.Time
@@ -995,41 +995,41 @@ func (m *DatumMutation) ResetIndex() {
 	m.addindex = nil
 }
 
-// SetLatest sets the latest field.
-func (m *DatumMutation) SetLatest(b bool) {
-	m.latest = &b
+// SetCurrent sets the current field.
+func (m *DatumMutation) SetCurrent(b bool) {
+	m.current = &b
 }
 
-// Latest returns the latest value in the mutation.
-func (m *DatumMutation) Latest() (r bool, exists bool) {
-	v := m.latest
+// Current returns the current value in the mutation.
+func (m *DatumMutation) Current() (r bool, exists bool) {
+	v := m.current
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldLatest returns the old latest value of the Datum.
+// OldCurrent returns the old current value of the Datum.
 // If the Datum object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *DatumMutation) OldLatest(ctx context.Context) (v bool, err error) {
+func (m *DatumMutation) OldCurrent(ctx context.Context) (v bool, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldLatest is allowed only on UpdateOne operations")
+		return v, fmt.Errorf("OldCurrent is allowed only on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldLatest requires an ID field in the mutation")
+		return v, fmt.Errorf("OldCurrent requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLatest: %w", err)
+		return v, fmt.Errorf("querying old value for OldCurrent: %w", err)
 	}
-	return oldValue.Latest, nil
+	return oldValue.Current, nil
 }
 
-// ResetLatest reset all changes of the "latest" field.
-func (m *DatumMutation) ResetLatest() {
-	m.latest = nil
+// ResetCurrent reset all changes of the "current" field.
+func (m *DatumMutation) ResetCurrent() {
+	m.current = nil
 }
 
 // SetVersion sets the version field.
@@ -1208,8 +1208,8 @@ func (m *DatumMutation) Fields() []string {
 	if m.index != nil {
 		fields = append(fields, datum.FieldIndex)
 	}
-	if m.latest != nil {
-		fields = append(fields, datum.FieldLatest)
+	if m.current != nil {
+		fields = append(fields, datum.FieldCurrent)
 	}
 	if m.version != nil {
 		fields = append(fields, datum.FieldVersion)
@@ -1235,8 +1235,8 @@ func (m *DatumMutation) Field(name string) (ent.Value, bool) {
 		return m.Val()
 	case datum.FieldIndex:
 		return m.Index()
-	case datum.FieldLatest:
-		return m.Latest()
+	case datum.FieldCurrent:
+		return m.Current()
 	case datum.FieldVersion:
 		return m.Version()
 	case datum.FieldDeletedAt:
@@ -1260,8 +1260,8 @@ func (m *DatumMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldVal(ctx)
 	case datum.FieldIndex:
 		return m.OldIndex(ctx)
-	case datum.FieldLatest:
-		return m.OldLatest(ctx)
+	case datum.FieldCurrent:
+		return m.OldCurrent(ctx)
 	case datum.FieldVersion:
 		return m.OldVersion(ctx)
 	case datum.FieldDeletedAt:
@@ -1310,12 +1310,12 @@ func (m *DatumMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetIndex(v)
 		return nil
-	case datum.FieldLatest:
+	case datum.FieldCurrent:
 		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetLatest(v)
+		m.SetCurrent(v)
 		return nil
 	case datum.FieldVersion:
 		v, ok := value.(int)
@@ -1432,8 +1432,8 @@ func (m *DatumMutation) ResetField(name string) error {
 	case datum.FieldIndex:
 		m.ResetIndex()
 		return nil
-	case datum.FieldLatest:
-		m.ResetLatest()
+	case datum.FieldCurrent:
+		m.ResetCurrent()
 		return nil
 	case datum.FieldVersion:
 		m.ResetVersion()

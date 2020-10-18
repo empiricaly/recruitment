@@ -112,11 +112,6 @@ type Project {
   Runs contained in Project
   """
   runs(runID: ID, limit: Int): [Run!]! @goField(forceResolver: true)
-
-  """
-  Data returns the custom data that has been set on the Participant.
-  """
-  data(keys: [String!]): [Datum!]! @goField(forceResolver: true)
 }
 
 """
@@ -179,11 +174,6 @@ type Run {
   Error reason, if the Run failed.
   """
   error: String
-
-  """
-  Data returns the custom data that has been set on the Participants.
-  """
-  data(keys: [String!]): [Datum!]! @goField(forceResolver: true)
 }
 
 """
@@ -770,11 +760,6 @@ type Datum {
   updatedAt: DateTime!
 
   """
-  Creator is the user or participant that created the Datum.
-  """
-  creator: User
-
-  """
   deletedAt is the time when the Datum was deleted. If null, the Datum was not
   deleted.
   """
@@ -795,6 +780,11 @@ type Datum {
   index of the Datum in multi-value Data.
   """
   index: Int
+
+  """
+  current is true if the Datum is the current version of the value for key.
+  """
+  current: Boolean
 
   """
   versions returns previous versions for the Datum (they all have the same ID).

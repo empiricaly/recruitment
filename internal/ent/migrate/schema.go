@@ -31,7 +31,7 @@ var (
 		{Name: "key", Type: field.TypeString},
 		{Name: "val", Type: field.TypeBytes},
 		{Name: "index", Type: field.TypeInt},
-		{Name: "latest", Type: field.TypeBool, Default: true},
+		{Name: "current", Type: field.TypeBool, Default: true},
 		{Name: "version", Type: field.TypeInt},
 		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "participant_data", Type: field.TypeString, Nullable: true, Size: 20},

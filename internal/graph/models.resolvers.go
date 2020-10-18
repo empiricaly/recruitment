@@ -9,22 +9,31 @@ import (
 	"fmt"
 
 	"github.com/empiricaly/recruitment/internal/ent"
+	"github.com/empiricaly/recruitment/internal/ent/datum"
+	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
+	errs "github.com/pkg/errors"
 )
 
-func (r *datumResolver) Creator(ctx context.Context, obj *ent.Datum) (model.User, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
 func (r *datumResolver) Val(ctx context.Context, obj *ent.Datum) (*string, error) {
-	panic(fmt.Errorf("not implemented"))
+	v := string(obj.Val)
+	return &v, nil
 }
 
 func (r *datumResolver) Versions(ctx context.Context, obj *ent.Datum) ([]*ent.Datum, error) {
-	panic(fmt.Errorf("not implemented"))
+	p, err := obj.QueryParticipant().Only(ctx)
+	if err != nil {
+		return nil, errs.Wrap(err, "query participant")
+	}
+
+	return p.
+		QueryData().
+		Where(datum.And(datum.KeyEQ(obj.Key))).
+		Order(ent.Asc(datum.FieldVersion), ent.Asc(datum.FieldIndex)).
+		All(ctx)
 }
 
 func (r *filterStepArgsResolver) Type(ctx context.Context, obj *model.FilterStepArgs) (model.ParticipantFilterType, error) {
@@ -56,7 +65,21 @@ func (r *participantResolver) ProviderIDs(ctx context.Context, obj *ent.Particip
 }
 
 func (r *participantResolver) Data(ctx context.Context, obj *ent.Participant, keys []string, deleted *bool) ([]*ent.Datum, error) {
-	panic(fmt.Errorf("not implemented"))
+	predicates := []predicate.Datum{
+		datum.Current(true),
+	}
+
+	if deleted != nil && *deleted {
+		predicates = append(predicates, datum.DeletedAtNotNil())
+	}
+
+	if keys != nil {
+		predicates = append(predicates, datum.KeyIn(keys...))
+	}
+
+	return obj.QueryData().Where(datum.And(predicates...)).
+		Order(ent.Asc(datum.FieldKey), ent.Asc(datum.FieldIndex)).
+		All(ctx)
 }
 
 func (r *participationResolver) Step(ctx context.Context, obj *ent.Participation) (*ent.StepRun, error) {
@@ -88,10 +111,6 @@ func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project, runID *str
 	return q.All(ctx)
 }
 
-func (r *projectResolver) Data(ctx context.Context, obj *ent.Project, keys []string) ([]*ent.Datum, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
 func (r *providerIDResolver) ProviderID(ctx context.Context, obj *ent.ProviderID) (string, error) {
 	panic(fmt.Errorf("not implemented"))
 }
@@ -118,10 +137,6 @@ func (r *runResolver) Steps(ctx context.Context, obj *ent.Run) ([]*ent.StepRun, 
 
 func (r *runResolver) CurrentStep(ctx context.Context, obj *ent.Run) (*ent.StepRun, error) {
 	return obj.QueryCurrentStep().Only(ctx)
-}
-
-func (r *runResolver) Data(ctx context.Context, obj *ent.Run, keys []string) ([]*ent.Datum, error) {
-	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *stepResolver) Creator(ctx context.Context, obj *ent.Step) (*ent.Admin, error) {

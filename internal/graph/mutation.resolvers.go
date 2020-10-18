@@ -7,10 +7,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	adminU "github.com/empiricaly/recruitment/internal/admin"
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/datum"
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/template"
@@ -25,8 +27,118 @@ func (r *mutationResolver) RegisterParticipant(ctx context.Context, input *model
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *mutationResolver) MutateDatum(ctx context.Context, input *model.MutateDatumInput) (*ent.Datum, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *mutationResolver) UpdateDatum(ctx context.Context, input *model.UpdateDatumInput) (*ent.Datum, error) {
+	if input.NodeType != nil && *input.NodeType != model.DatumNodeTypeParticipant {
+		log.Warn().Msgf("UpdateDatum: unknown nodeType: %s", string(*input.NodeType))
+		return nil, errs.New("unknown nodeType")
+	}
+
+	var newDatum *ent.Datum
+	if err := ent.WithTx(ctx, r.Store.Client, func(tx *ent.Tx) error {
+		p, err := tx.Participant.Get(ctx, input.NodeID)
+		if err != nil {
+			return errs.Wrap(err, "get participant")
+		}
+
+		existing, err := p.QueryData().
+			Where(datum.And(datum.Current(true), datum.KeyEQ(input.Key))).
+			Order(ent.Asc(datum.FieldIndex)).
+			All(ctx)
+		if err != nil && !ent.IsNotFound(err) {
+			return errs.Wrap(err, "get previous datum")
+		}
+
+		var version int
+		var index int
+		if len(existing) > 0 {
+			if input.IsAppend != nil && *input.IsAppend {
+				version = existing[0].Index
+			} else {
+				version = existing[0].Index + 1
+				index = existing[len(existing)-1].Index + 1
+
+				ids := make([]string, len(existing))
+				for i, d := range existing {
+					ids[i] = d.ID
+				}
+				_, err = tx.Datum.
+					Update().
+					Where(datum.IDIn(ids...)).
+					SetCurrent(false).
+					Save(ctx)
+				if err != nil {
+					return errs.Wrap(err, "update previous data")
+				}
+			}
+		}
+
+		newDatum, err = tx.Datum.Create().
+			SetCurrent(true).
+			SetVersion(version).
+			SetIndex(index).
+			SetKey(input.Key).
+			SetVal([]byte(input.Val)).
+			SetParticipant(p).
+			Save(ctx)
+		if err != nil {
+			return errs.Wrap(err, "insert new datum")
+		}
+
+		return nil
+	}); err != nil {
+		return nil, errs.Wrap(err, "update datum: commit transaction")
+	}
+
+	return newDatum, nil
+}
+
+func (r *mutationResolver) DeleteDatum(ctx context.Context, input *model.DeleteDatumInput) ([]*ent.Datum, error) {
+	if input.NodeType != nil && *input.NodeType != model.DatumNodeTypeParticipant {
+		log.Warn().Msgf("DeleteDatum: unknown nodeType: %s", string(*input.NodeType))
+		return nil, errs.New("unknown nodeType")
+	}
+
+	var data []*ent.Datum
+	if err := ent.WithTx(ctx, r.Store.Client, func(tx *ent.Tx) error {
+		p, err := tx.Participant.Get(ctx, input.NodeID)
+		if err != nil {
+			return errs.Wrap(err, "get participant")
+		}
+
+		data, err = p.QueryData().
+			Where(datum.And(datum.Current(true), datum.DeletedAtNotNil(), datum.KeyEQ(input.Key))).
+			All(ctx)
+		if err != nil && !ent.IsNotFound(err) {
+			return errs.Wrap(err, "get data")
+		}
+
+		// If data with key does not exist, noop
+		// NOTE(np): I don't know if returning an error helps?
+		if len(data) == 0 {
+			return nil
+		}
+
+		now := time.Now()
+
+		ids := make([]string, len(data))
+		for i, d := range data {
+			ids[i] = d.ID
+		}
+		_, err = tx.Datum.
+			Update().
+			Where(datum.IDIn(ids...)).
+			SetDeletedAt(now).
+			Save(ctx)
+		if err != nil {
+			return errs.Wrap(err, "set deletedAt")
+		}
+
+		return nil
+	}); err != nil {
+		return nil, errs.Wrap(err, "delete datum: commit transaction")
+	}
+
+	return data, nil
 }
 
 func (r *mutationResolver) Auth(ctx context.Context, input *model.AuthInput) (*model.AuthResp, error) {
@@ -245,7 +357,7 @@ func (r *mutationResolver) DuplicateRun(ctx context.Context, input *model.Duplic
 		result = newRun
 		return nil
 	}); err != nil {
-		log.Error().Err(err).Msg("start run: commit transaction")
+		return nil, errs.Wrap(err, "duplicate run: commit transaction")
 	}
 
 	return result, nil

@@ -25,34 +25,16 @@ input RegisterParticipantInput {
 }
 
 """
-Operation to perform on a Datum
+Type of the object for Datum updates
 """
-enum DatumOp {
-  """
-  Set the datum to given value.
-  """
-  SET
-
-  """
-  Append the datum to given value.
-  """
-  APPEND
-
-  """
-  Delete the datum.
-  """
-  DELETE
+enum DatumNodeType {
+  PARTICIPANT
 }
 
 """
-MutateDatumInput adds/appends/updates/deletes Data to a Node.
+UpdateDatumInput sets or appends Data on a Node.
 """
-input MutateDatumInput {
-  """
-  Operation to perform on Datum.
-  """
-  operation: DatumOp
-
+input UpdateDatumInput {
   """
   key identifies the unique key of the Datum.
   """
@@ -60,12 +42,42 @@ input MutateDatumInput {
 
   """
   val is the value of the Datum. It can be any JSON encodable value.
-  If Delete op, value is ignored.
   """
-  val: JSON
+  val: JSON!
 
   """
-  ID of object on which to set the value.
+  If isAppend is true, the new datum is appended to the existin data for key.
+  If not provided, it is assumed to be false.
+  """
+  isAppend: Boolean
+
+  """
+  Type of object on which to update the value. Defaults to PARTICIPANT
+  """
+  nodeType: DatumNodeType
+
+  """
+  ID of object on which to update the value.
+  """
+  nodeID: ID!
+}
+
+"""
+DeleteDatumInput deletes Data on a Node.
+"""
+input DeleteDatumInput {
+  """
+  key identifies the unique key of the Datum.
+  """
+  key: String!
+
+  """
+  Type of object on which to delete the value. Defaults to PARTICIPANT
+  """
+  nodeType: DatumNodeType
+
+  """
+  ID of object on which to delete the value.
   """
   nodeID: ID!
 }
@@ -218,9 +230,14 @@ type Mutation {
   registerParticipant(input: RegisterParticipantInput): Participant!
 
   """
-  MutateDatum adds/appends/updates/deletes Data to a Node.
+  Set or append Data to a Node.
   """
-  mutateDatum(input: MutateDatumInput): Datum!
+  updateDatum(input: UpdateDatumInput): Datum!
+
+  """
+  Delete Data on a Node.
+  """
+  deleteDatum(input: DeleteDatumInput): [Datum!]!
 
   # Admin
 

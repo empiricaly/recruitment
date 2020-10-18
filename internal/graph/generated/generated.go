@@ -91,7 +91,7 @@ type ComplexityRoot struct {
 
 	Datum struct {
 		CreatedAt func(childComplexity int) int
-		Creator   func(childComplexity int) int
+		Current   func(childComplexity int) int
 		DeletedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Index     func(childComplexity int) int
@@ -163,12 +163,13 @@ type ComplexityRoot struct {
 		CreateProject       func(childComplexity int, input *model.CreateProjectInput) int
 		CreateRun           func(childComplexity int, input *model.CreateRunInput) int
 		CreateTemplate      func(childComplexity int, input *model.CreateTemplateInput) int
+		DeleteDatum         func(childComplexity int, input *model.DeleteDatumInput) int
 		DuplicateRun        func(childComplexity int, input *model.DuplicateRunInput) int
-		MutateDatum         func(childComplexity int, input *model.MutateDatumInput) int
 		RegisterParticipant func(childComplexity int, input *model.RegisterParticipantInput) int
 		ScheduleRun         func(childComplexity int, input *model.ScheduleRunInput) int
 		StartRun            func(childComplexity int, input *model.StartRunInput) int
 		UnscheduleRun       func(childComplexity int, input *model.UnscheduleRunInput) int
+		UpdateDatum         func(childComplexity int, input *model.UpdateDatumInput) int
 		UpdateRun           func(childComplexity int, input *model.UpdateRunInput) int
 		UpdateTemplate      func(childComplexity int, input *model.UpdateTemplateInput) int
 	}
@@ -233,7 +234,6 @@ type ComplexityRoot struct {
 	Project struct {
 		CreatedAt func(childComplexity int) int
 		Creator   func(childComplexity int) int
-		Data      func(childComplexity int, keys []string) int
 		ID        func(childComplexity int) int
 		Name      func(childComplexity int) int
 		ProjectID func(childComplexity int) int
@@ -262,7 +262,6 @@ type ComplexityRoot struct {
 		CreatedAt   func(childComplexity int) int
 		Creator     func(childComplexity int) int
 		CurrentStep func(childComplexity int) int
-		Data        func(childComplexity int, keys []string) int
 		EndedAt     func(childComplexity int) int
 		Error       func(childComplexity int) int
 		ID          func(childComplexity int) int
@@ -323,8 +322,6 @@ type ComplexityRoot struct {
 }
 
 type DatumResolver interface {
-	Creator(ctx context.Context, obj *ent.Datum) (model.User, error)
-
 	Val(ctx context.Context, obj *ent.Datum) (*string, error)
 
 	Versions(ctx context.Context, obj *ent.Datum) ([]*ent.Datum, error)
@@ -339,7 +336,8 @@ type MessageStepArgsResolver interface {
 }
 type MutationResolver interface {
 	RegisterParticipant(ctx context.Context, input *model.RegisterParticipantInput) (*ent.Participant, error)
-	MutateDatum(ctx context.Context, input *model.MutateDatumInput) (*ent.Datum, error)
+	UpdateDatum(ctx context.Context, input *model.UpdateDatumInput) (*ent.Datum, error)
+	DeleteDatum(ctx context.Context, input *model.DeleteDatumInput) ([]*ent.Datum, error)
 	Auth(ctx context.Context, input *model.AuthInput) (*model.AuthResp, error)
 	CreateProject(ctx context.Context, input *model.CreateProjectInput) (*ent.Project, error)
 	CreateTemplate(ctx context.Context, input *model.CreateTemplateInput) (*ent.Template, error)
@@ -373,7 +371,6 @@ type ProjectResolver interface {
 
 	Templates(ctx context.Context, obj *ent.Project) ([]*ent.Template, error)
 	Runs(ctx context.Context, obj *ent.Project, runID *string, limit *int) ([]*ent.Run, error)
-	Data(ctx context.Context, obj *ent.Project, keys []string) ([]*ent.Datum, error)
 }
 type ProviderIDResolver interface {
 	ProviderID(ctx context.Context, obj *ent.ProviderID) (string, error)
@@ -396,8 +393,6 @@ type RunResolver interface {
 
 	Steps(ctx context.Context, obj *ent.Run) ([]*ent.StepRun, error)
 	CurrentStep(ctx context.Context, obj *ent.Run) (*ent.StepRun, error)
-
-	Data(ctx context.Context, obj *ent.Run, keys []string) ([]*ent.Datum, error)
 }
 type StepResolver interface {
 	Creator(ctx context.Context, obj *ent.Step) (*ent.Admin, error)
@@ -556,12 +551,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Datum.CreatedAt(childComplexity), true
 
-	case "Datum.creator":
-		if e.complexity.Datum.Creator == nil {
+	case "Datum.current":
+		if e.complexity.Datum.Current == nil {
 			break
 		}
 
-		return e.complexity.Datum.Creator(childComplexity), true
+		return e.complexity.Datum.Current(childComplexity), true
 
 	case "Datum.deletedAt":
 		if e.complexity.Datum.DeletedAt == nil {
@@ -896,6 +891,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateTemplate(childComplexity, args["input"].(*model.CreateTemplateInput)), true
 
+	case "Mutation.deleteDatum":
+		if e.complexity.Mutation.DeleteDatum == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteDatum_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteDatum(childComplexity, args["input"].(*model.DeleteDatumInput)), true
+
 	case "Mutation.duplicateRun":
 		if e.complexity.Mutation.DuplicateRun == nil {
 			break
@@ -907,18 +914,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DuplicateRun(childComplexity, args["input"].(*model.DuplicateRunInput)), true
-
-	case "Mutation.mutateDatum":
-		if e.complexity.Mutation.MutateDatum == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_mutateDatum_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.MutateDatum(childComplexity, args["input"].(*model.MutateDatumInput)), true
 
 	case "Mutation.registerParticipant":
 		if e.complexity.Mutation.RegisterParticipant == nil {
@@ -967,6 +962,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UnscheduleRun(childComplexity, args["input"].(*model.UnscheduleRunInput)), true
+
+	case "Mutation.updateDatum":
+		if e.complexity.Mutation.UpdateDatum == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateDatum_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateDatum(childComplexity, args["input"].(*model.UpdateDatumInput)), true
 
 	case "Mutation.updateRun":
 		if e.complexity.Mutation.UpdateRun == nil {
@@ -1242,18 +1249,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Project.Creator(childComplexity), true
 
-	case "Project.data":
-		if e.complexity.Project.Data == nil {
-			break
-		}
-
-		args, err := ec.field_Project_data_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Project.Data(childComplexity, args["keys"].([]string)), true
-
 	case "Project.id":
 		if e.complexity.Project.ID == nil {
 			break
@@ -1416,18 +1411,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Run.CurrentStep(childComplexity), true
-
-	case "Run.data":
-		if e.complexity.Run.Data == nil {
-			break
-		}
-
-		args, err := ec.field_Run_data_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Run.Data(childComplexity, args["keys"].([]string)), true
 
 	case "Run.endedAt":
 		if e.complexity.Run.EndedAt == nil {
@@ -1954,11 +1937,6 @@ type Project {
   Runs contained in Project
   """
   runs(runID: ID, limit: Int): [Run!]! @goField(forceResolver: true)
-
-  """
-  Data returns the custom data that has been set on the Participant.
-  """
-  data(keys: [String!]): [Datum!]! @goField(forceResolver: true)
 }
 
 """
@@ -2021,11 +1999,6 @@ type Run {
   Error reason, if the Run failed.
   """
   error: String
-
-  """
-  Data returns the custom data that has been set on the Participants.
-  """
-  data(keys: [String!]): [Datum!]! @goField(forceResolver: true)
 }
 
 """
@@ -2612,11 +2585,6 @@ type Datum {
   updatedAt: DateTime!
 
   """
-  Creator is the user or participant that created the Datum.
-  """
-  creator: User
-
-  """
   deletedAt is the time when the Datum was deleted. If null, the Datum was not
   deleted.
   """
@@ -2637,6 +2605,11 @@ type Datum {
   index of the Datum in multi-value Data.
   """
   index: Int
+
+  """
+  current is true if the Datum is the current version of the value for key.
+  """
+  current: Boolean
 
   """
   versions returns previous versions for the Datum (they all have the same ID).
@@ -2768,34 +2741,16 @@ input RegisterParticipantInput {
 }
 
 """
-Operation to perform on a Datum
+Type of the object for Datum updates
 """
-enum DatumOp {
-  """
-  Set the datum to given value.
-  """
-  SET
-
-  """
-  Append the datum to given value.
-  """
-  APPEND
-
-  """
-  Delete the datum.
-  """
-  DELETE
+enum DatumNodeType {
+  PARTICIPANT
 }
 
 """
-MutateDatumInput adds/appends/updates/deletes Data to a Node.
+UpdateDatumInput sets or appends Data on a Node.
 """
-input MutateDatumInput {
-  """
-  Operation to perform on Datum.
-  """
-  operation: DatumOp
-
+input UpdateDatumInput {
   """
   key identifies the unique key of the Datum.
   """
@@ -2803,12 +2758,42 @@ input MutateDatumInput {
 
   """
   val is the value of the Datum. It can be any JSON encodable value.
-  If Delete op, value is ignored.
   """
-  val: JSON
+  val: JSON!
 
   """
-  ID of object on which to set the value.
+  If isAppend is true, the new datum is appended to the existin data for key.
+  If not provided, it is assumed to be false.
+  """
+  isAppend: Boolean
+
+  """
+  Type of object on which to update the value. Defaults to PARTICIPANT
+  """
+  nodeType: DatumNodeType
+
+  """
+  ID of object on which to update the value.
+  """
+  nodeID: ID!
+}
+
+"""
+DeleteDatumInput deletes Data on a Node.
+"""
+input DeleteDatumInput {
+  """
+  key identifies the unique key of the Datum.
+  """
+  key: String!
+
+  """
+  Type of object on which to delete the value. Defaults to PARTICIPANT
+  """
+  nodeType: DatumNodeType
+
+  """
+  ID of object on which to delete the value.
   """
   nodeID: ID!
 }
@@ -2961,9 +2946,14 @@ type Mutation {
   registerParticipant(input: RegisterParticipantInput): Participant!
 
   """
-  MutateDatum adds/appends/updates/deletes Data to a Node.
+  Set or append Data to a Node.
   """
-  mutateDatum(input: MutateDatumInput): Datum!
+  updateDatum(input: UpdateDatumInput): Datum!
+
+  """
+  Delete Data on a Node.
+  """
+  deleteDatum(input: DeleteDatumInput): [Datum!]!
 
   # Admin
 
@@ -3525,13 +3515,13 @@ func (ec *executionContext) field_Mutation_createTemplate_args(ctx context.Conte
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_duplicateRun_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_deleteDatum_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.DuplicateRunInput
+	var arg0 *model.DeleteDatumInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalODuplicateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateRunInput(ctx, tmp)
+		arg0, err = ec.unmarshalODeleteDatumInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDeleteDatumInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3540,13 +3530,13 @@ func (ec *executionContext) field_Mutation_duplicateRun_args(ctx context.Context
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_mutateDatum_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_duplicateRun_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.MutateDatumInput
+	var arg0 *model.DuplicateRunInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOMutateDatumInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMutateDatumInput(ctx, tmp)
+		arg0, err = ec.unmarshalODuplicateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateRunInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3615,6 +3605,21 @@ func (ec *executionContext) field_Mutation_unscheduleRun_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_updateDatum_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.UpdateDatumInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOUpdateDatumInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateDatumInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_updateRun_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3666,21 +3671,6 @@ func (ec *executionContext) field_Participant_data_args(ctx context.Context, raw
 		}
 	}
 	args["deleted"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Project_data_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 []string
-	if tmp, ok := rawArgs["keys"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keys"))
-		arg0, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["keys"] = arg0
 	return args, nil
 }
 
@@ -3822,21 +3812,6 @@ func (ec *executionContext) field_Query_project_args(ctx context.Context, rawArg
 		}
 	}
 	args["projectID"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Run_data_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 []string
-	if tmp, ok := rawArgs["keys"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keys"))
-		arg0, err = ec.unmarshalOString2ᚕstringᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["keys"] = arg0
 	return args, nil
 }
 
@@ -4499,38 +4474,6 @@ func (ec *executionContext) _Datum_updatedAt(ctx context.Context, field graphql.
 	return ec.marshalNDateTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Datum_creator(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Datum",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Datum().Creator(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(model.User)
-	fc.Result = res
-	return ec.marshalOUser2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUser(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Datum_deletedAt(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4660,6 +4603,38 @@ func (ec *executionContext) _Datum_index(ctx context.Context, field graphql.Coll
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalOInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Datum_current(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Datum",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Current, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalOBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Datum_versions(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
@@ -5826,7 +5801,7 @@ func (ec *executionContext) _Mutation_registerParticipant(ctx context.Context, f
 	return ec.marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_mutateDatum(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_updateDatum(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5843,7 +5818,7 @@ func (ec *executionContext) _Mutation_mutateDatum(ctx context.Context, field gra
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_mutateDatum_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_updateDatum_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5851,7 +5826,7 @@ func (ec *executionContext) _Mutation_mutateDatum(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().MutateDatum(rctx, args["input"].(*model.MutateDatumInput))
+		return ec.resolvers.Mutation().UpdateDatum(rctx, args["input"].(*model.UpdateDatumInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5866,6 +5841,48 @@ func (ec *executionContext) _Mutation_mutateDatum(ctx context.Context, field gra
 	res := resTmp.(*ent.Datum)
 	fc.Result = res
 	return ec.marshalNDatum2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatum(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteDatum(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteDatum_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteDatum(rctx, args["input"].(*model.DeleteDatumInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Datum)
+	fc.Result = res
+	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatumᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_auth(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7977,48 +7994,6 @@ func (ec *executionContext) _Project_runs(ctx context.Context, field graphql.Col
 	return ec.marshalNRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRunᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Project_data(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Project",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Project_data_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Project().Data(rctx, obj, args["keys"].([]string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.Datum)
-	fc.Result = res
-	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatumᚄ(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _ProviderID_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.ProviderID) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -8976,48 +8951,6 @@ func (ec *executionContext) _Run_error(ctx context.Context, field graphql.Collec
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Run_data(ctx context.Context, field graphql.CollectedField, obj *ent.Run) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Run",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Run_data_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Run().Data(rctx, obj, args["keys"].([]string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.Datum)
-	fc.Result = res
-	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatumᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Step_id(ctx context.Context, field graphql.CollectedField, obj *ent.Step) (ret graphql.Marshaler) {
@@ -11515,6 +11448,42 @@ func (ec *executionContext) unmarshalInputCreateTemplateInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputDeleteDatumInput(ctx context.Context, obj interface{}) (model.DeleteDatumInput, error) {
+	var it model.DeleteDatumInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "key":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+			it.Key, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "nodeType":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeType"))
+			it.NodeType, err = ec.unmarshalODatumNodeType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumNodeType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "nodeID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
+			it.NodeID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputDuplicateRunInput(ctx context.Context, obj interface{}) (model.DuplicateRunInput, error) {
 	var it model.DuplicateRunInput
 	var asMap = obj.(map[string]interface{})
@@ -11851,50 +11820,6 @@ func (ec *executionContext) unmarshalInputMessageStepArgsInput(ctx context.Conte
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMutateDatumInput(ctx context.Context, obj interface{}) (model.MutateDatumInput, error) {
-	var it model.MutateDatumInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "operation":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operation"))
-			it.Operation, err = ec.unmarshalODatumOp2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumOp(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "key":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
-			it.Key, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "val":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("val"))
-			it.Val, err = ec.unmarshalOJSON2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "nodeID":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
-			it.NodeID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputRegisterParticipantInput(ctx context.Context, obj interface{}) (model.RegisterParticipantInput, error) {
 	var it model.RegisterParticipantInput
 	var asMap = obj.(map[string]interface{})
@@ -12151,6 +12076,58 @@ func (ec *executionContext) unmarshalInputUnscheduleRunInput(ctx context.Context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUpdateDatumInput(ctx context.Context, obj interface{}) (model.UpdateDatumInput, error) {
+	var it model.UpdateDatumInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "key":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+			it.Key, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "val":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("val"))
+			it.Val, err = ec.unmarshalNJSON2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isAppend":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isAppend"))
+			it.IsAppend, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "nodeType":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeType"))
+			it.NodeType, err = ec.unmarshalODatumNodeType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumNodeType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "nodeID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
+			it.NodeID, err = ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUpdateRunInput(ctx context.Context, obj interface{}) (model.UpdateRunInput, error) {
 	var it model.UpdateRunInput
 	var asMap = obj.(map[string]interface{})
@@ -12390,17 +12367,6 @@ func (ec *executionContext) _Datum(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "creator":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Datum_creator(ctx, field, obj)
-				return res
-			})
 		case "deletedAt":
 			out.Values[i] = ec._Datum_deletedAt(ctx, field, obj)
 		case "key":
@@ -12421,6 +12387,8 @@ func (ec *executionContext) _Datum(ctx context.Context, sel ast.SelectionSet, ob
 			})
 		case "index":
 			out.Values[i] = ec._Datum_index(ctx, field, obj)
+		case "current":
+			out.Values[i] = ec._Datum_current(ctx, field, obj)
 		case "versions":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -12796,8 +12764,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "mutateDatum":
-			out.Values[i] = ec._Mutation_mutateDatum(ctx, field)
+		case "updateDatum":
+			out.Values[i] = ec._Mutation_updateDatum(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteDatum":
+			out.Values[i] = ec._Mutation_deleteDatum(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -13316,20 +13289,6 @@ func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, 
 				}
 				return res
 			})
-		case "data":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Project_data(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13621,20 +13580,6 @@ func (ec *executionContext) _Run(ctx context.Context, sel ast.SelectionSet, obj 
 			})
 		case "error":
 			out.Values[i] = ec._Run_error(ctx, field, obj)
-		case "data":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Run_data(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14435,6 +14380,21 @@ func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}
 
 func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
 	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNJSON2string(ctx context.Context, v interface{}) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNJSON2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -15692,20 +15652,28 @@ func (ec *executionContext) marshalODateTime2ᚖtimeᚐTime(ctx context.Context,
 	return graphql.MarshalTime(*v)
 }
 
-func (ec *executionContext) unmarshalODatumOp2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumOp(ctx context.Context, v interface{}) (*model.DatumOp, error) {
+func (ec *executionContext) unmarshalODatumNodeType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumNodeType(ctx context.Context, v interface{}) (*model.DatumNodeType, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var res = new(model.DatumOp)
+	var res = new(model.DatumNodeType)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalODatumOp2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumOp(ctx context.Context, sel ast.SelectionSet, v *model.DatumOp) graphql.Marshaler {
+func (ec *executionContext) marshalODatumNodeType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDatumNodeType(ctx context.Context, sel ast.SelectionSet, v *model.DatumNodeType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalODeleteDatumInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDeleteDatumInput(ctx context.Context, v interface{}) (*model.DeleteDatumInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputDeleteDatumInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalODuplicateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateRunInput(ctx context.Context, v interface{}) (*model.DuplicateRunInput, error) {
@@ -15975,14 +15943,6 @@ func (ec *executionContext) unmarshalOMessageStepArgsInput2ᚖgithubᚗcomᚋemp
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOMutateDatumInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMutateDatumInput(ctx context.Context, v interface{}) (*model.MutateDatumInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputMutateDatumInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx context.Context, v interface{}) (*model.Provider, error) {
 	if v == nil {
 		return nil, nil
@@ -16196,6 +16156,14 @@ func (ec *executionContext) unmarshalOUnscheduleRunInput2ᚖgithubᚗcomᚋempir
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputUnscheduleRunInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOUpdateDatumInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐUpdateDatumInput(ctx context.Context, v interface{}) (*model.UpdateDatumInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUpdateDatumInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

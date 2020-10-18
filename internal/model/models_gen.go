@@ -98,6 +98,16 @@ type CreateTemplateInput struct {
 	Template  *TemplateInput `json:"template"`
 }
 
+// DeleteDatumInput deletes Data on a Node.
+type DeleteDatumInput struct {
+	// key identifies the unique key of the Datum.
+	Key string `json:"key"`
+	// Type of object on which to delete the value. Defaults to PARTICIPANT
+	NodeType *DatumNodeType `json:"nodeType"`
+	// ID of object on which to delete the value.
+	NodeID string `json:"nodeID"`
+}
+
 type DuplicateRunInput struct {
 	RunID       string  `json:"runID"`
 	ToProjectID *string `json:"toProjectID"`
@@ -437,19 +447,6 @@ type MessageStepArgsInput struct {
 	LobbyExpiration *int `json:"lobbyExpiration"`
 }
 
-// MutateDatumInput adds/appends/updates/deletes Data to a Node.
-type MutateDatumInput struct {
-	// Operation to perform on Datum.
-	Operation *DatumOp `json:"operation"`
-	// key identifies the unique key of the Datum.
-	Key string `json:"key"`
-	// val is the value of the Datum. It can be any JSON encodable value.
-	// If Delete op, value is ignored.
-	Val *string `json:"val"`
-	// ID of object on which to set the value.
-	NodeID string `json:"nodeID"`
-}
-
 // Page returns everything needed to display a page to Participants or redirect
 // them, depending on the Step, whether it's a message, or a lobby, and the token
 // used to acquire the page.
@@ -558,6 +555,21 @@ type TemplateInput struct {
 
 type UnscheduleRunInput struct {
 	ID string `json:"ID"`
+}
+
+// UpdateDatumInput sets or appends Data on a Node.
+type UpdateDatumInput struct {
+	// key identifies the unique key of the Datum.
+	Key string `json:"key"`
+	// val is the value of the Datum. It can be any JSON encodable value.
+	Val string `json:"val"`
+	// If isAppend is true, the new datum is appended to the existin data for key.
+	// If not provided, it is assumed to be false.
+	IsAppend *bool `json:"isAppend"`
+	// Type of object on which to update the value. Defaults to PARTICIPANT
+	NodeType *DatumNodeType `json:"nodeType"`
+	// ID of object on which to update the value.
+	NodeID string `json:"nodeID"`
 }
 
 type UpdateRunInput struct {
@@ -682,50 +694,43 @@ func (e ContentType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Operation to perform on a Datum
-type DatumOp string
+// Type of the object for Datum updates
+type DatumNodeType string
 
 const (
-	// Set the datum to given value.
-	DatumOpSet DatumOp = "SET"
-	// Append the datum to given value.
-	DatumOpAppend DatumOp = "APPEND"
-	// Delete the datum.
-	DatumOpDelete DatumOp = "DELETE"
+	DatumNodeTypeParticipant DatumNodeType = "PARTICIPANT"
 )
 
-var AllDatumOp = []DatumOp{
-	DatumOpSet,
-	DatumOpAppend,
-	DatumOpDelete,
+var AllDatumNodeType = []DatumNodeType{
+	DatumNodeTypeParticipant,
 }
 
-func (e DatumOp) IsValid() bool {
+func (e DatumNodeType) IsValid() bool {
 	switch e {
-	case DatumOpSet, DatumOpAppend, DatumOpDelete:
+	case DatumNodeTypeParticipant:
 		return true
 	}
 	return false
 }
 
-func (e DatumOp) String() string {
+func (e DatumNodeType) String() string {
 	return string(e)
 }
 
-func (e *DatumOp) UnmarshalGQL(v interface{}) error {
+func (e *DatumNodeType) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = DatumOp(str)
+	*e = DatumNodeType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid DatumOp", str)
+		return fmt.Errorf("%s is not a valid DatumNodeType", str)
 	}
 	return nil
 }
 
-func (e DatumOp) MarshalGQL(w io.Writer) {
+func (e DatumNodeType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

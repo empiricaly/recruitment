@@ -73,10 +73,10 @@ func init() {
 	datumDescIndex := datumFields[2].Descriptor()
 	// datum.DefaultIndex holds the default value on creation for the index field.
 	datum.DefaultIndex = datumDescIndex.Default.(int)
-	// datumDescLatest is the schema descriptor for latest field.
-	datumDescLatest := datumFields[3].Descriptor()
-	// datum.DefaultLatest holds the default value on creation for the latest field.
-	datum.DefaultLatest = datumDescLatest.Default.(bool)
+	// datumDescCurrent is the schema descriptor for current field.
+	datumDescCurrent := datumFields[3].Descriptor()
+	// datum.DefaultCurrent holds the default value on creation for the current field.
+	datum.DefaultCurrent = datumDescCurrent.Default.(bool)
 	// datumDescVersion is the schema descriptor for version field.
 	datumDescVersion := datumFields[4].Descriptor()
 	// datum.DefaultVersion holds the default value on creation for the version field.
