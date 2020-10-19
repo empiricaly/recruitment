@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
+	"github.com/hashicorp/go-multierror"
 	errs "github.com/pkg/errors"
 	"github.com/rs/xid"
 	"github.com/rs/zerolog/log"
@@ -433,7 +435,106 @@ func (r *mutationResolver) UnscheduleRun(ctx context.Context, input *model.Unsch
 }
 
 func (r *mutationResolver) StartRun(ctx context.Context, input *model.StartRunInput) (*ent.Run, error) {
-	run, err := r.Store.Run.UpdateOneID(input.ID).
+	run, err := r.Store.Run.Get(ctx, input.ID)
+	if err != nil {
+		return nil, errs.Wrap(err, "startRun: get run")
+	}
+
+	var multiError error
+
+	template, err := run.QueryTemplate().WithSteps().Only(ctx)
+	if err != nil {
+		err = errs.Wrap(err, "query validate: template")
+		return nil, err
+	}
+
+	// Check participantCount
+	if template.ParticipantCount < 1 {
+		multiError = multierror.Append(multiError, errors.New("template: participantCount cannot be less than one"))
+	}
+
+	// Check steps
+	for i, step := range template.Edges.Steps {
+		hitArgs := &model.HITStepArgs{}
+		err = json.Unmarshal(step.HitArgs, hitArgs)
+		if err != nil {
+			err = errs.Wrap(err, "query validate: template")
+			return nil, err
+		}
+
+		msgArgs := &model.MessageStepArgs{}
+		err = json.Unmarshal(step.MsgArgs, msgArgs)
+		if err != nil {
+			err = errs.Wrap(err, "query validate: template")
+			return nil, err
+		}
+
+		filterArgs := &model.FilterStepArgs{}
+		err = json.Unmarshal(step.FilterArgs, filterArgs)
+		if err != nil {
+			err = errs.Wrap(err, "query validate: template")
+			return nil, err
+		}
+
+		switch step.Type {
+		case stepModel.TypeMTURK_HIT:
+			if step.Duration < 5 {
+				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_hit: duration cannot be less that 5 minutes, index: %v", i+1))
+			}
+
+			if len(hitArgs.Title) == 0 {
+				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_hit: tittle cannot be empty, index: %v", i+1))
+			}
+
+			if len(hitArgs.Description) == 0 {
+				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_hit: description cannot be empty, index: %v", i+1))
+			}
+
+			if len(hitArgs.Keywords) == 0 {
+				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_hit: keywords cannot be empty, index: %v", i+1))
+			}
+
+			if hitArgs.Reward <= 0 {
+				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_hit: reward cannot be less than or equal to 0, index: %v", i+1))
+			}
+
+			if len(msgArgs.Message) == 0 {
+				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_hit: message cannot be empty, index: %v", i+1))
+			}
+
+			break
+		case stepModel.TypeMTURK_MESSAGE:
+			if step.Duration < 0 {
+				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_message: duration cannot be less that 0, index: %v", i+1))
+			}
+
+			if len(*msgArgs.Subject) == 0 {
+				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_message: subject cannot be empty, index: %v", i+1))
+			}
+
+			if len(msgArgs.Message) == 0 {
+				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_message: message cannot be empty, index: %v", i+1))
+			}
+
+			break
+		case stepModel.TypePARTICIPANT_FILTER:
+			if step.Duration < 0 {
+				multiError = multierror.Append(multiError, fmt.Errorf("step_participant_filter: duration cannot be less that 0, index: %v", i+1))
+			}
+			break
+		}
+
+	}
+
+	if multiError != nil {
+		errorString := multiError.Error()
+
+		if len(errorString) != 0 {
+			return nil, multiError
+		}
+	}
+
+	run, err = r.Store.Run.UpdateOneID(input.ID).
 		SetStatus(runModel.StatusRUNNING).
 		Save(ctx)
 
