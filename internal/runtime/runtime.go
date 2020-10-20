@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/hook"
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
@@ -96,7 +95,6 @@ func (r *Runtime) Stop() {
 }
 
 func (r *Runtime) addRun(run *ent.Run) {
-	spew.Dump(run)
 	_, ok := r.runs[run.ID]
 	if ok {
 		// r.logger.Warn().Msgf("Run %s already tracked", run.ID)

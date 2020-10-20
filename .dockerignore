@@ -1,0 +1,6 @@
+.vagrant
+tmp
+data
+*.pcap
+**/node_modules
+.git

@@ -1,6 +1,8 @@
 const defaultTheme = require("tailwindcss/defaultTheme");
 
 module.exports = {
+  // Running purge externally with postcss
+  purge: false,
   theme: {
     extend: {
       fontFamily: {

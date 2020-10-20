@@ -27,6 +27,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+//go:generate sh ./buildweb.sh
 //go:generate rice embed-go
 
 // Defining the Graphql handler

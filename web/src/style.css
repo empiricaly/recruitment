@@ -1,6 +1,11 @@
+/* purgecss start ignore */
 @tailwind base;
 @tailwind components;
+/* purgecss end ignore */
+
 @tailwind utilities;
+
+/* purgecss start ignore */
 
 /*!
  * Tippy.js
@@ -733,3 +738,5 @@ div.CodeMirror-dragcursors {
 span.CodeMirror-selectedtext {
   background: none;
 }
+
+/* purgecss end ignore */

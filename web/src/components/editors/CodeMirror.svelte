@@ -1,17 +1,18 @@
-<script context="module">
-  import CodeMirror from "codemirror";
-  import "codemirror/addon/comment/comment.js";
-  import "codemirror/addon/edit/closebrackets.js";
-  import "codemirror/addon/edit/closetag.js";
-  import "codemirror/mode/handlebars/handlebars.js";
-  import "codemirror/mode/htmlmixed/htmlmixed.js";
-  import "codemirror/mode/javascript/javascript.js";
-  import "codemirror/mode/jsx/jsx.js";
-  import "codemirror/mode/markdown/markdown.js";
-  import { createEventDispatcher, onMount } from "svelte";
-</script>
-
 <script>
+  import { createEventDispatcher, onMount } from "svelte";
+  import CodeMirror from "codemirror/src/codemirror.js";
+
+  import a1 from "codemirror/addon/comment/comment.js";
+  import a2 from "codemirror/addon/edit/closebrackets.js";
+  import a3 from "codemirror/addon/edit/closetag.js";
+  import a4 from "codemirror/mode/handlebars/handlebars.js";
+  import a5 from "codemirror/mode/htmlmixed/htmlmixed.js";
+  import a6 from "codemirror/mode/javascript/javascript.js";
+  import a7 from "codemirror/mode/jsx/jsx.js";
+  import a8 from "codemirror/mode/markdown/markdown.js";
+
+  console.log(a1, a2, a3, a4, a5, a6, a7, a8);
+
   const dispatch = createEventDispatcher();
 
   export let value = "";
