@@ -57,8 +57,11 @@ subscribeToken(async (token) => {
 function authRedirect() {
   const path = getPath();
   const loggedIn = get(user);
+  console.log(loggedIn && path === signinPath, loggedIn, path, signinPath);
   if (loggedIn && path === signinPath) {
-    replace(initialPath !== path ? initialPath : defaultPath);
+    replace(
+      initialPath !== path && initialPath !== "/" ? initialPath : defaultPath
+    );
   } else if (!loggedIn && !isPublicPath(path)) {
     replace(signinPath);
   }

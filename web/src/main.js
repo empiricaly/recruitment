@@ -1,5 +1,6 @@
 import App from "./App.svelte";
 import { manageFocus } from "./components/base/focus.js";
+import "./inits/codemirror.js";
 import "./inits/dayjs.js";
 import "./inits/routes.js";
 import "./inits/shortcuts.js";

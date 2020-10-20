@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -44,8 +45,8 @@ func Run(ctx context.Context, config *Config) (err error) {
 		return errors.Wrap(err, "could not initialize logger")
 	}
 
-	if e := log.Debug(); e.Enabled() {
-		log.Debug().Interface("config", config).Msg("")
+	if config.DevMode {
+		log.Debug().Interface("config", config).Msg("Configuration")
 	}
 
 	s.metrics, err = metrics.New(config.Metrics)
@@ -96,14 +97,18 @@ func Run(ctx context.Context, config *Config) (err error) {
 		return errors.Wrap(err, "init runtime")
 	}
 
-	s.startGraphqlServer()
+	s.startHTTPServer()
 
 	err = s.start()
 	if err != nil {
 		return errors.Wrap(err, "could not subscribe to configuration topic")
 	}
 
-	log.Info().Msg("Server started")
+	addr := config.HTTP.Addr
+	if strings.HasPrefix(addr, ":") {
+		addr = "https://localhost" + addr
+	}
+	log.Info().Msgf("Recruitment started at %s", addr)
 
 	<-s.ctx.Done()
 

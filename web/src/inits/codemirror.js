@@ -1,0 +1,9 @@
+import "codemirror";
+import "codemirror/addon/comment/comment.js";
+import "codemirror/addon/edit/closebrackets.js";
+import "codemirror/addon/edit/closetag.js";
+import "codemirror/mode/handlebars/handlebars.js";
+import "codemirror/mode/htmlmixed/htmlmixed.js";
+import "codemirror/mode/javascript/javascript.js";
+import "codemirror/mode/jsx/jsx.js";
+import "codemirror/mode/markdown/markdown.js";

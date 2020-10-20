@@ -1,5 +1,6 @@
 import { init } from "../lib/routing.js";
 import AllParticipants from "../pages/AllParticipants.svelte";
+import Home from "../pages/Home.svelte";
 import Overview from "../pages/Overview.svelte";
 import Participants from "../pages/Participants.svelte";
 import Profile from "../pages/Profile.svelte";
@@ -17,6 +18,10 @@ init({
     {
       path: signinPath,
       component: Signin,
+    },
+    {
+      path: "/",
+      component: Home,
     },
     {
       path: "/projects",

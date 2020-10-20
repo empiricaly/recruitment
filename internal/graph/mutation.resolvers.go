@@ -25,10 +25,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (r *mutationResolver) RegisterParticipant(ctx context.Context, input *model.RegisterParticipantInput) (*ent.Participant, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
 func (r *mutationResolver) UpdateDatum(ctx context.Context, input *model.UpdateDatumInput) (*ent.Datum, error) {
 	if input.NodeType != nil && *input.NodeType != model.DatumNodeTypeParticipant {
 		log.Warn().Msgf("UpdateDatum: unknown nodeType: %s", string(*input.NodeType))

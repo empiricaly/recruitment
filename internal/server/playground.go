@@ -3,7 +3,18 @@ package server
 import (
 	"html/template"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
+
+// Defining the Playground handler
+func playgroundHandler() gin.HandlerFunc {
+	h := playgroundServer("Empirica Recruitment GraphQL", "/query")
+
+	return func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	}
+}
 
 var playgroudPage = template.Must(template.New("graphiql").Parse(`<!DOCTYPE html>
 <html>

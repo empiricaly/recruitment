@@ -492,15 +492,6 @@ type ParticipationsEdge struct {
 	Node   *ent.Participation `json:"node"`
 }
 
-type RegisterParticipantInput struct {
-	// ID from provider.
-	ID string `json:"id"`
-	// Provider of ID.
-	Provider *Provider `json:"provider"`
-	// Initial Data to attach to Participant.
-	Data map[string]interface{} `json:"data"`
-}
-
 type ScheduleRunInput struct {
 	ID      string    `json:"ID"`
 	StartAt time.Time `json:"startAt"`

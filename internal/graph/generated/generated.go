@@ -158,20 +158,19 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		Auth                func(childComplexity int, input *model.AuthInput) int
-		CancelRun           func(childComplexity int, input *model.CancelRunInput) int
-		CreateProject       func(childComplexity int, input *model.CreateProjectInput) int
-		CreateRun           func(childComplexity int, input *model.CreateRunInput) int
-		CreateTemplate      func(childComplexity int, input *model.CreateTemplateInput) int
-		DeleteDatum         func(childComplexity int, input *model.DeleteDatumInput) int
-		DuplicateRun        func(childComplexity int, input *model.DuplicateRunInput) int
-		RegisterParticipant func(childComplexity int, input *model.RegisterParticipantInput) int
-		ScheduleRun         func(childComplexity int, input *model.ScheduleRunInput) int
-		StartRun            func(childComplexity int, input *model.StartRunInput) int
-		UnscheduleRun       func(childComplexity int, input *model.UnscheduleRunInput) int
-		UpdateDatum         func(childComplexity int, input *model.UpdateDatumInput) int
-		UpdateRun           func(childComplexity int, input *model.UpdateRunInput) int
-		UpdateTemplate      func(childComplexity int, input *model.UpdateTemplateInput) int
+		Auth           func(childComplexity int, input *model.AuthInput) int
+		CancelRun      func(childComplexity int, input *model.CancelRunInput) int
+		CreateProject  func(childComplexity int, input *model.CreateProjectInput) int
+		CreateRun      func(childComplexity int, input *model.CreateRunInput) int
+		CreateTemplate func(childComplexity int, input *model.CreateTemplateInput) int
+		DeleteDatum    func(childComplexity int, input *model.DeleteDatumInput) int
+		DuplicateRun   func(childComplexity int, input *model.DuplicateRunInput) int
+		ScheduleRun    func(childComplexity int, input *model.ScheduleRunInput) int
+		StartRun       func(childComplexity int, input *model.StartRunInput) int
+		UnscheduleRun  func(childComplexity int, input *model.UnscheduleRunInput) int
+		UpdateDatum    func(childComplexity int, input *model.UpdateDatumInput) int
+		UpdateRun      func(childComplexity int, input *model.UpdateRunInput) int
+		UpdateTemplate func(childComplexity int, input *model.UpdateTemplateInput) int
 	}
 
 	Page struct {
@@ -335,7 +334,6 @@ type MessageStepArgsResolver interface {
 	LobbyType(ctx context.Context, obj *model.MessageStepArgs) (*model.ContentType, error)
 }
 type MutationResolver interface {
-	RegisterParticipant(ctx context.Context, input *model.RegisterParticipantInput) (*ent.Participant, error)
 	UpdateDatum(ctx context.Context, input *model.UpdateDatumInput) (*ent.Datum, error)
 	DeleteDatum(ctx context.Context, input *model.DeleteDatumInput) ([]*ent.Datum, error)
 	Auth(ctx context.Context, input *model.AuthInput) (*model.AuthResp, error)
@@ -914,18 +912,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DuplicateRun(childComplexity, args["input"].(*model.DuplicateRunInput)), true
-
-	case "Mutation.registerParticipant":
-		if e.complexity.Mutation.RegisterParticipant == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_registerParticipant_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.RegisterParticipant(childComplexity, args["input"].(*model.RegisterParticipantInput)), true
 
 	case "Mutation.scheduleRun":
 		if e.complexity.Mutation.ScheduleRun == nil {
@@ -2723,23 +2709,6 @@ type AuthResp {
   token: String!
 }
 
-input RegisterParticipantInput {
-  """
-  ID from provider.
-  """
-  id: ID!
-
-  """
-  Provider of ID.
-  """
-  provider: PROVIDER
-
-  """
-  Initial Data to attach to Participant.
-  """
-  data: Map
-}
-
 """
 Type of the object for Datum updates
 """
@@ -2940,11 +2909,6 @@ input CancelRunInput {
 }
 
 type Mutation {
-  """
-  RegisterParticipant finds or creates a Participant from the input data.
-  """
-  registerParticipant(input: RegisterParticipantInput): Participant!
-
   """
   Set or append Data to a Node.
   """
@@ -3537,21 +3501,6 @@ func (ec *executionContext) field_Mutation_duplicateRun_args(ctx context.Context
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalODuplicateRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐDuplicateRunInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_registerParticipant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *model.RegisterParticipantInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalORegisterParticipantInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRegisterParticipantInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -5757,48 +5706,6 @@ func (ec *executionContext) _MessageStepArgs_lobbyExpiration(ctx context.Context
 	res := resTmp.(*int)
 	fc.Result = res
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_registerParticipant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_registerParticipant_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RegisterParticipant(rctx, args["input"].(*model.RegisterParticipantInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Participant)
-	fc.Result = res
-	return ec.marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateDatum(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -11820,42 +11727,6 @@ func (ec *executionContext) unmarshalInputMessageStepArgsInput(ctx context.Conte
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputRegisterParticipantInput(ctx context.Context, obj interface{}) (model.RegisterParticipantInput, error) {
-	var it model.RegisterParticipantInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalNID2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "provider":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("provider"))
-			it.Provider, err = ec.unmarshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "data":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
-			it.Data, err = ec.unmarshalOMap2map(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputScheduleRunInput(ctx context.Context, obj interface{}) (model.ScheduleRunInput, error) {
 	var it model.ScheduleRunInput
 	var asMap = obj.(map[string]interface{})
@@ -12759,11 +12630,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "registerParticipant":
-			out.Values[i] = ec._Mutation_registerParticipant(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "updateDatum":
 			out.Values[i] = ec._Mutation_updateDatum(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -16058,14 +15924,6 @@ func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋempiricalyᚋrecru
 		return graphql.Null
 	}
 	return ec._Project(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalORegisterParticipantInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRegisterParticipantInput(ctx context.Context, v interface{}) (*model.RegisterParticipantInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputRegisterParticipantInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOScheduleRunInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐScheduleRunInput(ctx context.Context, v interface{}) (*model.ScheduleRunInput, error) {

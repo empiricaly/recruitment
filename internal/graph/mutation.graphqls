@@ -7,23 +7,6 @@ type AuthResp {
   token: String!
 }
 
-input RegisterParticipantInput {
-  """
-  ID from provider.
-  """
-  id: ID!
-
-  """
-  Provider of ID.
-  """
-  provider: PROVIDER
-
-  """
-  Initial Data to attach to Participant.
-  """
-  data: Map
-}
-
 """
 Type of the object for Datum updates
 """
@@ -224,11 +207,6 @@ input CancelRunInput {
 }
 
 type Mutation {
-  """
-  RegisterParticipant finds or creates a Participant from the input data.
-  """
-  registerParticipant(input: RegisterParticipantInput): Participant!
-
   """
   Set or append Data to a Node.
   """
