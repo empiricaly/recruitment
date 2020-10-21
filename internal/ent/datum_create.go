@@ -56,8 +56,8 @@ func (dc *DatumCreate) SetKey(s string) *DatumCreate {
 }
 
 // SetVal sets the val field.
-func (dc *DatumCreate) SetVal(b []byte) *DatumCreate {
-	dc.mutation.SetVal(b)
+func (dc *DatumCreate) SetVal(s string) *DatumCreate {
+	dc.mutation.SetVal(s)
 	return dc
 }
 
@@ -219,8 +219,18 @@ func (dc *DatumCreate) check() error {
 	if _, ok := dc.mutation.Key(); !ok {
 		return &ValidationError{Name: "key", err: errors.New("ent: missing required field \"key\"")}
 	}
+	if v, ok := dc.mutation.Key(); ok {
+		if err := datum.KeyValidator(v); err != nil {
+			return &ValidationError{Name: "key", err: fmt.Errorf("ent: validator failed for field \"key\": %w", err)}
+		}
+	}
 	if _, ok := dc.mutation.Val(); !ok {
 		return &ValidationError{Name: "val", err: errors.New("ent: missing required field \"val\"")}
+	}
+	if v, ok := dc.mutation.Val(); ok {
+		if err := datum.ValValidator(v); err != nil {
+			return &ValidationError{Name: "val", err: fmt.Errorf("ent: validator failed for field \"val\": %w", err)}
+		}
 	}
 	if _, ok := dc.mutation.Index(); !ok {
 		return &ValidationError{Name: "index", err: errors.New("ent: missing required field \"index\"")}
@@ -294,7 +304,7 @@ func (dc *DatumCreate) createSpec() (*Datum, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := dc.mutation.Val(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeString,
 			Value:  value,
 			Column: datum.FieldVal,
 		})

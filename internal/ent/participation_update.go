@@ -36,6 +36,20 @@ func (pu *ParticipationUpdate) SetUpdatedAt(t time.Time) *ParticipationUpdate {
 	return pu
 }
 
+// SetAddedParticipant sets the addedParticipant field.
+func (pu *ParticipationUpdate) SetAddedParticipant(b bool) *ParticipationUpdate {
+	pu.mutation.SetAddedParticipant(b)
+	return pu
+}
+
+// SetNillableAddedParticipant sets the addedParticipant field if the given value is not nil.
+func (pu *ParticipationUpdate) SetNillableAddedParticipant(b *bool) *ParticipationUpdate {
+	if b != nil {
+		pu.SetAddedParticipant(*b)
+	}
+	return pu
+}
+
 // SetMturkWorkerID sets the mturkWorkerID field.
 func (pu *ParticipationUpdate) SetMturkWorkerID(s string) *ParticipationUpdate {
 	pu.mutation.SetMturkWorkerID(s)
@@ -206,6 +220,13 @@ func (pu *ParticipationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: participation.FieldUpdatedAt,
 		})
 	}
+	if value, ok := pu.mutation.AddedParticipant(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: participation.FieldAddedParticipant,
+		})
+	}
 	if value, ok := pu.mutation.MturkWorkerID(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -332,6 +353,20 @@ type ParticipationUpdateOne struct {
 // SetUpdatedAt sets the updated_at field.
 func (puo *ParticipationUpdateOne) SetUpdatedAt(t time.Time) *ParticipationUpdateOne {
 	puo.mutation.SetUpdatedAt(t)
+	return puo
+}
+
+// SetAddedParticipant sets the addedParticipant field.
+func (puo *ParticipationUpdateOne) SetAddedParticipant(b bool) *ParticipationUpdateOne {
+	puo.mutation.SetAddedParticipant(b)
+	return puo
+}
+
+// SetNillableAddedParticipant sets the addedParticipant field if the given value is not nil.
+func (puo *ParticipationUpdateOne) SetNillableAddedParticipant(b *bool) *ParticipationUpdateOne {
+	if b != nil {
+		puo.SetAddedParticipant(*b)
+	}
 	return puo
 }
 
@@ -501,6 +536,13 @@ func (puo *ParticipationUpdateOne) sqlSave(ctx context.Context) (_node *Particip
 			Type:   field.TypeTime,
 			Value:  value,
 			Column: participation.FieldUpdatedAt,
+		})
+	}
+	if value, ok := puo.mutation.AddedParticipant(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: participation.FieldAddedParticipant,
 		})
 	}
 	if value, ok := puo.mutation.MturkWorkerID(); ok {

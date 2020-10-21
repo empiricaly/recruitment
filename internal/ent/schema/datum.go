@@ -21,8 +21,8 @@ func (Datum) Mixin() []ent.Mixin {
 // Fields of the Datum.
 func (Datum) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("key"),
-		field.Bytes("val"),
+		field.String("key").NotEmpty().MaxLen(1024),
+		field.String("val").NotEmpty().MaxLen(4096),
 		field.Int("index").Default(0),
 		// Versioning the current version is marked current == true. All inserts
 		// must be done with transaction to make sure only one key per

@@ -38,46 +38,11 @@ func (r *mutationResolver) UpdateDatum(ctx context.Context, input *model.UpdateD
 			return errs.Wrap(err, "get participant")
 		}
 
-		existing, err := p.QueryData().
-			Where(datum.And(datum.Current(true), datum.KeyEQ(input.Key))).
-			Order(ent.Asc(datum.FieldIndex)).
-			All(ctx)
-		if err != nil && !ent.IsNotFound(err) {
-			return errs.Wrap(err, "get previous datum")
+		var isAppend bool
+		if input.IsAppend != nil && *input.IsAppend {
+			isAppend = true
 		}
-
-		var version int
-		var index int
-		if len(existing) > 0 {
-			if input.IsAppend != nil && *input.IsAppend {
-				version = existing[0].Index
-			} else {
-				version = existing[0].Index + 1
-				index = existing[len(existing)-1].Index + 1
-
-				ids := make([]string, len(existing))
-				for i, d := range existing {
-					ids[i] = d.ID
-				}
-				_, err = tx.Datum.
-					Update().
-					Where(datum.IDIn(ids...)).
-					SetCurrent(false).
-					Save(ctx)
-				if err != nil {
-					return errs.Wrap(err, "update previous data")
-				}
-			}
-		}
-
-		newDatum, err = tx.Datum.Create().
-			SetCurrent(true).
-			SetVersion(version).
-			SetIndex(index).
-			SetKey(input.Key).
-			SetVal([]byte(input.Val)).
-			SetParticipant(p).
-			Save(ctx)
+		ent.SetDatum(ctx, tx, p, input.Key, input.Val, isAppend)
 		if err != nil {
 			return errs.Wrap(err, "insert new datum")
 		}

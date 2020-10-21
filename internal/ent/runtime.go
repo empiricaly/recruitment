@@ -69,6 +69,42 @@ func init() {
 	datum.DefaultUpdatedAt = datumDescUpdatedAt.Default.(func() time.Time)
 	// datum.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	datum.UpdateDefaultUpdatedAt = datumDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// datumDescKey is the schema descriptor for key field.
+	datumDescKey := datumFields[0].Descriptor()
+	// datum.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	datum.KeyValidator = func() func(string) error {
+		validators := datumDescKey.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(key string) error {
+			for _, fn := range fns {
+				if err := fn(key); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// datumDescVal is the schema descriptor for val field.
+	datumDescVal := datumFields[1].Descriptor()
+	// datum.ValValidator is a validator for the "val" field. It is called by the builders before save.
+	datum.ValValidator = func() func(string) error {
+		validators := datumDescVal.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(val string) error {
+			for _, fn := range fns {
+				if err := fn(val); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// datumDescIndex is the schema descriptor for index field.
 	datumDescIndex := datumFields[2].Descriptor()
 	// datum.DefaultIndex holds the default value on creation for the index field.
@@ -147,6 +183,10 @@ func init() {
 	participation.DefaultUpdatedAt = participationDescUpdatedAt.Default.(func() time.Time)
 	// participation.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	participation.UpdateDefaultUpdatedAt = participationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// participationDescAddedParticipant is the schema descriptor for addedParticipant field.
+	participationDescAddedParticipant := participationFields[0].Descriptor()
+	// participation.DefaultAddedParticipant holds the default value on creation for the addedParticipant field.
+	participation.DefaultAddedParticipant = participationDescAddedParticipant.Default.(bool)
 	// participationDescID is the schema descriptor for id field.
 	participationDescID := participationMixinFields0[0].Descriptor()
 	// participation.IDValidator is a validator for the "id" field. It is called by the builders before save.

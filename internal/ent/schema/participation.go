@@ -21,6 +21,8 @@ func (Participation) Mixin() []ent.Mixin {
 // Fields of the Participation.
 func (Participation) Fields() []ent.Field {
 	return []ent.Field{
+		// If true, the corresponding participant was added during this step participation
+		field.Bool("addedParticipant").Default(false),
 		// Fields from MTurk ExternalQuestion params:
 		// https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_ExternalQuestionArticle.html#ApiReference_ExternalQuestionArticle-the-external-form
 		field.String("mturkWorkerID"),

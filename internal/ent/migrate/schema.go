@@ -28,8 +28,8 @@ var (
 		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "key", Type: field.TypeString},
-		{Name: "val", Type: field.TypeBytes},
+		{Name: "key", Type: field.TypeString, Size: 1024},
+		{Name: "val", Type: field.TypeString, Size: 4096},
 		{Name: "index", Type: field.TypeInt},
 		{Name: "current", Type: field.TypeBool, Default: true},
 		{Name: "version", Type: field.TypeInt},
@@ -79,6 +79,7 @@ var (
 		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "added_participant", Type: field.TypeBool},
 		{Name: "mturk_worker_id", Type: field.TypeString},
 		{Name: "mturk_assignment_id", Type: field.TypeString},
 		{Name: "mturk_hit_id", Type: field.TypeString},
@@ -95,14 +96,14 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "participations_participants_participations",
-				Columns: []*schema.Column{ParticipationsColumns[8]},
+				Columns: []*schema.Column{ParticipationsColumns[9]},
 
 				RefColumns: []*schema.Column{ParticipantsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:  "participations_step_runs_participations",
-				Columns: []*schema.Column{ParticipationsColumns[9]},
+				Columns: []*schema.Column{ParticipationsColumns[10]},
 
 				RefColumns: []*schema.Column{StepRunsColumns[0]},
 				OnDelete:   schema.SetNull,

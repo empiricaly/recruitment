@@ -107,6 +107,13 @@ func UpdatedAt(v time.Time) predicate.Participation {
 	})
 }
 
+// AddedParticipant applies equality check predicate on the "addedParticipant" field. It's identical to AddedParticipantEQ.
+func AddedParticipant(v bool) predicate.Participation {
+	return predicate.Participation(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldAddedParticipant), v))
+	})
+}
+
 // MturkWorkerID applies equality check predicate on the "mturkWorkerID" field. It's identical to MturkWorkerIDEQ.
 func MturkWorkerID(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
@@ -291,6 +298,20 @@ func UpdatedAtLT(v time.Time) predicate.Participation {
 func UpdatedAtLTE(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// AddedParticipantEQ applies the EQ predicate on the "addedParticipant" field.
+func AddedParticipantEQ(v bool) predicate.Participation {
+	return predicate.Participation(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldAddedParticipant), v))
+	})
+}
+
+// AddedParticipantNEQ applies the NEQ predicate on the "addedParticipant" field.
+func AddedParticipantNEQ(v bool) predicate.Participation {
+	return predicate.Participation(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldAddedParticipant), v))
 	})
 }
 

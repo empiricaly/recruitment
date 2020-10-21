@@ -321,8 +321,6 @@ type ComplexityRoot struct {
 }
 
 type DatumResolver interface {
-	Val(ctx context.Context, obj *ent.Datum) (*string, error)
-
 	Versions(ctx context.Context, obj *ent.Datum) ([]*ent.Datum, error)
 }
 type FilterStepArgsResolver interface {
@@ -4501,14 +4499,14 @@ func (ec *executionContext) _Datum_val(ctx context.Context, field graphql.Collec
 		Object:     "Datum",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Datum().Val(rctx, obj)
+		return obj.Val, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4517,9 +4515,9 @@ func (ec *executionContext) _Datum_val(ctx context.Context, field graphql.Collec
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOJSON2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOJSON2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Datum_index(ctx context.Context, field graphql.CollectedField, obj *ent.Datum) (ret graphql.Marshaler) {
@@ -12246,16 +12244,7 @@ func (ec *executionContext) _Datum(ctx context.Context, sel ast.SelectionSet, ob
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "val":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Datum_val(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Datum_val(ctx, field, obj)
 		case "index":
 			out.Values[i] = ec._Datum_index(ctx, field, obj)
 		case "current":
@@ -15685,19 +15674,13 @@ func (ec *executionContext) unmarshalOInternalCriteriaInput2ᚖgithubᚗcomᚋem
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOJSON2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
-	if v == nil {
-		return nil, nil
-	}
+func (ec *executionContext) unmarshalOJSON2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOJSON2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return graphql.MarshalString(*v)
+func (ec *executionContext) marshalOJSON2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	return graphql.MarshalString(v)
 }
 
 func (ec *executionContext) marshalOMTurkCriteria2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐMTurkCriteria(ctx context.Context, sel ast.SelectionSet, v *model.MTurkCriteria) graphql.Marshaler {

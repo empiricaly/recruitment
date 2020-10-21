@@ -50,6 +50,20 @@ func (pc *ParticipationCreate) SetNillableUpdatedAt(t *time.Time) *Participation
 	return pc
 }
 
+// SetAddedParticipant sets the addedParticipant field.
+func (pc *ParticipationCreate) SetAddedParticipant(b bool) *ParticipationCreate {
+	pc.mutation.SetAddedParticipant(b)
+	return pc
+}
+
+// SetNillableAddedParticipant sets the addedParticipant field if the given value is not nil.
+func (pc *ParticipationCreate) SetNillableAddedParticipant(b *bool) *ParticipationCreate {
+	if b != nil {
+		pc.SetAddedParticipant(*b)
+	}
+	return pc
+}
+
 // SetMturkWorkerID sets the mturkWorkerID field.
 func (pc *ParticipationCreate) SetMturkWorkerID(s string) *ParticipationCreate {
 	pc.mutation.SetMturkWorkerID(s)
@@ -184,6 +198,10 @@ func (pc *ParticipationCreate) defaults() {
 		v := participation.DefaultUpdatedAt()
 		pc.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := pc.mutation.AddedParticipant(); !ok {
+		v := participation.DefaultAddedParticipant
+		pc.mutation.SetAddedParticipant(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -193,6 +211,9 @@ func (pc *ParticipationCreate) check() error {
 	}
 	if _, ok := pc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New("ent: missing required field \"updated_at\"")}
+	}
+	if _, ok := pc.mutation.AddedParticipant(); !ok {
+		return &ValidationError{Name: "addedParticipant", err: errors.New("ent: missing required field \"addedParticipant\"")}
 	}
 	if _, ok := pc.mutation.MturkWorkerID(); !ok {
 		return &ValidationError{Name: "mturkWorkerID", err: errors.New("ent: missing required field \"mturkWorkerID\"")}
@@ -258,6 +279,14 @@ func (pc *ParticipationCreate) createSpec() (*Participation, *sqlgraph.CreateSpe
 			Column: participation.FieldUpdatedAt,
 		})
 		_node.UpdatedAt = value
+	}
+	if value, ok := pc.mutation.AddedParticipant(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: participation.FieldAddedParticipant,
+		})
+		_node.AddedParticipant = value
 	}
 	if value, ok := pc.mutation.MturkWorkerID(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

@@ -24,7 +24,7 @@ type Datum struct {
 	// Key holds the value of the "key" field.
 	Key string `json:"key,omitempty"`
 	// Val holds the value of the "val" field.
-	Val []byte `json:"val,omitempty"`
+	Val string `json:"val,omitempty"`
 	// Index holds the value of the "index" field.
 	Index int `json:"index,omitempty"`
 	// Current holds the value of the "current" field.
@@ -69,7 +69,7 @@ func (*Datum) scanValues() []interface{} {
 		&sql.NullTime{},   // created_at
 		&sql.NullTime{},   // updated_at
 		&sql.NullString{}, // key
-		&[]byte{},         // val
+		&sql.NullString{}, // val
 		&sql.NullInt64{},  // index
 		&sql.NullBool{},   // current
 		&sql.NullInt64{},  // version
@@ -111,10 +111,10 @@ func (d *Datum) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		d.Key = value.String
 	}
-	if value, ok := values[3].(*[]byte); !ok {
+	if value, ok := values[3].(*sql.NullString); !ok {
 		return fmt.Errorf("unexpected type %T for field val", values[3])
-	} else if value != nil {
-		d.Val = *value
+	} else if value.Valid {
+		d.Val = value.String
 	}
 	if value, ok := values[4].(*sql.NullInt64); !ok {
 		return fmt.Errorf("unexpected type %T for field index", values[4])
@@ -184,7 +184,7 @@ func (d *Datum) String() string {
 	builder.WriteString(", key=")
 	builder.WriteString(d.Key)
 	builder.WriteString(", val=")
-	builder.WriteString(fmt.Sprintf("%v", d.Val))
+	builder.WriteString(d.Val)
 	builder.WriteString(", index=")
 	builder.WriteString(fmt.Sprintf("%v", d.Index))
 	builder.WriteString(", current=")

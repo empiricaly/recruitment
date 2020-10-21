@@ -22,6 +22,8 @@ type Participation struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// AddedParticipant holds the value of the "addedParticipant" field.
+	AddedParticipant bool `json:"addedParticipant,omitempty"`
 	// MturkWorkerID holds the value of the "mturkWorkerID" field.
 	MturkWorkerID string `json:"mturkWorkerID,omitempty"`
 	// MturkAssignmentID holds the value of the "mturkAssignmentID" field.
@@ -84,6 +86,7 @@ func (*Participation) scanValues() []interface{} {
 		&sql.NullString{}, // id
 		&sql.NullTime{},   // created_at
 		&sql.NullTime{},   // updated_at
+		&sql.NullBool{},   // addedParticipant
 		&sql.NullString{}, // mturkWorkerID
 		&sql.NullString{}, // mturkAssignmentID
 		&sql.NullString{}, // mturkHitID
@@ -122,32 +125,37 @@ func (pa *Participation) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		pa.UpdatedAt = value.Time
 	}
-	if value, ok := values[2].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field mturkWorkerID", values[2])
+	if value, ok := values[2].(*sql.NullBool); !ok {
+		return fmt.Errorf("unexpected type %T for field addedParticipant", values[2])
+	} else if value.Valid {
+		pa.AddedParticipant = value.Bool
+	}
+	if value, ok := values[3].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field mturkWorkerID", values[3])
 	} else if value.Valid {
 		pa.MturkWorkerID = value.String
 	}
-	if value, ok := values[3].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field mturkAssignmentID", values[3])
+	if value, ok := values[4].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field mturkAssignmentID", values[4])
 	} else if value.Valid {
 		pa.MturkAssignmentID = value.String
 	}
-	if value, ok := values[4].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field mturkHitID", values[4])
+	if value, ok := values[5].(*sql.NullString); !ok {
+		return fmt.Errorf("unexpected type %T for field mturkHitID", values[5])
 	} else if value.Valid {
 		pa.MturkHitID = value.String
 	}
-	if value, ok := values[5].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field mturkAcceptedAt", values[5])
+	if value, ok := values[6].(*sql.NullTime); !ok {
+		return fmt.Errorf("unexpected type %T for field mturkAcceptedAt", values[6])
 	} else if value.Valid {
 		pa.MturkAcceptedAt = value.Time
 	}
-	if value, ok := values[6].(*sql.NullTime); !ok {
-		return fmt.Errorf("unexpected type %T for field mturkSubmittedAt", values[6])
+	if value, ok := values[7].(*sql.NullTime); !ok {
+		return fmt.Errorf("unexpected type %T for field mturkSubmittedAt", values[7])
 	} else if value.Valid {
 		pa.MturkSubmittedAt = value.Time
 	}
-	values = values[7:]
+	values = values[8:]
 	if len(values) == len(participation.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullString); !ok {
 			return fmt.Errorf("unexpected type %T for field participant_participations", values[0])
@@ -202,6 +210,8 @@ func (pa *Participation) String() string {
 	builder.WriteString(pa.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", updated_at=")
 	builder.WriteString(pa.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", addedParticipant=")
+	builder.WriteString(fmt.Sprintf("%v", pa.AddedParticipant))
 	builder.WriteString(", mturkWorkerID=")
 	builder.WriteString(pa.MturkWorkerID)
 	builder.WriteString(", mturkAssignmentID=")

@@ -43,8 +43,8 @@ func (du *DatumUpdate) SetKey(s string) *DatumUpdate {
 }
 
 // SetVal sets the val field.
-func (du *DatumUpdate) SetVal(b []byte) *DatumUpdate {
-	du.mutation.SetVal(b)
+func (du *DatumUpdate) SetVal(s string) *DatumUpdate {
+	du.mutation.SetVal(s)
 	return du
 }
 
@@ -214,6 +214,16 @@ func (du *DatumUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (du *DatumUpdate) check() error {
+	if v, ok := du.mutation.Key(); ok {
+		if err := datum.KeyValidator(v); err != nil {
+			return &ValidationError{Name: "key", err: fmt.Errorf("ent: validator failed for field \"key\": %w", err)}
+		}
+	}
+	if v, ok := du.mutation.Val(); ok {
+		if err := datum.ValValidator(v); err != nil {
+			return &ValidationError{Name: "val", err: fmt.Errorf("ent: validator failed for field \"val\": %w", err)}
+		}
+	}
 	if _, ok := du.mutation.ParticipantID(); du.mutation.ParticipantCleared() && !ok {
 		return errors.New("ent: clearing a required unique edge \"participant\"")
 	}
@@ -254,7 +264,7 @@ func (du *DatumUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := du.mutation.Val(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeString,
 			Value:  value,
 			Column: datum.FieldVal,
 		})
@@ -373,8 +383,8 @@ func (duo *DatumUpdateOne) SetKey(s string) *DatumUpdateOne {
 }
 
 // SetVal sets the val field.
-func (duo *DatumUpdateOne) SetVal(b []byte) *DatumUpdateOne {
-	duo.mutation.SetVal(b)
+func (duo *DatumUpdateOne) SetVal(s string) *DatumUpdateOne {
+	duo.mutation.SetVal(s)
 	return duo
 }
 
@@ -544,6 +554,16 @@ func (duo *DatumUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (duo *DatumUpdateOne) check() error {
+	if v, ok := duo.mutation.Key(); ok {
+		if err := datum.KeyValidator(v); err != nil {
+			return &ValidationError{Name: "key", err: fmt.Errorf("ent: validator failed for field \"key\": %w", err)}
+		}
+	}
+	if v, ok := duo.mutation.Val(); ok {
+		if err := datum.ValValidator(v); err != nil {
+			return &ValidationError{Name: "val", err: fmt.Errorf("ent: validator failed for field \"val\": %w", err)}
+		}
+	}
 	if _, ok := duo.mutation.ParticipantID(); duo.mutation.ParticipantCleared() && !ok {
 		return errors.New("ent: clearing a required unique edge \"participant\"")
 	}
@@ -582,7 +602,7 @@ func (duo *DatumUpdateOne) sqlSave(ctx context.Context) (_node *Datum, err error
 	}
 	if value, ok := duo.mutation.Val(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeString,
 			Value:  value,
 			Column: datum.FieldVal,
 		})

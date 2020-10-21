@@ -691,7 +691,7 @@ type DatumMutation struct {
 	created_at         *time.Time
 	updated_at         *time.Time
 	key                *string
-	val                *[]byte
+	val                *string
 	index              *int
 	addindex           *int
 	current            *bool
@@ -902,12 +902,12 @@ func (m *DatumMutation) ResetKey() {
 }
 
 // SetVal sets the val field.
-func (m *DatumMutation) SetVal(b []byte) {
-	m.val = &b
+func (m *DatumMutation) SetVal(s string) {
+	m.val = &s
 }
 
 // Val returns the val value in the mutation.
-func (m *DatumMutation) Val() (r []byte, exists bool) {
+func (m *DatumMutation) Val() (r string, exists bool) {
 	v := m.val
 	if v == nil {
 		return
@@ -919,7 +919,7 @@ func (m *DatumMutation) Val() (r []byte, exists bool) {
 // If the Datum object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *DatumMutation) OldVal(ctx context.Context) (v []byte, err error) {
+func (m *DatumMutation) OldVal(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldVal is allowed only on UpdateOne operations")
 	}
@@ -1297,7 +1297,7 @@ func (m *DatumMutation) SetField(name string, value ent.Value) error {
 		m.SetKey(v)
 		return nil
 	case datum.FieldVal:
-		v, ok := value.([]byte)
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -2362,6 +2362,7 @@ type ParticipationMutation struct {
 	id                 *string
 	created_at         *time.Time
 	updated_at         *time.Time
+	addedParticipant   *bool
 	mturkWorkerID      *string
 	mturkAssignmentID  *string
 	mturkHitID         *string
@@ -2533,6 +2534,43 @@ func (m *ParticipationMutation) OldUpdatedAt(ctx context.Context) (v time.Time, 
 // ResetUpdatedAt reset all changes of the "updated_at" field.
 func (m *ParticipationMutation) ResetUpdatedAt() {
 	m.updated_at = nil
+}
+
+// SetAddedParticipant sets the addedParticipant field.
+func (m *ParticipationMutation) SetAddedParticipant(b bool) {
+	m.addedParticipant = &b
+}
+
+// AddedParticipant returns the addedParticipant value in the mutation.
+func (m *ParticipationMutation) AddedParticipant() (r bool, exists bool) {
+	v := m.addedParticipant
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAddedParticipant returns the old addedParticipant value of the Participation.
+// If the Participation object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ParticipationMutation) OldAddedParticipant(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldAddedParticipant is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldAddedParticipant requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAddedParticipant: %w", err)
+	}
+	return oldValue.AddedParticipant, nil
+}
+
+// ResetAddedParticipant reset all changes of the "addedParticipant" field.
+func (m *ParticipationMutation) ResetAddedParticipant() {
+	m.addedParticipant = nil
 }
 
 // SetMturkWorkerID sets the mturkWorkerID field.
@@ -2812,12 +2850,15 @@ func (m *ParticipationMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *ParticipationMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, participation.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, participation.FieldUpdatedAt)
+	}
+	if m.addedParticipant != nil {
+		fields = append(fields, participation.FieldAddedParticipant)
 	}
 	if m.mturkWorkerID != nil {
 		fields = append(fields, participation.FieldMturkWorkerID)
@@ -2846,6 +2887,8 @@ func (m *ParticipationMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case participation.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case participation.FieldAddedParticipant:
+		return m.AddedParticipant()
 	case participation.FieldMturkWorkerID:
 		return m.MturkWorkerID()
 	case participation.FieldMturkAssignmentID:
@@ -2869,6 +2912,8 @@ func (m *ParticipationMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldCreatedAt(ctx)
 	case participation.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case participation.FieldAddedParticipant:
+		return m.OldAddedParticipant(ctx)
 	case participation.FieldMturkWorkerID:
 		return m.OldMturkWorkerID(ctx)
 	case participation.FieldMturkAssignmentID:
@@ -2901,6 +2946,13 @@ func (m *ParticipationMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case participation.FieldAddedParticipant:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAddedParticipant(v)
 		return nil
 	case participation.FieldMturkWorkerID:
 		v, ok := value.(string)
@@ -2992,6 +3044,9 @@ func (m *ParticipationMutation) ResetField(name string) error {
 		return nil
 	case participation.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case participation.FieldAddedParticipant:
+		m.ResetAddedParticipant()
 		return nil
 	case participation.FieldMturkWorkerID:
 		m.ResetMturkWorkerID()

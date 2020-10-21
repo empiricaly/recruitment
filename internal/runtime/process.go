@@ -37,7 +37,7 @@ func (r *runState) startRun(ctx context.Context, startTime time.Time) error {
 			}
 
 			if i == 0 && r.template.SelectionType == templateModel.SelectionTypeINTERNAL_DB {
-				participants, err := r.filterParticipants(ctx, tx, r.template)
+				participants, err := r.filterParticipants(ctx, tx, r.template.ParticipantCount)
 				if err != nil {
 					return errors.Wrap(err, "filter participants")
 				}
@@ -190,14 +190,14 @@ func (r *runState) endRun(ctx context.Context, endTime time.Time) error {
 	return r.refresh()
 }
 
-func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, template *ent.Template) ([]*ent.Participant, error) {
+func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int) ([]*ent.Participant, error) {
 	participants, err := tx.Participant.Query().All(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "find participants")
 	}
 
 	// TODO should filter participants here
-	l := math.Min(float64(template.ParticipantCount), float64(len(participants)))
+	l := math.Min(float64(limit), float64(len(participants)))
 	return participants[:int(l)], nil
 }
 

@@ -15,6 +15,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldAddedParticipant holds the string denoting the addedparticipant field in the database.
+	FieldAddedParticipant = "added_participant"
 	// FieldMturkWorkerID holds the string denoting the mturkworkerid field in the database.
 	FieldMturkWorkerID = "mturk_worker_id"
 	// FieldMturkAssignmentID holds the string denoting the mturkassignmentid field in the database.
@@ -54,6 +56,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldAddedParticipant,
 	FieldMturkWorkerID,
 	FieldMturkAssignmentID,
 	FieldMturkHitID,
@@ -89,6 +92,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultAddedParticipant holds the default value on creation for the addedParticipant field.
+	DefaultAddedParticipant bool
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
 	IDValidator func(string) error
 )

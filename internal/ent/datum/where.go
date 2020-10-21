@@ -115,7 +115,7 @@ func Key(v string) predicate.Datum {
 }
 
 // Val applies equality check predicate on the "val" field. It's identical to ValEQ.
-func Val(v []byte) predicate.Datum {
+func Val(v string) predicate.Datum {
 	return predicate.Datum(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldVal), v))
 	})
@@ -413,21 +413,21 @@ func KeyContainsFold(v string) predicate.Datum {
 }
 
 // ValEQ applies the EQ predicate on the "val" field.
-func ValEQ(v []byte) predicate.Datum {
+func ValEQ(v string) predicate.Datum {
 	return predicate.Datum(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldVal), v))
 	})
 }
 
 // ValNEQ applies the NEQ predicate on the "val" field.
-func ValNEQ(v []byte) predicate.Datum {
+func ValNEQ(v string) predicate.Datum {
 	return predicate.Datum(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldVal), v))
 	})
 }
 
 // ValIn applies the In predicate on the "val" field.
-func ValIn(vs ...[]byte) predicate.Datum {
+func ValIn(vs ...string) predicate.Datum {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -444,7 +444,7 @@ func ValIn(vs ...[]byte) predicate.Datum {
 }
 
 // ValNotIn applies the NotIn predicate on the "val" field.
-func ValNotIn(vs ...[]byte) predicate.Datum {
+func ValNotIn(vs ...string) predicate.Datum {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -461,30 +461,65 @@ func ValNotIn(vs ...[]byte) predicate.Datum {
 }
 
 // ValGT applies the GT predicate on the "val" field.
-func ValGT(v []byte) predicate.Datum {
+func ValGT(v string) predicate.Datum {
 	return predicate.Datum(func(s *sql.Selector) {
 		s.Where(sql.GT(s.C(FieldVal), v))
 	})
 }
 
 // ValGTE applies the GTE predicate on the "val" field.
-func ValGTE(v []byte) predicate.Datum {
+func ValGTE(v string) predicate.Datum {
 	return predicate.Datum(func(s *sql.Selector) {
 		s.Where(sql.GTE(s.C(FieldVal), v))
 	})
 }
 
 // ValLT applies the LT predicate on the "val" field.
-func ValLT(v []byte) predicate.Datum {
+func ValLT(v string) predicate.Datum {
 	return predicate.Datum(func(s *sql.Selector) {
 		s.Where(sql.LT(s.C(FieldVal), v))
 	})
 }
 
 // ValLTE applies the LTE predicate on the "val" field.
-func ValLTE(v []byte) predicate.Datum {
+func ValLTE(v string) predicate.Datum {
 	return predicate.Datum(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldVal), v))
+	})
+}
+
+// ValContains applies the Contains predicate on the "val" field.
+func ValContains(v string) predicate.Datum {
+	return predicate.Datum(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldVal), v))
+	})
+}
+
+// ValHasPrefix applies the HasPrefix predicate on the "val" field.
+func ValHasPrefix(v string) predicate.Datum {
+	return predicate.Datum(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldVal), v))
+	})
+}
+
+// ValHasSuffix applies the HasSuffix predicate on the "val" field.
+func ValHasSuffix(v string) predicate.Datum {
+	return predicate.Datum(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldVal), v))
+	})
+}
+
+// ValEqualFold applies the EqualFold predicate on the "val" field.
+func ValEqualFold(v string) predicate.Datum {
+	return predicate.Datum(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldVal), v))
+	})
+}
+
+// ValContainsFold applies the ContainsFold predicate on the "val" field.
+func ValContainsFold(v string) predicate.Datum {
+	return predicate.Datum(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldVal), v))
 	})
 }
 
