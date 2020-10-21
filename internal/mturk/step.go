@@ -289,7 +289,7 @@ func (s *Session) endMTurkHITStep(ctx context.Context, run *ent.Run, template *e
 			SetID(xid.New().String()).
 			SetParticipant(p).
 			SetStepRun(stepRun).
-			SetMturkWorkerId(*assignment.WorkerId).
+			SetMturkWorkerID(*assignment.WorkerId).
 			SetMturkAssignmentID(*assignment.AssignmentId).
 			SetMturkHitID(*assignment.HITId)
 

@@ -36,9 +36,9 @@ func (pu *ParticipationUpdate) SetUpdatedAt(t time.Time) *ParticipationUpdate {
 	return pu
 }
 
-// SetMturkWorkerId sets the mturkWorkerId field.
-func (pu *ParticipationUpdate) SetMturkWorkerId(s string) *ParticipationUpdate {
-	pu.mutation.SetMturkWorkerId(s)
+// SetMturkWorkerID sets the mturkWorkerID field.
+func (pu *ParticipationUpdate) SetMturkWorkerID(s string) *ParticipationUpdate {
+	pu.mutation.SetMturkWorkerID(s)
 	return pu
 }
 
@@ -206,11 +206,11 @@ func (pu *ParticipationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: participation.FieldUpdatedAt,
 		})
 	}
-	if value, ok := pu.mutation.MturkWorkerId(); ok {
+	if value, ok := pu.mutation.MturkWorkerID(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: participation.FieldMturkWorkerId,
+			Column: participation.FieldMturkWorkerID,
 		})
 	}
 	if value, ok := pu.mutation.MturkAssignmentID(); ok {
@@ -335,9 +335,9 @@ func (puo *ParticipationUpdateOne) SetUpdatedAt(t time.Time) *ParticipationUpdat
 	return puo
 }
 
-// SetMturkWorkerId sets the mturkWorkerId field.
-func (puo *ParticipationUpdateOne) SetMturkWorkerId(s string) *ParticipationUpdateOne {
-	puo.mutation.SetMturkWorkerId(s)
+// SetMturkWorkerID sets the mturkWorkerID field.
+func (puo *ParticipationUpdateOne) SetMturkWorkerID(s string) *ParticipationUpdateOne {
+	puo.mutation.SetMturkWorkerID(s)
 	return puo
 }
 
@@ -503,11 +503,11 @@ func (puo *ParticipationUpdateOne) sqlSave(ctx context.Context) (_node *Particip
 			Column: participation.FieldUpdatedAt,
 		})
 	}
-	if value, ok := puo.mutation.MturkWorkerId(); ok {
+	if value, ok := puo.mutation.MturkWorkerID(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: participation.FieldMturkWorkerId,
+			Column: participation.FieldMturkWorkerID,
 		})
 	}
 	if value, ok := puo.mutation.MturkAssignmentID(); ok {

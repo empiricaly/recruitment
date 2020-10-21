@@ -23,7 +23,7 @@ func (Participation) Fields() []ent.Field {
 	return []ent.Field{
 		// Fields from MTurk ExternalQuestion params:
 		// https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_ExternalQuestionArticle.html#ApiReference_ExternalQuestionArticle-the-external-form
-		field.String("mturkWorkerId"),
+		field.String("mturkWorkerID"),
 		field.String("mturkAssignmentID"),
 		field.String("mturkHitID"),
 		// Corresponds to MTurk AcceptTime: The date and time the Worker

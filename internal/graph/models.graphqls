@@ -246,7 +246,7 @@ type Participation {
   """
   ID of the MTurk Worker corresponding to this Participation.
   """
-  mturkWorkerId: String
+  mturkWorkerID: String
 
   """
   ID of the MTurk Assignment corresponding to this Participation.

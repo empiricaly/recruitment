@@ -107,10 +107,10 @@ func UpdatedAt(v time.Time) predicate.Participation {
 	})
 }
 
-// MturkWorkerId applies equality check predicate on the "mturkWorkerId" field. It's identical to MturkWorkerIdEQ.
-func MturkWorkerId(v string) predicate.Participation {
+// MturkWorkerID applies equality check predicate on the "mturkWorkerID" field. It's identical to MturkWorkerIDEQ.
+func MturkWorkerID(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldMturkWorkerId), v))
+		s.Where(sql.EQ(s.C(FieldMturkWorkerID), v))
 	})
 }
 
@@ -294,22 +294,22 @@ func UpdatedAtLTE(v time.Time) predicate.Participation {
 	})
 }
 
-// MturkWorkerIdEQ applies the EQ predicate on the "mturkWorkerId" field.
-func MturkWorkerIdEQ(v string) predicate.Participation {
+// MturkWorkerIDEQ applies the EQ predicate on the "mturkWorkerID" field.
+func MturkWorkerIDEQ(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldMturkWorkerId), v))
+		s.Where(sql.EQ(s.C(FieldMturkWorkerID), v))
 	})
 }
 
-// MturkWorkerIdNEQ applies the NEQ predicate on the "mturkWorkerId" field.
-func MturkWorkerIdNEQ(v string) predicate.Participation {
+// MturkWorkerIDNEQ applies the NEQ predicate on the "mturkWorkerID" field.
+func MturkWorkerIDNEQ(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldMturkWorkerId), v))
+		s.Where(sql.NEQ(s.C(FieldMturkWorkerID), v))
 	})
 }
 
-// MturkWorkerIdIn applies the In predicate on the "mturkWorkerId" field.
-func MturkWorkerIdIn(vs ...string) predicate.Participation {
+// MturkWorkerIDIn applies the In predicate on the "mturkWorkerID" field.
+func MturkWorkerIDIn(vs ...string) predicate.Participation {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -321,12 +321,12 @@ func MturkWorkerIdIn(vs ...string) predicate.Participation {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.In(s.C(FieldMturkWorkerId), v...))
+		s.Where(sql.In(s.C(FieldMturkWorkerID), v...))
 	})
 }
 
-// MturkWorkerIdNotIn applies the NotIn predicate on the "mturkWorkerId" field.
-func MturkWorkerIdNotIn(vs ...string) predicate.Participation {
+// MturkWorkerIDNotIn applies the NotIn predicate on the "mturkWorkerID" field.
+func MturkWorkerIDNotIn(vs ...string) predicate.Participation {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -338,70 +338,70 @@ func MturkWorkerIdNotIn(vs ...string) predicate.Participation {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.NotIn(s.C(FieldMturkWorkerId), v...))
+		s.Where(sql.NotIn(s.C(FieldMturkWorkerID), v...))
 	})
 }
 
-// MturkWorkerIdGT applies the GT predicate on the "mturkWorkerId" field.
-func MturkWorkerIdGT(v string) predicate.Participation {
+// MturkWorkerIDGT applies the GT predicate on the "mturkWorkerID" field.
+func MturkWorkerIDGT(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldMturkWorkerId), v))
+		s.Where(sql.GT(s.C(FieldMturkWorkerID), v))
 	})
 }
 
-// MturkWorkerIdGTE applies the GTE predicate on the "mturkWorkerId" field.
-func MturkWorkerIdGTE(v string) predicate.Participation {
+// MturkWorkerIDGTE applies the GTE predicate on the "mturkWorkerID" field.
+func MturkWorkerIDGTE(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldMturkWorkerId), v))
+		s.Where(sql.GTE(s.C(FieldMturkWorkerID), v))
 	})
 }
 
-// MturkWorkerIdLT applies the LT predicate on the "mturkWorkerId" field.
-func MturkWorkerIdLT(v string) predicate.Participation {
+// MturkWorkerIDLT applies the LT predicate on the "mturkWorkerID" field.
+func MturkWorkerIDLT(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldMturkWorkerId), v))
+		s.Where(sql.LT(s.C(FieldMturkWorkerID), v))
 	})
 }
 
-// MturkWorkerIdLTE applies the LTE predicate on the "mturkWorkerId" field.
-func MturkWorkerIdLTE(v string) predicate.Participation {
+// MturkWorkerIDLTE applies the LTE predicate on the "mturkWorkerID" field.
+func MturkWorkerIDLTE(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldMturkWorkerId), v))
+		s.Where(sql.LTE(s.C(FieldMturkWorkerID), v))
 	})
 }
 
-// MturkWorkerIdContains applies the Contains predicate on the "mturkWorkerId" field.
-func MturkWorkerIdContains(v string) predicate.Participation {
+// MturkWorkerIDContains applies the Contains predicate on the "mturkWorkerID" field.
+func MturkWorkerIDContains(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldMturkWorkerId), v))
+		s.Where(sql.Contains(s.C(FieldMturkWorkerID), v))
 	})
 }
 
-// MturkWorkerIdHasPrefix applies the HasPrefix predicate on the "mturkWorkerId" field.
-func MturkWorkerIdHasPrefix(v string) predicate.Participation {
+// MturkWorkerIDHasPrefix applies the HasPrefix predicate on the "mturkWorkerID" field.
+func MturkWorkerIDHasPrefix(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldMturkWorkerId), v))
+		s.Where(sql.HasPrefix(s.C(FieldMturkWorkerID), v))
 	})
 }
 
-// MturkWorkerIdHasSuffix applies the HasSuffix predicate on the "mturkWorkerId" field.
-func MturkWorkerIdHasSuffix(v string) predicate.Participation {
+// MturkWorkerIDHasSuffix applies the HasSuffix predicate on the "mturkWorkerID" field.
+func MturkWorkerIDHasSuffix(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldMturkWorkerId), v))
+		s.Where(sql.HasSuffix(s.C(FieldMturkWorkerID), v))
 	})
 }
 
-// MturkWorkerIdEqualFold applies the EqualFold predicate on the "mturkWorkerId" field.
-func MturkWorkerIdEqualFold(v string) predicate.Participation {
+// MturkWorkerIDEqualFold applies the EqualFold predicate on the "mturkWorkerID" field.
+func MturkWorkerIDEqualFold(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldMturkWorkerId), v))
+		s.Where(sql.EqualFold(s.C(FieldMturkWorkerID), v))
 	})
 }
 
-// MturkWorkerIdContainsFold applies the ContainsFold predicate on the "mturkWorkerId" field.
-func MturkWorkerIdContainsFold(v string) predicate.Participation {
+// MturkWorkerIDContainsFold applies the ContainsFold predicate on the "mturkWorkerID" field.
+func MturkWorkerIDContainsFold(v string) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldMturkWorkerId), v))
+		s.Where(sql.ContainsFold(s.C(FieldMturkWorkerID), v))
 	})
 }
 

@@ -15,8 +15,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// FieldMturkWorkerId holds the string denoting the mturkworkerid field in the database.
-	FieldMturkWorkerId = "mturk_worker_id"
+	// FieldMturkWorkerID holds the string denoting the mturkworkerid field in the database.
+	FieldMturkWorkerID = "mturk_worker_id"
 	// FieldMturkAssignmentID holds the string denoting the mturkassignmentid field in the database.
 	FieldMturkAssignmentID = "mturk_assignment_id"
 	// FieldMturkHitID holds the string denoting the mturkhitid field in the database.
@@ -54,7 +54,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-	FieldMturkWorkerId,
+	FieldMturkWorkerID,
 	FieldMturkAssignmentID,
 	FieldMturkHitID,
 	FieldMturkAcceptedAt,

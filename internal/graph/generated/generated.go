@@ -213,7 +213,7 @@ type ComplexityRoot struct {
 		MturkAssignmentID func(childComplexity int) int
 		MturkHitID        func(childComplexity int) int
 		MturkSubmittedAt  func(childComplexity int) int
-		MturkWorkerId     func(childComplexity int) int
+		MturkWorkerID     func(childComplexity int) int
 		Participant       func(childComplexity int) int
 		Step              func(childComplexity int) int
 	}
@@ -1158,12 +1158,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Participation.MturkSubmittedAt(childComplexity), true
 
-	case "Participation.mturkWorkerId":
-		if e.complexity.Participation.MturkWorkerId == nil {
+	case "Participation.mturkWorkerID":
+		if e.complexity.Participation.MturkWorkerID == nil {
 			break
 		}
 
-		return e.complexity.Participation.MturkWorkerId(childComplexity), true
+		return e.complexity.Participation.MturkWorkerID(childComplexity), true
 
 	case "Participation.participant":
 		if e.complexity.Participation.Participant == nil {
@@ -2057,7 +2057,7 @@ type Participation {
   """
   ID of the MTurk Worker corresponding to this Participation.
   """
-  mturkWorkerId: String
+  mturkWorkerID: String
 
   """
   ID of the MTurk Assignment corresponding to this Participation.
@@ -7250,7 +7250,7 @@ func (ec *executionContext) _Participation_participant(ctx context.Context, fiel
 	return ec.marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Participation_mturkWorkerId(ctx context.Context, field graphql.CollectedField, obj *ent.Participation) (ret graphql.Marshaler) {
+func (ec *executionContext) _Participation_mturkWorkerID(ctx context.Context, field graphql.CollectedField, obj *ent.Participation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -7268,7 +7268,7 @@ func (ec *executionContext) _Participation_mturkWorkerId(ctx context.Context, fi
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MturkWorkerId, nil
+		return obj.MturkWorkerID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12979,8 +12979,8 @@ func (ec *executionContext) _Participation(ctx context.Context, sel ast.Selectio
 				}
 				return res
 			})
-		case "mturkWorkerId":
-			out.Values[i] = ec._Participation_mturkWorkerId(ctx, field, obj)
+		case "mturkWorkerID":
+			out.Values[i] = ec._Participation_mturkWorkerID(ctx, field, obj)
 		case "mturkAssignmentID":
 			out.Values[i] = ec._Participation_mturkAssignmentID(ctx, field, obj)
 		case "mturkHitID":

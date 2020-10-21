@@ -50,9 +50,9 @@ func (pc *ParticipationCreate) SetNillableUpdatedAt(t *time.Time) *Participation
 	return pc
 }
 
-// SetMturkWorkerId sets the mturkWorkerId field.
-func (pc *ParticipationCreate) SetMturkWorkerId(s string) *ParticipationCreate {
-	pc.mutation.SetMturkWorkerId(s)
+// SetMturkWorkerID sets the mturkWorkerID field.
+func (pc *ParticipationCreate) SetMturkWorkerID(s string) *ParticipationCreate {
+	pc.mutation.SetMturkWorkerID(s)
 	return pc
 }
 
@@ -194,8 +194,8 @@ func (pc *ParticipationCreate) check() error {
 	if _, ok := pc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New("ent: missing required field \"updated_at\"")}
 	}
-	if _, ok := pc.mutation.MturkWorkerId(); !ok {
-		return &ValidationError{Name: "mturkWorkerId", err: errors.New("ent: missing required field \"mturkWorkerId\"")}
+	if _, ok := pc.mutation.MturkWorkerID(); !ok {
+		return &ValidationError{Name: "mturkWorkerID", err: errors.New("ent: missing required field \"mturkWorkerID\"")}
 	}
 	if _, ok := pc.mutation.MturkAssignmentID(); !ok {
 		return &ValidationError{Name: "mturkAssignmentID", err: errors.New("ent: missing required field \"mturkAssignmentID\"")}
@@ -259,13 +259,13 @@ func (pc *ParticipationCreate) createSpec() (*Participation, *sqlgraph.CreateSpe
 		})
 		_node.UpdatedAt = value
 	}
-	if value, ok := pc.mutation.MturkWorkerId(); ok {
+	if value, ok := pc.mutation.MturkWorkerID(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: participation.FieldMturkWorkerId,
+			Column: participation.FieldMturkWorkerID,
 		})
-		_node.MturkWorkerId = value
+		_node.MturkWorkerID = value
 	}
 	if value, ok := pc.mutation.MturkAssignmentID(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

@@ -49,6 +49,7 @@ func (s *Server) startHTTPServer() {
 
 	queryHandler := graphqlHandler(s)
 	rgin.POST("/query", queryHandler)
+	rgin.POST("/a/:id", ginAnswersHandler(s))
 	rgin.GET("/*rest", webHandler(queryHandler, playgroundHandler(), ginQuestionsHandler(s)))
 
 	srv := &http.Server{

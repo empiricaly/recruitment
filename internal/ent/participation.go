@@ -22,8 +22,8 @@ type Participation struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// MturkWorkerId holds the value of the "mturkWorkerId" field.
-	MturkWorkerId string `json:"mturkWorkerId,omitempty"`
+	// MturkWorkerID holds the value of the "mturkWorkerID" field.
+	MturkWorkerID string `json:"mturkWorkerID,omitempty"`
 	// MturkAssignmentID holds the value of the "mturkAssignmentID" field.
 	MturkAssignmentID string `json:"mturkAssignmentID,omitempty"`
 	// MturkHitID holds the value of the "mturkHitID" field.
@@ -84,7 +84,7 @@ func (*Participation) scanValues() []interface{} {
 		&sql.NullString{}, // id
 		&sql.NullTime{},   // created_at
 		&sql.NullTime{},   // updated_at
-		&sql.NullString{}, // mturkWorkerId
+		&sql.NullString{}, // mturkWorkerID
 		&sql.NullString{}, // mturkAssignmentID
 		&sql.NullString{}, // mturkHitID
 		&sql.NullTime{},   // mturkAcceptedAt
@@ -123,9 +123,9 @@ func (pa *Participation) assignValues(values ...interface{}) error {
 		pa.UpdatedAt = value.Time
 	}
 	if value, ok := values[2].(*sql.NullString); !ok {
-		return fmt.Errorf("unexpected type %T for field mturkWorkerId", values[2])
+		return fmt.Errorf("unexpected type %T for field mturkWorkerID", values[2])
 	} else if value.Valid {
-		pa.MturkWorkerId = value.String
+		pa.MturkWorkerID = value.String
 	}
 	if value, ok := values[3].(*sql.NullString); !ok {
 		return fmt.Errorf("unexpected type %T for field mturkAssignmentID", values[3])
@@ -202,8 +202,8 @@ func (pa *Participation) String() string {
 	builder.WriteString(pa.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", updated_at=")
 	builder.WriteString(pa.UpdatedAt.Format(time.ANSIC))
-	builder.WriteString(", mturkWorkerId=")
-	builder.WriteString(pa.MturkWorkerId)
+	builder.WriteString(", mturkWorkerID=")
+	builder.WriteString(pa.MturkWorkerID)
 	builder.WriteString(", mturkAssignmentID=")
 	builder.WriteString(pa.MturkAssignmentID)
 	builder.WriteString(", mturkHitID=")
