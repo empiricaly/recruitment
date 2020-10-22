@@ -61,5 +61,9 @@
 </TemplateSection>
 
 {#each run.template.steps as step, index}
-  <StepRun {step} stepRun={runB && runB.steps[index]} />
+  <StepRun
+    {run}
+    steps={run.template.steps}
+    {step}
+    stepRun={runB && runB.steps[index]} />
 {/each}

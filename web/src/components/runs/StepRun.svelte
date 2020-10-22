@@ -6,6 +6,8 @@
   import StepRunParticipantFilter from "./StepRunParticipantFilter.svelte";
   import StepRunTemplateSection from "./StepRunTemplateSection.svelte";
 
+  export let run;
+  export let steps;
   export let step;
   export let stepRun;
   $: current = stepRun && stepRun.status === "RUNNING";
@@ -30,6 +32,31 @@
       dayjs(stepRun.startedAt).add(step.duration, "minutes").diff(dayjs())
     );
     remainingPercent = (100 / (step.duration * 60)) * remaining.as("seconds");
+  }
+
+  let remainingStr = "";
+  $: if (remaining) {
+    let rem = "";
+    if (Math.floor(remaining.as("hours")) >= 1) {
+      rem += String(Math.floor(remaining.as("hours"))).padStart(2, "0") + ":";
+    }
+    rem += String(Math.floor(remaining.as("minutes") % 60)).padStart(2, "0");
+    rem += ":";
+    rem += String(Math.floor(remaining.as("seconds") % 60)).padStart(2, "0");
+    remainingStr = rem;
+  }
+
+  let startsAt = null;
+  $: if (!finishedAt && !remaining && run && run.startedAt) {
+    let sat = dayjs(run.startedAt);
+    for (let i = 0; i < steps.length; i++) {
+      console.log(steps[i].index, step.index);
+      if (steps[i].index === step.index) {
+        break;
+      }
+      sat = sat.add(steps[i].duration * 60, "seconds");
+    }
+    startsAt = sat;
   }
 
   let showDetails = false;
@@ -68,10 +95,13 @@
           <div class="text-gray-500  mr-2">Finished</div>
           {finishedAt}
         {:else if remaining}
+          <div class="tabular-nums mr-2">{remainingStr}</div>
           <div class="{current ? 'text-mint-300' : 'text-gray-500'}  mr-2">
-            Remaining
+            remaining
           </div>
-          {remaining.humanize()}
+        {:else}
+          <div class="text-gray-500  mr-2">Starts at</div>
+          <div class="tabular-nums mr-1">{startsAt.calendar()}</div>
         {/if}
       </div>
 
@@ -79,7 +109,7 @@
         <div class="{current ? 'text-mint-300' : 'text-gray-500'} mr-2">
           Duration
         </div>
-        {step.duration}
+        <div class="tabular-nums mr-1">{step.duration}</div>
         minutes
       </div>
     </div>
