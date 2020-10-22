@@ -5,7 +5,6 @@ go 1.14
 require (
 	github.com/99designs/gqlgen v0.13.0
 	github.com/GeertJohan/go.rice v1.0.0
-	github.com/apex/log v1.9.0
 	github.com/aws/aws-sdk-go v1.35.9
 	github.com/facebook/ent v0.4.3
 	github.com/gin-contrib/logger v0.0.2

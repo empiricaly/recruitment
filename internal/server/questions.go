@@ -54,7 +54,11 @@ const htmlHead = `<!DOCTYPE html><html lang="en"><head>
 
         const data = {};
         e.currentTarget.querySelectorAll("input").forEach((el) => {
-          data[el.name] = el.value;
+			let value = el.value;
+			if (el.type === "number") {
+				value = parseFloat(value);
+			}
+          data[el.name] = value;
         });
         try {
           (async () => {
@@ -76,7 +80,7 @@ const htmlHead = `<!DOCTYPE html><html lang="en"><head>
             loading.remove();
 
             if (response.ok) {
-							const assignmentId = document.createElement("input");
+				const assignmentId = document.createElement("input");
               assignmentId.name = "assignmentId";
               assignmentId.type = "hidden";
               assignmentId.value = params.get("assignmentId");

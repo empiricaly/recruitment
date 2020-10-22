@@ -269,6 +269,7 @@ func (r *mutationResolver) DuplicateRun(ctx context.Context, input *model.Duplic
 			SetInternalCriteria(template.InternalCriteria).
 			SetMturkCriteria(template.MturkCriteria).
 			SetCreator(creator).
+			SetSandbox(template.Sandbox).
 			SetProjectID(*projectID).
 			Save(ctx)
 		if err != nil {

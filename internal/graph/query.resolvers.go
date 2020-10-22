@@ -34,7 +34,7 @@ func (r *queryResolver) Project(ctx context.Context, id *string, projectID *stri
 }
 
 func (r *queryResolver) Participants(ctx context.Context, first *int, after *string) ([]*ent.Participant, error) {
-	panic(fmt.Errorf("not implemented"))
+	return r.Store.Participant.Query().All(ctx)
 }
 
 func (r *queryResolver) Me(ctx context.Context) (model.User, error) {

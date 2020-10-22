@@ -111,6 +111,9 @@ func InternalCriteriaFromInput(criti *InternalCriteriaInput) *InternalCriteria {
 }
 
 func ConditionFromInput(condi *ConditionInput) *Condition {
+	if condi == nil {
+		return nil
+	}
 	cond := &Condition{}
 	if len(condi.And) > 0 {
 		cond.And = make([]*Condition, len(condi.And))
