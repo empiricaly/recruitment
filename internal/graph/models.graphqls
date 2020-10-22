@@ -563,7 +563,7 @@ type FilterStepArgs {
   Type is whether to use a predefined filter, JS code, or the Condition filter
   mechanism.
   """
-  type: ParticipantFilterType! @goField(forceResolver: true)
+  type: ParticipantFilterType @goField(forceResolver: true)
 
   """
   Filter should be the name of pre-defined filtering function.
@@ -814,6 +814,11 @@ type Participant {
   All StepRuns the Participant participated in.
   """
   steps: [StepRun!]!
+
+  """
+  MTurk Worker ID.
+  """
+  mturkWorkerID: String
 
   """
   ProviderIDs contains the IDs from 3rd providers corresponding the participant.

@@ -179,13 +179,14 @@ type ComplexityRoot struct {
 	}
 
 	Participant struct {
-		CreatedAt   func(childComplexity int) int
-		CreatedBy   func(childComplexity int) int
-		Data        func(childComplexity int, keys []string, deleted *bool) int
-		ID          func(childComplexity int) int
-		ProviderIDs func(childComplexity int) int
-		Steps       func(childComplexity int) int
-		UpdatedAt   func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		CreatedBy     func(childComplexity int) int
+		Data          func(childComplexity int, keys []string, deleted *bool) int
+		ID            func(childComplexity int) int
+		MturkWorkerID func(childComplexity int) int
+		ProviderIDs   func(childComplexity int) int
+		Steps         func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
 	}
 
 	Participation struct {
@@ -292,7 +293,7 @@ type DatumResolver interface {
 	Versions(ctx context.Context, obj *ent.Datum) ([]*ent.Datum, error)
 }
 type FilterStepArgsResolver interface {
-	Type(ctx context.Context, obj *model.FilterStepArgs) (model.ParticipantFilterType, error)
+	Type(ctx context.Context, obj *model.FilterStepArgs) (*model.ParticipantFilterType, error)
 }
 type MessageStepArgsResolver interface {
 	MessageType(ctx context.Context, obj *model.MessageStepArgs) (model.ContentType, error)
@@ -317,6 +318,7 @@ type MutationResolver interface {
 type ParticipantResolver interface {
 	CreatedBy(ctx context.Context, obj *ent.Participant) (*ent.StepRun, error)
 	Steps(ctx context.Context, obj *ent.Participant) ([]*ent.StepRun, error)
+
 	ProviderIDs(ctx context.Context, obj *ent.Participant) ([]*ent.ProviderID, error)
 	Data(ctx context.Context, obj *ent.Participant, keys []string, deleted *bool) ([]*ent.Datum, error)
 }
@@ -1000,6 +1002,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Participant.ID(childComplexity), true
+
+	case "Participant.mturkWorkerID":
+		if e.complexity.Participant.MturkWorkerID == nil {
+			break
+		}
+
+		return e.complexity.Participant.MturkWorkerID(childComplexity), true
 
 	case "Participant.providerIDs":
 		if e.complexity.Participant.ProviderIDs == nil {
@@ -2224,7 +2233,7 @@ type FilterStepArgs {
   Type is whether to use a predefined filter, JS code, or the Condition filter
   mechanism.
   """
-  type: ParticipantFilterType! @goField(forceResolver: true)
+  type: ParticipantFilterType @goField(forceResolver: true)
 
   """
   Filter should be the name of pre-defined filtering function.
@@ -2475,6 +2484,11 @@ type Participant {
   All StepRuns the Participant participated in.
   """
   steps: [StepRun!]!
+
+  """
+  MTurk Worker ID.
+  """
+  mturkWorkerID: String
 
   """
   ProviderIDs contains the IDs from 3rd providers corresponding the participant.
@@ -2966,7 +2980,7 @@ input FilterStepArgsInput {
   Type is whether to use a predefined filter, JS code, or the Condition filter
   mechanism.
   """
-  type: ParticipantFilterType! @goField(forceResolver: true)
+  type: ParticipantFilterType @goField(forceResolver: true)
 
   """
   Javascript to execute as a participant filter step.
@@ -4466,14 +4480,11 @@ func (ec *executionContext) _FilterStepArgs_type(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(model.ParticipantFilterType)
+	res := resTmp.(*model.ParticipantFilterType)
 	fc.Result = res
-	return ec.marshalNParticipantFilterType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx, field.Selections, res)
+	return ec.marshalOParticipantFilterType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FilterStepArgs_filter(ctx context.Context, field graphql.CollectedField, obj *model.FilterStepArgs) (ret graphql.Marshaler) {
@@ -6612,6 +6623,38 @@ func (ec *executionContext) _Participant_steps(ctx context.Context, field graphq
 	res := resTmp.([]*ent.StepRun)
 	fc.Result = res
 	return ec.marshalNStepRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRunᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Participant_mturkWorkerID(ctx context.Context, field graphql.CollectedField, obj *ent.Participant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Participant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MturkWorkerID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Participant_providerIDs(ctx context.Context, field graphql.CollectedField, obj *ent.Participant) (ret graphql.Marshaler) {
@@ -10736,7 +10779,7 @@ func (ec *executionContext) unmarshalInputFilterStepArgsInput(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-			it.Type, err = ec.unmarshalNParticipantFilterType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx, v)
+			it.Type, err = ec.unmarshalOParticipantFilterType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -11603,9 +11646,6 @@ func (ec *executionContext) _FilterStepArgs(ctx context.Context, sel ast.Selecti
 					}
 				}()
 				res = ec._FilterStepArgs_type(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "filter":
@@ -12085,6 +12125,8 @@ func (ec *executionContext) _Participant(ctx context.Context, sel ast.SelectionS
 				}
 				return res
 			})
+		case "mturkWorkerID":
+			out.Values[i] = ec._Participant_mturkWorkerID(ctx, field, obj)
 		case "providerIDs":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -13568,16 +13610,6 @@ func (ec *executionContext) marshalNParticipant2ᚖgithubᚗcomᚋempiricalyᚋr
 	return ec._Participant(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNParticipantFilterType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx context.Context, v interface{}) (model.ParticipantFilterType, error) {
-	var res model.ParticipantFilterType
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNParticipantFilterType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx context.Context, sel ast.SelectionSet, v model.ParticipantFilterType) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) marshalNParticipation2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipationᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Participation) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -14817,6 +14849,22 @@ func (ec *executionContext) unmarshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋre
 }
 
 func (ec *executionContext) marshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐProvider(ctx context.Context, sel ast.SelectionSet, v *model.Provider) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
+func (ec *executionContext) unmarshalOParticipantFilterType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx context.Context, v interface{}) (*model.ParticipantFilterType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(model.ParticipantFilterType)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOParticipantFilterType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx context.Context, sel ast.SelectionSet, v *model.ParticipantFilterType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

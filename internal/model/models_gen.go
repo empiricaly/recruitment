@@ -117,7 +117,7 @@ type DuplicateRunInput struct {
 type FilterStepArgs struct {
 	// Type is whether to use a predefined filter, JS code, or the Condition filter
 	// mechanism.
-	Type ParticipantFilterType `json:"type"`
+	Type *ParticipantFilterType `json:"type"`
 	// Filter should be the name of pre-defined filtering function.
 	Filter *string `json:"filter"`
 	// Javascript to execute as a participant filter step.
@@ -143,7 +143,7 @@ type FilterStepArgs struct {
 type FilterStepArgsInput struct {
 	// Type is whether to use a predefined filter, JS code, or the Condition filter
 	// mechanism.
-	Type ParticipantFilterType `json:"type"`
+	Type *ParticipantFilterType `json:"type"`
 	// Javascript to execute as a participant filter step.
 	// The code must contain a functinon exported using a default ES6 export.
 	// The function should accept a single argument object. This object contains the

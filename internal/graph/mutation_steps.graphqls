@@ -8,7 +8,7 @@ input FilterStepArgsInput {
   Type is whether to use a predefined filter, JS code, or the Condition filter
   mechanism.
   """
-  type: ParticipantFilterType! @goField(forceResolver: true)
+  type: ParticipantFilterType @goField(forceResolver: true)
 
   """
   Javascript to execute as a participant filter step.

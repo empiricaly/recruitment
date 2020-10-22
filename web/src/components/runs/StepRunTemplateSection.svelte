@@ -24,18 +24,22 @@
   </div>
 
   <div
-    class="mt-5 md:mt-0 md:col-span-7 shadow sm:rounded-lg {current ? 'border-2 border-mint-300 bg-mint-600 text-gray-50' : 'text-mint-600 bg-gray-50'} relative overflow-hidden">
-    <div
-      class="absolute bg-mint-900 h-full top-0 left-0 z-0"
-      style="width: {progress}%" />
-
+    class="mt-5 md:mt-0 md:col-span-7 shadow sm:rounded-lg relative overflow-hidden">
     {#if header}
-      <header class="relative z-10 px-4 sm:px-4 py-3">
-        <slot name="header" />
+      <header
+        class="relative sm:rounded-lg px-4 sm:px-4 py-3 {current ? 'border-2 border-mint-300 bg-mint-600 text-gray-50' : 'text-mint-600 bg-gray-50'}">
+        <div
+          class="absolute bg-mint-900 h-full top-0 left-0 z-0 sm:rounded-lg"
+          style="width: {progress}%" />
+        <div class="relative z-10">
+          <slot name="header" />
+        </div>
       </header>
     {/if}
 
-    <slot />
+    <div class="bg-gray-50">
+      <slot />
+    </div>
 
     {#if footer}
       <footer class="px-4 py-3 bg-gray-50 sm:px-6 sm:rounded-b-md">

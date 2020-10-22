@@ -30,8 +30,12 @@ func (r *datumResolver) Versions(ctx context.Context, obj *ent.Datum) ([]*ent.Da
 		All(ctx)
 }
 
-func (r *filterStepArgsResolver) Type(ctx context.Context, obj *model.FilterStepArgs) (model.ParticipantFilterType, error) {
-	return model.ParticipantFilterType(obj.Type.String()), nil
+func (r *filterStepArgsResolver) Type(ctx context.Context, obj *model.FilterStepArgs) (*model.ParticipantFilterType, error) {
+	if obj.Type == nil {
+		return nil, nil
+	}
+	t := model.ParticipantFilterType(obj.Type.String())
+	return &t, nil
 }
 
 func (r *messageStepArgsResolver) MessageType(ctx context.Context, obj *model.MessageStepArgs) (model.ContentType, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -183,7 +184,12 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, run *ent.Run, stepRun
 		return errStepWithoutParticipants
 	}
 
-	return s.notifyWorkers(ctx, subject, step.MsgArgs.Message, workerIDs)
+	msg := step.MsgArgs.Message
+	if step.MsgArgs.URL != nil {
+		msg = strings.ReplaceAll(msg, "{url}", *step.MsgArgs.URL)
+	}
+
+	return s.notifyWorkers(ctx, subject, msg, workerIDs)
 }
 
 // EndStep to end step based on stepType

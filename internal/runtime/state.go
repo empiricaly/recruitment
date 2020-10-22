@@ -135,7 +135,7 @@ func (r *runState) processNextStep() {
 	r.logger.Debug().Msgf("Finished processing %s", currentEventType)
 }
 func (r *runState) processStep() error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
 
 	r.timer = nil

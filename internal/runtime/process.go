@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/empiricaly/recruitment/internal/ent"
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
@@ -197,6 +198,8 @@ func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int
 		return nil, errors.Wrap(err, "find participants")
 	}
 
+	spew.Dump("BEFORE", participants)
+
 	if !useAll {
 		n := 0
 		for _, participant := range participants {
@@ -212,6 +215,8 @@ func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int
 		}
 		participants = participants[:n]
 	}
+
+	spew.Dump("AFTER", participants)
 
 	// TODO should filter participants here
 	l := math.Min(float64(limit), float64(len(participants)))
