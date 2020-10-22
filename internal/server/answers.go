@@ -24,21 +24,21 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 			return
 		}
 
-		workerID := c.Query("workerID")
+		workerID := c.Query("workerId")
 		if id == "" {
 			log.Error().Msg("answers handler: missing workerID")
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
 
-		assignmentID := c.Query("assignmentID")
+		assignmentID := c.Query("assignmentId")
 		if id == "" {
 			log.Error().Msg("answers handler: missing assignmentID")
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}
 
-		hitID := c.Query("hitID")
+		hitID := c.Query("hitId")
 		if id == "" {
 			log.Error().Msg("answers handler: missing hitID")
 			c.AbortWithStatus(http.StatusNotFound)
@@ -64,6 +64,7 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 				// WithStep(func(step *ent.StepQuery) {
 				// 	step.WithTemplate()
 				// }).
+				WithStep().
 				WithRun().
 				Where(stepRunModel.UrlTokenEQ(id)).
 				First(ctx)
@@ -75,8 +76,12 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 				return errors.Errorf("stepTun no longer running, cannot save data (current state: %s)", stepRun.Status.String())
 			}
 
-			if stepRun.HitID == nil || *stepRun.HitID != hitID {
-				return errors.Errorf("stepTun has different HIT ID (%s)", stepRun.HitID)
+			if stepRun.HitID == nil {
+				return errors.Errorf("stepRun has nil HIT ID")
+			}
+
+			if *stepRun.HitID != hitID {
+				return errors.Errorf("stepTun has different HIT ID (%s)", *stepRun.HitID)
 			}
 
 			step, err := stepRun.Edges.StepOrErr()

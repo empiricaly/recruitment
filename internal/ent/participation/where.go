@@ -724,6 +724,20 @@ func MturkAcceptedAtLTE(v time.Time) predicate.Participation {
 	})
 }
 
+// MturkAcceptedAtIsNil applies the IsNil predicate on the "mturkAcceptedAt" field.
+func MturkAcceptedAtIsNil() predicate.Participation {
+	return predicate.Participation(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldMturkAcceptedAt)))
+	})
+}
+
+// MturkAcceptedAtNotNil applies the NotNil predicate on the "mturkAcceptedAt" field.
+func MturkAcceptedAtNotNil() predicate.Participation {
+	return predicate.Participation(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldMturkAcceptedAt)))
+	})
+}
+
 // MturkSubmittedAtEQ applies the EQ predicate on the "mturkSubmittedAt" field.
 func MturkSubmittedAtEQ(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
@@ -797,6 +811,20 @@ func MturkSubmittedAtLT(v time.Time) predicate.Participation {
 func MturkSubmittedAtLTE(v time.Time) predicate.Participation {
 	return predicate.Participation(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldMturkSubmittedAt), v))
+	})
+}
+
+// MturkSubmittedAtIsNil applies the IsNil predicate on the "mturkSubmittedAt" field.
+func MturkSubmittedAtIsNil() predicate.Participation {
+	return predicate.Participation(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldMturkSubmittedAt)))
+	})
+}
+
+// MturkSubmittedAtNotNil applies the NotNil predicate on the "mturkSubmittedAt" field.
+func MturkSubmittedAtNotNil() predicate.Participation {
+	return predicate.Participation(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldMturkSubmittedAt)))
 	})
 }
 

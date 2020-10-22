@@ -74,6 +74,7 @@ func (s *Session) createHit(ctx context.Context, params *mturk.CreateHITInput) (
 	} else {
 		hit, err := s.MTurk.CreateHITWithContext(ctx, params)
 		if err != nil {
+			log.Error().Err(err).Msg("failed to createHit HIT")
 			return "", err
 		}
 		hitID = *hit.HIT.HITId
@@ -187,7 +188,8 @@ func (s *Session) assignmentsForHit(ctx context.Context, hitID string) (chan *mt
 				for _, assignment := range assignments.Assignments {
 					c <- assignment
 				}
-				if assignments.NextToken != nil {
+
+				if assignments.NextToken != nil && *assignments.NextToken != "" {
 					nextToken = assignments.NextToken
 				} else {
 					return

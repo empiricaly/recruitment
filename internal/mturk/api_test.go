@@ -25,7 +25,8 @@ func getSession() *Session {
 	if sess == nil {
 		var err error
 		config := &Config{}
-		sess, err = New(config, sess.sandbox, "https://www.example.com", nil)
+		sess, err = New(config, true, "https://www.example.com", nil)
+
 		if err != nil {
 			panic(err)
 		}

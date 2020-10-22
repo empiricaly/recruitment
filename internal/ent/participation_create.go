@@ -88,9 +88,25 @@ func (pc *ParticipationCreate) SetMturkAcceptedAt(t time.Time) *ParticipationCre
 	return pc
 }
 
+// SetNillableMturkAcceptedAt sets the mturkAcceptedAt field if the given value is not nil.
+func (pc *ParticipationCreate) SetNillableMturkAcceptedAt(t *time.Time) *ParticipationCreate {
+	if t != nil {
+		pc.SetMturkAcceptedAt(*t)
+	}
+	return pc
+}
+
 // SetMturkSubmittedAt sets the mturkSubmittedAt field.
 func (pc *ParticipationCreate) SetMturkSubmittedAt(t time.Time) *ParticipationCreate {
 	pc.mutation.SetMturkSubmittedAt(t)
+	return pc
+}
+
+// SetNillableMturkSubmittedAt sets the mturkSubmittedAt field if the given value is not nil.
+func (pc *ParticipationCreate) SetNillableMturkSubmittedAt(t *time.Time) *ParticipationCreate {
+	if t != nil {
+		pc.SetMturkSubmittedAt(*t)
+	}
 	return pc
 }
 
@@ -223,12 +239,6 @@ func (pc *ParticipationCreate) check() error {
 	}
 	if _, ok := pc.mutation.MturkHitID(); !ok {
 		return &ValidationError{Name: "mturkHitID", err: errors.New("ent: missing required field \"mturkHitID\"")}
-	}
-	if _, ok := pc.mutation.MturkAcceptedAt(); !ok {
-		return &ValidationError{Name: "mturkAcceptedAt", err: errors.New("ent: missing required field \"mturkAcceptedAt\"")}
-	}
-	if _, ok := pc.mutation.MturkSubmittedAt(); !ok {
-		return &ValidationError{Name: "mturkSubmittedAt", err: errors.New("ent: missing required field \"mturkSubmittedAt\"")}
 	}
 	if v, ok := pc.mutation.ID(); ok {
 		if err := participation.IDValidator(v); err != nil {

@@ -83,8 +83,8 @@ var (
 		{Name: "mturk_worker_id", Type: field.TypeString},
 		{Name: "mturk_assignment_id", Type: field.TypeString},
 		{Name: "mturk_hit_id", Type: field.TypeString},
-		{Name: "mturk_accepted_at", Type: field.TypeTime},
-		{Name: "mturk_submitted_at", Type: field.TypeTime},
+		{Name: "mturk_accepted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "mturk_submitted_at", Type: field.TypeTime, Nullable: true},
 		{Name: "participant_participations", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "step_run_participations", Type: field.TypeString, Nullable: true, Size: 20},
 	}

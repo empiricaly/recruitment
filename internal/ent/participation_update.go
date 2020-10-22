@@ -74,9 +74,37 @@ func (pu *ParticipationUpdate) SetMturkAcceptedAt(t time.Time) *ParticipationUpd
 	return pu
 }
 
+// SetNillableMturkAcceptedAt sets the mturkAcceptedAt field if the given value is not nil.
+func (pu *ParticipationUpdate) SetNillableMturkAcceptedAt(t *time.Time) *ParticipationUpdate {
+	if t != nil {
+		pu.SetMturkAcceptedAt(*t)
+	}
+	return pu
+}
+
+// ClearMturkAcceptedAt clears the value of mturkAcceptedAt.
+func (pu *ParticipationUpdate) ClearMturkAcceptedAt() *ParticipationUpdate {
+	pu.mutation.ClearMturkAcceptedAt()
+	return pu
+}
+
 // SetMturkSubmittedAt sets the mturkSubmittedAt field.
 func (pu *ParticipationUpdate) SetMturkSubmittedAt(t time.Time) *ParticipationUpdate {
 	pu.mutation.SetMturkSubmittedAt(t)
+	return pu
+}
+
+// SetNillableMturkSubmittedAt sets the mturkSubmittedAt field if the given value is not nil.
+func (pu *ParticipationUpdate) SetNillableMturkSubmittedAt(t *time.Time) *ParticipationUpdate {
+	if t != nil {
+		pu.SetMturkSubmittedAt(*t)
+	}
+	return pu
+}
+
+// ClearMturkSubmittedAt clears the value of mturkSubmittedAt.
+func (pu *ParticipationUpdate) ClearMturkSubmittedAt() *ParticipationUpdate {
+	pu.mutation.ClearMturkSubmittedAt()
 	return pu
 }
 
@@ -255,10 +283,22 @@ func (pu *ParticipationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: participation.FieldMturkAcceptedAt,
 		})
 	}
+	if pu.mutation.MturkAcceptedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Column: participation.FieldMturkAcceptedAt,
+		})
+	}
 	if value, ok := pu.mutation.MturkSubmittedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
+			Column: participation.FieldMturkSubmittedAt,
+		})
+	}
+	if pu.mutation.MturkSubmittedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
 			Column: participation.FieldMturkSubmittedAt,
 		})
 	}
@@ -394,9 +434,37 @@ func (puo *ParticipationUpdateOne) SetMturkAcceptedAt(t time.Time) *Participatio
 	return puo
 }
 
+// SetNillableMturkAcceptedAt sets the mturkAcceptedAt field if the given value is not nil.
+func (puo *ParticipationUpdateOne) SetNillableMturkAcceptedAt(t *time.Time) *ParticipationUpdateOne {
+	if t != nil {
+		puo.SetMturkAcceptedAt(*t)
+	}
+	return puo
+}
+
+// ClearMturkAcceptedAt clears the value of mturkAcceptedAt.
+func (puo *ParticipationUpdateOne) ClearMturkAcceptedAt() *ParticipationUpdateOne {
+	puo.mutation.ClearMturkAcceptedAt()
+	return puo
+}
+
 // SetMturkSubmittedAt sets the mturkSubmittedAt field.
 func (puo *ParticipationUpdateOne) SetMturkSubmittedAt(t time.Time) *ParticipationUpdateOne {
 	puo.mutation.SetMturkSubmittedAt(t)
+	return puo
+}
+
+// SetNillableMturkSubmittedAt sets the mturkSubmittedAt field if the given value is not nil.
+func (puo *ParticipationUpdateOne) SetNillableMturkSubmittedAt(t *time.Time) *ParticipationUpdateOne {
+	if t != nil {
+		puo.SetMturkSubmittedAt(*t)
+	}
+	return puo
+}
+
+// ClearMturkSubmittedAt clears the value of mturkSubmittedAt.
+func (puo *ParticipationUpdateOne) ClearMturkSubmittedAt() *ParticipationUpdateOne {
+	puo.mutation.ClearMturkSubmittedAt()
 	return puo
 }
 
@@ -573,10 +641,22 @@ func (puo *ParticipationUpdateOne) sqlSave(ctx context.Context) (_node *Particip
 			Column: participation.FieldMturkAcceptedAt,
 		})
 	}
+	if puo.mutation.MturkAcceptedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Column: participation.FieldMturkAcceptedAt,
+		})
+	}
 	if value, ok := puo.mutation.MturkSubmittedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
+			Column: participation.FieldMturkSubmittedAt,
+		})
+	}
+	if puo.mutation.MturkSubmittedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
 			Column: participation.FieldMturkSubmittedAt,
 		})
 	}

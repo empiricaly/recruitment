@@ -2717,9 +2717,22 @@ func (m *ParticipationMutation) OldMturkAcceptedAt(ctx context.Context) (v time.
 	return oldValue.MturkAcceptedAt, nil
 }
 
+// ClearMturkAcceptedAt clears the value of mturkAcceptedAt.
+func (m *ParticipationMutation) ClearMturkAcceptedAt() {
+	m.mturkAcceptedAt = nil
+	m.clearedFields[participation.FieldMturkAcceptedAt] = struct{}{}
+}
+
+// MturkAcceptedAtCleared returns if the field mturkAcceptedAt was cleared in this mutation.
+func (m *ParticipationMutation) MturkAcceptedAtCleared() bool {
+	_, ok := m.clearedFields[participation.FieldMturkAcceptedAt]
+	return ok
+}
+
 // ResetMturkAcceptedAt reset all changes of the "mturkAcceptedAt" field.
 func (m *ParticipationMutation) ResetMturkAcceptedAt() {
 	m.mturkAcceptedAt = nil
+	delete(m.clearedFields, participation.FieldMturkAcceptedAt)
 }
 
 // SetMturkSubmittedAt sets the mturkSubmittedAt field.
@@ -2754,9 +2767,22 @@ func (m *ParticipationMutation) OldMturkSubmittedAt(ctx context.Context) (v time
 	return oldValue.MturkSubmittedAt, nil
 }
 
+// ClearMturkSubmittedAt clears the value of mturkSubmittedAt.
+func (m *ParticipationMutation) ClearMturkSubmittedAt() {
+	m.mturkSubmittedAt = nil
+	m.clearedFields[participation.FieldMturkSubmittedAt] = struct{}{}
+}
+
+// MturkSubmittedAtCleared returns if the field mturkSubmittedAt was cleared in this mutation.
+func (m *ParticipationMutation) MturkSubmittedAtCleared() bool {
+	_, ok := m.clearedFields[participation.FieldMturkSubmittedAt]
+	return ok
+}
+
 // ResetMturkSubmittedAt reset all changes of the "mturkSubmittedAt" field.
 func (m *ParticipationMutation) ResetMturkSubmittedAt() {
 	m.mturkSubmittedAt = nil
+	delete(m.clearedFields, participation.FieldMturkSubmittedAt)
 }
 
 // SetStepRunID sets the stepRun edge to StepRun by id.
@@ -3019,7 +3045,14 @@ func (m *ParticipationMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared
 // during this mutation.
 func (m *ParticipationMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(participation.FieldMturkAcceptedAt) {
+		fields = append(fields, participation.FieldMturkAcceptedAt)
+	}
+	if m.FieldCleared(participation.FieldMturkSubmittedAt) {
+		fields = append(fields, participation.FieldMturkSubmittedAt)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicates if this field was
@@ -3032,6 +3065,14 @@ func (m *ParticipationMutation) FieldCleared(name string) bool {
 // ClearField clears the value for the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ParticipationMutation) ClearField(name string) error {
+	switch name {
+	case participation.FieldMturkAcceptedAt:
+		m.ClearMturkAcceptedAt()
+		return nil
+	case participation.FieldMturkSubmittedAt:
+		m.ClearMturkSubmittedAt()
+		return nil
+	}
 	return fmt.Errorf("unknown Participation nullable field %s", name)
 }
 

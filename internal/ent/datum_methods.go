@@ -5,6 +5,7 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/ent/datum"
 	"github.com/pkg/errors"
+	"github.com/rs/xid"
 )
 
 // SetDatum sets a new datum version respecting all the rules.
@@ -42,6 +43,7 @@ func SetDatum(ctx context.Context, tx *Tx, p *Participant, key string, val strin
 	}
 
 	newDatum, err := tx.Datum.Create().
+		SetID(xid.New().String()).
 		SetCurrent(true).
 		SetVersion(version).
 		SetIndex(index).

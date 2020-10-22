@@ -51,8 +51,10 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 	// rootURL is already tested from config options, should never fail to parse
 	addr, err := url.Parse(s.rootURL)
 	if err != nil {
-		addr.Path = "/q/" + stepRun.UrlToken
+		return errors.Wrap(err, "get root URL")
 	}
+	addr.Path = "/q/" + stepRun.UrlToken
+
 	question, err := getExternalQuestion(addr.String())
 	if err != nil {
 		return errors.Wrap(err, "encode HIT question URL")
@@ -132,13 +134,13 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 
 	params := &mturk.CreateHITInput{
 		Question:                    aws.String(question),
-		AssignmentDurationInSeconds: aws.Int64(int64(step.HitArgs.Duration)),
-		LifetimeInSeconds:           aws.Int64(int64(step.HitArgs.Duration)),
+		AssignmentDurationInSeconds: aws.Int64(int64(step.HitArgs.Duration * 60)),
+		LifetimeInSeconds:           aws.Int64(int64(step.HitArgs.Duration * 60)),
 		MaxAssignments:              aws.Int64(int64(assignmentCount)),
 		Title:                       aws.String(step.HitArgs.Title),
 		Description:                 aws.String(step.HitArgs.Description),
 		Keywords:                    aws.String(step.HitArgs.Keywords),
-		Reward:                      aws.String(fmt.Sprintf("%f", step.HitArgs.Reward)),
+		Reward:                      aws.String(fmt.Sprintf("%.2f", step.HitArgs.Reward)),
 		QualificationRequirements:   quals,
 		UniqueRequestToken:          aws.String(stepRun.ID),
 		AutoApprovalDelayInSeconds:  aws.Int64(30),
