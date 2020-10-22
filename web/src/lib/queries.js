@@ -234,6 +234,27 @@ export const GET_RUNNING_RUN = gql`
   }
 `;
 
+export const GET_PARTICIPANTS = gql`
+  query getParticipants($projectID: ID!, $runID: ID!) {
+    project(projectID: $projectID) {
+      id
+      runs(runID: $runID) {
+        status
+        steps {
+          participants {
+            id
+            mturkWorkerID
+            data {
+              key
+              val
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const CREATE_PROJECT = gql`
   mutation createProject($input: CreateProjectInput!) {
     createProject(input: $input) {

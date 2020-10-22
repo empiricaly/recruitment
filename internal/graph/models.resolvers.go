@@ -163,6 +163,10 @@ func (r *stepRunResolver) Participations(ctx context.Context, obj *ent.StepRun, 
 	panic(fmt.Errorf("not implemented"))
 }
 
+func (r *stepRunResolver) Participants(ctx context.Context, obj *ent.StepRun) ([]*ent.Participant, error) {
+	return obj.QueryParticipants().All(ctx)
+}
+
 func (r *stepRunResolver) ParticipantsCount(ctx context.Context, obj *ent.StepRun) (int, error) {
 	return obj.QueryParticipants().Count(ctx)
 }

@@ -221,6 +221,11 @@ type StepRun {
   participations(first: Int, after: ID): [Participation!]! @goField(forceResolver: true)
 
   """
+  Participants in this Step.
+  """
+  participants: [Participant!]! @goField(forceResolver: true)
+
+  """
   Number of Participants in this Step.
   """
   participantsCount: Int! @goField(forceResolver: true)

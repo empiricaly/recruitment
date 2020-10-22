@@ -261,6 +261,7 @@ type ComplexityRoot struct {
 		EndedAt           func(childComplexity int) int
 		ID                func(childComplexity int) int
 		Index             func(childComplexity int) int
+		Participants      func(childComplexity int) int
 		ParticipantsCount func(childComplexity int) int
 		Participations    func(childComplexity int, first *int, after *string) int
 		StartedAt         func(childComplexity int) int
@@ -366,6 +367,7 @@ type StepRunResolver interface {
 	Status(ctx context.Context, obj *ent.StepRun) (model.Status, error)
 
 	Participations(ctx context.Context, obj *ent.StepRun, first *int, after *string) ([]*ent.Participation, error)
+	Participants(ctx context.Context, obj *ent.StepRun) ([]*ent.Participant, error)
 	ParticipantsCount(ctx context.Context, obj *ent.StepRun) (int, error)
 }
 type SubscriptionResolver interface {
@@ -1432,6 +1434,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.StepRun.Index(childComplexity), true
 
+	case "StepRun.participants":
+		if e.complexity.StepRun.Participants == nil {
+			break
+		}
+
+		return e.complexity.StepRun.Participants(childComplexity), true
+
 	case "StepRun.participantsCount":
 		if e.complexity.StepRun.ParticipantsCount == nil {
 			break
@@ -1889,6 +1898,11 @@ type StepRun {
   Step is on going.
   """
   participations(first: Int, after: ID): [Participation!]! @goField(forceResolver: true)
+
+  """
+  Participants in this Step.
+  """
+  participants: [Participant!]! @goField(forceResolver: true)
 
   """
   Number of Participants in this Step.
@@ -8902,6 +8916,41 @@ func (ec *executionContext) _StepRun_participations(ctx context.Context, field g
 	return ec.marshalNParticipation2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipationᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _StepRun_participants(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "StepRun",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.StepRun().Participants(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Participant)
+	fc.Result = res
+	return ec.marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipantᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _StepRun_participantsCount(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -12773,6 +12822,20 @@ func (ec *executionContext) _StepRun(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._StepRun_participations(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "participants":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._StepRun_participants(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

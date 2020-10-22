@@ -6,6 +6,7 @@
   import { GET_RUNNING_RUN } from "../../lib/queries";
   import { timer } from "../../utils/timer.js";
   import TemplateSection from "../templates/TemplateSection.svelte";
+  import FinishedParticipants from "./FinishedParticipants.svelte";
   import StepRun from "./StepRun.svelte";
 
   const dispatch = createEventDispatcher();
@@ -26,9 +27,11 @@
     runB = result.data.project.runs[0];
   });
 
-  $: if ($timer) {
-    if ($runningRun) {
-      runningRun.refetch();
+  $: if (runB && runB.status == "RUNNING") {
+    if ($timer) {
+      if ($runningRun) {
+        runningRun.refetch();
+      }
     }
   }
 
@@ -67,3 +70,13 @@
     {step}
     stepRun={runB && runB.steps[index]} />
 {/each}
+
+{#if run && run.status === 'DONE'}
+  <div class="mt-8 mb-6 hidden sm:block">
+    <div class="py-5">
+      <div class="border-t border-gray-200" />
+    </div>
+  </div>
+
+  <FinishedParticipants {project} {run} />
+{/if}
