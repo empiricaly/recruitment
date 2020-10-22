@@ -73,12 +73,7 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 	var assignmentCount int
 	if isFirstStep && isMturkSelection {
 		assignmentCount = template.ParticipantCount
-		crit := &model.MTurkCriteria{}
-		err := json.Unmarshal(template.MturkCriteria, crit)
-		if err != nil {
-			return errors.Wrap(err, "unmarshal MturkCriteria")
-		}
-		for _, q := range crit.Qualifications {
+		for _, q := range template.MturkCriteria.Qualifications {
 			ints := make([]*int64, len(q.Values))
 			for i, val := range q.Values {
 				ints[i] = aws.Int64(int64(val))

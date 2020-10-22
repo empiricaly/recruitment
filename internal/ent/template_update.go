@@ -13,6 +13,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -72,14 +73,14 @@ func (tu *TemplateUpdate) AddParticipantCount(i int) *TemplateUpdate {
 }
 
 // SetInternalCriteria sets the internalCriteria field.
-func (tu *TemplateUpdate) SetInternalCriteria(b []byte) *TemplateUpdate {
-	tu.mutation.SetInternalCriteria(b)
+func (tu *TemplateUpdate) SetInternalCriteria(mc *model.InternalCriteria) *TemplateUpdate {
+	tu.mutation.SetInternalCriteria(mc)
 	return tu
 }
 
 // SetMturkCriteria sets the mturkCriteria field.
-func (tu *TemplateUpdate) SetMturkCriteria(b []byte) *TemplateUpdate {
-	tu.mutation.SetMturkCriteria(b)
+func (tu *TemplateUpdate) SetMturkCriteria(mtc *model.MTurkCriteria) *TemplateUpdate {
+	tu.mutation.SetMturkCriteria(mtc)
 	return tu
 }
 
@@ -368,14 +369,14 @@ func (tu *TemplateUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tu.mutation.InternalCriteria(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: template.FieldInternalCriteria,
 		})
 	}
 	if value, ok := tu.mutation.MturkCriteria(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: template.FieldMturkCriteria,
 		})
@@ -611,14 +612,14 @@ func (tuo *TemplateUpdateOne) AddParticipantCount(i int) *TemplateUpdateOne {
 }
 
 // SetInternalCriteria sets the internalCriteria field.
-func (tuo *TemplateUpdateOne) SetInternalCriteria(b []byte) *TemplateUpdateOne {
-	tuo.mutation.SetInternalCriteria(b)
+func (tuo *TemplateUpdateOne) SetInternalCriteria(mc *model.InternalCriteria) *TemplateUpdateOne {
+	tuo.mutation.SetInternalCriteria(mc)
 	return tuo
 }
 
 // SetMturkCriteria sets the mturkCriteria field.
-func (tuo *TemplateUpdateOne) SetMturkCriteria(b []byte) *TemplateUpdateOne {
-	tuo.mutation.SetMturkCriteria(b)
+func (tuo *TemplateUpdateOne) SetMturkCriteria(mtc *model.MTurkCriteria) *TemplateUpdateOne {
+	tuo.mutation.SetMturkCriteria(mtc)
 	return tuo
 }
 
@@ -905,14 +906,14 @@ func (tuo *TemplateUpdateOne) sqlSave(ctx context.Context) (_node *Template, err
 	}
 	if value, ok := tuo.mutation.InternalCriteria(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: template.FieldInternalCriteria,
 		})
 	}
 	if value, ok := tuo.mutation.MturkCriteria(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: template.FieldMturkCriteria,
 		})

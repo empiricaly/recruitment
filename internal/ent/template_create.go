@@ -13,6 +13,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
@@ -79,14 +80,14 @@ func (tc *TemplateCreate) SetNillableParticipantCount(i *int) *TemplateCreate {
 }
 
 // SetInternalCriteria sets the internalCriteria field.
-func (tc *TemplateCreate) SetInternalCriteria(b []byte) *TemplateCreate {
-	tc.mutation.SetInternalCriteria(b)
+func (tc *TemplateCreate) SetInternalCriteria(mc *model.InternalCriteria) *TemplateCreate {
+	tc.mutation.SetInternalCriteria(mc)
 	return tc
 }
 
 // SetMturkCriteria sets the mturkCriteria field.
-func (tc *TemplateCreate) SetMturkCriteria(b []byte) *TemplateCreate {
-	tc.mutation.SetMturkCriteria(b)
+func (tc *TemplateCreate) SetMturkCriteria(mtc *model.MTurkCriteria) *TemplateCreate {
+	tc.mutation.SetMturkCriteria(mtc)
 	return tc
 }
 
@@ -390,7 +391,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := tc.mutation.InternalCriteria(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: template.FieldInternalCriteria,
 		})
@@ -398,7 +399,7 @@ func (tc *TemplateCreate) createSpec() (*Template, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := tc.mutation.MturkCriteria(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: template.FieldMturkCriteria,
 		})

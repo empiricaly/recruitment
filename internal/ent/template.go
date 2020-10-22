@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/facebook/ent/dialect/sql"
 )
 
@@ -30,9 +32,9 @@ type Template struct {
 	// ParticipantCount holds the value of the "participantCount" field.
 	ParticipantCount int `json:"participantCount,omitempty"`
 	// InternalCriteria holds the value of the "internalCriteria" field.
-	InternalCriteria []byte `json:"internalCriteria,omitempty"`
+	InternalCriteria *model.InternalCriteria `json:"internalCriteria,omitempty"`
 	// MturkCriteria holds the value of the "mturkCriteria" field.
-	MturkCriteria []byte `json:"mturkCriteria,omitempty"`
+	MturkCriteria *model.MTurkCriteria `json:"mturkCriteria,omitempty"`
 	// Adult holds the value of the "adult" field.
 	Adult bool `json:"adult,omitempty"`
 	// Sandbox holds the value of the "sandbox" field.
@@ -173,15 +175,21 @@ func (t *Template) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		t.ParticipantCount = int(value.Int64)
 	}
+
 	if value, ok := values[5].(*[]byte); !ok {
 		return fmt.Errorf("unexpected type %T for field internalCriteria", values[5])
-	} else if value != nil {
-		t.InternalCriteria = *value
+	} else if value != nil && len(*value) > 0 {
+		if err := json.Unmarshal(*value, &t.InternalCriteria); err != nil {
+			return fmt.Errorf("unmarshal field internalCriteria: %v", err)
+		}
 	}
+
 	if value, ok := values[6].(*[]byte); !ok {
 		return fmt.Errorf("unexpected type %T for field mturkCriteria", values[6])
-	} else if value != nil {
-		t.MturkCriteria = *value
+	} else if value != nil && len(*value) > 0 {
+		if err := json.Unmarshal(*value, &t.MturkCriteria); err != nil {
+			return fmt.Errorf("unmarshal field mturkCriteria: %v", err)
+		}
 	}
 	if value, ok := values[7].(*sql.NullBool); !ok {
 		return fmt.Errorf("unexpected type %T for field adult", values[7])

@@ -26,36 +26,6 @@ type Page {
   contentType: ContentType!
 }
 
-type PageInfo {
-  startCursor: ID!
-  endCursor: ID!
-  hasNextPage: Boolean!
-}
-
-type ParticipationsConnection {
-  totalCount: Int!
-  edges: [ParticipationsEdge!]
-  participations: [Participation!]! @goField(forceResolver: true)
-  pageInfo: PageInfo!
-}
-
-type ParticipationsEdge {
-  cursor: ID!
-  node: Participation
-}
-
-type ParticipantsConnection {
-  totalCount: Int!
-  edges: [ParticipantsEdge!]
-  participants: [Participant!]! @goField(forceResolver: true)
-  pageInfo: PageInfo!
-}
-
-type ParticipantsEdge {
-  cursor: ID!
-  node: Participant
-}
-
 type Query {
   """
   Projects returns all projects.
@@ -70,7 +40,7 @@ type Query {
   """
   Participants returns all participants in DB.
   """
-  participants(first: Int, after: ID): ParticipantsConnection! @hasRole(role: ADMIN)
+  participants(first: Int, after: ID): [Participant!]! @hasRole(role: ADMIN)
 
   """
   me returns the current Admin or Participant, depending on whether the user is

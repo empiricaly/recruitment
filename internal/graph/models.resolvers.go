@@ -172,7 +172,7 @@ func (r *stepRunResolver) Status(ctx context.Context, obj *ent.StepRun) (model.S
 	return model.Status(obj.Status.String()), nil
 }
 
-func (r *stepRunResolver) Participations(ctx context.Context, obj *ent.StepRun, first *int, after *string) (*model.ParticipationsConnection, error) {
+func (r *stepRunResolver) Participations(ctx context.Context, obj *ent.StepRun, first *int, after *string) ([]*ent.Participation, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -186,18 +186,6 @@ func (r *templateResolver) Creator(ctx context.Context, obj *ent.Template) (*ent
 
 func (r *templateResolver) SelectionType(ctx context.Context, obj *ent.Template) (model.SelectionType, error) {
 	return model.SelectionType(obj.SelectionType), nil
-}
-
-func (r *templateResolver) InternalCriteria(ctx context.Context, obj *ent.Template) (*model.InternalCriteria, error) {
-	crit := &model.InternalCriteria{}
-	err := json.Unmarshal(obj.InternalCriteria, crit)
-	return crit, err
-}
-
-func (r *templateResolver) MturkCriteria(ctx context.Context, obj *ent.Template) (*model.MTurkCriteria, error) {
-	crit := &model.MTurkCriteria{}
-	err := json.Unmarshal(obj.MturkCriteria, crit)
-	return crit, err
 }
 
 func (r *templateResolver) Steps(ctx context.Context, obj *ent.Template) ([]*ent.Step, error) {
@@ -252,14 +240,3 @@ type runResolver struct{ *Resolver }
 type stepResolver struct{ *Resolver }
 type stepRunResolver struct{ *Resolver }
 type templateResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *datumResolver) Val(ctx context.Context, obj *ent.Datum) (*string, error) {
-	v := string(obj.Val)
-	return &v, nil
-}

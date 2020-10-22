@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"context"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -47,13 +46,8 @@ type Runtime struct {
 	sync.Mutex
 }
 
-var initRand sync.Once
-
 // Start the empirica recruitment runtime
 func Start(conf *Config, conn *storage.Conn, mturk, mturkSandbox *mturk.Session) (*Runtime, error) {
-	initRand.Do(func() {
-		rand.Seed(time.Now().UnixNano())
-	})
 
 	logger := log.With().Str("pkg", "runtime").Logger()
 

@@ -138,14 +138,8 @@ func (r *mutationResolver) CreateTemplate(ctx context.Context, input *model.Crea
 }
 
 func (r *mutationResolver) UpdateTemplate(ctx context.Context, input *model.UpdateTemplateInput) (*ent.Template, error) {
-	internalCriteria, err := json.Marshal(input.Template.InternalCriteria)
-	if err != nil {
-		return nil, errs.Wrap(err, "encode internal criteria")
-	}
-	mturkCriteria, err := json.Marshal(input.Template.MturkCriteria)
-	if err != nil {
-		return nil, errs.Wrap(err, "encode mturk criteria")
-	}
+	internalCriteria := model.InternalCriteriaFromInput(input.Template.InternalCriteria)
+	mturkCriteria := model.MturkCriteriaFromInput(input.Template.MturkCriteria)
 
 	tx, err := r.Store.Tx(ctx)
 	if err != nil {
@@ -334,14 +328,8 @@ func (r *mutationResolver) CreateRun(ctx context.Context, input *model.CreateRun
 
 	creator := adminU.ForContext(ctx)
 
-	internalCriteria, err := json.Marshal(input.Template.InternalCriteria)
-	if err != nil {
-		return nil, errs.Wrap(err, "encode internal criteria")
-	}
-	mturkCriteria, err := json.Marshal(input.Template.MturkCriteria)
-	if err != nil {
-		return nil, errs.Wrap(err, "encode mturk criteria")
-	}
+	internalCriteria := model.InternalCriteriaFromInput(input.Template.InternalCriteria)
+	mturkCriteria := model.MturkCriteriaFromInput(input.Template.MturkCriteria)
 
 	template, err := tx.Template.Create().
 		SetID(xid.New().String()).

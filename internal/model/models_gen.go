@@ -7,8 +7,6 @@ import (
 	"io"
 	"strconv"
 	"time"
-
-	"github.com/empiricaly/recruitment/internal/ent"
 )
 
 // User is either an Admin or a Participant.
@@ -460,36 +458,6 @@ type Page struct {
 	Content *string `json:"content"`
 	// The rendered for the content to display.
 	ContentType ContentType `json:"contentType"`
-}
-
-type PageInfo struct {
-	StartCursor string `json:"startCursor"`
-	EndCursor   string `json:"endCursor"`
-	HasNextPage bool   `json:"hasNextPage"`
-}
-
-type ParticipantsConnection struct {
-	TotalCount   int                 `json:"totalCount"`
-	Edges        []*ParticipantsEdge `json:"edges"`
-	Participants []*ent.Participant  `json:"participants"`
-	PageInfo     *PageInfo           `json:"pageInfo"`
-}
-
-type ParticipantsEdge struct {
-	Cursor string           `json:"cursor"`
-	Node   *ent.Participant `json:"node"`
-}
-
-type ParticipationsConnection struct {
-	TotalCount     int                   `json:"totalCount"`
-	Edges          []*ParticipationsEdge `json:"edges"`
-	Participations []*ent.Participation  `json:"participations"`
-	PageInfo       *PageInfo             `json:"pageInfo"`
-}
-
-type ParticipationsEdge struct {
-	Cursor string             `json:"cursor"`
-	Node   *ent.Participation `json:"node"`
 }
 
 type ScheduleRunInput struct {

@@ -18,6 +18,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/model"
 
 	"github.com/facebook/ent"
 )
@@ -7568,8 +7569,8 @@ type TemplateMutation struct {
 	selectionType       *template.SelectionType
 	participantCount    *int
 	addparticipantCount *int
-	internalCriteria    *[]byte
-	mturkCriteria       *[]byte
+	internalCriteria    **model.InternalCriteria
+	mturkCriteria       **model.MTurkCriteria
 	adult               *bool
 	sandbox             *bool
 	clearedFields       map[string]struct{}
@@ -7877,12 +7878,12 @@ func (m *TemplateMutation) ResetParticipantCount() {
 }
 
 // SetInternalCriteria sets the internalCriteria field.
-func (m *TemplateMutation) SetInternalCriteria(b []byte) {
-	m.internalCriteria = &b
+func (m *TemplateMutation) SetInternalCriteria(mc *model.InternalCriteria) {
+	m.internalCriteria = &mc
 }
 
 // InternalCriteria returns the internalCriteria value in the mutation.
-func (m *TemplateMutation) InternalCriteria() (r []byte, exists bool) {
+func (m *TemplateMutation) InternalCriteria() (r *model.InternalCriteria, exists bool) {
 	v := m.internalCriteria
 	if v == nil {
 		return
@@ -7894,7 +7895,7 @@ func (m *TemplateMutation) InternalCriteria() (r []byte, exists bool) {
 // If the Template object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *TemplateMutation) OldInternalCriteria(ctx context.Context) (v []byte, err error) {
+func (m *TemplateMutation) OldInternalCriteria(ctx context.Context) (v *model.InternalCriteria, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldInternalCriteria is allowed only on UpdateOne operations")
 	}
@@ -7914,12 +7915,12 @@ func (m *TemplateMutation) ResetInternalCriteria() {
 }
 
 // SetMturkCriteria sets the mturkCriteria field.
-func (m *TemplateMutation) SetMturkCriteria(b []byte) {
-	m.mturkCriteria = &b
+func (m *TemplateMutation) SetMturkCriteria(mtc *model.MTurkCriteria) {
+	m.mturkCriteria = &mtc
 }
 
 // MturkCriteria returns the mturkCriteria value in the mutation.
-func (m *TemplateMutation) MturkCriteria() (r []byte, exists bool) {
+func (m *TemplateMutation) MturkCriteria() (r *model.MTurkCriteria, exists bool) {
 	v := m.mturkCriteria
 	if v == nil {
 		return
@@ -7931,7 +7932,7 @@ func (m *TemplateMutation) MturkCriteria() (r []byte, exists bool) {
 // If the Template object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *TemplateMutation) OldMturkCriteria(ctx context.Context) (v []byte, err error) {
+func (m *TemplateMutation) OldMturkCriteria(ctx context.Context) (v *model.MTurkCriteria, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldMturkCriteria is allowed only on UpdateOne operations")
 	}
@@ -8334,14 +8335,14 @@ func (m *TemplateMutation) SetField(name string, value ent.Value) error {
 		m.SetParticipantCount(v)
 		return nil
 	case template.FieldInternalCriteria:
-		v, ok := value.([]byte)
+		v, ok := value.(*model.InternalCriteria)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetInternalCriteria(v)
 		return nil
 	case template.FieldMturkCriteria:
-		v, ok := value.([]byte)
+		v, ok := value.(*model.MTurkCriteria)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

@@ -218,7 +218,7 @@ type StepRun {
   Participant Participations in this Step. Participations can increase while the
   Step is on going.
   """
-  participations(first: Int, after: ID): ParticipationsConnection! @goField(forceResolver: true)
+  participations(first: Int, after: ID): [Participation!]! @goField(forceResolver: true)
 
   """
   Number of Participants in this Step.
@@ -296,12 +296,12 @@ type Template {
   """
   Selection criteria for internal DB participants.
   """
-  internalCriteria: InternalCriteria @goField(forceResolver: true)
+  internalCriteria: InternalCriteria
 
   """
   Selection criteria for internal DB participants.
   """
-  mturkCriteria: MTurkCriteria @goField(forceResolver: true)
+  mturkCriteria: MTurkCriteria
 
   """
   Ordered list of Steps in a Template.

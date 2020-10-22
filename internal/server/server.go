@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"math/rand"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/empiricaly/recruitment/internal/admin"
 	logger "github.com/empiricaly/recruitment/internal/log"
@@ -32,8 +34,14 @@ type Server struct {
 	wg           sync.WaitGroup
 }
 
+var initRand sync.Once
+
 // Run starts the server with the given configuration
 func Run(ctx context.Context, config *Config) (err error) {
+	initRand.Do(func() {
+		rand.Seed(time.Now().UnixNano())
+	})
+
 	s := Server{
 		ctx:    ctx,
 		config: config,

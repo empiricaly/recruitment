@@ -44,9 +44,7 @@ type ResolverRoot interface {
 	MessageStepArgs() MessageStepArgsResolver
 	Mutation() MutationResolver
 	Participant() ParticipantResolver
-	ParticipantsConnection() ParticipantsConnectionResolver
 	Participation() ParticipationResolver
-	ParticipationsConnection() ParticipationsConnectionResolver
 	Project() ProjectResolver
 	ProviderID() ProviderIDResolver
 	Query() QueryResolver
@@ -180,12 +178,6 @@ type ComplexityRoot struct {
 		Redirect    func(childComplexity int) int
 	}
 
-	PageInfo struct {
-		EndCursor   func(childComplexity int) int
-		HasNextPage func(childComplexity int) int
-		StartCursor func(childComplexity int) int
-	}
-
 	Participant struct {
 		CreatedAt   func(childComplexity int) int
 		CreatedBy   func(childComplexity int) int
@@ -196,18 +188,6 @@ type ComplexityRoot struct {
 		UpdatedAt   func(childComplexity int) int
 	}
 
-	ParticipantsConnection struct {
-		Edges        func(childComplexity int) int
-		PageInfo     func(childComplexity int) int
-		Participants func(childComplexity int) int
-		TotalCount   func(childComplexity int) int
-	}
-
-	ParticipantsEdge struct {
-		Cursor func(childComplexity int) int
-		Node   func(childComplexity int) int
-	}
-
 	Participation struct {
 		MturkAcceptedAt   func(childComplexity int) int
 		MturkAssignmentID func(childComplexity int) int
@@ -216,18 +196,6 @@ type ComplexityRoot struct {
 		MturkWorkerID     func(childComplexity int) int
 		Participant       func(childComplexity int) int
 		Step              func(childComplexity int) int
-	}
-
-	ParticipationsConnection struct {
-		Edges          func(childComplexity int) int
-		PageInfo       func(childComplexity int) int
-		Participations func(childComplexity int) int
-		TotalCount     func(childComplexity int) int
-	}
-
-	ParticipationsEdge struct {
-		Cursor func(childComplexity int) int
-		Node   func(childComplexity int) int
 	}
 
 	Project struct {
@@ -352,15 +320,9 @@ type ParticipantResolver interface {
 	ProviderIDs(ctx context.Context, obj *ent.Participant) ([]*ent.ProviderID, error)
 	Data(ctx context.Context, obj *ent.Participant, keys []string, deleted *bool) ([]*ent.Datum, error)
 }
-type ParticipantsConnectionResolver interface {
-	Participants(ctx context.Context, obj *model.ParticipantsConnection) ([]*ent.Participant, error)
-}
 type ParticipationResolver interface {
 	Step(ctx context.Context, obj *ent.Participation) (*ent.StepRun, error)
 	Participant(ctx context.Context, obj *ent.Participation) (*ent.Participant, error)
-}
-type ParticipationsConnectionResolver interface {
-	Participations(ctx context.Context, obj *model.ParticipationsConnection) ([]*ent.Participation, error)
 }
 type ProjectResolver interface {
 	Creator(ctx context.Context, obj *ent.Project) (*ent.Admin, error)
@@ -375,7 +337,7 @@ type ProviderIDResolver interface {
 type QueryResolver interface {
 	Projects(ctx context.Context) ([]*ent.Project, error)
 	Project(ctx context.Context, id *string, projectID *string) (*ent.Project, error)
-	Participants(ctx context.Context, first *int, after *string) (*model.ParticipantsConnection, error)
+	Participants(ctx context.Context, first *int, after *string) ([]*ent.Participant, error)
 	Me(ctx context.Context) (model.User, error)
 	Page(ctx context.Context, token string, participantID string) (*model.Page, error)
 	MturkQualificationTypes(ctx context.Context, sandbox *bool) ([]*model.MTurkQulificationType, error)
@@ -405,7 +367,7 @@ type StepRunResolver interface {
 
 	Status(ctx context.Context, obj *ent.StepRun) (model.Status, error)
 
-	Participations(ctx context.Context, obj *ent.StepRun, first *int, after *string) (*model.ParticipationsConnection, error)
+	Participations(ctx context.Context, obj *ent.StepRun, first *int, after *string) ([]*ent.Participation, error)
 	ParticipantsCount(ctx context.Context, obj *ent.StepRun) (int, error)
 }
 type SubscriptionResolver interface {
@@ -415,8 +377,7 @@ type TemplateResolver interface {
 	Creator(ctx context.Context, obj *ent.Template) (*ent.Admin, error)
 
 	SelectionType(ctx context.Context, obj *ent.Template) (model.SelectionType, error)
-	InternalCriteria(ctx context.Context, obj *ent.Template) (*model.InternalCriteria, error)
-	MturkCriteria(ctx context.Context, obj *ent.Template) (*model.MTurkCriteria, error)
+
 	Steps(ctx context.Context, obj *ent.Template) ([]*ent.Step, error)
 }
 
@@ -1011,27 +972,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Page.Redirect(childComplexity), true
 
-	case "PageInfo.endCursor":
-		if e.complexity.PageInfo.EndCursor == nil {
-			break
-		}
-
-		return e.complexity.PageInfo.EndCursor(childComplexity), true
-
-	case "PageInfo.hasNextPage":
-		if e.complexity.PageInfo.HasNextPage == nil {
-			break
-		}
-
-		return e.complexity.PageInfo.HasNextPage(childComplexity), true
-
-	case "PageInfo.startCursor":
-		if e.complexity.PageInfo.StartCursor == nil {
-			break
-		}
-
-		return e.complexity.PageInfo.StartCursor(childComplexity), true
-
 	case "Participant.createdAt":
 		if e.complexity.Participant.CreatedAt == nil {
 			break
@@ -1086,48 +1026,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Participant.UpdatedAt(childComplexity), true
 
-	case "ParticipantsConnection.edges":
-		if e.complexity.ParticipantsConnection.Edges == nil {
-			break
-		}
-
-		return e.complexity.ParticipantsConnection.Edges(childComplexity), true
-
-	case "ParticipantsConnection.pageInfo":
-		if e.complexity.ParticipantsConnection.PageInfo == nil {
-			break
-		}
-
-		return e.complexity.ParticipantsConnection.PageInfo(childComplexity), true
-
-	case "ParticipantsConnection.participants":
-		if e.complexity.ParticipantsConnection.Participants == nil {
-			break
-		}
-
-		return e.complexity.ParticipantsConnection.Participants(childComplexity), true
-
-	case "ParticipantsConnection.totalCount":
-		if e.complexity.ParticipantsConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.ParticipantsConnection.TotalCount(childComplexity), true
-
-	case "ParticipantsEdge.cursor":
-		if e.complexity.ParticipantsEdge.Cursor == nil {
-			break
-		}
-
-		return e.complexity.ParticipantsEdge.Cursor(childComplexity), true
-
-	case "ParticipantsEdge.node":
-		if e.complexity.ParticipantsEdge.Node == nil {
-			break
-		}
-
-		return e.complexity.ParticipantsEdge.Node(childComplexity), true
-
 	case "Participation.mturkAcceptedAt":
 		if e.complexity.Participation.MturkAcceptedAt == nil {
 			break
@@ -1176,48 +1074,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Participation.Step(childComplexity), true
-
-	case "ParticipationsConnection.edges":
-		if e.complexity.ParticipationsConnection.Edges == nil {
-			break
-		}
-
-		return e.complexity.ParticipationsConnection.Edges(childComplexity), true
-
-	case "ParticipationsConnection.pageInfo":
-		if e.complexity.ParticipationsConnection.PageInfo == nil {
-			break
-		}
-
-		return e.complexity.ParticipationsConnection.PageInfo(childComplexity), true
-
-	case "ParticipationsConnection.participations":
-		if e.complexity.ParticipationsConnection.Participations == nil {
-			break
-		}
-
-		return e.complexity.ParticipationsConnection.Participations(childComplexity), true
-
-	case "ParticipationsConnection.totalCount":
-		if e.complexity.ParticipationsConnection.TotalCount == nil {
-			break
-		}
-
-		return e.complexity.ParticipationsConnection.TotalCount(childComplexity), true
-
-	case "ParticipationsEdge.cursor":
-		if e.complexity.ParticipationsEdge.Cursor == nil {
-			break
-		}
-
-		return e.complexity.ParticipationsEdge.Cursor(childComplexity), true
-
-	case "ParticipationsEdge.node":
-		if e.complexity.ParticipationsEdge.Node == nil {
-			break
-		}
-
-		return e.complexity.ParticipationsEdge.Node(childComplexity), true
 
 	case "Project.createdAt":
 		if e.complexity.Project.CreatedAt == nil {
@@ -2027,7 +1883,7 @@ type StepRun {
   Participant Participations in this Step. Participations can increase while the
   Step is on going.
   """
-  participations(first: Int, after: ID): ParticipationsConnection! @goField(forceResolver: true)
+  participations(first: Int, after: ID): [Participation!]! @goField(forceResolver: true)
 
   """
   Number of Participants in this Step.
@@ -2105,12 +1961,12 @@ type Template {
   """
   Selection criteria for internal DB participants.
   """
-  internalCriteria: InternalCriteria @goField(forceResolver: true)
+  internalCriteria: InternalCriteria
 
   """
   Selection criteria for internal DB participants.
   """
-  mturkCriteria: MTurkCriteria @goField(forceResolver: true)
+  mturkCriteria: MTurkCriteria
 
   """
   Ordered list of Steps in a Template.
@@ -3284,36 +3140,6 @@ type Page {
   contentType: ContentType!
 }
 
-type PageInfo {
-  startCursor: ID!
-  endCursor: ID!
-  hasNextPage: Boolean!
-}
-
-type ParticipationsConnection {
-  totalCount: Int!
-  edges: [ParticipationsEdge!]
-  participations: [Participation!]! @goField(forceResolver: true)
-  pageInfo: PageInfo!
-}
-
-type ParticipationsEdge {
-  cursor: ID!
-  node: Participation
-}
-
-type ParticipantsConnection {
-  totalCount: Int!
-  edges: [ParticipantsEdge!]
-  participants: [Participant!]! @goField(forceResolver: true)
-  pageInfo: PageInfo!
-}
-
-type ParticipantsEdge {
-  cursor: ID!
-  node: Participant
-}
-
 type Query {
   """
   Projects returns all projects.
@@ -3328,7 +3154,7 @@ type Query {
   """
   Participants returns all participants in DB.
   """
-  participants(first: Int, after: ID): ParticipantsConnection! @hasRole(role: ADMIN)
+  participants(first: Int, after: ID): [Participant!]! @hasRole(role: ADMIN)
 
   """
   me returns the current Admin or Participant, depending on whether the user is
@@ -6620,111 +6446,6 @@ func (ec *executionContext) _Page_contentType(ctx context.Context, field graphql
 	return ec.marshalNContentType2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐContentType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PageInfo",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.StartCursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PageInfo",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.EndCursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PageInfo",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.HasNextPage, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Participant_id(ctx context.Context, field graphql.CollectedField, obj *ent.Participant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -6974,210 +6695,6 @@ func (ec *executionContext) _Participant_data(ctx context.Context, field graphql
 	return ec.marshalNDatum2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐDatumᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ParticipantsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.ParticipantsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ParticipantsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ParticipantsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.ParticipantsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ParticipantsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.ParticipantsEdge)
-	fc.Result = res
-	return ec.marshalOParticipantsEdge2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantsEdgeᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ParticipantsConnection_participants(ctx context.Context, field graphql.CollectedField, obj *model.ParticipantsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ParticipantsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ParticipantsConnection().Participants(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.Participant)
-	fc.Result = res
-	return ec.marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipantᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ParticipantsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.ParticipantsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ParticipantsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.PageInfo)
-	fc.Result = res
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPageInfo(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ParticipantsEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.ParticipantsEdge) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ParticipantsEdge",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ParticipantsEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.ParticipantsEdge) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ParticipantsEdge",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Participant)
-	fc.Result = res
-	return ec.marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Participation_step(ctx context.Context, field graphql.CollectedField, obj *ent.Participation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7406,210 +6923,6 @@ func (ec *executionContext) _Participation_mturkSubmittedAt(ctx context.Context,
 	res := resTmp.(time.Time)
 	fc.Result = res
 	return ec.marshalODateTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ParticipationsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.ParticipationsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ParticipationsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ParticipationsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.ParticipationsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ParticipationsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Edges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*model.ParticipationsEdge)
-	fc.Result = res
-	return ec.marshalOParticipationsEdge2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsEdgeᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ParticipationsConnection_participations(ctx context.Context, field graphql.CollectedField, obj *model.ParticipationsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ParticipationsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ParticipationsConnection().Participations(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*ent.Participation)
-	fc.Result = res
-	return ec.marshalNParticipation2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipationᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ParticipationsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.ParticipationsConnection) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ParticipationsConnection",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.PageInfo)
-	fc.Result = res
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPageInfo(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ParticipationsEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.ParticipationsEdge) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ParticipationsEdge",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ParticipationsEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.ParticipationsEdge) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ParticipationsEdge",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Node, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*ent.Participation)
-	fc.Result = res
-	return ec.marshalOParticipation2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipation(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Project_id(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
@@ -8169,10 +7482,10 @@ func (ec *executionContext) _Query_participants(ctx context.Context, field graph
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*model.ParticipantsConnection); ok {
+		if data, ok := tmp.([]*ent.Participant); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/empiricaly/recruitment/internal/model.ParticipantsConnection`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/empiricaly/recruitment/internal/ent.Participant`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8184,9 +7497,9 @@ func (ec *executionContext) _Query_participants(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ParticipantsConnection)
+	res := resTmp.([]*ent.Participant)
 	fc.Result = res
-	return ec.marshalNParticipantsConnection2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantsConnection(ctx, field.Selections, res)
+	return ec.marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipantᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -9545,9 +8858,9 @@ func (ec *executionContext) _StepRun_participations(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ParticipationsConnection)
+	res := resTmp.([]*ent.Participation)
 	fc.Result = res
-	return ec.marshalNParticipationsConnection2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsConnection(ctx, field.Selections, res)
+	return ec.marshalNParticipation2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipationᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _StepRun_participantsCount(ctx context.Context, field graphql.CollectedField, obj *ent.StepRun) (ret graphql.Marshaler) {
@@ -9848,14 +9161,14 @@ func (ec *executionContext) _Template_internalCriteria(ctx context.Context, fiel
 		Object:     "Template",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Template().InternalCriteria(rctx, obj)
+		return obj.InternalCriteria, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9880,14 +9193,14 @@ func (ec *executionContext) _Template_mturkCriteria(ctx context.Context, field g
 		Object:     "Template",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Template().MturkCriteria(rctx, obj)
+		return obj.MturkCriteria, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12725,43 +12038,6 @@ func (ec *executionContext) _Page(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
-var pageInfoImplementors = []string{"PageInfo"}
-
-func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *model.PageInfo) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, pageInfoImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PageInfo")
-		case "startCursor":
-			out.Values[i] = ec._PageInfo_startCursor(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "endCursor":
-			out.Values[i] = ec._PageInfo_endCursor(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "hasNextPage":
-			out.Values[i] = ec._PageInfo_hasNextPage(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var participantImplementors = []string{"Participant", "User"}
 
 func (ec *executionContext) _Participant(ctx context.Context, sel ast.SelectionSet, obj *ent.Participant) graphql.Marshaler {
@@ -12852,83 +12128,6 @@ func (ec *executionContext) _Participant(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var participantsConnectionImplementors = []string{"ParticipantsConnection"}
-
-func (ec *executionContext) _ParticipantsConnection(ctx context.Context, sel ast.SelectionSet, obj *model.ParticipantsConnection) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, participantsConnectionImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ParticipantsConnection")
-		case "totalCount":
-			out.Values[i] = ec._ParticipantsConnection_totalCount(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "edges":
-			out.Values[i] = ec._ParticipantsConnection_edges(ctx, field, obj)
-		case "participants":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ParticipantsConnection_participants(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "pageInfo":
-			out.Values[i] = ec._ParticipantsConnection_pageInfo(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var participantsEdgeImplementors = []string{"ParticipantsEdge"}
-
-func (ec *executionContext) _ParticipantsEdge(ctx context.Context, sel ast.SelectionSet, obj *model.ParticipantsEdge) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, participantsEdgeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ParticipantsEdge")
-		case "cursor":
-			out.Values[i] = ec._ParticipantsEdge_cursor(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "node":
-			out.Values[i] = ec._ParticipantsEdge_node(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var participationImplementors = []string{"Participation"}
 
 func (ec *executionContext) _Participation(ctx context.Context, sel ast.SelectionSet, obj *ent.Participation) graphql.Marshaler {
@@ -12978,83 +12177,6 @@ func (ec *executionContext) _Participation(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._Participation_mturkAcceptedAt(ctx, field, obj)
 		case "mturkSubmittedAt":
 			out.Values[i] = ec._Participation_mturkSubmittedAt(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var participationsConnectionImplementors = []string{"ParticipationsConnection"}
-
-func (ec *executionContext) _ParticipationsConnection(ctx context.Context, sel ast.SelectionSet, obj *model.ParticipationsConnection) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, participationsConnectionImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ParticipationsConnection")
-		case "totalCount":
-			out.Values[i] = ec._ParticipationsConnection_totalCount(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "edges":
-			out.Values[i] = ec._ParticipationsConnection_edges(ctx, field, obj)
-		case "participations":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ParticipationsConnection_participations(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "pageInfo":
-			out.Values[i] = ec._ParticipationsConnection_pageInfo(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var participationsEdgeImplementors = []string{"ParticipationsEdge"}
-
-func (ec *executionContext) _ParticipationsEdge(ctx context.Context, sel ast.SelectionSet, obj *model.ParticipationsEdge) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, participationsEdgeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ParticipationsEdge")
-		case "cursor":
-			out.Values[i] = ec._ParticipationsEdge_cursor(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "node":
-			out.Values[i] = ec._ParticipationsEdge_node(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13750,27 +12872,9 @@ func (ec *executionContext) _Template(ctx context.Context, sel ast.SelectionSet,
 				return res
 			})
 		case "internalCriteria":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Template_internalCriteria(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Template_internalCriteria(ctx, field, obj)
 		case "mturkCriteria":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Template_mturkCriteria(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Template_mturkCriteria(ctx, field, obj)
 		case "steps":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -14444,16 +13548,6 @@ func (ec *executionContext) marshalNPage2ᚖgithubᚗcomᚋempiricalyᚋrecruitm
 	return ec._Page(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._PageInfo(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNParticipant2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx context.Context, sel ast.SelectionSet, v ent.Participant) graphql.Marshaler {
 	return ec._Participant(ctx, sel, &v)
 }
@@ -14515,30 +13609,6 @@ func (ec *executionContext) marshalNParticipantFilterType2githubᚗcomᚋempiric
 	return v
 }
 
-func (ec *executionContext) marshalNParticipantsConnection2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantsConnection(ctx context.Context, sel ast.SelectionSet, v model.ParticipantsConnection) graphql.Marshaler {
-	return ec._ParticipantsConnection(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNParticipantsConnection2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantsConnection(ctx context.Context, sel ast.SelectionSet, v *model.ParticipantsConnection) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._ParticipantsConnection(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNParticipantsEdge2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantsEdge(ctx context.Context, sel ast.SelectionSet, v *model.ParticipantsEdge) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._ParticipantsEdge(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNParticipation2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipationᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Participation) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -14584,30 +13654,6 @@ func (ec *executionContext) marshalNParticipation2ᚖgithubᚗcomᚋempiricaly�
 		return graphql.Null
 	}
 	return ec._Participation(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNParticipationsConnection2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsConnection(ctx context.Context, sel ast.SelectionSet, v model.ParticipationsConnection) graphql.Marshaler {
-	return ec._ParticipationsConnection(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNParticipationsConnection2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsConnection(ctx context.Context, sel ast.SelectionSet, v *model.ParticipationsConnection) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._ParticipationsConnection(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNParticipationsEdge2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsEdge(ctx context.Context, sel ast.SelectionSet, v *model.ParticipationsEdge) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._ParticipationsEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNProject2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v ent.Project) graphql.Marshaler {
@@ -15806,100 +14852,6 @@ func (ec *executionContext) marshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecr
 		return graphql.Null
 	}
 	return v
-}
-
-func (ec *executionContext) marshalOParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipant(ctx context.Context, sel ast.SelectionSet, v *ent.Participant) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Participant(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOParticipantsEdge2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantsEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ParticipantsEdge) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNParticipantsEdge2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantsEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalOParticipation2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipation(ctx context.Context, sel ast.SelectionSet, v *ent.Participation) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Participation(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOParticipationsEdge2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ParticipationsEdge) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNParticipationsEdge2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipationsEdge(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
 }
 
 func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐProject(ctx context.Context, sel ast.SelectionSet, v *ent.Project) graphql.Marshaler {

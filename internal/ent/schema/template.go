@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/facebook/ent"
 	"github.com/facebook/ent/schema/edge"
 	"github.com/facebook/ent/schema/field"
@@ -24,8 +25,8 @@ func (Template) Fields() []ent.Field {
 		field.String("name").MaxLen(255).MinLen(1),
 		field.Enum("selectionType").Values("INTERNAL_DB", "MTURK_QUALIFICATIONS"),
 		field.Int("participantCount").NonNegative().Default(0),
-		field.Bytes("internalCriteria"),
-		field.Bytes("mturkCriteria"),
+		field.JSON("internalCriteria", &model.InternalCriteria{}),
+		field.JSON("mturkCriteria", &model.MTurkCriteria{}),
 		field.Bool("adult").Default(false),
 		field.Bool("sandbox").Default(false),
 	}
