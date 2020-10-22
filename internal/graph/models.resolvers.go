@@ -65,6 +65,8 @@ func (r *participantResolver) Data(ctx context.Context, obj *ent.Participant, ke
 
 	if deleted != nil && *deleted {
 		predicates = append(predicates, datum.DeletedAtNotNil())
+	} else {
+		predicates = append(predicates, datum.DeletedAtIsNil())
 	}
 
 	if keys != nil {

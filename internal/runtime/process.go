@@ -11,6 +11,7 @@ import (
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	steprunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
 	templateModel "github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/pkg/errors"
 	"github.com/rs/xid"
 	"github.com/rs/zerolog/log"
@@ -37,7 +38,8 @@ func (r *runState) startRun(ctx context.Context, startTime time.Time) error {
 			}
 
 			if i == 0 && r.template.SelectionType == templateModel.SelectionTypeINTERNAL_DB {
-				participants, err := r.filterParticipants(ctx, tx, r.template.ParticipantCount)
+				c := r.template.InternalCriteria
+				participants, err := r.filterParticipants(ctx, tx, r.template.ParticipantCount, c.All, c.Condition)
 				if err != nil {
 					return errors.Wrap(err, "filter participants")
 				}
@@ -189,10 +191,26 @@ func (r *runState) endRun(ctx context.Context, endTime time.Time) error {
 	return r.refresh()
 }
 
-func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int) ([]*ent.Participant, error) {
+func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int, useAll bool, condition *model.Condition) ([]*ent.Participant, error) {
 	participants, err := tx.Participant.Query().All(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "find participants")
+	}
+
+	if !useAll {
+		n := 0
+		for _, participant := range participants {
+			matches, err := participant.MatchCondition(ctx, condition)
+			if err != nil {
+				log.Debug().Err(err).Msg("match participant filter condition")
+				continue
+			}
+			if matches {
+				participants[n] = participant
+				n++
+			}
+		}
+		participants = participants[:n]
 	}
 
 	// TODO should filter participants here
