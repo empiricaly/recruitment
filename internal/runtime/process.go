@@ -69,7 +69,6 @@ func (r *runState) startRun(ctx context.Context, startTime time.Time) error {
 	}
 
 	return r.setNextStep()
-
 }
 
 func (r *runState) advanceSteps(ctx context.Context, at time.Time) error {
