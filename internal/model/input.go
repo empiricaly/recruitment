@@ -1,5 +1,71 @@
 package model
 
+func FilterArgsFromInput(criti *FilterStepArgsInput) *FilterStepArgs {
+	args := &FilterStepArgs{}
+	args.Condition = ConditionFromInput(criti.Condition)
+	args.Filter = criti.Filter
+	args.Js = args.Js
+	args.Type = args.Type
+
+	return args
+}
+
+func MsgArgsFromInput(criti *MessageStepArgsInput) *MessageStepArgs {
+	args := &MessageStepArgs{}
+	args.Subject = criti.Subject
+	args.URL = criti.URL
+
+	if criti.Message != nil {
+		args.Message = *criti.Message
+	}
+
+	if criti.MessageType != nil {
+		args.MessageType = *criti.MessageType
+	}
+
+	args.Lobby = criti.Lobby
+	args.LobbyType = criti.LobbyType
+	args.LobbyExpiration = criti.LobbyExpiration
+
+	return args
+}
+
+func HITStepArgsFromInput(criti *HITStepArgsInput) *HITStepArgs {
+	args := &HITStepArgs{}
+
+	if criti.Title != nil {
+		args.Title = *criti.Title
+	}
+
+	if criti.Description != nil {
+		args.Description = *criti.Description
+	}
+
+	if criti.Keywords != nil {
+		args.Keywords = *criti.Keywords
+	}
+
+	if criti.Microbatch != nil {
+		args.Microbatch = *criti.Microbatch
+	}
+
+	if criti.Reward != nil {
+		args.Reward = *criti.Reward
+	}
+
+	if criti.Timeout != nil {
+		args.Timeout = *criti.Timeout
+	}
+
+	args.Duration = criti.Duration
+
+	if criti.WorkersCount != nil {
+		args.WorkersCount = *criti.WorkersCount
+	}
+
+	return args
+}
+
 func MturkCriteriaFromInput(criti *MTurkCriteriaInput) *MTurkCriteria {
 	crit := &MTurkCriteria{}
 	if len(crit.Qualifications) > 0 {

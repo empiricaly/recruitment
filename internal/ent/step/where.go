@@ -121,27 +121,6 @@ func Duration(v int) predicate.Step {
 	})
 }
 
-// MsgArgs applies equality check predicate on the "msgArgs" field. It's identical to MsgArgsEQ.
-func MsgArgs(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldMsgArgs), v))
-	})
-}
-
-// HitArgs applies equality check predicate on the "hitArgs" field. It's identical to HitArgsEQ.
-func HitArgs(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldHitArgs), v))
-	})
-}
-
-// FilterArgs applies equality check predicate on the "filterArgs" field. It's identical to FilterArgsEQ.
-func FilterArgs(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldFilterArgs), v))
-	})
-}
-
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Step {
 	return predicate.Step(func(s *sql.Selector) {
@@ -494,82 +473,6 @@ func DurationLTE(v int) predicate.Step {
 	})
 }
 
-// MsgArgsEQ applies the EQ predicate on the "msgArgs" field.
-func MsgArgsEQ(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldMsgArgs), v))
-	})
-}
-
-// MsgArgsNEQ applies the NEQ predicate on the "msgArgs" field.
-func MsgArgsNEQ(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldMsgArgs), v))
-	})
-}
-
-// MsgArgsIn applies the In predicate on the "msgArgs" field.
-func MsgArgsIn(vs ...[]byte) predicate.Step {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Step(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.In(s.C(FieldMsgArgs), v...))
-	})
-}
-
-// MsgArgsNotIn applies the NotIn predicate on the "msgArgs" field.
-func MsgArgsNotIn(vs ...[]byte) predicate.Step {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Step(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.NotIn(s.C(FieldMsgArgs), v...))
-	})
-}
-
-// MsgArgsGT applies the GT predicate on the "msgArgs" field.
-func MsgArgsGT(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldMsgArgs), v))
-	})
-}
-
-// MsgArgsGTE applies the GTE predicate on the "msgArgs" field.
-func MsgArgsGTE(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldMsgArgs), v))
-	})
-}
-
-// MsgArgsLT applies the LT predicate on the "msgArgs" field.
-func MsgArgsLT(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldMsgArgs), v))
-	})
-}
-
-// MsgArgsLTE applies the LTE predicate on the "msgArgs" field.
-func MsgArgsLTE(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldMsgArgs), v))
-	})
-}
-
 // MsgArgsIsNil applies the IsNil predicate on the "msgArgs" field.
 func MsgArgsIsNil() predicate.Step {
 	return predicate.Step(func(s *sql.Selector) {
@@ -584,82 +487,6 @@ func MsgArgsNotNil() predicate.Step {
 	})
 }
 
-// HitArgsEQ applies the EQ predicate on the "hitArgs" field.
-func HitArgsEQ(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldHitArgs), v))
-	})
-}
-
-// HitArgsNEQ applies the NEQ predicate on the "hitArgs" field.
-func HitArgsNEQ(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldHitArgs), v))
-	})
-}
-
-// HitArgsIn applies the In predicate on the "hitArgs" field.
-func HitArgsIn(vs ...[]byte) predicate.Step {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Step(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.In(s.C(FieldHitArgs), v...))
-	})
-}
-
-// HitArgsNotIn applies the NotIn predicate on the "hitArgs" field.
-func HitArgsNotIn(vs ...[]byte) predicate.Step {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Step(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.NotIn(s.C(FieldHitArgs), v...))
-	})
-}
-
-// HitArgsGT applies the GT predicate on the "hitArgs" field.
-func HitArgsGT(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldHitArgs), v))
-	})
-}
-
-// HitArgsGTE applies the GTE predicate on the "hitArgs" field.
-func HitArgsGTE(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldHitArgs), v))
-	})
-}
-
-// HitArgsLT applies the LT predicate on the "hitArgs" field.
-func HitArgsLT(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldHitArgs), v))
-	})
-}
-
-// HitArgsLTE applies the LTE predicate on the "hitArgs" field.
-func HitArgsLTE(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldHitArgs), v))
-	})
-}
-
 // HitArgsIsNil applies the IsNil predicate on the "hitArgs" field.
 func HitArgsIsNil() predicate.Step {
 	return predicate.Step(func(s *sql.Selector) {
@@ -671,82 +498,6 @@ func HitArgsIsNil() predicate.Step {
 func HitArgsNotNil() predicate.Step {
 	return predicate.Step(func(s *sql.Selector) {
 		s.Where(sql.NotNull(s.C(FieldHitArgs)))
-	})
-}
-
-// FilterArgsEQ applies the EQ predicate on the "filterArgs" field.
-func FilterArgsEQ(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldFilterArgs), v))
-	})
-}
-
-// FilterArgsNEQ applies the NEQ predicate on the "filterArgs" field.
-func FilterArgsNEQ(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldFilterArgs), v))
-	})
-}
-
-// FilterArgsIn applies the In predicate on the "filterArgs" field.
-func FilterArgsIn(vs ...[]byte) predicate.Step {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Step(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.In(s.C(FieldFilterArgs), v...))
-	})
-}
-
-// FilterArgsNotIn applies the NotIn predicate on the "filterArgs" field.
-func FilterArgsNotIn(vs ...[]byte) predicate.Step {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Step(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.NotIn(s.C(FieldFilterArgs), v...))
-	})
-}
-
-// FilterArgsGT applies the GT predicate on the "filterArgs" field.
-func FilterArgsGT(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldFilterArgs), v))
-	})
-}
-
-// FilterArgsGTE applies the GTE predicate on the "filterArgs" field.
-func FilterArgsGTE(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldFilterArgs), v))
-	})
-}
-
-// FilterArgsLT applies the LT predicate on the "filterArgs" field.
-func FilterArgsLT(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldFilterArgs), v))
-	})
-}
-
-// FilterArgsLTE applies the LTE predicate on the "filterArgs" field.
-func FilterArgsLTE(v []byte) predicate.Step {
-	return predicate.Step(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldFilterArgs), v))
 	})
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
 )
@@ -69,20 +70,20 @@ func (sc *StepCreate) SetDuration(i int) *StepCreate {
 }
 
 // SetMsgArgs sets the msgArgs field.
-func (sc *StepCreate) SetMsgArgs(b []byte) *StepCreate {
-	sc.mutation.SetMsgArgs(b)
+func (sc *StepCreate) SetMsgArgs(msa *model.MessageStepArgs) *StepCreate {
+	sc.mutation.SetMsgArgs(msa)
 	return sc
 }
 
 // SetHitArgs sets the hitArgs field.
-func (sc *StepCreate) SetHitArgs(b []byte) *StepCreate {
-	sc.mutation.SetHitArgs(b)
+func (sc *StepCreate) SetHitArgs(msa *model.HITStepArgs) *StepCreate {
+	sc.mutation.SetHitArgs(msa)
 	return sc
 }
 
 // SetFilterArgs sets the filterArgs field.
-func (sc *StepCreate) SetFilterArgs(b []byte) *StepCreate {
-	sc.mutation.SetFilterArgs(b)
+func (sc *StepCreate) SetFilterArgs(msa *model.FilterStepArgs) *StepCreate {
+	sc.mutation.SetFilterArgs(msa)
 	return sc
 }
 
@@ -290,7 +291,7 @@ func (sc *StepCreate) createSpec() (*Step, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := sc.mutation.MsgArgs(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: step.FieldMsgArgs,
 		})
@@ -298,7 +299,7 @@ func (sc *StepCreate) createSpec() (*Step, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := sc.mutation.HitArgs(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: step.FieldHitArgs,
 		})
@@ -306,7 +307,7 @@ func (sc *StepCreate) createSpec() (*Step, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := sc.mutation.FilterArgs(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: step.FieldFilterArgs,
 		})

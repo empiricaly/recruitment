@@ -201,9 +201,9 @@ var (
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"MTURK_HIT", "MTURK_MESSAGE", "PARTICIPANT_FILTER"}},
 		{Name: "index", Type: field.TypeInt},
 		{Name: "duration", Type: field.TypeInt},
-		{Name: "msg_args", Type: field.TypeBytes, Nullable: true},
-		{Name: "hit_args", Type: field.TypeBytes, Nullable: true},
-		{Name: "filter_args", Type: field.TypeBytes, Nullable: true},
+		{Name: "msg_args", Type: field.TypeJSON, Nullable: true},
+		{Name: "hit_args", Type: field.TypeJSON, Nullable: true},
+		{Name: "filter_args", Type: field.TypeJSON, Nullable: true},
 		{Name: "step_run_step", Type: field.TypeString, Unique: true, Nullable: true, Size: 20},
 		{Name: "template_steps", Type: field.TypeString, Nullable: true, Size: 20},
 	}

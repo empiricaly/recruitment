@@ -2,7 +2,6 @@ package mturk
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"time"
@@ -12,7 +11,6 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	templateModel "github.com/empiricaly/recruitment/internal/ent/template"
-	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/pkg/errors"
 	"github.com/rs/xid"
 	"github.com/rs/zerolog/log"
@@ -50,12 +48,6 @@ func (s *Session) RunStep(run *ent.Run, step *ent.Step, stepRun *ent.StepRun, st
 }
 
 func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *ent.StepRun, template *ent.Template, step *ent.Step, startTime time.Time) error {
-	hitArgs := &model.HITStepArgs{}
-	err := json.Unmarshal(step.HitArgs, hitArgs)
-	if err != nil {
-		return errors.Wrap(err, "unmarshal Step Hit args")
-	}
-
 	// rootURL is already tested from config options, should never fail to parse
 	addr, err := url.Parse(s.rootURL)
 	if err != nil {
@@ -140,13 +132,13 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 
 	params := &mturk.CreateHITInput{
 		Question:                    aws.String(question),
-		AssignmentDurationInSeconds: aws.Int64(int64(hitArgs.Duration)),
-		LifetimeInSeconds:           aws.Int64(int64(hitArgs.Duration)),
+		AssignmentDurationInSeconds: aws.Int64(int64(step.HitArgs.Duration)),
+		LifetimeInSeconds:           aws.Int64(int64(step.HitArgs.Duration)),
 		MaxAssignments:              aws.Int64(int64(assignmentCount)),
-		Title:                       aws.String(hitArgs.Title),
-		Description:                 aws.String(hitArgs.Description),
-		Keywords:                    aws.String(hitArgs.Keywords),
-		Reward:                      aws.String(fmt.Sprintf("%f", hitArgs.Reward)),
+		Title:                       aws.String(step.HitArgs.Title),
+		Description:                 aws.String(step.HitArgs.Description),
+		Keywords:                    aws.String(step.HitArgs.Keywords),
+		Reward:                      aws.String(fmt.Sprintf("%f", step.HitArgs.Reward)),
 		QualificationRequirements:   quals,
 		UniqueRequestToken:          aws.String(stepRun.ID),
 		AutoApprovalDelayInSeconds:  aws.Int64(30),
@@ -170,15 +162,9 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, run *ent.Run, stepRun
 		return errInvalidInitialMessageStep
 	}
 
-	msg := &model.MessageStepArgs{}
-	err := json.Unmarshal(step.MsgArgs, msg)
-	if err != nil {
-		return errors.Wrap(err, "unmarshal Step Hit args")
-	}
-
 	subject := "New Message"
-	if msg.Subject == nil {
-		subject = *msg.Subject
+	if step.MsgArgs.Subject == nil {
+		subject = *step.MsgArgs.Subject
 	}
 
 	participants, err := stepRun.QueryParticipants().All(ctx)
@@ -195,7 +181,7 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, run *ent.Run, stepRun
 		return errStepWithoutParticipants
 	}
 
-	return s.notifyWorkers(ctx, subject, msg.Message, workerIDs)
+	return s.notifyWorkers(ctx, subject, step.MsgArgs.Message, workerIDs)
 }
 
 // EndStep to end step based on stepType

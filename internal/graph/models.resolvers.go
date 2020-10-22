@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/empiricaly/recruitment/internal/ent"
@@ -140,24 +139,6 @@ func (r *stepResolver) Creator(ctx context.Context, obj *ent.Step) (*ent.Admin, 
 
 func (r *stepResolver) Type(ctx context.Context, obj *ent.Step) (model.StepType, error) {
 	return model.StepType(obj.Type.String()), nil
-}
-
-func (r *stepResolver) MsgArgs(ctx context.Context, obj *ent.Step) (*model.MessageStepArgs, error) {
-	args := &model.MessageStepArgs{}
-	err := json.Unmarshal(obj.MsgArgs, args)
-	return args, err
-}
-
-func (r *stepResolver) HitArgs(ctx context.Context, obj *ent.Step) (*model.HITStepArgs, error) {
-	args := &model.HITStepArgs{}
-	err := json.Unmarshal(obj.HitArgs, args)
-	return args, err
-}
-
-func (r *stepResolver) FilterArgs(ctx context.Context, obj *ent.Step) (*model.FilterStepArgs, error) {
-	args := &model.FilterStepArgs{}
-	err := json.Unmarshal(obj.FilterArgs, args)
-	return args, err
 }
 
 func (r *stepRunResolver) Creator(ctx context.Context, obj *ent.StepRun) (*ent.Admin, error) {

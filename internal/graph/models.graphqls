@@ -540,17 +540,17 @@ type Step {
   """
   Arguments for Message type Step.
   """
-  msgArgs: MessageStepArgs @goField(forceResolver: true)
+  msgArgs: MessageStepArgs
 
   """
   Arguments for HIT type Step.
   """
-  hitArgs: HITStepArgs @goField(forceResolver: true)
+  hitArgs: HITStepArgs
 
   """
   Arguments for Filter type Step.
   """
-  filterArgs: FilterStepArgs @goField(forceResolver: true)
+  filterArgs: FilterStepArgs
 }
 
 """

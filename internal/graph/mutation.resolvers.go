@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -162,20 +161,9 @@ func (r *mutationResolver) UpdateTemplate(ctx context.Context, input *model.Upda
 	steps, err := template.QuerySteps().All(ctx)
 	newSteps := make([]string, len(input.Template.Steps))
 	for _, step := range input.Template.Steps {
-		filterArgs, err := json.Marshal(step.FilterArgs)
-		if err != nil {
-			return nil, errs.Wrap(err, "encode filter args")
-		}
-
-		hitArgs, err := json.Marshal(step.HitArgs)
-		if err != nil {
-			return nil, errs.Wrap(err, "encode hit args")
-		}
-
-		msgArgs, err := json.Marshal(step.MsgArgs)
-		if err != nil {
-			return nil, errs.Wrap(err, "encode msg args")
-		}
+		hitArgs := model.HITStepArgsFromInput(step.HitArgs)
+		msgArgs := model.MsgArgsFromInput(step.MsgArgs)
+		filterArgs := model.FilterArgsFromInput(step.FilterArgs)
 
 		if step.ID != nil {
 			var found bool
@@ -404,50 +392,29 @@ func (r *mutationResolver) StartRun(ctx context.Context, input *model.StartRunIn
 
 	// Check steps
 	for i, step := range template.Edges.Steps {
-		hitArgs := &model.HITStepArgs{}
-		err = json.Unmarshal(step.HitArgs, hitArgs)
-		if err != nil {
-			err = errs.Wrap(err, "query validate: template")
-			return nil, err
-		}
-
-		msgArgs := &model.MessageStepArgs{}
-		err = json.Unmarshal(step.MsgArgs, msgArgs)
-		if err != nil {
-			err = errs.Wrap(err, "query validate: template")
-			return nil, err
-		}
-
-		filterArgs := &model.FilterStepArgs{}
-		err = json.Unmarshal(step.FilterArgs, filterArgs)
-		if err != nil {
-			err = errs.Wrap(err, "query validate: template")
-			return nil, err
-		}
-
 		switch step.Type {
 		case stepModel.TypeMTURK_HIT:
 			if step.Duration < 5 {
 				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_hit: duration cannot be less that 5 minutes, index: %v", i+1))
 			}
 
-			if len(hitArgs.Title) == 0 {
+			if len(step.HitArgs.Title) == 0 {
 				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_hit: tittle cannot be empty, index: %v", i+1))
 			}
 
-			if len(hitArgs.Description) == 0 {
+			if len(step.HitArgs.Description) == 0 {
 				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_hit: description cannot be empty, index: %v", i+1))
 			}
 
-			if len(hitArgs.Keywords) == 0 {
+			if len(step.HitArgs.Keywords) == 0 {
 				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_hit: keywords cannot be empty, index: %v", i+1))
 			}
 
-			if hitArgs.Reward <= 0 {
+			if step.HitArgs.Reward <= 0 {
 				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_hit: reward cannot be less than or equal to 0, index: %v", i+1))
 			}
 
-			if len(msgArgs.Message) == 0 {
+			if len(step.MsgArgs.Message) == 0 {
 				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_hit: message cannot be empty, index: %v", i+1))
 			}
 
@@ -457,11 +424,11 @@ func (r *mutationResolver) StartRun(ctx context.Context, input *model.StartRunIn
 				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_message: duration cannot be less that 0, index: %v", i+1))
 			}
 
-			if len(*msgArgs.Subject) == 0 {
+			if len(*step.MsgArgs.Subject) == 0 {
 				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_message: subject cannot be empty, index: %v", i+1))
 			}
 
-			if len(msgArgs.Message) == 0 {
+			if len(step.MsgArgs.Message) == 0 {
 				multiError = multierror.Append(multiError, fmt.Errorf("step_mturk_message: message cannot be empty, index: %v", i+1))
 			}
 

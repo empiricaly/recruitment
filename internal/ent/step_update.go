@@ -11,6 +11,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/facebook/ent/dialect/sql"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
 	"github.com/facebook/ent/schema/field"
@@ -69,8 +70,8 @@ func (su *StepUpdate) AddDuration(i int) *StepUpdate {
 }
 
 // SetMsgArgs sets the msgArgs field.
-func (su *StepUpdate) SetMsgArgs(b []byte) *StepUpdate {
-	su.mutation.SetMsgArgs(b)
+func (su *StepUpdate) SetMsgArgs(msa *model.MessageStepArgs) *StepUpdate {
+	su.mutation.SetMsgArgs(msa)
 	return su
 }
 
@@ -81,8 +82,8 @@ func (su *StepUpdate) ClearMsgArgs() *StepUpdate {
 }
 
 // SetHitArgs sets the hitArgs field.
-func (su *StepUpdate) SetHitArgs(b []byte) *StepUpdate {
-	su.mutation.SetHitArgs(b)
+func (su *StepUpdate) SetHitArgs(msa *model.HITStepArgs) *StepUpdate {
+	su.mutation.SetHitArgs(msa)
 	return su
 }
 
@@ -93,8 +94,8 @@ func (su *StepUpdate) ClearHitArgs() *StepUpdate {
 }
 
 // SetFilterArgs sets the filterArgs field.
-func (su *StepUpdate) SetFilterArgs(b []byte) *StepUpdate {
-	su.mutation.SetFilterArgs(b)
+func (su *StepUpdate) SetFilterArgs(msa *model.FilterStepArgs) *StepUpdate {
+	su.mutation.SetFilterArgs(msa)
 	return su
 }
 
@@ -297,40 +298,40 @@ func (su *StepUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := su.mutation.MsgArgs(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: step.FieldMsgArgs,
 		})
 	}
 	if su.mutation.MsgArgsCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Column: step.FieldMsgArgs,
 		})
 	}
 	if value, ok := su.mutation.HitArgs(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: step.FieldHitArgs,
 		})
 	}
 	if su.mutation.HitArgsCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Column: step.FieldHitArgs,
 		})
 	}
 	if value, ok := su.mutation.FilterArgs(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: step.FieldFilterArgs,
 		})
 	}
 	if su.mutation.FilterArgsCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Column: step.FieldFilterArgs,
 		})
 	}
@@ -461,8 +462,8 @@ func (suo *StepUpdateOne) AddDuration(i int) *StepUpdateOne {
 }
 
 // SetMsgArgs sets the msgArgs field.
-func (suo *StepUpdateOne) SetMsgArgs(b []byte) *StepUpdateOne {
-	suo.mutation.SetMsgArgs(b)
+func (suo *StepUpdateOne) SetMsgArgs(msa *model.MessageStepArgs) *StepUpdateOne {
+	suo.mutation.SetMsgArgs(msa)
 	return suo
 }
 
@@ -473,8 +474,8 @@ func (suo *StepUpdateOne) ClearMsgArgs() *StepUpdateOne {
 }
 
 // SetHitArgs sets the hitArgs field.
-func (suo *StepUpdateOne) SetHitArgs(b []byte) *StepUpdateOne {
-	suo.mutation.SetHitArgs(b)
+func (suo *StepUpdateOne) SetHitArgs(msa *model.HITStepArgs) *StepUpdateOne {
+	suo.mutation.SetHitArgs(msa)
 	return suo
 }
 
@@ -485,8 +486,8 @@ func (suo *StepUpdateOne) ClearHitArgs() *StepUpdateOne {
 }
 
 // SetFilterArgs sets the filterArgs field.
-func (suo *StepUpdateOne) SetFilterArgs(b []byte) *StepUpdateOne {
-	suo.mutation.SetFilterArgs(b)
+func (suo *StepUpdateOne) SetFilterArgs(msa *model.FilterStepArgs) *StepUpdateOne {
+	suo.mutation.SetFilterArgs(msa)
 	return suo
 }
 
@@ -687,40 +688,40 @@ func (suo *StepUpdateOne) sqlSave(ctx context.Context) (_node *Step, err error) 
 	}
 	if value, ok := suo.mutation.MsgArgs(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: step.FieldMsgArgs,
 		})
 	}
 	if suo.mutation.MsgArgsCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Column: step.FieldMsgArgs,
 		})
 	}
 	if value, ok := suo.mutation.HitArgs(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: step.FieldHitArgs,
 		})
 	}
 	if suo.mutation.HitArgsCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Column: step.FieldHitArgs,
 		})
 	}
 	if value, ok := suo.mutation.FilterArgs(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Value:  value,
 			Column: step.FieldFilterArgs,
 		})
 	}
 	if suo.mutation.FilterArgsCleared() {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeBytes,
+			Type:   field.TypeJSON,
 			Column: step.FieldFilterArgs,
 		})
 	}

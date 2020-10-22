@@ -356,10 +356,6 @@ type StepResolver interface {
 	Creator(ctx context.Context, obj *ent.Step) (*ent.Admin, error)
 
 	Type(ctx context.Context, obj *ent.Step) (model.StepType, error)
-
-	MsgArgs(ctx context.Context, obj *ent.Step) (*model.MessageStepArgs, error)
-	HitArgs(ctx context.Context, obj *ent.Step) (*model.HITStepArgs, error)
-	FilterArgs(ctx context.Context, obj *ent.Step) (*model.FilterStepArgs, error)
 }
 type StepRunResolver interface {
 	Creator(ctx context.Context, obj *ent.StepRun) (*ent.Admin, error)
@@ -2205,17 +2201,17 @@ type Step {
   """
   Arguments for Message type Step.
   """
-  msgArgs: MessageStepArgs @goField(forceResolver: true)
+  msgArgs: MessageStepArgs
 
   """
   Arguments for HIT type Step.
   """
-  hitArgs: HITStepArgs @goField(forceResolver: true)
+  hitArgs: HITStepArgs
 
   """
   Arguments for Filter type Step.
   """
-  filterArgs: FilterStepArgs @goField(forceResolver: true)
+  filterArgs: FilterStepArgs
 }
 
 """
@@ -8427,14 +8423,14 @@ func (ec *executionContext) _Step_msgArgs(ctx context.Context, field graphql.Col
 		Object:     "Step",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Step().MsgArgs(rctx, obj)
+		return obj.MsgArgs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8459,14 +8455,14 @@ func (ec *executionContext) _Step_hitArgs(ctx context.Context, field graphql.Col
 		Object:     "Step",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Step().HitArgs(rctx, obj)
+		return obj.HitArgs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8491,14 +8487,14 @@ func (ec *executionContext) _Step_filterArgs(ctx context.Context, field graphql.
 		Object:     "Step",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Step().FilterArgs(rctx, obj)
+		return obj.FilterArgs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12633,38 +12629,11 @@ func (ec *executionContext) _Step(ctx context.Context, sel ast.SelectionSet, obj
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "msgArgs":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Step_msgArgs(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Step_msgArgs(ctx, field, obj)
 		case "hitArgs":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Step_hitArgs(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Step_hitArgs(ctx, field, obj)
 		case "filterArgs":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Step_filterArgs(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Step_filterArgs(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

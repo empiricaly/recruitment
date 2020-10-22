@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -51,21 +50,13 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 			return
 		}
 
-		msgArgs := &model.MessageStepArgs{}
-		err = json.Unmarshal(step.MsgArgs, msgArgs)
-		if err != nil {
-			log.Error().Err(err).Msg("decode mturk HIT step args")
-			c.AbortWithStatus(http.StatusNotFound)
-			return
-		}
-
-		switch msgArgs.MessageType {
+		switch step.MsgArgs.MessageType {
 		case model.ContentTypeHTML:
 			var out string
-			if strings.Contains(msgArgs.Message, "<html>") {
-				out = msgArgs.Message
+			if strings.Contains(step.MsgArgs.Message, "<html>") {
+				out = step.MsgArgs.Message
 			} else {
-				out = htmlHead + msgArgs.Message + htmlFoot
+				out = htmlHead + step.MsgArgs.Message + htmlFoot
 			}
 
 			c.Header("Content-Type", "text/html; charset=utf-8")
@@ -83,9 +74,9 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 					html.WithUnsafe(),
 				),
 			)
-			log.Debug().Str("content", msgArgs.Message).Msg("markdown message")
+			log.Debug().Str("content", step.MsgArgs.Message).Msg("markdown message")
 			var buf bytes.Buffer
-			if err := md.Convert([]byte(msgArgs.Message), &buf); err != nil {
+			if err := md.Convert([]byte(step.MsgArgs.Message), &buf); err != nil {
 				log.Error().Err(err).Msg("convert markdown")
 				c.AbortWithStatus(http.StatusNotFound)
 				return
@@ -101,7 +92,7 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 			c.Header("Content-Type", "text/html; charset=utf-8")
 			c.String(200, "<html>react not yet supported</html>")
 		default:
-			log.Error().Msgf("unknown step message type: %s", msgArgs.MessageType.String())
+			log.Error().Msgf("unknown step message type: %s", step.MsgArgs.MessageType.String())
 			c.AbortWithStatus(http.StatusNotFound)
 			return
 		}

@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/step"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/facebook/ent/dialect/sql"
 )
 
@@ -29,11 +31,11 @@ type Step struct {
 	// Duration holds the value of the "duration" field.
 	Duration int `json:"duration,omitempty"`
 	// MsgArgs holds the value of the "msgArgs" field.
-	MsgArgs []byte `json:"msgArgs,omitempty"`
+	MsgArgs *model.MessageStepArgs `json:"msgArgs,omitempty"`
 	// HitArgs holds the value of the "hitArgs" field.
-	HitArgs []byte `json:"hitArgs,omitempty"`
+	HitArgs *model.HITStepArgs `json:"hitArgs,omitempty"`
 	// FilterArgs holds the value of the "filterArgs" field.
-	FilterArgs []byte `json:"filterArgs,omitempty"`
+	FilterArgs *model.FilterStepArgs `json:"filterArgs,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StepQuery when eager-loading is set.
 	Edges          StepEdges `json:"edges"`
@@ -140,20 +142,29 @@ func (s *Step) assignValues(values ...interface{}) error {
 	} else if value.Valid {
 		s.Duration = int(value.Int64)
 	}
+
 	if value, ok := values[5].(*[]byte); !ok {
 		return fmt.Errorf("unexpected type %T for field msgArgs", values[5])
-	} else if value != nil {
-		s.MsgArgs = *value
+	} else if value != nil && len(*value) > 0 {
+		if err := json.Unmarshal(*value, &s.MsgArgs); err != nil {
+			return fmt.Errorf("unmarshal field msgArgs: %v", err)
+		}
 	}
+
 	if value, ok := values[6].(*[]byte); !ok {
 		return fmt.Errorf("unexpected type %T for field hitArgs", values[6])
-	} else if value != nil {
-		s.HitArgs = *value
+	} else if value != nil && len(*value) > 0 {
+		if err := json.Unmarshal(*value, &s.HitArgs); err != nil {
+			return fmt.Errorf("unmarshal field hitArgs: %v", err)
+		}
 	}
+
 	if value, ok := values[7].(*[]byte); !ok {
 		return fmt.Errorf("unexpected type %T for field filterArgs", values[7])
-	} else if value != nil {
-		s.FilterArgs = *value
+	} else if value != nil && len(*value) > 0 {
+		if err := json.Unmarshal(*value, &s.FilterArgs); err != nil {
+			return fmt.Errorf("unmarshal field filterArgs: %v", err)
+		}
 	}
 	values = values[8:]
 	if len(values) == len(step.ForeignKeys) {

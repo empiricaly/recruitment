@@ -5387,9 +5387,9 @@ type StepMutation struct {
 	addindex        *int
 	duration        *int
 	addduration     *int
-	msgArgs         *[]byte
-	hitArgs         *[]byte
-	filterArgs      *[]byte
+	msgArgs         **model.MessageStepArgs
+	hitArgs         **model.HITStepArgs
+	filterArgs      **model.FilterStepArgs
 	clearedFields   map[string]struct{}
 	stepRun         *string
 	clearedstepRun  bool
@@ -5710,12 +5710,12 @@ func (m *StepMutation) ResetDuration() {
 }
 
 // SetMsgArgs sets the msgArgs field.
-func (m *StepMutation) SetMsgArgs(b []byte) {
-	m.msgArgs = &b
+func (m *StepMutation) SetMsgArgs(msa *model.MessageStepArgs) {
+	m.msgArgs = &msa
 }
 
 // MsgArgs returns the msgArgs value in the mutation.
-func (m *StepMutation) MsgArgs() (r []byte, exists bool) {
+func (m *StepMutation) MsgArgs() (r *model.MessageStepArgs, exists bool) {
 	v := m.msgArgs
 	if v == nil {
 		return
@@ -5727,7 +5727,7 @@ func (m *StepMutation) MsgArgs() (r []byte, exists bool) {
 // If the Step object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *StepMutation) OldMsgArgs(ctx context.Context) (v []byte, err error) {
+func (m *StepMutation) OldMsgArgs(ctx context.Context) (v *model.MessageStepArgs, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldMsgArgs is allowed only on UpdateOne operations")
 	}
@@ -5760,12 +5760,12 @@ func (m *StepMutation) ResetMsgArgs() {
 }
 
 // SetHitArgs sets the hitArgs field.
-func (m *StepMutation) SetHitArgs(b []byte) {
-	m.hitArgs = &b
+func (m *StepMutation) SetHitArgs(msa *model.HITStepArgs) {
+	m.hitArgs = &msa
 }
 
 // HitArgs returns the hitArgs value in the mutation.
-func (m *StepMutation) HitArgs() (r []byte, exists bool) {
+func (m *StepMutation) HitArgs() (r *model.HITStepArgs, exists bool) {
 	v := m.hitArgs
 	if v == nil {
 		return
@@ -5777,7 +5777,7 @@ func (m *StepMutation) HitArgs() (r []byte, exists bool) {
 // If the Step object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *StepMutation) OldHitArgs(ctx context.Context) (v []byte, err error) {
+func (m *StepMutation) OldHitArgs(ctx context.Context) (v *model.HITStepArgs, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldHitArgs is allowed only on UpdateOne operations")
 	}
@@ -5810,12 +5810,12 @@ func (m *StepMutation) ResetHitArgs() {
 }
 
 // SetFilterArgs sets the filterArgs field.
-func (m *StepMutation) SetFilterArgs(b []byte) {
-	m.filterArgs = &b
+func (m *StepMutation) SetFilterArgs(msa *model.FilterStepArgs) {
+	m.filterArgs = &msa
 }
 
 // FilterArgs returns the filterArgs value in the mutation.
-func (m *StepMutation) FilterArgs() (r []byte, exists bool) {
+func (m *StepMutation) FilterArgs() (r *model.FilterStepArgs, exists bool) {
 	v := m.filterArgs
 	if v == nil {
 		return
@@ -5827,7 +5827,7 @@ func (m *StepMutation) FilterArgs() (r []byte, exists bool) {
 // If the Step object wasn't provided to the builder, the object is fetched
 // from the database.
 // An error is returned if the mutation operation is not UpdateOne, or database query fails.
-func (m *StepMutation) OldFilterArgs(ctx context.Context) (v []byte, err error) {
+func (m *StepMutation) OldFilterArgs(ctx context.Context) (v *model.FilterStepArgs, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldFilterArgs is allowed only on UpdateOne operations")
 	}
@@ -6070,21 +6070,21 @@ func (m *StepMutation) SetField(name string, value ent.Value) error {
 		m.SetDuration(v)
 		return nil
 	case step.FieldMsgArgs:
-		v, ok := value.([]byte)
+		v, ok := value.(*model.MessageStepArgs)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetMsgArgs(v)
 		return nil
 	case step.FieldHitArgs:
-		v, ok := value.([]byte)
+		v, ok := value.(*model.HITStepArgs)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetHitArgs(v)
 		return nil
 	case step.FieldFilterArgs:
-		v, ok := value.([]byte)
+		v, ok := value.(*model.FilterStepArgs)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

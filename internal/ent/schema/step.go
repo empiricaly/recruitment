@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/facebook/ent"
 	"github.com/facebook/ent/schema/edge"
 	"github.com/facebook/ent/schema/field"
@@ -24,9 +25,9 @@ func (Step) Fields() []ent.Field {
 		field.Enum("type").Values("MTURK_HIT", "MTURK_MESSAGE", "PARTICIPANT_FILTER"),
 		field.Int("index"),
 		field.Int("duration"),
-		field.Bytes("msgArgs").Optional(),
-		field.Bytes("hitArgs").Optional(),
-		field.Bytes("filterArgs").Optional(),
+		field.JSON("msgArgs", &model.MessageStepArgs{}).Optional(),
+		field.JSON("hitArgs", &model.HITStepArgs{}).Optional(),
+		field.JSON("filterArgs", &model.FilterStepArgs{}).Optional(),
 	}
 }
 
