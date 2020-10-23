@@ -122,6 +122,7 @@ func (s *Session) runMTurkHITStep(ctx context.Context, project *ent.Project, run
 		quals = append(quals, &mturk.QualificationRequirement{
 			QualificationTypeId: aws.String(qualID),
 			Comparator:          aws.String("Exists"),
+			ActionsGuarded:      aws.String("DiscoverPreviewAndAccept"),
 		})
 		assignmentCount = len(participants)
 	}
