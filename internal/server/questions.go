@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/empiricaly/recruitment/internal/ent"
@@ -37,7 +38,33 @@ const htmlHead = `<!DOCTYPE html><html lang="en"><head>
 
 <script>
   window.addEventListener("load", () => {
-    const params = new URL(document.location).searchParams;
+	const params = new URL(document.location).searchParams;
+	console.log(params.get("assignmentId"));
+	if (params.get("assignmentId") === "ASSIGNMENT_ID_NOT_AVAILABLE") {
+		const notAssigned = document.querySelectorAll(".notAssigned");
+		console.log(notAssigned)
+		for (let i = 0; i < notAssigned.length ; i++) {
+			notAssigned[i].style.display = "block";
+		}
+		const assigned = document.querySelectorAll(".assigned");
+		for (let i = 0; i < assigned.length ; i++) {
+			assigned[i].style.display = "none";
+		}
+	} else {
+		const notAssigned = document.querySelectorAll(".notAssigned");
+		console.log(1, notAssigned)
+		for (let i = 0; i < notAssigned.length ; i++) {
+			notAssigned[i].style.display = "none";
+		}
+		const assigned = document.querySelectorAll(".assigned");
+		for (let i = 0; i < assigned.length ; i++) {
+			assigned[i].style.display = "block";
+		}
+	}
+
+
+
+
     if (!params.get("turkSubmitTo")) {
       console.log("can't find redirect param", params);
       return;
@@ -142,6 +169,27 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := strings.TrimPrefix(c.Request.URL.Path, "/q/")
 
+		workerID := c.Query("workerId")
+		if id == "" {
+			log.Error().Msg("answers handler: missing workerID")
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		assignmentID := c.Query("assignmentId")
+		if id == "" {
+			log.Error().Msg("answers handler: missing assignmentID")
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		hitID := c.Query("hitId")
+		if id == "" {
+			log.Error().Msg("answers handler: missing hitID")
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
 		stepRun, err := s.storeConn.StepRun.
 			Query().
 			WithStep(func(step *ent.StepQuery) {
@@ -170,11 +218,26 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 
 		switch step.MsgArgs.MessageType {
 		case model.ContentTypeHTML:
+			content := step.MsgArgs.Message
+			if step.MsgArgs.URL != nil {
+				u, err := url.Parse(*step.MsgArgs.URL)
+				if err != nil {
+					log.Error().Err(err).Msg("invalid HIT message URL")
+				} else {
+					q := u.Query()
+					q.Set("workerId", workerID)
+					q.Set("assignmentId", assignmentID)
+					q.Set("hitId", hitID)
+					u.RawQuery = q.Encode()
+					content = strings.ReplaceAll(content, "{url}", u.String())
+				}
+			}
+
 			var out string
 			if strings.Contains(step.MsgArgs.Message, "<html>") {
-				out = step.MsgArgs.Message
+				out = content
 			} else {
-				out = htmlHead + step.MsgArgs.Message + htmlFoot
+				out = htmlHead + content + htmlFoot
 			}
 
 			c.Header("Content-Type", "text/html; charset=utf-8")
@@ -200,9 +263,24 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 				return
 			}
 
+			content := buf.String()
+			if step.MsgArgs.URL != nil {
+				u, err := url.Parse(*step.MsgArgs.URL)
+				if err != nil {
+					log.Error().Err(err).Msg("invalid HIT message URL")
+				} else {
+					q := u.Query()
+					q.Set("workerId", workerID)
+					q.Set("assignmentId", assignmentID)
+					q.Set("hitId", hitID)
+					u.RawQuery = q.Encode()
+					content = strings.ReplaceAll(content, "{url}", u.String())
+				}
+			}
+
 			c.Header("Content-Type", "text/html; charset=utf-8")
-			log.Debug().Str("content", buf.String()).Msg("html message")
-			c.String(200, htmlHead+buf.String()+htmlFoot)
+			log.Debug().Str("content", content).Msg("html message")
+			c.String(200, htmlHead+content+htmlFoot)
 		case model.ContentTypeSvelte:
 			c.Header("Content-Type", "text/html; charset=utf-8")
 			c.String(200, "<html>react not yet supported</html>")

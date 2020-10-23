@@ -220,6 +220,7 @@ export const GET_RUNNING_RUN = gql`
     project(projectID: $projectID) {
       id
       runs(runID: $runID) {
+        id
         status
         steps {
           id
@@ -239,8 +240,10 @@ export const GET_RUN_PARTICIPANTS = gql`
     project(projectID: $projectID) {
       id
       runs(runID: $runID) {
+        id
         status
         steps {
+          id
           participants {
             id
             mturkWorkerID
@@ -277,6 +280,7 @@ export const GET_ALL_PARTICIPANTS = gql`
       id
       mturkWorkerID
       data {
+        id
         key
         val
       }

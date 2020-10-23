@@ -115,6 +115,7 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 						),
 					)
 				}).
+				WithProjects().
 				Where(participantModel.MturkWorkerID(workerID)).
 				First(ctx)
 			if err != nil && !ent.IsNotFound(err) {
@@ -136,12 +137,25 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 					return errors.Wrap(err, "create participant")
 				}
 			} else {
-				participant, err = participant.Update().
-					AddProjects(project).
-					AddSteps(stepRun).
-					Save(ctx)
+				projects, err := participant.Edges.ProjectsOrErr()
 				if err != nil {
-					return errors.Wrap(err, "update participant")
+					return errors.Wrap(err, "get participant projects")
+				}
+				var found bool
+				for _, project := range projects {
+					if project.ID == project.ID {
+						found = true
+						break
+					}
+				}
+				if !found {
+					participant, err = participant.Update().
+						AddProjects(project).
+						AddSteps(stepRun).
+						Save(ctx)
+					if err != nil {
+						return errors.Wrap(err, "update participant")
+					}
 				}
 			}
 

@@ -1,11 +1,11 @@
 <script>
-  import Label from "../components/base/Label.svelte";
-  import Input from "../components/base/Input.svelte";
   import Button from "../components/base/Button.svelte";
+  import Input from "../components/base/Input.svelte";
+  import Label from "../components/base/Label.svelte";
   import { authenticate } from "../lib/auth";
 
-  let username = "putu";
-  let password = "123456789";
+  let username = "";
+  let password = "";
 
   function submit(event) {
     event.preventDefault();

@@ -135,8 +135,8 @@ func (s *Session) runMTurkHITStep(ctx context.Context, project *ent.Project, run
 
 	params := &mturk.CreateHITInput{
 		Question:                    aws.String(question),
-		AssignmentDurationInSeconds: aws.Int64(int64(step.HitArgs.Duration * 60)),
-		LifetimeInSeconds:           aws.Int64(int64(step.HitArgs.Duration * 60)),
+		AssignmentDurationInSeconds: aws.Int64(int64(step.HitArgs.Timeout)),
+		LifetimeInSeconds:           aws.Int64(int64(step.Duration * 60)),
 		MaxAssignments:              aws.Int64(int64(assignmentCount)),
 		Title:                       aws.String(step.HitArgs.Title),
 		Description:                 aws.String(step.HitArgs.Description),
@@ -238,7 +238,7 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 		return errors.New("get assignments for hit step failed")
 	}
 
-	particpants, err := stepRun.QueryParticipants().All(ctx)
+	particpants, err := stepRun.QueryParticipants().WithProjects().All(ctx)
 	if err != nil {
 		return errors.New("get participants for hit failed")
 	}
@@ -273,13 +273,26 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 				continue
 			}
 		} else {
-			p, err = p.Update().
-				AddProjects(project).
-				AddSteps(stepRun).
-				Save(ctx)
+			projects, err := p.Edges.ProjectsOrErr()
 			if err != nil {
-				log.Error().Msgf("could not update participant with workerID %s for stepRun %s", *assignment.WorkerId, stepRun.ID)
-				continue
+				return errors.Wrap(err, "get participant projects")
+			}
+			var found bool
+			for _, project := range projects {
+				if project.ID == project.ID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				p, err = p.Update().
+					AddProjects(project).
+					AddSteps(stepRun).
+					Save(ctx)
+				if err != nil {
+					log.Error().Msgf("could not update participant with workerID %s for stepRun %s", *assignment.WorkerId, stepRun.ID)
+					continue
+				}
 			}
 		}
 		nextParticipants = append(nextParticipants, p)
