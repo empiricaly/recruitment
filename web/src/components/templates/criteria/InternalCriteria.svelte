@@ -21,8 +21,6 @@
   export let useCriteria = false;
   let useCriteriaValue = all ? "doNotUseCriteria" : "useCriteria";
 
-  $: console.log(JSON.stringify(criteria, null, "  "));
-
   $: {
     if (useCriteriaValue) {
       useCriteria = useCriteriaValue === "useCriteria";
