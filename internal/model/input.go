@@ -4,8 +4,8 @@ func FilterArgsFromInput(criti *FilterStepArgsInput) *FilterStepArgs {
 	args := &FilterStepArgs{}
 	args.Condition = ConditionFromInput(criti.Condition)
 	args.Filter = criti.Filter
-	args.Js = args.Js
-	args.Type = args.Type
+	args.Js = criti.Js
+	args.Type = criti.Type
 
 	return args
 }
@@ -68,7 +68,7 @@ func HITStepArgsFromInput(criti *HITStepArgsInput) *HITStepArgs {
 
 func MturkCriteriaFromInput(criti *MTurkCriteriaInput) *MTurkCriteria {
 	crit := &MTurkCriteria{}
-	if len(crit.Qualifications) > 0 {
+	if len(criti.Qualifications) > 0 {
 		crit.Qualifications = make([]*MTurkQualificationCriteria, len(criti.Qualifications))
 		for i, q := range criti.Qualifications {
 			crit.Qualifications[i] = MTurkQualificationFromInput(q)
@@ -83,13 +83,13 @@ func MTurkQualificationFromInput(criti *MTurkQualificationCriteriaInput) *MTurkQ
 		ID:         criti.ID,
 		Comparator: *criti.Comparator,
 	}
-	if len(crit.Values) > 0 {
+	if len(criti.Values) > 0 {
 		crit.Values = make([]int, len(criti.Values))
 		for i, v := range criti.Values {
 			crit.Values[i] = v
 		}
 	}
-	if len(crit.Locales) > 0 {
+	if len(criti.Locales) > 0 {
 		crit.Locales = make([]*MTurkLocale, len(criti.Locales))
 		for i, l := range criti.Locales {
 			crit.Locales[i] = &MTurkLocale{
