@@ -27,6 +27,7 @@ type runState struct {
 
 	run *ent.Run
 
+	project        *ent.Project
 	template       *ent.Template
 	steps          []*ent.Step
 	stepRuns       []*ent.StepRun
@@ -246,14 +247,25 @@ func (r *runState) refresh() error {
 		return errors.Wrap(err, "refresh: run")
 	}
 
-	r.template, err = r.run.QueryTemplate().Only(ctx)
-	if err != nil {
-		return errors.Wrap(err, "refresh: template")
+	if r.project == nil {
+		r.project, err = r.run.QueryProject().Only(ctx)
+		if err != nil {
+			return errors.Wrap(err, "refresh: project")
+		}
 	}
 
-	r.steps, err = r.template.QuerySteps().Order(ent.Asc(stepModel.FieldIndex)).All(ctx)
-	if err != nil {
-		return errors.Wrap(err, "refresh: steps")
+	if r.template == nil {
+		r.template, err = r.run.QueryTemplate().Only(ctx)
+		if err != nil {
+			return errors.Wrap(err, "refresh: template")
+		}
+	}
+
+	if r.steps == nil {
+		r.steps, err = r.template.QuerySteps().Order(ent.Asc(stepModel.FieldIndex)).All(ctx)
+		if err != nil {
+			return errors.Wrap(err, "refresh: steps")
+		}
 	}
 
 	r.stepRuns, err = r.run.QuerySteps().Order(ent.Asc(stepModel.FieldIndex)).All(ctx)

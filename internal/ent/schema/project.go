@@ -31,6 +31,7 @@ func (Project) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("runs", Run.Type),
 		edge.To("templates", Template.Type),
+		edge.To("participants", Participant.Type),
 		edge.From("owner", Admin.Type).
 			Ref("projects").
 			Unique(),

@@ -24,6 +24,8 @@ const (
 	EdgeRuns = "runs"
 	// EdgeTemplates holds the string denoting the templates edge name in mutations.
 	EdgeTemplates = "templates"
+	// EdgeParticipants holds the string denoting the participants edge name in mutations.
+	EdgeParticipants = "participants"
 	// EdgeOwner holds the string denoting the owner edge name in mutations.
 	EdgeOwner = "owner"
 
@@ -43,6 +45,11 @@ const (
 	TemplatesInverseTable = "templates"
 	// TemplatesColumn is the table column denoting the templates relation/edge.
 	TemplatesColumn = "project_templates"
+	// ParticipantsTable is the table the holds the participants relation/edge. The primary key declared below.
+	ParticipantsTable = "project_participants"
+	// ParticipantsInverseTable is the table name for the Participant entity.
+	// It exists in this package in order to avoid circular dependency with the "participant" package.
+	ParticipantsInverseTable = "participants"
 	// OwnerTable is the table the holds the owner relation/edge.
 	OwnerTable = "projects"
 	// OwnerInverseTable is the table name for the Admin entity.
@@ -65,6 +72,12 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"admin_projects",
 }
+
+var (
+	// ParticipantsPrimaryKey and ParticipantsColumn2 are the table columns denoting the
+	// primary key for the participants relation (M2M).
+	ParticipantsPrimaryKey = []string{"project_id", "participant_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

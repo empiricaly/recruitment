@@ -41,9 +41,11 @@ type ParticipantEdges struct {
 	CreatedBy *StepRun
 	// Steps holds the value of the steps edge.
 	Steps []*StepRun
+	// Projects holds the value of the projects edge.
+	Projects []*Project
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // DataOrErr returns the Data value or an error if the edge
@@ -94,6 +96,15 @@ func (e ParticipantEdges) StepsOrErr() ([]*StepRun, error) {
 		return e.Steps, nil
 	}
 	return nil, &NotLoadedError{edge: "steps"}
+}
+
+// ProjectsOrErr returns the Projects value or an error if the edge
+// was not loaded in eager-loading.
+func (e ParticipantEdges) ProjectsOrErr() ([]*Project, error) {
+	if e.loadedTypes[5] {
+		return e.Projects, nil
+	}
+	return nil, &NotLoadedError{edge: "projects"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -176,6 +187,11 @@ func (pa *Participant) QueryCreatedBy() *StepRunQuery {
 // QuerySteps queries the steps edge of the Participant.
 func (pa *Participant) QuerySteps() *StepRunQuery {
 	return (&ParticipantClient{config: pa.config}).QuerySteps(pa)
+}
+
+// QueryProjects queries the projects edge of the Participant.
+func (pa *Participant) QueryProjects() *ProjectQuery {
+	return (&ParticipantClient{config: pa.config}).QueryProjects(pa)
 }
 
 // Update returns a builder for updating this Participant.

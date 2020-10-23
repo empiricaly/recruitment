@@ -200,14 +200,15 @@ type ComplexityRoot struct {
 	}
 
 	Project struct {
-		CreatedAt func(childComplexity int) int
-		Creator   func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Name      func(childComplexity int) int
-		ProjectID func(childComplexity int) int
-		Runs      func(childComplexity int, runID *string, limit *int) int
-		Templates func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
+		CreatedAt    func(childComplexity int) int
+		Creator      func(childComplexity int) int
+		ID           func(childComplexity int) int
+		Name         func(childComplexity int) int
+		Participants func(childComplexity int) int
+		ProjectID    func(childComplexity int) int
+		Runs         func(childComplexity int, runID *string, limit *int) int
+		Templates    func(childComplexity int) int
+		UpdatedAt    func(childComplexity int) int
 	}
 
 	ProviderID struct {
@@ -221,6 +222,7 @@ type ComplexityRoot struct {
 		MturkLocales            func(childComplexity int, sandbox *bool) int
 		MturkQualificationTypes func(childComplexity int, sandbox *bool) int
 		Page                    func(childComplexity int, token string, participantID string) int
+		ParticipantCount        func(childComplexity int) int
 		Participants            func(childComplexity int, first *int, after *string) int
 		Project                 func(childComplexity int, id *string, projectID *string) int
 		Projects                func(childComplexity int) int
@@ -332,6 +334,7 @@ type ProjectResolver interface {
 
 	Templates(ctx context.Context, obj *ent.Project) ([]*ent.Template, error)
 	Runs(ctx context.Context, obj *ent.Project, runID *string, limit *int) ([]*ent.Run, error)
+	Participants(ctx context.Context, obj *ent.Project) ([]*ent.Participant, error)
 }
 type ProviderIDResolver interface {
 	ProviderID(ctx context.Context, obj *ent.ProviderID) (string, error)
@@ -341,6 +344,7 @@ type QueryResolver interface {
 	Projects(ctx context.Context) ([]*ent.Project, error)
 	Project(ctx context.Context, id *string, projectID *string) (*ent.Project, error)
 	Participants(ctx context.Context, first *int, after *string) ([]*ent.Participant, error)
+	ParticipantCount(ctx context.Context) (*int, error)
 	Me(ctx context.Context) (model.User, error)
 	Page(ctx context.Context, token string, participantID string) (*model.Page, error)
 	MturkQualificationTypes(ctx context.Context, sandbox *bool) ([]*model.MTurkQulificationType, error)
@@ -1110,6 +1114,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Project.Name(childComplexity), true
 
+	case "Project.participants":
+		if e.complexity.Project.Participants == nil {
+			break
+		}
+
+		return e.complexity.Project.Participants(childComplexity), true
+
 	case "Project.projectID":
 		if e.complexity.Project.ProjectID == nil {
 			break
@@ -1206,6 +1217,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Page(childComplexity, args["token"].(string), args["participantID"].(string)), true
+
+	case "Query.participantCount":
+		if e.complexity.Query.ParticipantCount == nil {
+			break
+		}
+
+		return e.complexity.Query.ParticipantCount(childComplexity), true
 
 	case "Query.participants":
 		if e.complexity.Query.Participants == nil {
@@ -1791,6 +1809,11 @@ type Project {
   Runs contained in Project
   """
   runs(runID: ID, limit: Int): [Run!]! @goField(forceResolver: true)
+
+  """
+  Participants in this Project.
+  """
+  participants: [Participant!]! @goField(forceResolver: true)
 }
 
 """
@@ -3179,6 +3202,11 @@ type Query {
   Participants returns all participants in DB.
   """
   participants(first: Int, after: ID): [Participant!]! @hasRole(role: ADMIN)
+
+  """
+  Number of all Participants in DB.
+  """
+  participantCount: Int @hasRole(role: ADMIN)
 
   """
   me returns the current Admin or Participant, depending on whether the user is
@@ -7265,6 +7293,41 @@ func (ec *executionContext) _Project_runs(ctx context.Context, field graphql.Col
 	return ec.marshalNRun2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRunᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Project_participants(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Project().Participants(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Participant)
+	fc.Result = res
+	return ec.marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipantᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ProviderID_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.ProviderID) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7553,6 +7616,62 @@ func (ec *executionContext) _Query_participants(ctx context.Context, field graph
 	res := resTmp.([]*ent.Participant)
 	fc.Result = res
 	return ec.marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipantᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_participantCount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().ParticipantCount(rctx)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*int); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *int`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -12353,6 +12472,20 @@ func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, 
 				}
 				return res
 			})
+		case "participants":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Project_participants(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12468,6 +12601,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			})
+		case "participantCount":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_participantCount(ctx, field)
 				return res
 			})
 		case "me":

@@ -9,6 +9,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/migrate"
 	entsql "github.com/facebook/ent/dialect/sql"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
 	// SQLLite3 package required by ent to init the SQLLite Storage
@@ -18,6 +19,7 @@ import (
 // Conn represents a datastore connection.
 type Conn struct {
 	*ent.Client
+	logger zerolog.Logger
 }
 
 // Connect creates a connection to a messaging service with the given config.
@@ -34,7 +36,7 @@ func dbLog(msg ...interface{}) {
 }
 
 // Connect creates a connection to a messaging service with the given config.
-func Connect(ctx context.Context, config *Config) (c *Conn, err error) {
+func Connect(ctx context.Context, config *Config) (*Conn, error) {
 	connString := fmt.Sprintf("file:%s?mode=rwc&_fk=1", config.File)
 	db, err := sql.Open("sqlite3", connString)
 	if err != nil {
@@ -67,10 +69,18 @@ func Connect(ctx context.Context, config *Config) (c *Conn, err error) {
 		client = client.Debug()
 	}
 
-	return &Conn{Client: client}, nil
+	logger := log.With().Str("pkg", "runtime").Logger()
+	if !config.Debug {
+		logger = logger.Level(zerolog.Disabled)
+	}
+
+	c := &Conn{Client: client, logger: logger}
+	err = c.runMigrations()
+
+	return c, nil
 }
 
-// Close cleanlu close the database connection.
+// Close cleanly closes the database connection.
 func (c *Conn) Close() error {
 	return c.Client.Close()
 }

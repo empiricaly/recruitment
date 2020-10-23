@@ -37,6 +37,10 @@ func (r *queryResolver) Participants(ctx context.Context, first *int, after *str
 	return r.Store.Participant.Query().All(ctx)
 }
 
+func (r *queryResolver) ParticipantCount(ctx context.Context) (*int, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *queryResolver) Me(ctx context.Context) (model.User, error) {
 	return admin.ForContext(ctx), nil
 }

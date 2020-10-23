@@ -3,10 +3,10 @@
   import { createEventDispatcher } from "svelte";
   import { query } from "svelte-apollo";
   import { client } from "../../lib/apollo";
-  import { GET_RUNNING_RUN } from "../../lib/queries";
+  import { GET_RUNNING_RUN, GET_RUN_PARTICIPANTS } from "../../lib/queries";
   import { timer } from "../../utils/timer.js";
+  import ParticipantList from "../participants/ParticipantList.svelte";
   import TemplateSection from "../templates/TemplateSection.svelte";
-  import FinishedParticipants from "./FinishedParticipants.svelte";
   import StepRun from "./StepRun.svelte";
 
   const dispatch = createEventDispatcher();
@@ -78,5 +78,6 @@
     </div>
   </div>
 
-  <FinishedParticipants {project} {run} />
+  <ParticipantList
+    queryArgs={{ query: GET_RUN_PARTICIPANTS, variables: { projectID: project.projectID, runID: run.id } }} />
 {/if}

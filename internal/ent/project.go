@@ -37,11 +37,13 @@ type ProjectEdges struct {
 	Runs []*Run
 	// Templates holds the value of the templates edge.
 	Templates []*Template
+	// Participants holds the value of the participants edge.
+	Participants []*Participant
 	// Owner holds the value of the owner edge.
 	Owner *Admin
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // RunsOrErr returns the Runs value or an error if the edge
@@ -62,10 +64,19 @@ func (e ProjectEdges) TemplatesOrErr() ([]*Template, error) {
 	return nil, &NotLoadedError{edge: "templates"}
 }
 
+// ParticipantsOrErr returns the Participants value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProjectEdges) ParticipantsOrErr() ([]*Participant, error) {
+	if e.loadedTypes[2] {
+		return e.Participants, nil
+	}
+	return nil, &NotLoadedError{edge: "participants"}
+}
+
 // OwnerOrErr returns the Owner value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e ProjectEdges) OwnerOrErr() (*Admin, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		if e.Owner == nil {
 			// The edge owner was loaded in eager-loading,
 			// but was not found.
@@ -146,6 +157,11 @@ func (pr *Project) QueryRuns() *RunQuery {
 // QueryTemplates queries the templates edge of the Project.
 func (pr *Project) QueryTemplates() *TemplateQuery {
 	return (&ProjectClient{config: pr.config}).QueryTemplates(pr)
+}
+
+// QueryParticipants queries the participants edge of the Project.
+func (pr *Project) QueryParticipants() *ParticipantQuery {
+	return (&ProjectClient{config: pr.config}).QueryParticipants(pr)
 }
 
 // QueryOwner queries the owner edge of the Project.

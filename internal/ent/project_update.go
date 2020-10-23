@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
@@ -79,6 +80,21 @@ func (pu *ProjectUpdate) AddTemplates(t ...*Template) *ProjectUpdate {
 	return pu.AddTemplateIDs(ids...)
 }
 
+// AddParticipantIDs adds the participants edge to Participant by ids.
+func (pu *ProjectUpdate) AddParticipantIDs(ids ...string) *ProjectUpdate {
+	pu.mutation.AddParticipantIDs(ids...)
+	return pu
+}
+
+// AddParticipants adds the participants edges to Participant.
+func (pu *ProjectUpdate) AddParticipants(p ...*Participant) *ProjectUpdate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pu.AddParticipantIDs(ids...)
+}
+
 // SetOwnerID sets the owner edge to Admin by id.
 func (pu *ProjectUpdate) SetOwnerID(id string) *ProjectUpdate {
 	pu.mutation.SetOwnerID(id)
@@ -143,6 +159,27 @@ func (pu *ProjectUpdate) RemoveTemplates(t ...*Template) *ProjectUpdate {
 		ids[i] = t[i].ID
 	}
 	return pu.RemoveTemplateIDs(ids...)
+}
+
+// ClearParticipants clears all "participants" edges to type Participant.
+func (pu *ProjectUpdate) ClearParticipants() *ProjectUpdate {
+	pu.mutation.ClearParticipants()
+	return pu
+}
+
+// RemoveParticipantIDs removes the participants edge to Participant by ids.
+func (pu *ProjectUpdate) RemoveParticipantIDs(ids ...string) *ProjectUpdate {
+	pu.mutation.RemoveParticipantIDs(ids...)
+	return pu
+}
+
+// RemoveParticipants removes participants edges to Participant.
+func (pu *ProjectUpdate) RemoveParticipants(p ...*Participant) *ProjectUpdate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pu.RemoveParticipantIDs(ids...)
 }
 
 // ClearOwner clears the "owner" edge to type Admin.
@@ -358,6 +395,60 @@ func (pu *ProjectUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if pu.mutation.ParticipantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.ParticipantsTable,
+			Columns: project.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedParticipantsIDs(); len(nodes) > 0 && !pu.mutation.ParticipantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.ParticipantsTable,
+			Columns: project.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.ParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.ParticipantsTable,
+			Columns: project.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if pu.mutation.OwnerCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -459,6 +550,21 @@ func (puo *ProjectUpdateOne) AddTemplates(t ...*Template) *ProjectUpdateOne {
 	return puo.AddTemplateIDs(ids...)
 }
 
+// AddParticipantIDs adds the participants edge to Participant by ids.
+func (puo *ProjectUpdateOne) AddParticipantIDs(ids ...string) *ProjectUpdateOne {
+	puo.mutation.AddParticipantIDs(ids...)
+	return puo
+}
+
+// AddParticipants adds the participants edges to Participant.
+func (puo *ProjectUpdateOne) AddParticipants(p ...*Participant) *ProjectUpdateOne {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return puo.AddParticipantIDs(ids...)
+}
+
 // SetOwnerID sets the owner edge to Admin by id.
 func (puo *ProjectUpdateOne) SetOwnerID(id string) *ProjectUpdateOne {
 	puo.mutation.SetOwnerID(id)
@@ -523,6 +629,27 @@ func (puo *ProjectUpdateOne) RemoveTemplates(t ...*Template) *ProjectUpdateOne {
 		ids[i] = t[i].ID
 	}
 	return puo.RemoveTemplateIDs(ids...)
+}
+
+// ClearParticipants clears all "participants" edges to type Participant.
+func (puo *ProjectUpdateOne) ClearParticipants() *ProjectUpdateOne {
+	puo.mutation.ClearParticipants()
+	return puo
+}
+
+// RemoveParticipantIDs removes the participants edge to Participant by ids.
+func (puo *ProjectUpdateOne) RemoveParticipantIDs(ids ...string) *ProjectUpdateOne {
+	puo.mutation.RemoveParticipantIDs(ids...)
+	return puo
+}
+
+// RemoveParticipants removes participants edges to Participant.
+func (puo *ProjectUpdateOne) RemoveParticipants(p ...*Participant) *ProjectUpdateOne {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return puo.RemoveParticipantIDs(ids...)
 }
 
 // ClearOwner clears the "owner" edge to type Admin.
@@ -728,6 +855,60 @@ func (puo *ProjectUpdateOne) sqlSave(ctx context.Context) (_node *Project, err e
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: template.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.ParticipantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.ParticipantsTable,
+			Columns: project.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedParticipantsIDs(); len(nodes) > 0 && !puo.mutation.ParticipantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.ParticipantsTable,
+			Columns: project.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.ParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.ParticipantsTable,
+			Columns: project.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
 				},
 			},
 		}

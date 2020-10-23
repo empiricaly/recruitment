@@ -111,6 +111,10 @@ func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project, runID *str
 	return q.All(ctx)
 }
 
+func (r *projectResolver) Participants(ctx context.Context, obj *ent.Project) ([]*ent.Participant, error) {
+	return obj.QueryParticipants().All(ctx)
+}
+
 func (r *providerIDResolver) ProviderID(ctx context.Context, obj *ent.ProviderID) (string, error) {
 	panic(fmt.Errorf("not implemented"))
 }

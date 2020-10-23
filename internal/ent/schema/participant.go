@@ -36,5 +36,7 @@ func (Participant) Edges() []ent.Edge {
 			Unique(),
 		edge.From("steps", StepRun.Type).
 			Ref("participants"),
+		edge.From("projects", Project.Type).
+			Ref("participants"),
 	}
 }

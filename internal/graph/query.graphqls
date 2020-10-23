@@ -43,6 +43,11 @@ type Query {
   participants(first: Int, after: ID): [Participant!]! @hasRole(role: ADMIN)
 
   """
+  Number of all Participants in DB.
+  """
+  participantCount: Int @hasRole(role: ADMIN)
+
+  """
   me returns the current Admin or Participant, depending on whether the user is
   logged in.
   """

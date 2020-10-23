@@ -131,7 +131,7 @@ func (r *runState) advanceSteps(ctx context.Context, at time.Time) error {
 func (r *runState) startStep(ctx context.Context, startTime time.Time) error {
 	switch r.currentStep.Type {
 	case stepModel.TypeMTURK_HIT, stepModel.TypeMTURK_MESSAGE:
-		err := r.mturkSession.RunStep(r.run, r.currentStep, r.currentStepRun, startTime)
+		err := r.mturkSession.StartStep(r.project, r.run, r.currentStep, r.currentStepRun, startTime)
 		if err != nil {
 			return errors.Wrap(err, "run mturk")
 		}
@@ -159,7 +159,7 @@ func (r *runState) startStep(ctx context.Context, startTime time.Time) error {
 func (r *runState) endStep(ctx context.Context, endTime time.Time) error {
 	switch r.currentStep.Type {
 	case stepModel.TypeMTURK_HIT, stepModel.TypeMTURK_MESSAGE:
-		err := r.mturkSession.EndStep(r.run, r.currentStep, r.currentStepRun, r.nextStep, r.nextStepRun)
+		err := r.mturkSession.EndStep(r.project, r.run, r.currentStep, r.currentStepRun, r.nextStep, r.nextStepRun)
 		if err != nil {
 			return errors.Wrap(err, "run mturk for step")
 		}

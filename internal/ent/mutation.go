@@ -1551,6 +1551,9 @@ type ParticipantMutation struct {
 	steps                 map[string]struct{}
 	removedsteps          map[string]struct{}
 	clearedsteps          bool
+	projects              map[string]struct{}
+	removedprojects       map[string]struct{}
+	clearedprojects       bool
 	done                  bool
 	oldValue              func(context.Context) (*Participant, error)
 }
@@ -2015,6 +2018,59 @@ func (m *ParticipantMutation) ResetSteps() {
 	m.removedsteps = nil
 }
 
+// AddProjectIDs adds the projects edge to Project by ids.
+func (m *ParticipantMutation) AddProjectIDs(ids ...string) {
+	if m.projects == nil {
+		m.projects = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.projects[ids[i]] = struct{}{}
+	}
+}
+
+// ClearProjects clears the projects edge to Project.
+func (m *ParticipantMutation) ClearProjects() {
+	m.clearedprojects = true
+}
+
+// ProjectsCleared returns if the edge projects was cleared.
+func (m *ParticipantMutation) ProjectsCleared() bool {
+	return m.clearedprojects
+}
+
+// RemoveProjectIDs removes the projects edge to Project by ids.
+func (m *ParticipantMutation) RemoveProjectIDs(ids ...string) {
+	if m.removedprojects == nil {
+		m.removedprojects = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedprojects[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedProjects returns the removed ids of projects.
+func (m *ParticipantMutation) RemovedProjectsIDs() (ids []string) {
+	for id := range m.removedprojects {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ProjectsIDs returns the projects ids in the mutation.
+func (m *ParticipantMutation) ProjectsIDs() (ids []string) {
+	for id := range m.projects {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetProjects reset all changes of the "projects" edge.
+func (m *ParticipantMutation) ResetProjects() {
+	m.projects = nil
+	m.clearedprojects = false
+	m.removedprojects = nil
+}
+
 // Op returns the operation name.
 func (m *ParticipantMutation) Op() Op {
 	return m.op
@@ -2173,7 +2229,7 @@ func (m *ParticipantMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *ParticipantMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.data != nil {
 		edges = append(edges, participant.EdgeData)
 	}
@@ -2188,6 +2244,9 @@ func (m *ParticipantMutation) AddedEdges() []string {
 	}
 	if m.steps != nil {
 		edges = append(edges, participant.EdgeSteps)
+	}
+	if m.projects != nil {
+		edges = append(edges, participant.EdgeProjects)
 	}
 	return edges
 }
@@ -2224,6 +2283,12 @@ func (m *ParticipantMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case participant.EdgeProjects:
+		ids := make([]ent.Value, 0, len(m.projects))
+		for id := range m.projects {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -2231,7 +2296,7 @@ func (m *ParticipantMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *ParticipantMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removeddata != nil {
 		edges = append(edges, participant.EdgeData)
 	}
@@ -2243,6 +2308,9 @@ func (m *ParticipantMutation) RemovedEdges() []string {
 	}
 	if m.removedsteps != nil {
 		edges = append(edges, participant.EdgeSteps)
+	}
+	if m.removedprojects != nil {
+		edges = append(edges, participant.EdgeProjects)
 	}
 	return edges
 }
@@ -2275,6 +2343,12 @@ func (m *ParticipantMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case participant.EdgeProjects:
+		ids := make([]ent.Value, 0, len(m.removedprojects))
+		for id := range m.removedprojects {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -2282,7 +2356,7 @@ func (m *ParticipantMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *ParticipantMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.cleareddata {
 		edges = append(edges, participant.EdgeData)
 	}
@@ -2297,6 +2371,9 @@ func (m *ParticipantMutation) ClearedEdges() []string {
 	}
 	if m.clearedsteps {
 		edges = append(edges, participant.EdgeSteps)
+	}
+	if m.clearedprojects {
+		edges = append(edges, participant.EdgeProjects)
 	}
 	return edges
 }
@@ -2315,6 +2392,8 @@ func (m *ParticipantMutation) EdgeCleared(name string) bool {
 		return m.clearedcreatedBy
 	case participant.EdgeSteps:
 		return m.clearedsteps
+	case participant.EdgeProjects:
+		return m.clearedprojects
 	}
 	return false
 }
@@ -2349,6 +2428,9 @@ func (m *ParticipantMutation) ResetEdge(name string) error {
 		return nil
 	case participant.EdgeSteps:
 		m.ResetSteps()
+		return nil
+	case participant.EdgeProjects:
+		m.ResetProjects()
 		return nil
 	}
 	return fmt.Errorf("unknown Participant edge %s", name)
@@ -3211,24 +3293,27 @@ func (m *ParticipationMutation) ResetEdge(name string) error {
 // nodes in the graph.
 type ProjectMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *string
-	created_at       *time.Time
-	updated_at       *time.Time
-	projectID        *string
-	name             *string
-	clearedFields    map[string]struct{}
-	runs             map[string]struct{}
-	removedruns      map[string]struct{}
-	clearedruns      bool
-	templates        map[string]struct{}
-	removedtemplates map[string]struct{}
-	clearedtemplates bool
-	owner            *string
-	clearedowner     bool
-	done             bool
-	oldValue         func(context.Context) (*Project, error)
+	op                  Op
+	typ                 string
+	id                  *string
+	created_at          *time.Time
+	updated_at          *time.Time
+	projectID           *string
+	name                *string
+	clearedFields       map[string]struct{}
+	runs                map[string]struct{}
+	removedruns         map[string]struct{}
+	clearedruns         bool
+	templates           map[string]struct{}
+	removedtemplates    map[string]struct{}
+	clearedtemplates    bool
+	participants        map[string]struct{}
+	removedparticipants map[string]struct{}
+	clearedparticipants bool
+	owner               *string
+	clearedowner        bool
+	done                bool
+	oldValue            func(context.Context) (*Project, error)
 }
 
 var _ ent.Mutation = (*ProjectMutation)(nil)
@@ -3570,6 +3655,59 @@ func (m *ProjectMutation) ResetTemplates() {
 	m.removedtemplates = nil
 }
 
+// AddParticipantIDs adds the participants edge to Participant by ids.
+func (m *ProjectMutation) AddParticipantIDs(ids ...string) {
+	if m.participants == nil {
+		m.participants = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.participants[ids[i]] = struct{}{}
+	}
+}
+
+// ClearParticipants clears the participants edge to Participant.
+func (m *ProjectMutation) ClearParticipants() {
+	m.clearedparticipants = true
+}
+
+// ParticipantsCleared returns if the edge participants was cleared.
+func (m *ProjectMutation) ParticipantsCleared() bool {
+	return m.clearedparticipants
+}
+
+// RemoveParticipantIDs removes the participants edge to Participant by ids.
+func (m *ProjectMutation) RemoveParticipantIDs(ids ...string) {
+	if m.removedparticipants == nil {
+		m.removedparticipants = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedparticipants[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedParticipants returns the removed ids of participants.
+func (m *ProjectMutation) RemovedParticipantsIDs() (ids []string) {
+	for id := range m.removedparticipants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ParticipantsIDs returns the participants ids in the mutation.
+func (m *ProjectMutation) ParticipantsIDs() (ids []string) {
+	for id := range m.participants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetParticipants reset all changes of the "participants" edge.
+func (m *ProjectMutation) ResetParticipants() {
+	m.participants = nil
+	m.clearedparticipants = false
+	m.removedparticipants = nil
+}
+
 // SetOwnerID sets the owner edge to Admin by id.
 func (m *ProjectMutation) SetOwnerID(id string) {
 	m.owner = &id
@@ -3775,12 +3913,15 @@ func (m *ProjectMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *ProjectMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.runs != nil {
 		edges = append(edges, project.EdgeRuns)
 	}
 	if m.templates != nil {
 		edges = append(edges, project.EdgeTemplates)
+	}
+	if m.participants != nil {
+		edges = append(edges, project.EdgeParticipants)
 	}
 	if m.owner != nil {
 		edges = append(edges, project.EdgeOwner)
@@ -3804,6 +3945,12 @@ func (m *ProjectMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case project.EdgeParticipants:
+		ids := make([]ent.Value, 0, len(m.participants))
+		for id := range m.participants {
+			ids = append(ids, id)
+		}
+		return ids
 	case project.EdgeOwner:
 		if id := m.owner; id != nil {
 			return []ent.Value{*id}
@@ -3815,12 +3962,15 @@ func (m *ProjectMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *ProjectMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedruns != nil {
 		edges = append(edges, project.EdgeRuns)
 	}
 	if m.removedtemplates != nil {
 		edges = append(edges, project.EdgeTemplates)
+	}
+	if m.removedparticipants != nil {
+		edges = append(edges, project.EdgeParticipants)
 	}
 	return edges
 }
@@ -3841,6 +3991,12 @@ func (m *ProjectMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case project.EdgeParticipants:
+		ids := make([]ent.Value, 0, len(m.removedparticipants))
+		for id := range m.removedparticipants {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -3848,12 +4004,15 @@ func (m *ProjectMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *ProjectMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedruns {
 		edges = append(edges, project.EdgeRuns)
 	}
 	if m.clearedtemplates {
 		edges = append(edges, project.EdgeTemplates)
+	}
+	if m.clearedparticipants {
+		edges = append(edges, project.EdgeParticipants)
 	}
 	if m.clearedowner {
 		edges = append(edges, project.EdgeOwner)
@@ -3869,6 +4028,8 @@ func (m *ProjectMutation) EdgeCleared(name string) bool {
 		return m.clearedruns
 	case project.EdgeTemplates:
 		return m.clearedtemplates
+	case project.EdgeParticipants:
+		return m.clearedparticipants
 	case project.EdgeOwner:
 		return m.clearedowner
 	}
@@ -3896,6 +4057,9 @@ func (m *ProjectMutation) ResetEdge(name string) error {
 		return nil
 	case project.EdgeTemplates:
 		m.ResetTemplates()
+		return nil
+	case project.EdgeParticipants:
+		m.ResetParticipants()
 		return nil
 	case project.EdgeOwner:
 		m.ResetOwner()

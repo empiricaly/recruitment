@@ -303,6 +303,33 @@ var (
 			},
 		},
 	}
+	// ProjectParticipantsColumns holds the columns for the "project_participants" table.
+	ProjectParticipantsColumns = []*schema.Column{
+		{Name: "project_id", Type: field.TypeString, Size: 20},
+		{Name: "participant_id", Type: field.TypeString, Size: 20},
+	}
+	// ProjectParticipantsTable holds the schema information for the "project_participants" table.
+	ProjectParticipantsTable = &schema.Table{
+		Name:       "project_participants",
+		Columns:    ProjectParticipantsColumns,
+		PrimaryKey: []*schema.Column{ProjectParticipantsColumns[0], ProjectParticipantsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "project_participants_project_id",
+				Columns: []*schema.Column{ProjectParticipantsColumns[0]},
+
+				RefColumns: []*schema.Column{ProjectsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:  "project_participants_participant_id",
+				Columns: []*schema.Column{ProjectParticipantsColumns[1]},
+
+				RefColumns: []*schema.Column{ParticipantsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// StepRunParticipantsColumns holds the columns for the "step_run_participants" table.
 	StepRunParticipantsColumns = []*schema.Column{
 		{Name: "step_run_id", Type: field.TypeString, Size: 20},
@@ -342,6 +369,7 @@ var (
 		StepsTable,
 		StepRunsTable,
 		TemplatesTable,
+		ProjectParticipantsTable,
 		StepRunParticipantsTable,
 	}
 )
@@ -361,6 +389,8 @@ func init() {
 	TemplatesTable.ForeignKeys[0].RefTable = AdminsTable
 	TemplatesTable.ForeignKeys[1].RefTable = ProjectsTable
 	TemplatesTable.ForeignKeys[2].RefTable = RunsTable
+	ProjectParticipantsTable.ForeignKeys[0].RefTable = ProjectsTable
+	ProjectParticipantsTable.ForeignKeys[1].RefTable = ParticipantsTable
 	StepRunParticipantsTable.ForeignKeys[0].RefTable = StepRunsTable
 	StepRunParticipantsTable.ForeignKeys[1].RefTable = ParticipantsTable
 }

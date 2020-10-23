@@ -234,8 +234,8 @@ export const GET_RUNNING_RUN = gql`
   }
 `;
 
-export const GET_PARTICIPANTS = gql`
-  query getParticipants($projectID: ID!, $runID: ID!) {
+export const GET_RUN_PARTICIPANTS = gql`
+  query getRunParticipants($projectID: ID!, $runID: ID!) {
     project(projectID: $projectID) {
       id
       runs(runID: $runID) {
@@ -250,6 +250,35 @@ export const GET_PARTICIPANTS = gql`
             }
           }
         }
+      }
+    }
+  }
+`;
+
+export const GET_PROJECT_PARTICIPANTS = gql`
+  query getProjectParticipants($projectID: ID!) {
+    project(projectID: $projectID) {
+      id
+      participants {
+        id
+        mturkWorkerID
+        data {
+          key
+          val
+        }
+      }
+    }
+  }
+`;
+
+export const GET_ALL_PARTICIPANTS = gql`
+  query getAllParticipants {
+    participants {
+      id
+      mturkWorkerID
+      data {
+        key
+        val
       }
     }
   }

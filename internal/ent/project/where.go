@@ -551,6 +551,34 @@ func HasTemplatesWith(preds ...predicate.Template) predicate.Project {
 	})
 }
 
+// HasParticipants applies the HasEdge predicate on the "participants" edge.
+func HasParticipants() predicate.Project {
+	return predicate.Project(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ParticipantsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, ParticipantsTable, ParticipantsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasParticipantsWith applies the HasEdge predicate on the "participants" edge with a given conditions (other predicates).
+func HasParticipantsWith(preds ...predicate.Participant) predicate.Project {
+	return predicate.Project(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ParticipantsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, ParticipantsTable, ParticipantsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasOwner applies the HasEdge predicate on the "owner" edge.
 func HasOwner() predicate.Project {
 	return predicate.Project(func(s *sql.Selector) {

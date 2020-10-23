@@ -28,6 +28,8 @@ const (
 	EdgeCreatedBy = "createdBy"
 	// EdgeSteps holds the string denoting the steps edge name in mutations.
 	EdgeSteps = "steps"
+	// EdgeProjects holds the string denoting the projects edge name in mutations.
+	EdgeProjects = "projects"
 
 	// Table holds the table name of the participant in the database.
 	Table = "participants"
@@ -64,6 +66,11 @@ const (
 	// StepsInverseTable is the table name for the StepRun entity.
 	// It exists in this package in order to avoid circular dependency with the "steprun" package.
 	StepsInverseTable = "step_runs"
+	// ProjectsTable is the table the holds the projects relation/edge. The primary key declared below.
+	ProjectsTable = "project_participants"
+	// ProjectsInverseTable is the table name for the Project entity.
+	// It exists in this package in order to avoid circular dependency with the "project" package.
+	ProjectsInverseTable = "projects"
 )
 
 // Columns holds all SQL columns for participant fields.
@@ -83,6 +90,9 @@ var (
 	// StepsPrimaryKey and StepsColumn2 are the table columns denoting the
 	// primary key for the steps relation (M2M).
 	StepsPrimaryKey = []string{"step_run_id", "participant_id"}
+	// ProjectsPrimaryKey and ProjectsColumn2 are the table columns denoting the
+	// primary key for the projects relation (M2M).
+	ProjectsPrimaryKey = []string{"project_id", "participant_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

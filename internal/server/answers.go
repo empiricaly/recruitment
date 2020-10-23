@@ -65,7 +65,9 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 				// 	step.WithTemplate()
 				// }).
 				WithStep().
-				WithRun().
+				WithRun(func(run *ent.RunQuery) {
+					run.WithProject()
+				}).
 				Where(stepRunModel.UrlTokenEQ(id)).
 				First(ctx)
 			if err != nil {
@@ -93,6 +95,16 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 				return errors.New("trying to save data on a non-hit step")
 			}
 
+			run, err := stepRun.Edges.RunOrErr()
+			if err != nil {
+				return errors.Wrap(err, "get run")
+			}
+
+			project, err := run.Edges.ProjectOrErr()
+			if err != nil {
+				return errors.Wrap(err, "get project")
+			}
+
 			participant, err := tx.Participant.
 				Query().
 				WithParticipations(func(p *ent.ParticipationQuery) {
@@ -116,11 +128,20 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 					Create().
 					SetID(xid.New().String()).
 					SetMturkWorkerID(workerID).
+					AddProjects(project).
 					AddSteps(stepRun).
 					SetCreatedBy(stepRun).
 					Save(c.Request.Context())
 				if err != nil {
 					return errors.Wrap(err, "create participant")
+				}
+			} else {
+				participant, err = participant.Update().
+					AddProjects(project).
+					AddSteps(stepRun).
+					Save(ctx)
+				if err != nil {
+					return errors.Wrap(err, "update participant")
 				}
 			}
 

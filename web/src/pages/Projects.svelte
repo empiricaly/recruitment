@@ -151,7 +151,7 @@
 
           <div class="mt-8 sm:mt-0 sm:w-64 md:w-96 px-8 py-4">
             <h1 class="font-semibold sm:pl-2">Participants</h1>
-            <div class="mt-3">There are 0 participants in the internal DB.</div>
+            <div class="mt-3">See all participants in the internal DB.</div>
             <div class="mt-8">
               <LinkButton to="/participants" secondary>
                 View Participants

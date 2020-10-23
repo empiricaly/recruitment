@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/template"
@@ -97,6 +98,21 @@ func (pc *ProjectCreate) AddTemplates(t ...*Template) *ProjectCreate {
 		ids[i] = t[i].ID
 	}
 	return pc.AddTemplateIDs(ids...)
+}
+
+// AddParticipantIDs adds the participants edge to Participant by ids.
+func (pc *ProjectCreate) AddParticipantIDs(ids ...string) *ProjectCreate {
+	pc.mutation.AddParticipantIDs(ids...)
+	return pc
+}
+
+// AddParticipants adds the participants edges to Participant.
+func (pc *ProjectCreate) AddParticipants(p ...*Participant) *ProjectCreate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pc.AddParticipantIDs(ids...)
 }
 
 // SetOwnerID sets the owner edge to Admin by id.
@@ -290,6 +306,25 @@ func (pc *ProjectCreate) createSpec() (*Project, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: template.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.ParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   project.ParticipantsTable,
+			Columns: project.ParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
 				},
 			},
 		}

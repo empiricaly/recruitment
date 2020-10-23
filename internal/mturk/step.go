@@ -22,8 +22,8 @@ const workerAdultQualTypeID = "00000000000000000060"
 var errStepWithoutParticipants = errors.New("message step without participants")
 var errInvalidInitialMessageStep = errors.New("message step cannot be first with mturk player selection")
 
-// RunStep to run step based on stepType
-func (s *Session) RunStep(run *ent.Run, step *ent.Step, stepRun *ent.StepRun, startTime time.Time) error {
+// StartStep to run step based on stepType
+func (s *Session) StartStep(project *ent.Project, run *ent.Run, step *ent.Step, stepRun *ent.StepRun, startTime time.Time) error {
 	s.logger.Debug().Msg("Running step")
 	defer s.logger.Debug().Msg("Step ran")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -40,15 +40,15 @@ func (s *Session) RunStep(run *ent.Run, step *ent.Step, stepRun *ent.StepRun, st
 
 	switch step.Type {
 	case stepModel.TypeMTURK_HIT:
-		return s.runMTurkHITStep(ctx, run, stepRun, template, step, startTime)
+		return s.runMTurkHITStep(ctx, project, run, stepRun, template, step, startTime)
 	case stepModel.TypeMTURK_MESSAGE:
-		return s.runMTurkMessageStep(ctx, run, stepRun, template, step, startTime)
+		return s.runMTurkMessageStep(ctx, project, run, stepRun, template, step, startTime)
 	default:
 		return errors.Errorf("unknown step type for MTurk: %s", step.Type.String())
 	}
 }
 
-func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *ent.StepRun, template *ent.Template, step *ent.Step, startTime time.Time) error {
+func (s *Session) runMTurkHITStep(ctx context.Context, project *ent.Project, run *ent.Run, stepRun *ent.StepRun, template *ent.Template, step *ent.Step, startTime time.Time) error {
 	// rootURL is already tested from config options, should never fail to parse
 	addr, err := url.Parse(s.rootURL)
 	if err != nil {
@@ -160,7 +160,7 @@ func (s *Session) runMTurkHITStep(ctx context.Context, run *ent.Run, stepRun *en
 	return nil
 }
 
-func (s *Session) runMTurkMessageStep(ctx context.Context, run *ent.Run, stepRun *ent.StepRun, template *ent.Template, step *ent.Step, startTime time.Time) error {
+func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project, run *ent.Run, stepRun *ent.StepRun, template *ent.Template, step *ent.Step, startTime time.Time) error {
 	if step.Index == 0 && template.SelectionType == templateModel.SelectionTypeMTURK_QUALIFICATIONS {
 		return errInvalidInitialMessageStep
 	}
@@ -193,7 +193,7 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, run *ent.Run, stepRun
 }
 
 // EndStep to end step based on stepType
-func (s *Session) EndStep(run *ent.Run, step *ent.Step, stepRun *ent.StepRun, nextStep *ent.Step, nextStepRun *ent.StepRun) error {
+func (s *Session) EndStep(project *ent.Project, run *ent.Run, step *ent.Step, stepRun *ent.StepRun, nextStep *ent.Step, nextStepRun *ent.StepRun) error {
 	s.logger.Debug().Msg("Ending step")
 	defer s.logger.Debug().Msg("Step ended")
 
@@ -211,15 +211,15 @@ func (s *Session) EndStep(run *ent.Run, step *ent.Step, stepRun *ent.StepRun, ne
 
 	switch step.Type {
 	case stepModel.TypeMTURK_HIT:
-		return s.endMTurkHITStep(ctx, run, template, step, stepRun, nextStep, nextStepRun)
+		return s.endMTurkHITStep(ctx, project, run, template, step, stepRun, nextStep, nextStepRun)
 	case stepModel.TypeMTURK_MESSAGE:
-		return s.endMTurkMessageStep(ctx, run, template, step, stepRun, nextStep, nextStepRun)
+		return s.endMTurkMessageStep(ctx, project, run, template, step, stepRun, nextStep, nextStepRun)
 	default:
 		return errors.Errorf("unknown step type for MTurk: %s", step.Type.String())
 	}
 }
 
-func (s *Session) endMTurkHITStep(ctx context.Context, run *ent.Run, template *ent.Template, step *ent.Step, stepRun *ent.StepRun, nextStep *ent.Step, nextStepRun *ent.StepRun) error {
+func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run *ent.Run, template *ent.Template, step *ent.Step, stepRun *ent.StepRun, nextStep *ent.Step, nextStepRun *ent.StepRun) error {
 	// Getting stepRun again, to make sure we have the HIT ID saved previously
 	// Maybe should refresh stepRun higher up in the chain...
 	s.store.StepRun.Get(ctx, stepRun.ID)
@@ -263,12 +263,22 @@ func (s *Session) endMTurkHITStep(ctx context.Context, run *ent.Run, template *e
 		if p == nil {
 			p, err = s.store.Participant.Create().
 				SetID(xid.New().String()).
+				AddProjects(project).
 				SetMturkWorkerID(*assignment.WorkerId).
 				SetCreatedBy(stepRun).
 				AddSteps(stepRun).
 				Save(ctx)
 			if err != nil {
 				log.Error().Msgf("could not add participant with workerID %s for stepRun %s", *assignment.WorkerId, stepRun.ID)
+				continue
+			}
+		} else {
+			p, err = p.Update().
+				AddProjects(project).
+				AddSteps(stepRun).
+				Save(ctx)
+			if err != nil {
+				log.Error().Msgf("could not update participant with workerID %s for stepRun %s", *assignment.WorkerId, stepRun.ID)
 				continue
 			}
 		}
@@ -308,7 +318,7 @@ func (s *Session) endMTurkHITStep(ctx context.Context, run *ent.Run, template *e
 	return nil
 }
 
-func (s *Session) endMTurkMessageStep(ctx context.Context, run *ent.Run, template *ent.Template, step *ent.Step, stepRun *ent.StepRun, nextStep *ent.Step, nextStepRun *ent.StepRun) error {
+func (s *Session) endMTurkMessageStep(ctx context.Context, project *ent.Project, run *ent.Run, template *ent.Template, step *ent.Step, stepRun *ent.StepRun, nextStep *ent.Step, nextStepRun *ent.StepRun) error {
 	particpants, err := stepRun.QueryParticipants().All(ctx)
 	if err != nil {
 		return errors.New("get participants for msg step failed")

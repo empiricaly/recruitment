@@ -567,6 +567,22 @@ func (c *ParticipantClient) QuerySteps(pa *Participant) *StepRunQuery {
 	return query
 }
 
+// QueryProjects queries the projects edge of a Participant.
+func (c *ParticipantClient) QueryProjects(pa *Participant) *ProjectQuery {
+	query := &ProjectQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(participant.Table, participant.FieldID, id),
+			sqlgraph.To(project.Table, project.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, participant.ProjectsTable, participant.ProjectsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ParticipantClient) Hooks() []Hook {
 	return c.hooks.Participant
@@ -800,6 +816,22 @@ func (c *ProjectClient) QueryTemplates(pr *Project) *TemplateQuery {
 			sqlgraph.From(project.Table, project.FieldID, id),
 			sqlgraph.To(template.Table, template.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, project.TemplatesTable, project.TemplatesColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryParticipants queries the participants edge of a Project.
+func (c *ProjectClient) QueryParticipants(pr *Project) *ParticipantQuery {
+	query := &ParticipantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, id),
+			sqlgraph.To(participant.Table, participant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, project.ParticipantsTable, project.ParticipantsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil

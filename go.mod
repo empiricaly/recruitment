@@ -28,5 +28,6 @@ require (
 	github.com/tidwall/gjson v1.6.1
 	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/yuin/goldmark v1.2.1
+	golang.org/x/net v0.0.0-20200822124328-c89045814202
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )

@@ -11,6 +11,7 @@ import (
 	"github.com/empiricaly/recruitment/internal/ent/datum"
 	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
+	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/providerid"
 	"github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -149,6 +150,21 @@ func (pc *ParticipantCreate) AddSteps(s ...*StepRun) *ParticipantCreate {
 		ids[i] = s[i].ID
 	}
 	return pc.AddStepIDs(ids...)
+}
+
+// AddProjectIDs adds the projects edge to Project by ids.
+func (pc *ParticipantCreate) AddProjectIDs(ids ...string) *ParticipantCreate {
+	pc.mutation.AddProjectIDs(ids...)
+	return pc
+}
+
+// AddProjects adds the projects edges to Project.
+func (pc *ParticipantCreate) AddProjects(p ...*Project) *ParticipantCreate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pc.AddProjectIDs(ids...)
 }
 
 // Mutation returns the ParticipantMutation object of the builder.
@@ -366,6 +382,25 @@ func (pc *ParticipantCreate) createSpec() (*Participant, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: steprun.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.ProjectsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   participant.ProjectsTable,
+			Columns: participant.ProjectsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: project.FieldID,
 				},
 			},
 		}

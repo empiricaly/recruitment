@@ -10,6 +10,7 @@ import (
 	"math"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/run"
@@ -28,10 +29,11 @@ type ProjectQuery struct {
 	unique     []string
 	predicates []predicate.Project
 	// eager-loading edges.
-	withRuns      *RunQuery
-	withTemplates *TemplateQuery
-	withOwner     *AdminQuery
-	withFKs       bool
+	withRuns         *RunQuery
+	withTemplates    *TemplateQuery
+	withParticipants *ParticipantQuery
+	withOwner        *AdminQuery
+	withFKs          bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -98,6 +100,28 @@ func (pq *ProjectQuery) QueryTemplates() *TemplateQuery {
 			sqlgraph.From(project.Table, project.FieldID, selector),
 			sqlgraph.To(template.Table, template.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, project.TemplatesTable, project.TemplatesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryParticipants chains the current query on the participants edge.
+func (pq *ProjectQuery) QueryParticipants() *ParticipantQuery {
+	query := &ParticipantQuery{config: pq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(project.Table, project.FieldID, selector),
+			sqlgraph.To(participant.Table, participant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, project.ParticipantsTable, project.ParticipantsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -328,6 +352,17 @@ func (pq *ProjectQuery) WithTemplates(opts ...func(*TemplateQuery)) *ProjectQuer
 	return pq
 }
 
+//  WithParticipants tells the query-builder to eager-loads the nodes that are connected to
+// the "participants" edge. The optional arguments used to configure the query builder of the edge.
+func (pq *ProjectQuery) WithParticipants(opts ...func(*ParticipantQuery)) *ProjectQuery {
+	query := &ParticipantQuery{config: pq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withParticipants = query
+	return pq
+}
+
 //  WithOwner tells the query-builder to eager-loads the nodes that are connected to
 // the "owner" edge. The optional arguments used to configure the query builder of the edge.
 func (pq *ProjectQuery) WithOwner(opts ...func(*AdminQuery)) *ProjectQuery {
@@ -406,9 +441,10 @@ func (pq *ProjectQuery) sqlAll(ctx context.Context) ([]*Project, error) {
 		nodes       = []*Project{}
 		withFKs     = pq.withFKs
 		_spec       = pq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			pq.withRuns != nil,
 			pq.withTemplates != nil,
+			pq.withParticipants != nil,
 			pq.withOwner != nil,
 		}
 	)
@@ -495,6 +531,69 @@ func (pq *ProjectQuery) sqlAll(ctx context.Context) ([]*Project, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "project_templates" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Templates = append(node.Edges.Templates, n)
+		}
+	}
+
+	if query := pq.withParticipants; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[string]*Project, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+		}
+		var (
+			edgeids []string
+			edges   = make(map[string][]*Project)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: false,
+				Table:   project.ParticipantsTable,
+				Columns: project.ParticipantsPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(project.ParticipantsPrimaryKey[0], fks...))
+			},
+
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{&sql.NullString{}, &sql.NullString{}}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullString)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullString)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := eout.String
+				inValue := ein.String
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				edgeids = append(edgeids, inValue)
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, pq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "participants": %v`, err)
+		}
+		query.Where(participant.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "participants" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Participants = append(nodes[i].Edges.Participants, n)
+			}
 		}
 	}
 
