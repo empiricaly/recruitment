@@ -89,6 +89,14 @@
     }
   }
 
+  function mapComparatorFromExistedQual(qualification, selectedQual, quals) {
+    if (!qualification || !quals) {
+      return [];
+    }
+    selectedQual = quals.find((q) => q.id === qualification.id);
+    return mapComparator(selectedQual);
+  }
+
   function mapIntegers(qualificationId) {
     const integers = [];
     const isHITsApproved = qualificationId === "00000000000000000040";
@@ -186,7 +194,7 @@
       {#if qualification.id && !isPremium}
         <Select
           bind:value={qualification.comparator}
-          options={mapComparator(selectedQual)}
+          options={!qualification.id ? mapComparator(selectedQual) : mapComparatorFromExistedQual(qualification, selectedQual, result.data.mturkQualificationTypes)}
           on:change={handleComparatorChange}
           placeholder="Select Comparator" />
       {/if}
@@ -210,7 +218,7 @@
             {/await}
           {/if}
 
-          {#if qualification.comparator && qualification.comparator && !isLocation && !isPremium && !isPresence}
+          {#if qualification.comparator && !isLocation && !isPremium && !isPresence}
             <div class="w-24">
               <Select
                 bind:value={qualification.values[0]}
