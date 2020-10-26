@@ -135,7 +135,7 @@ func (s *Session) runMTurkHITStep(ctx context.Context, project *ent.Project, run
 
 	params := &mturk.CreateHITInput{
 		Question:                    aws.String(question),
-		AssignmentDurationInSeconds: aws.Int64(int64(step.HitArgs.Timeout)),
+		AssignmentDurationInSeconds: aws.Int64(int64(step.HitArgs.Timeout * 60)),
 		LifetimeInSeconds:           aws.Int64(int64(step.Duration * 60)),
 		MaxAssignments:              aws.Int64(int64(assignmentCount)),
 		Title:                       aws.String(step.HitArgs.Title),
