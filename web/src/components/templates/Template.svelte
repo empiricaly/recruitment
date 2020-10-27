@@ -2,6 +2,7 @@
   import { mutate } from "svelte-apollo";
   import { client } from "../../lib/apollo";
   import { UPDATE_TEMPLATE } from "../../lib/queries.js";
+  import { addDirtyObject, removeDirtyObject } from "../../lib/dirty";
   import { deepCopy } from "../../utils/copy";
   import { debounce } from "../../utils/timing";
   import Button from "../base/Button.svelte";
@@ -24,14 +25,18 @@
   export let project;
   export let run;
   export let template;
+  export let isTemplateDirty;
 
+  let previousTemplate = JSON.stringify(template);
   $: {
-    if (template) {
+    const newTemplate = JSON.stringify(template);
+    if (newTemplate !== previousTemplate) {
+      isTemplateDirty = true;
+      addDirtyObject(template.id);
       save();
     }
   }
 
-  let previousTemplate = JSON.stringify(template);
   const save = debounce(
     async () => {
       const newTemplate = JSON.stringify(template);
@@ -55,6 +60,8 @@
             input,
           },
         });
+        isTemplateDirty = false;
+        removeDirtyObject(template.id);
         notify({
           success: true,
           title: `Run Saved`,
@@ -69,8 +76,8 @@
         });
       }
     },
-    2500,
-    30000
+    1000,
+    5000
   );
 
   function handleNewStep(stepType) {
@@ -165,7 +172,7 @@
           forID="participantCount"
           text="Starting Number of Participants"
           question="The number of participants the process should start with
-            from the selection phase." />
+          from the selection phase." />
         <div class="w-28">
           <Input
             id="participantCount"
@@ -183,7 +190,7 @@
           forID="adult"
           text="May contain Explicit Content"
           question="This run may contain potentially explicit or offensive
-            content, for example, nudity." />
+          content, for example, nudity." />
         <div class="">
           <Toggle id="adult" bind:checked={template.adult} />
         </div>
@@ -193,7 +200,9 @@
         <Label
           forID="sandbox"
           text="Use Sandbox"
-          question="Use MTurk Sandbox mode instead of production mode. Real Workers will not see the HITs. Search for MTurk Sandbox on Google to find out more." />
+          question="Use MTurk Sandbox mode instead of production mode. Real
+          Workers will not see the HITs. Search for MTurk Sandbox on Google to
+          find out more." />
         <div class="">
           <Toggle id="adult" bind:checked={template.sandbox} />
         </div>
