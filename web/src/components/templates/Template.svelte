@@ -62,10 +62,6 @@
         });
         isTemplateDirty = false;
         removeDirtyObject(template.id);
-        notify({
-          success: true,
-          title: `Run Saved`,
-        });
       } catch (error) {
         console.error(error);
         notify({
