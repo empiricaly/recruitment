@@ -140,7 +140,7 @@ func (s *Session) createQualificationType(ctx context.Context, params *mturk.Cre
 	return qualID, nil
 }
 
-func (s *Session) notifyWorkers(ctx context.Context, subject, text string, workerIDs []string) error {
+func (s *Session) notifyWorkers(ctx context.Context, subject, text string, workerIDs []string) (*mturk.NotifyWorkersOutput, error) {
 	if s.config.Dev {
 		log.Debug().Strs("players", workerIDs).Msg("Notify Players")
 	} else {
@@ -149,13 +149,15 @@ func (s *Session) notifyWorkers(ctx context.Context, subject, text string, worke
 			Subject:     aws.String(subject),
 			MessageText: aws.String(text),
 		}
-		_, err := s.MTurk.NotifyWorkersWithContext(ctx, params)
+		res, err := s.MTurk.NotifyWorkersWithContext(ctx, params)
 		if err != nil {
-			return err
+			return nil, err
 		}
+
+		return res, nil
 	}
 
-	return nil
+	return &mturk.NotifyWorkersOutput{}, nil
 }
 
 func (s *Session) assignmentsForHit(ctx context.Context, hitID string) (chan *mturk.Assignment, error) {
