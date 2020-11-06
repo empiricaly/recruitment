@@ -79,11 +79,11 @@
       <Label
         forID={uniq('timeout')}
         text="HIT Accepted HIT Timeout"
-        question="Timeout of a single accepted HIT in seconds" />
+        question="Timeout of a single accepted HIT in minutes" />
       <Input
         type="number"
         id={uniq('timeout')}
-        right="seconds"
+        right="minutes"
         bind:value={step.hitArgs.timeout}
         inputmode="numeric"
         required

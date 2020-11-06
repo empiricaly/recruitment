@@ -10,7 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/mturk"
 	"github.com/empiricaly/recruitment/internal/ent"
+	"github.com/empiricaly/recruitment/internal/ent/participation"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
+	stepRunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
 	templateModel "github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/pkg/errors"
 	"github.com/rs/xid"
@@ -136,7 +138,7 @@ func (s *Session) runMTurkHITStep(ctx context.Context, project *ent.Project, run
 
 	params := &mturk.CreateHITInput{
 		Question:                    aws.String(question),
-		AssignmentDurationInSeconds: aws.Int64(int64(step.HitArgs.Timeout)),
+		AssignmentDurationInSeconds: aws.Int64(int64(step.HitArgs.Timeout * 60)),
 		LifetimeInSeconds:           aws.Int64(int64(step.Duration * 60)),
 		MaxAssignments:              aws.Int64(int64(assignmentCount)),
 		Title:                       aws.String(step.HitArgs.Title),
@@ -190,7 +192,49 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 		msg = strings.ReplaceAll(msg, "{url}", *step.MsgArgs.URL)
 	}
 
-	return s.notifyWorkers(ctx, subject, msg, workerIDs)
+	output, err := s.notifyWorkers(ctx, subject, msg, workerIDs)
+	if err != nil {
+		return errors.Wrap(err, "notify workers")
+	}
+
+	failedWorkedIDs := make(map[string]*mturk.NotifyWorkersFailureStatus)
+	for _, stat := range output.NotifyWorkersFailureStatuses {
+		failedWorkedIDs[*stat.WorkerId] = stat
+	}
+
+	for _, p := range participants {
+		if p.MturkWorkerID == nil {
+			log.Warn().
+				Str("participantID", p.ID).
+				Msg("notifying participant without workerID?!")
+			continue
+		}
+
+		stat, ok := failedWorkedIDs[*p.MturkWorkerID]
+		if ok {
+			log.Error().
+				Str("mturkErrCode", *stat.NotifyWorkersFailureCode).
+				Str("mturkErr", *stat.NotifyWorkersFailureMessage).
+				Msg("could not notify worker")
+			continue
+		}
+
+		partParams := s.store.Participation.Create().
+			SetID(xid.New().String()).
+			SetParticipant(p).
+			SetStepRun(stepRun).
+			SetMturkWorkerID(*p.MturkWorkerID)
+
+		_, err := partParams.Save(ctx)
+		if err != nil {
+			log.Error().
+				Str("workerID", *p.MturkWorkerID).
+				Str("stepRunID", stepRun.ID).
+				Msg("could not add participant to stepRun")
+		}
+	}
+
+	return nil
 }
 
 // EndStep to end step based on stepType
@@ -239,7 +283,12 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 		return errors.New("get assignments for hit step failed")
 	}
 
-	particpants, err := stepRun.QueryParticipants().WithProjects().All(ctx)
+	particpants, err := stepRun.QueryParticipants().
+		WithParticipations(func(q *ent.ParticipationQuery) {
+			q.Where(participation.HasStepRunWith(stepRunModel.IDEQ(stepRun.ID)))
+		}).
+		WithProjects().
+		All(ctx)
 	if err != nil {
 		return errors.New("get participants for hit failed")
 	}
@@ -298,26 +347,30 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 		}
 		nextParticipants = append(nextParticipants, p)
 
-		partParams := s.store.Participation.Create().
-			SetID(xid.New().String()).
-			SetParticipant(p).
-			SetStepRun(stepRun).
-			SetMturkWorkerID(*assignment.WorkerId).
-			SetMturkAssignmentID(*assignment.AssignmentId).
-			SetMturkHitID(*assignment.HITId)
+		participation, err := p.Edges.ParticipationsOrErr()
+		if err != nil || participation == nil {
+			partParams := s.store.Participation.Create().
+				SetID(xid.New().String()).
+				SetParticipant(p).
+				SetStepRun(stepRun).
+				SetMturkWorkerID(*assignment.WorkerId).
+				SetMturkAssignmentID(*assignment.AssignmentId).
+				SetMturkHitID(*assignment.HITId)
 
-		if assignment.AcceptTime != nil {
-			partParams.SetMturkAcceptedAt(*assignment.AcceptTime)
-		}
-		if assignment.SubmitTime != nil {
-			partParams.SetMturkSubmittedAt(*assignment.SubmitTime)
+			if assignment.AcceptTime != nil {
+				partParams.SetMturkAcceptedAt(*assignment.AcceptTime)
+			}
+			if assignment.SubmitTime != nil {
+				partParams.SetMturkSubmittedAt(*assignment.SubmitTime)
+			}
+
+			_, err := partParams.Save(ctx)
+			if err != nil {
+				log.Error().Msgf("could not add participant with workerID %s for stepRun %s", *assignment.WorkerId, stepRun.ID)
+				continue
+			}
 		}
 
-		_, err := partParams.Save(ctx)
-		if err != nil {
-			log.Error().Msgf("could not add participant with workerID %s for stepRun %s", *assignment.WorkerId, stepRun.ID)
-			continue
-		}
 	}
 
 	if nextStepRun != nil {
@@ -333,14 +386,20 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 }
 
 func (s *Session) endMTurkMessageStep(ctx context.Context, project *ent.Project, run *ent.Run, template *ent.Template, step *ent.Step, stepRun *ent.StepRun, nextStep *ent.Step, nextStepRun *ent.StepRun) error {
-	particpants, err := stepRun.QueryParticipants().All(ctx)
+	participations, err := stepRun.QueryParticipations().WithParticipant().All(ctx)
 	if err != nil {
 		return errors.New("get participants for msg step failed")
 	}
 
+	participants := make([]*ent.Participant, len(participations))
+
+	for i, p := range participations {
+		participants[i] = p.Edges.Participant
+	}
+
 	if nextStepRun != nil {
 		_, err = nextStepRun.Update().
-			AddParticipants(particpants...).
+			AddParticipants(participants...).
 			Save(ctx)
 		if err != nil {
 			return errors.Wrap(err, "push msg step participants to next run")

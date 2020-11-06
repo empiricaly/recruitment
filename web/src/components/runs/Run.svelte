@@ -12,6 +12,7 @@
     UPDATE_RUN,
   } from "../../lib/queries";
   import { push } from "../../lib/routing";
+  import { addDirtyObject, removeDirtyObject } from "../../lib/dirty";
   import { deepCopy } from "../../utils/copy";
   import { debounce } from "../../utils/timing";
   import StatusBadge from "../misc/StatusBadge.svelte";
@@ -26,9 +27,14 @@
 
   let name = run.name;
   let initialName = name;
+  let isRunDirty = false;
+  let isTemplateDirty = false;
+  let disabled = false;
 
   $: {
     if (name !== initialName) {
+      isRunDirty = true;
+      addDirtyObject(run.id);
       update();
       initialName = name;
     }
@@ -53,12 +59,8 @@
           },
         });
 
-        notify({
-          success: true,
-          title: `Run Saved`,
-          // body:
-          //   "Something happened on the server, and we could not create a new Run as requested.",
-        });
+        isRunDirty = false;
+        removeDirtyObject(run.id);
       } catch (error) {
         console.error(error);
         notify({
@@ -70,7 +72,7 @@
       }
     },
     1000,
-    10000
+    5000
   );
 
   const startRun = async () => {
@@ -216,17 +218,16 @@
 
   let actions = [];
   let facts = [];
-  let disabled = false;
   $: isMturkQual = template.selectionType === "MTURK_QUALIFICATIONS";
 
   $: {
+    disabled = isRunDirty || isTemplateDirty;
+
     if (
-      template.steps.length === 0 ||
+      (!disabled && template.steps.length === 0) ||
       (isMturkQual && template.steps[0].type !== "MTURK_HIT")
     ) {
       disabled = true;
-    } else {
-      disabled = false;
     }
   }
 
@@ -367,7 +368,7 @@
     {#if run.status !== 'CREATED' || run.startAt}
       <RunningRun {project} {run} />
     {:else}
-      <Template {project} {run} bind:template />
+      <Template {project} {run} bind:template bind:isTemplateDirty />
     {/if}
   </Layout>
 {/if}
