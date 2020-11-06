@@ -137,7 +137,7 @@ func (r *Runtime) removeRun(run *ent.Run) {
 }
 
 func (r *Runtime) processRun(runID string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
 	runRecord, err := r.conn.Run.Get(ctx, runID)
 	if err != nil {
@@ -193,7 +193,7 @@ func (r *Runtime) registerHooks() {
 }
 
 func (r *Runtime) registerExistingSteps() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
 
 	runIDs, err := r.conn.Run.Query().

@@ -13,9 +13,9 @@ export const defaultMessageStepArgs = {
   subject: "",
   url: "",
   message: "\n\n\n\n",
-  messageType: "MARKDOWN",
+  messageType: "HTML",
   lobby: "",
-  lobbyType: "MARKDOWN",
+  lobbyType: "HTML",
   lobbyExpiration: 0,
 };
 

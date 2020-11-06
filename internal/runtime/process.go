@@ -8,6 +8,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/empiricaly/recruitment/internal/ent"
+	"github.com/empiricaly/recruitment/internal/ent/participant"
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	steprunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
@@ -193,7 +194,7 @@ func (r *runState) endRun(ctx context.Context, endTime time.Time) error {
 }
 
 func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int, useAll bool, condition *model.Condition) ([]*ent.Participant, error) {
-	participants, err := tx.Participant.Query().All(ctx)
+	participants, err := tx.Participant.Query().Where(participant.And(participant.MturkWorkerIDNotIn("A1R5P9HWU2CDUT", "A3T2X4G0BQDZLX", "A297TGBZSHSPOI"))).All(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "find participants")
 	}
@@ -208,6 +209,12 @@ func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int
 				log.Debug().Err(err).Msg("match participant filter condition")
 				continue
 			}
+			// if participant.MturkWorkerID == nil ||
+			// 	*participant.MturkWorkerID == "A1R5P9HWU2CDUT" ||
+			// 	*participant.MturkWorkerID == "A3T2X4G0BQDZLX" ||
+			// 	*participant.MturkWorkerID == "A297TGBZSHSPOI" {
+			// 	matches = false
+			// }
 			if matches {
 				participants[n] = participant
 				n++
