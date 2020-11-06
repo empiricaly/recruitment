@@ -174,7 +174,6 @@ func (r *runState) processStep() error {
 	var err error
 	switch r.nextEvent {
 	case startRunEvent:
-		return errors.New("Oh nooooo")
 		at := time.Now()
 		err = r.startRun(ctx, at)
 		if err != nil {

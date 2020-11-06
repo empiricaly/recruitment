@@ -14,7 +14,7 @@ import (
 )
 
 func jsfilter(ctx context.Context, conn *storage.Conn, participants []*ent.Participant, js string) ([]*ent.Participant, error) {
-	subProcess := exec.Command("node", "../../scripts/participant_filter/filter.js")
+	subProcess := exec.Command("node", "scripts/participant_filter/filter.js")
 	subProcess.Stderr = os.Stderr
 
 	stdin, err := subProcess.StdinPipe()

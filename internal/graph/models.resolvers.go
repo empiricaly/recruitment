@@ -9,7 +9,6 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/datum"
-	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/run"
 	"github.com/empiricaly/recruitment/internal/ent/step"
@@ -113,8 +112,7 @@ func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project, runID *str
 }
 
 func (r *projectResolver) Participants(ctx context.Context, obj *ent.Project) ([]*ent.Participant, error) {
-	return obj.QueryParticipants().Where(participant.And(participant.MturkWorkerIDNotIn("A1R5P9HWU2CDUT", "A3T2X4G0BQDZLX", "A297TGBZSHSPOI"))).All(ctx)
-	// return obj.QueryParticipants().All(ctx)
+	return obj.QueryParticipants().All(ctx)
 }
 
 func (r *providerIDResolver) ProviderID(ctx context.Context, obj *ent.ProviderID) (string, error) {
