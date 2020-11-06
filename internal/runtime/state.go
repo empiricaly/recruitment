@@ -6,7 +6,9 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/run"
+	runModel "github.com/empiricaly/recruitment/internal/ent/run"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
+	steprunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
 	"github.com/empiricaly/recruitment/internal/mturk"
 	"github.com/pkg/errors"
 )
@@ -130,11 +132,39 @@ func (r *runState) processNextStep() {
 	currentEventType := r.nextEvent.String()
 	r.logger.Debug().Msgf("Processing processing %s", currentEventType)
 	if err := r.processStep(); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		r.refresh()
+
+		at := time.Now()
+
+		if r.currentStepRun != nil {
+			_, err := r.currentStepRun.
+				Update().
+				SetStatus(steprunModel.StatusFAILED).
+				SetEndedAt(at).
+				Save(ctx)
+			if err != nil {
+				r.logger.Error().Err(err).Msg("Failed stopping failed step")
+			}
+		}
+
+		_, err := r.run.Update().
+			SetStatus(runModel.StatusFAILED).
+			SetEndedAt(at).
+			SetError(errors.Wrapf(err, "Failed processing %s", currentEventType).Error()).
+			Save(ctx)
+		if err != nil {
+			r.logger.Error().Err(err).Msg("Failed stopping failed run")
+		}
+
 		r.logger.Error().Err(err).Msgf("Failed processing %s", currentEventType)
 		return
 	}
 	r.logger.Debug().Msgf("Finished processing %s", currentEventType)
 }
+
 func (r *runState) processStep() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
@@ -144,6 +174,7 @@ func (r *runState) processStep() error {
 	var err error
 	switch r.nextEvent {
 	case startRunEvent:
+		return errors.New("Oh nooooo")
 		at := time.Now()
 		err = r.startRun(ctx, at)
 		if err != nil {
