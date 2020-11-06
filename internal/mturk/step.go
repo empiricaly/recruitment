@@ -28,7 +28,7 @@ var errInvalidInitialMessageStep = errors.New("message step cannot be first with
 func (s *Session) StartStep(project *ent.Project, run *ent.Run, step *ent.Step, stepRun *ent.StepRun, startTime time.Time) error {
 	s.logger.Debug().Msg("Running step")
 	defer s.logger.Debug().Msg("Step ran")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
 
 	var err error
@@ -124,6 +124,7 @@ func (s *Session) runMTurkHITStep(ctx context.Context, project *ent.Project, run
 		quals = append(quals, &mturk.QualificationRequirement{
 			QualificationTypeId: aws.String(qualID),
 			Comparator:          aws.String("Exists"),
+			ActionsGuarded:      aws.String("DiscoverPreviewAndAccept"),
 		})
 		assignmentCount = len(participants)
 	}
@@ -241,7 +242,7 @@ func (s *Session) EndStep(project *ent.Project, run *ent.Run, step *ent.Step, st
 	s.logger.Debug().Msg("Ending step")
 	defer s.logger.Debug().Msg("Step ended")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
 
 	var err error

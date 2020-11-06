@@ -42,7 +42,7 @@
       USD
     </div>
 
-    <!-- <div class="mt-4">
+    <div class="mt-4">
       <Label
         text="HIT Accepted HIT Timeout"
         question="Timeout of a single accepted HIT in seconds" />
@@ -50,7 +50,7 @@
       seconds
     </div>
 
-    <div class="mt-4">
+    <!-- <div class="mt-4">
       <Label
         text="Number of HITs to publish"
         question="Maximum number of HITs to publish." />

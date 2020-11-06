@@ -10,6 +10,7 @@ import (
 
 	"github.com/empiricaly/recruitment/internal/admin"
 	"github.com/empiricaly/recruitment/internal/ent"
+	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/graph/generated"
 	"github.com/empiricaly/recruitment/internal/model"
@@ -34,7 +35,8 @@ func (r *queryResolver) Project(ctx context.Context, id *string, projectID *stri
 }
 
 func (r *queryResolver) Participants(ctx context.Context, first *int, after *string) ([]*ent.Participant, error) {
-	return r.Store.Participant.Query().All(ctx)
+	return r.Store.Participant.Query().Where(participant.And(participant.MturkWorkerIDNotIn("A1R5P9HWU2CDUT", "A3T2X4G0BQDZLX", "A297TGBZSHSPOI"))).All(ctx)
+	// return r.Store.Participant.Query().All(ctx)
 }
 
 func (r *queryResolver) ParticipantCount(ctx context.Context) (*int, error) {

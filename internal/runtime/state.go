@@ -238,7 +238,7 @@ func (r *runState) setNextStep() error {
 }
 
 func (r *runState) refresh() error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
 
 	var err error

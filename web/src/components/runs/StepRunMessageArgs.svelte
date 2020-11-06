@@ -29,6 +29,7 @@
 <script>
   import { uniqueID } from "../../utils/uniq.js";
   import Label from "../base/Label.svelte";
+  import CodeMirror from "../editors/CodeMirror.svelte";
 
   export let msgArgs;
   export let hasSubject = false;
@@ -47,13 +48,15 @@
   </div>
 {/if}
 
-<div class="mt-4">
-  <Label
-    forID={uniq('url')}
-    text="Target URL"
-    question="URL Participants should be forwarded to" />
-  {msgArgs.url}
-</div>
+{#if msgArgs.url}
+  <div class="mt-4">
+    <Label
+      forID={uniq('url')}
+      text="Target URL"
+      question="URL Participants should be forwarded to" />
+    {msgArgs.url}
+  </div>
+{/if}
 
 <div class="mt-4">
   <div class="flex justify-between">
@@ -66,9 +69,12 @@
       {msgArgs.messageType}
     </div>
   </div>
-  <div>
-    <pre>
-      {msgArgs.message}
-    </pre>
+  <div class="mt-2 border">
+    <CodeMirror
+      readonly
+      value={msgArgs.message}
+      mode={typeToMode[msgArgs.messageType]} />
+
+    <!-- {msgArgs.message} -->
   </div>
 </div>

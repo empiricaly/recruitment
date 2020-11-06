@@ -21,7 +21,7 @@ func init() {
 
 func (s *Session) stopHit(ctx context.Context, hitID string) error {
 	if s.config.Dev {
-		log.Debug().Interface("hitID", hitID).Msg("Stopping HIT")
+		log.Debug().Str("hitID", hitID).Msg("Stopping HIT")
 		selectedHit := devHITMap[hitID]
 		if selectedHit == nil {
 			log.Warn().Msg("failed to stop Hit (dev mode)")
@@ -31,6 +31,7 @@ func (s *Session) stopHit(ctx context.Context, hitID string) error {
 	} else {
 		date := "1999-12-31"
 		t, _ := time.Parse("layoutISO", date)
+		log.Debug().Str("hitID", hitID).Msg("Stopping HIT")
 		_, err := s.MTurk.UpdateExpirationForHITWithContext(ctx, &mturk.UpdateExpirationForHITInput{
 			HITId:    aws.String(hitID),
 			ExpireAt: aws.Time(t),
@@ -72,6 +73,7 @@ func (s *Session) createHit(ctx context.Context, params *mturk.CreateHITInput) (
 			AssignmentDurationInSeconds: params.AssignmentDurationInSeconds,
 		}
 	} else {
+		log.Debug().Interface("input", params).Msg("Creating HIT")
 		hit, err := s.MTurk.CreateHITWithContext(ctx, params)
 		if err != nil {
 			log.Error().Err(err).Msg("failed to createHit HIT")
@@ -115,6 +117,7 @@ func (s *Session) associateQualificationWithWorker(ctx context.Context, params *
 	if s.config.Dev {
 		log.Debug().Interface("input", params).Msg("Associating qualification with worker")
 	} else {
+		log.Debug().Interface("input", params).Msg("Associating qualification with worker")
 		_, err := s.MTurk.AssociateQualificationWithWorkerWithContext(ctx, params)
 		if err != nil {
 			return err
@@ -130,6 +133,7 @@ func (s *Session) createQualificationType(ctx context.Context, params *mturk.Cre
 		log.Debug().Interface("input", params).Msg("Creating Qualification")
 		qualID = xid.New().String()
 	} else {
+		log.Debug().Interface("input", params).Msg("Creating Qualification")
 		qual, err := s.MTurk.CreateQualificationTypeWithContext(ctx, params)
 		if err != nil {
 			return "", err
@@ -144,6 +148,7 @@ func (s *Session) notifyWorkers(ctx context.Context, subject, text string, worke
 	if s.config.Dev {
 		log.Debug().Strs("players", workerIDs).Msg("Notify Players")
 	} else {
+		log.Debug().Strs("players", workerIDs).Msg("Notify Players")
 		params := &mturk.NotifyWorkersInput{
 			WorkerIds:   aws.StringSlice(workerIDs),
 			Subject:     aws.String(subject),
