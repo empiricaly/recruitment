@@ -150,13 +150,13 @@ func (r *runState) processNextStep() {
 			}
 		}
 
-		_, err := r.run.Update().
+		_, err2 := r.run.Update().
 			SetStatus(runModel.StatusFAILED).
 			SetEndedAt(at).
 			SetError(errors.Wrapf(err, "Failed processing %s", currentEventType).Error()).
 			Save(ctx)
-		if err != nil {
-			r.logger.Error().Err(err).Msg("Failed stopping failed run")
+		if err2 != nil {
+			r.logger.Error().Err(err2).Msg("Failed stopping failed run")
 		}
 
 		r.logger.Error().Err(err).Msgf("Failed processing %s", currentEventType)

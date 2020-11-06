@@ -152,6 +152,7 @@ export const GET_RUN = gql`
         startAt
         startedAt
         endedAt
+        error
 
         template {
           id
@@ -222,6 +223,7 @@ export const GET_RUNNING_RUN = gql`
       runs(runID: $runID) {
         id
         status
+        error
         steps {
           id
           index

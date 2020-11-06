@@ -99,9 +99,13 @@
           <div class="{current ? 'text-mint-300' : 'text-gray-500'}  mr-2">
             remaining
           </div>
-        {:else}
+        {:else if startsAt}
           <div class="text-gray-500  mr-2">Starts at</div>
           <div class="tabular-nums mr-1">{startsAt.calendar()}</div>
+        {:else if stepRun && stepRun.status === 'FAILED'}
+          <div class="text-red-700  mr-2">Failed!</div>
+        {:else if run.status === 'FAILED'}
+          <div class="text-red-700  mr-2">Run failed to start</div>
         {/if}
       </div>
 
