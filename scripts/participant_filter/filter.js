@@ -16,7 +16,7 @@ rl.on("close", function () {
   for (let i = 0; i < participants.length; i++) {
     participants[i].get = (k) => {
       if (participants[i].changes && participants[i].changes[k] !== undefined) {
-        return participants[i].changes[k];
+        return JSON.parse(participants[i].changes[k]);
       }
 
       const data = participants[i].edges.Data;
@@ -34,7 +34,7 @@ rl.on("close", function () {
         participants[i].changes = {};
       }
 
-      participants[i].changes[k] = v;
+      participants[i].changes[k] = JSON.stringify(v);
     };
   }
   args.unshift(participants);

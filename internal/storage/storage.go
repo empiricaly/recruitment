@@ -37,8 +37,11 @@ func dbLog(msg ...interface{}) {
 
 // Connect creates a connection to a messaging service with the given config.
 func Connect(ctx context.Context, config *Config) (*Conn, error) {
-	connString := fmt.Sprintf("file:%s?mode=rwc&_fk=1", config.File)
-	db, err := sql.Open("sqlite3", connString)
+	connString := config.DriverURI
+	if connString == "" {
+		connString = fmt.Sprintf("file:%s?mode=rwc&_fk=1", config.File)
+	}
+	db, err := sql.Open(config.Driver, connString)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +49,7 @@ func Connect(ctx context.Context, config *Config) (*Conn, error) {
 	db.SetMaxOpenConns(0)
 	db.SetConnMaxLifetime(0)
 
-	drv := entsql.OpenDB("sqlite3", db)
+	drv := entsql.OpenDB(config.Driver, db)
 
 	options := []ent.Option{ent.Driver(drv)}
 	if config.Debug {

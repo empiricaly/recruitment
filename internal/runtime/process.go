@@ -142,26 +142,23 @@ func (r *runState) startStep(ctx context.Context, startTime time.Time) error {
 			return errors.Wrap(err, "get participants for filter step failed")
 		}
 
-		if r.currentStep.FilterArgs == nil {
-			log.Error().Msg("We are letting all participants through because the filterArgs object is missing")
+		if r.currentStep.FilterArgs == nil || r.currentStep.FilterArgs.Type == nil {
+			log.Error().Msg("We are letting all participants through because the filterArgs object or type is missing")
 		} else {
-			if r.currentStep.FilterArgs.Type == nil {
-				log.Error().Msg("We are letting all participants through because the filterArgs type is missing")
-			} else {
-				switch *r.currentStep.FilterArgs.Type {
-				case model.ParticipantFilterTypeJs:
-					if r.currentStep.FilterArgs.Js == nil {
-						log.Error().Msg("We are letting all participants through because the JS filter is empty")
-					} else {
-						participants, err = jsfilter(participants, *r.currentStep.FilterArgs.Js)
-						if err != nil {
-							return errors.Wrap(err, "jsfilter participants failed")
-						}
-					}
-				default:
-					log.Error().Msgf("unsupported participant filter: %s", r.currentStep.FilterArgs.Type.String())
-					log.Error().Msg("We are letting all participants through this unknown filter!")
+			switch *r.currentStep.FilterArgs.Type {
+			case model.ParticipantFilterTypeJs:
+				if r.currentStep.FilterArgs.Js == nil {
+					log.Error().Msg("We are letting all participants through because the JS filter is empty")
+					break
 				}
+
+				participants, err = jsfilter(ctx, r.conn, participants, *r.currentStep.FilterArgs.Js)
+				if err != nil {
+					return errors.Wrap(err, "jsfilter participants failed")
+				}
+			default:
+				log.Error().Msgf("unsupported participant filter: %s", r.currentStep.FilterArgs.Type.String())
+				log.Error().Msg("We are letting all participants through this unknown filter!")
 			}
 		}
 

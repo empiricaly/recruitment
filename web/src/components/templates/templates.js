@@ -32,6 +32,6 @@ export const defaultHITStepArgs = {
 
 export const defaultFilterStepArgs = {
   type: "JS",
-  js: "function (participants, stepRun) {\n\treturn participants;\n}",
+  js: "function (participants) {\n\treturn participants;\n}",
   filter: "",
 };

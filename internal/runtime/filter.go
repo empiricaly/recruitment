@@ -2,17 +2,18 @@ package runtime
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"os"
 	"os/exec"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/empiricaly/recruitment/internal/ent"
+	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
 
-func jsfilter(participants []*ent.Participant, js string) ([]*ent.Participant, error) {
+func jsfilter(ctx context.Context, conn *storage.Conn, participants []*ent.Participant, js string) ([]*ent.Participant, error) {
 	subProcess := exec.Command("node", "../../scripts/participant_filter/filter.js")
 	subProcess.Stderr = os.Stderr
 
@@ -32,23 +33,19 @@ func jsfilter(participants []*ent.Participant, js string) ([]*ent.Participant, e
 		return nil, errors.Wrap(err, "running node process")
 	}
 
-	_, err = input.WriteString(js)
-	if err != nil {
+	if _, err = input.WriteString(js); err != nil {
 		return nil, errors.Wrap(err, "writing js function to node")
 	}
 
-	_, err = input.WriteString("\nEND_OF_JS\n")
-	if err != nil {
+	if _, err = input.WriteString("\nEND_OF_JS\n"); err != nil {
 		return nil, errors.Wrap(err, "writing end of js to node")
 	}
 
-	_, err = input.WriteString("\nEND_OF_ARGS\n")
-	if err != nil {
+	if _, err = input.WriteString("\nEND_OF_ARGS\n"); err != nil {
 		return nil, errors.Wrap(err, "writing end of args to node")
 	}
 
-	err = input.Flush()
-	if err != nil {
+	if err = input.Flush(); err != nil {
 		return nil, errors.Wrap(err, "flush args to node")
 	}
 
@@ -58,37 +55,33 @@ func jsfilter(participants []*ent.Participant, js string) ([]*ent.Participant, e
 			return nil, errors.Wrap(err, "JSON encode participant")
 		}
 
-		_, err = input.Write(b)
-		if err != nil {
+		if _, err = input.Write(b); err != nil {
 			return nil, errors.Wrap(err, "writing participant to node")
 		}
 
-		_, err = input.WriteString("\n")
-		if err != nil {
+		if _, err = input.WriteString("\n"); err != nil {
 			return nil, errors.Wrap(err, "writing new line to node")
 		}
 
-		err = input.Flush()
-		if err != nil {
+		if err = input.Flush(); err != nil {
 			return nil, errors.Wrap(err, "flush participant to node")
 		}
-
 	}
 
-	err = stdin.Close()
-	if err != nil {
+	if err = stdin.Close(); err != nil {
 		return nil, errors.Wrap(err, "finished sending input to node")
 	}
 
+	changes := make([]*participantChanges, 0, len(participants))
 	for output.Scan() {
 		line := output.Bytes()
-		p := &participantChanges{}
-		err = json.Unmarshal(line, p)
+		change := &participantChanges{}
+		err = json.Unmarshal(line, change)
 		if err != nil {
 			log.Error().Err(err).Msg("unmarshal json from node")
 			continue
 		}
-		spew.Dump(p)
+		changes = append(changes, change)
 	}
 	if err := output.Err(); err != nil {
 		return nil, errors.Wrap(err, "reading output from node process")
@@ -96,11 +89,46 @@ func jsfilter(participants []*ent.Participant, js string) ([]*ent.Participant, e
 
 	subProcess.Wait()
 
-	return nil, nil
+	participantsMap := make(map[string]*ent.Participant)
+	for _, p := range participants {
+		participantsMap[p.ID] = p
+	}
+
+	outputParticipants := make([]*ent.Participant, 0)
+
+	if err := ent.WithTx(ctx, conn.Client, func(tx *ent.Tx) error {
+		for _, change := range changes {
+			if change.Keep {
+				p, ok := participantsMap[change.ID]
+				if !ok {
+					log.Warn().Str("ID", change.ID).Msg("returned unknown filtered participant")
+				} else {
+					outputParticipants = append(outputParticipants, p)
+				}
+			}
+
+			if len(change.Changes) == 0 {
+				continue
+			}
+
+			for key, val := range change.Changes {
+				_, err := ent.SetDatum(ctx, tx, participantsMap[change.ID], key, val, false)
+				if err != nil {
+					return errors.Wrap(err, "set datum")
+				}
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return nil, errors.Wrap(err, "set data on fitered participant: commit transaction")
+	}
+
+	return outputParticipants, nil
 }
 
 type participantChanges struct {
 	ID      string
-	Changes map[string]interface{}
+	Changes map[string]string
 	Keep    bool
 }

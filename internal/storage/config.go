@@ -9,6 +9,9 @@ import (
 type Config struct {
 	File  string `mapstructure:"file"`
 	Debug bool   `mapstructure:"debug"`
+
+	Driver    string `mapstructure:"driver"`
+	DriverURI string `mapstructure:"driveruri"`
 }
 
 // Validate configuration is ok
@@ -28,6 +31,16 @@ func ConfigFlags(cmd *cobra.Command, prefix string) error {
 	flag := prefix + ".file"
 	val := "recruitment.db"
 	cmd.Flags().String(flag, val, "Sqlite3 database file")
+	viper.SetDefault(flag, val)
+
+	flag = prefix + ".driver"
+	val = "sqlite3"
+	cmd.Flags().String(flag, val, "DB Driver")
+	viper.SetDefault(flag, val)
+
+	flag = prefix + ".driveruri"
+	val = ""
+	cmd.Flags().String(flag, val, "Custom DB connection uri (golang sql format)")
 	viper.SetDefault(flag, val)
 
 	flag = prefix + ".debug"
