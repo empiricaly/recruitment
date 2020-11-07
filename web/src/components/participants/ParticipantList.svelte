@@ -1,39 +1,24 @@
 <script>
   import { query } from "svelte-apollo";
   import { client } from "../../lib/apollo";
+  import { participantPerQueryType } from "../../lib/models/participants/participants.js";
   import DataCell from "./DataCell.svelte";
 
   export let queryArgs;
   export let type = "run";
 
-  console.log(queryArgs);
+  // console.log(queryArgs);
   const participantsQuery = query(client, queryArgs);
 
-  let participants;
+  export let participants;
   $: $participantsQuery.then((result) => {
-    let pp;
-    switch (type) {
-      case "run":
-        const steps = result.data.project.runs[0].steps;
-        if (steps.length === 0) {
-          return;
-        }
-        pp = steps[0].participants;
-        break;
-      case "project":
-        pp = result.data.project.participants;
-        break;
-      case "all":
-        pp = result.data.participants;
-        break;
-      default:
-        console.error("unknown type");
-        return;
+    const pp = participantPerQueryType(type, result);
+    if (pp) {
+      participants = pp;
     }
-    participants = pp;
   });
 
-  let keys = [];
+  export let keys = [];
   $: if (participants && participants.length > 0) {
     const lkeys = {};
     for (let i = 0; i < participants.length; i++) {
@@ -42,12 +27,16 @@
       }
     }
     keys = Object.keys(lkeys);
+    // const k = [];
+    // for (let i = 0; i < 100; i++) {
+    //   k.push(`key${i}`);
+    // }
+    // keys.push(...k);
   }
 
-  $: console.log(participants);
-  $: console.log(keys);
-
-  $: console.log(participants);
+  // $: console.log(participants);
+  // $: console.log(keys);
+  // $: console.log(participants);
 </script>
 
 {#if participants}

@@ -107,18 +107,20 @@
             </div>
             <div class="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
               <div class="flex-shrink-0 flex items-center px-4 pt-4 pb-6">
-                <Logo />
+                <Link to="/projects">
+                  <Logo />
+                </Link>
               </div>
 
               <div class="mt-4 px-4">
-              <Link
-                to="/projects">
-                <div class="items-center flex flex-shrink-0 px-4 rounded text-white py-2
+                <Link to="/projects">
+                  <div
+                    class="items-center flex flex-shrink-0 px-4 rounded text-white py-2
                 bg-gray-700 font-semibold hover:text-gray-200">
-                  {result.data.project.name}
-                </div>  
-              </Link>
-            </div>
+                    {result.data.project.name}
+                  </div>
+                </Link>
+              </div>
 
               <nav class="mt-5 px-2">
                 {#each menuitems as item}
@@ -181,8 +183,11 @@
     <div class="hidden md:flex md:flex-shrink-0">
       <div class="flex flex-col w-64 bg-gray-800">
         <div class="h-0 flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-          <div class="flex items-center flex-shrink-0 px-4 pt-8 pb-2 text-white">
-            <Logo />
+          <div
+            class="flex items-center flex-shrink-0 px-4 pt-8 pb-2 text-white">
+            <Link to="/projects">
+              <Logo />
+            </Link>
           </div>
           <!-- <Link
             to="/projects"
@@ -190,13 +195,12 @@
             bg-gray-700 font-medium hover:text-gray-200">
             {result.data.project.name}
           </Link> -->
-          <Link
-            to="/projects"
-            className="mt-5 mx-4">
-            <div class="items-center flex flex-shrink-0 px-4 rounded text-white py-2
+          <Link to="/projects" className="mt-5 mx-4">
+            <div
+              class="items-center flex flex-shrink-0 px-4 rounded text-white py-2
             bg-gray-700 font-semibold hover:text-gray-200">
-            {result.data.project.name}
-          </div>  
+              {result.data.project.name}
+            </div>
           </Link>
           <nav class="mt-6 flex-1 px-2 bg-gray-800">
             {#each menuitems as item}

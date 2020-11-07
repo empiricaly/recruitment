@@ -1,6 +1,4 @@
 <script>
-  import Callout from "../components/base/Callout.svelte";
-  import Link from "../components/base/Link.svelte";
   import RunsList from "../components/runs/RunsList.svelte";
   import Layout from "../layouts/Layout.svelte";
 </script>
@@ -8,19 +6,7 @@
 <Layout title="Overview" let:project>
   <div>
     <!-- <h3 class="text-lg leading-6 font-medium text-gray-900">Last 30 days</h3> -->
-    <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-          <dl>
-            <dt class="text-sm leading-5 font-medium text-gray-500 truncate">
-              Participants
-            </dt>
-            <dd class="mt-1 text-3xl leading-9 font-semibold text-gray-900">
-              2,892
-            </dd>
-          </dl>
-        </div>
-      </div>
+    <!-- <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
       <div class="bg-white overflow-hidden shadow rounded-lg">
         <div class="px-4 py-5 sm:p-6">
           <dl>
@@ -29,6 +15,18 @@
             </dt>
             <dd class="mt-1 text-3xl leading-9 font-semibold text-gray-900">
               32
+            </dd>
+          </dl>
+        </div>
+      </div>
+      <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+          <dl>
+            <dt class="text-sm leading-5 font-medium text-gray-500 truncate">
+              Participants
+            </dt>
+            <dd class="mt-1 text-3xl leading-9 font-semibold text-gray-900">
+              2,892
             </dd>
           </dl>
         </div>
@@ -46,9 +44,9 @@
         </div>
       </div>
     </div>
-  </div>
+    </div> -->
 
-  <div class="mt-8">
+    <!-- <div class="mt-8">
     <h3 class="text-lg leading-6 font-medium text-gray-900">On Going Runs</h3>
     <div class="mt-5">
       <Callout
@@ -63,17 +61,18 @@
             Runs page
           </Link>
           to create new Run.
-        </p>
+        </p> 
       </Callout>
     </div>
-  </div>
+  </div> -->
 
-  <div class="mt-8">
-    <h3 class="text-lg leading-6 font-medium text-gray-900">Last 3 Runs</h3>
-    <div class="mt-5 bg-white shadow overflow-hidden sm:rounded-md">
-      <ul>
-        <RunsList {project} limit={3} />
-      </ul>
+    <div class="mt-8">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Runs</h3>
+      <div class="mt-5 bg-white shadow overflow-hidden sm:rounded-md">
+        <ul>
+          <RunsList {project} limit={10} />
+        </ul>
+      </div>
     </div>
   </div>
 </Layout>

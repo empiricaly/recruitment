@@ -267,6 +267,7 @@ export const GET_PROJECT_PARTICIPANTS = gql`
       participants {
         id
         mturkWorkerID
+        createdAt
         data {
           key
           val

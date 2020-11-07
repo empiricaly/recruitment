@@ -206,7 +206,7 @@ type ComplexityRoot struct {
 		Name         func(childComplexity int) int
 		Participants func(childComplexity int) int
 		ProjectID    func(childComplexity int) int
-		Runs         func(childComplexity int, runID *string, limit *int) int
+		Runs         func(childComplexity int, runID *string, statuses []model.Status, limit *int) int
 		Templates    func(childComplexity int) int
 		UpdatedAt    func(childComplexity int) int
 	}
@@ -333,7 +333,7 @@ type ProjectResolver interface {
 	Creator(ctx context.Context, obj *ent.Project) (*ent.Admin, error)
 
 	Templates(ctx context.Context, obj *ent.Project) ([]*ent.Template, error)
-	Runs(ctx context.Context, obj *ent.Project, runID *string, limit *int) ([]*ent.Run, error)
+	Runs(ctx context.Context, obj *ent.Project, runID *string, statuses []model.Status, limit *int) ([]*ent.Run, error)
 	Participants(ctx context.Context, obj *ent.Project) ([]*ent.Participant, error)
 }
 type ProviderIDResolver interface {
@@ -1138,7 +1138,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Project.Runs(childComplexity, args["runID"].(*string), args["limit"].(*int)), true
+		return e.complexity.Project.Runs(childComplexity, args["runID"].(*string), args["statuses"].([]model.Status), args["limit"].(*int)), true
 
 	case "Project.templates":
 		if e.complexity.Project.Templates == nil {
@@ -1808,7 +1808,7 @@ type Project {
   """
   Runs contained in Project
   """
-  runs(runID: ID, limit: Int): [Run!]! @goField(forceResolver: true)
+  runs(runID: ID, statuses: [Status!], limit: Int): [Run!]! @goField(forceResolver: true)
 
   """
   Participants in this Project.
@@ -3511,15 +3511,24 @@ func (ec *executionContext) field_Project_runs_args(ctx context.Context, rawArgs
 		}
 	}
 	args["runID"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["limit"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+	var arg1 []model.Status
+	if tmp, ok := rawArgs["statuses"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("statuses"))
+		arg1, err = ec.unmarshalOStatus2ᚕgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStatusᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["limit"] = arg1
+	args["statuses"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg2
 	return args, nil
 }
 
@@ -7276,7 +7285,7 @@ func (ec *executionContext) _Project_runs(ctx context.Context, field graphql.Col
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Project().Runs(rctx, obj, args["runID"].(*string), args["limit"].(*int))
+		return ec.resolvers.Project().Runs(rctx, obj, args["runID"].(*string), args["statuses"].([]model.Status), args["limit"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15099,6 +15108,70 @@ func (ec *executionContext) unmarshalOStartRunInput2ᚖgithubᚗcomᚋempiricaly
 	}
 	res, err := ec.unmarshalInputStartRunInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOStatus2ᚕgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStatusᚄ(ctx context.Context, v interface{}) ([]model.Status, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]model.Status, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNStatus2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStatus(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOStatus2ᚕgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []model.Status) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNStatus2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐStatus(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalOStepRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐStepRun(ctx context.Context, sel ast.SelectionSet, v *ent.StepRun) graphql.Marshaler {

@@ -98,7 +98,7 @@ func (r *projectResolver) Templates(ctx context.Context, obj *ent.Project) ([]*e
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project, runID *string, limit *int) ([]*ent.Run, error) {
+func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project, runID *string, statuses []model.Status, limit *int) ([]*ent.Run, error) {
 	if runID != nil {
 		return obj.QueryRuns().Where(run.IDEQ(*runID)).All(ctx)
 	}
@@ -106,6 +106,14 @@ func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project, runID *str
 	q := obj.QueryRuns().Order(ent.Desc(run.FieldCreatedAt))
 	if limit != nil && *limit > 0 {
 		q = q.Limit(*limit)
+	}
+
+	if len(statuses) > 0 {
+		s := make([]run.Status, len(statuses))
+		for i, st := range statuses {
+			s[i] = run.Status(st)
+		}
+		q = q.Where(run.StatusIn(s...))
 	}
 
 	return q.All(ctx)

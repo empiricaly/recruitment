@@ -111,7 +111,7 @@ type Project {
   """
   Runs contained in Project
   """
-  runs(runID: ID, limit: Int): [Run!]! @goField(forceResolver: true)
+  runs(runID: ID, statuses: [Status!], limit: Int): [Run!]! @goField(forceResolver: true)
 
   """
   Participants in this Project.
