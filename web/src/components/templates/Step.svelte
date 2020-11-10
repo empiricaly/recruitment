@@ -59,7 +59,9 @@
         MTurk HIT
       {:else if step.type === 'MTURK_MESSAGE'}
         MTurk Message
-      {:else if step.type === 'PARTICIPANT_FILTER'}Participant Filter{/if}
+      {:else if step.type === 'PARTICIPANT_FILTER'}
+        Participant Filter
+      {:else if step.type === 'WAIT'}Wait{/if}
     </div>
   </div>
   <div slot="description">
@@ -164,6 +166,12 @@
           for later use.
         </p>
       </details>
+    {:else if step.type === 'WAIT'}
+      <p>
+        A
+        <em>Wait Step</em>
+        allows you to add a duration before executing the next step.
+      </p>
     {/if}
   </div>
   <div slot="header">
@@ -193,7 +201,7 @@
             {error}
             {error}
           </div>
-        {:else}
+        {:else if step.type === 'MTURK_HIT' || step.type === 'WAIT'}
           <div class="ml-2 mr-2 whitespace-no-wrap">
             <Label
               forID={uniq('duration')}
@@ -285,5 +293,7 @@
     <StepMTurkMessage bind:step />
   {:else if step.type === 'PARTICIPANT_FILTER'}
     <StepParticipantFilter bind:step />
+  {:else if step.type === 'WAIT'}
+    <div />
   {:else}Unknown Step Type?!?{/if}
 </TemplateSection>

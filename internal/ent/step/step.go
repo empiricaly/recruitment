@@ -105,6 +105,7 @@ const (
 	TypeMTURK_HIT          Type = "MTURK_HIT"
 	TypeMTURK_MESSAGE      Type = "MTURK_MESSAGE"
 	TypePARTICIPANT_FILTER Type = "PARTICIPANT_FILTER"
+	TypeWAIT               Type = "WAIT"
 )
 
 func (_type Type) String() string {
@@ -114,7 +115,7 @@ func (_type Type) String() string {
 // TypeValidator is a validator for the "type" field enum values. It is called by the builders before save.
 func TypeValidator(_type Type) error {
 	switch _type {
-	case TypeMTURK_HIT, TypeMTURK_MESSAGE, TypePARTICIPANT_FILTER:
+	case TypeMTURK_HIT, TypeMTURK_MESSAGE, TypePARTICIPANT_FILTER, TypeWAIT:
 		return nil
 	default:
 		return fmt.Errorf("step: invalid enum value for type field: %q", _type)

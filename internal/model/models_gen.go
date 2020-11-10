@@ -978,17 +978,20 @@ const (
 	StepTypeMturkMessage StepType = "MTURK_MESSAGE"
 	// PARTICIPANT_FILTER is a participant filtering step.
 	StepTypeParticipantFilter StepType = "PARTICIPANT_FILTER"
+	// WAIT is a step that has duration before executing the next step.
+	StepTypeWait StepType = "WAIT"
 )
 
 var AllStepType = []StepType{
 	StepTypeMturkHit,
 	StepTypeMturkMessage,
 	StepTypeParticipantFilter,
+	StepTypeWait,
 }
 
 func (e StepType) IsValid() bool {
 	switch e {
-	case StepTypeMturkHit, StepTypeMturkMessage, StepTypeParticipantFilter:
+	case StepTypeMturkHit, StepTypeMturkMessage, StepTypeParticipantFilter, StepTypeWait:
 		return true
 	}
 	return false

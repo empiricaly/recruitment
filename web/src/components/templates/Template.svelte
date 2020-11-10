@@ -80,7 +80,7 @@
     return function (event) {
       let params = {
         type: stepType,
-        duration: 60,
+        duration: stepType === "MTURK_HIT" || stepType === "WAIT" ? 60 : 0,
         index: template.steps.length,
         msgArgs: deepCopy(defaultMessageStepArgs),
         hitArgs: deepCopy(defaultHITStepArgs),
@@ -238,7 +238,7 @@
   </p>
 </div>
 
-<div class="mt-4 md:grid md:grid-cols-3 md:gap-4">
+<div class="mt-4 md:grid md:grid-cols-4 md:gap-3">
   <Button
     secondary={template.steps.length > 0}
     on:click={handleNewStep('MTURK_HIT')}
@@ -258,5 +258,13 @@
       on:click={handleNewStep('PARTICIPANT_FILTER')}
       disabled={template.steps.length === 0 && template.selectionType !== 'INTERNAL_DB'}
       text="Add Participant Filter Step" />
+  </div>
+
+  <div class="mt-2 md:mt-0">
+    <Button
+      secondary={template.steps.length > 0}
+      on:click={handleNewStep('WAIT')}
+      disabled={template.steps.length === 0 && template.selectionType !== 'INTERNAL_DB'}
+      text="Add Wait Step" />
   </div>
 </div>

@@ -16,6 +16,11 @@ enum StepType {
   PARTICIPANT_FILTER is a participant filtering step.
   """
   PARTICIPANT_FILTER
+
+  """
+  WAIT is a step that has duration before executing the next step.
+  """
+  WAIT
 }
 
 """

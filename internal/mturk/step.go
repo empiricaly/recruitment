@@ -45,6 +45,8 @@ func (s *Session) StartStep(project *ent.Project, run *ent.Run, step *ent.Step, 
 		return s.runMTurkHITStep(ctx, project, run, stepRun, template, step, startTime)
 	case stepModel.TypeMTURK_MESSAGE:
 		return s.runMTurkMessageStep(ctx, project, run, stepRun, template, step, startTime)
+	case stepModel.TypeWAIT:
+		return nil
 	default:
 		return errors.Errorf("unknown step type for MTurk: %s", step.Type.String())
 	}
@@ -259,6 +261,8 @@ func (s *Session) EndStep(project *ent.Project, run *ent.Run, step *ent.Step, st
 		return s.endMTurkHITStep(ctx, project, run, template, step, stepRun, nextStep, nextStepRun)
 	case stepModel.TypeMTURK_MESSAGE:
 		return s.endMTurkMessageStep(ctx, project, run, template, step, stepRun, nextStep, nextStepRun)
+	case stepModel.TypeWAIT:
+		return nil
 	default:
 		return errors.Errorf("unknown step type for MTurk: %s", step.Type.String())
 	}
@@ -386,6 +390,10 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 }
 
 func (s *Session) endMTurkMessageStep(ctx context.Context, project *ent.Project, run *ent.Run, template *ent.Template, step *ent.Step, stepRun *ent.StepRun, nextStep *ent.Step, nextStepRun *ent.StepRun) error {
+	if nextStepRun == nil {
+		return nil
+	}
+
 	participations, err := stepRun.QueryParticipations().WithParticipant().All(ctx)
 	if err != nil {
 		return errors.New("get participants for msg step failed")
@@ -397,13 +405,11 @@ func (s *Session) endMTurkMessageStep(ctx context.Context, project *ent.Project,
 		participants[i] = p.Edges.Participant
 	}
 
-	if nextStepRun != nil {
-		_, err = nextStepRun.Update().
-			AddParticipants(participants...).
-			Save(ctx)
-		if err != nil {
-			return errors.Wrap(err, "push msg step participants to next run")
-		}
+	_, err = nextStepRun.Update().
+		AddParticipants(participants...).
+		Save(ctx)
+	if err != nil {
+		return errors.Wrap(err, "push msg step participants to next run")
 	}
 
 	return nil
