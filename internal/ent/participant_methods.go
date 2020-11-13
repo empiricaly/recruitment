@@ -5,12 +5,57 @@ import (
 	"strings"
 
 	"github.com/empiricaly/recruitment/internal/ent/datum"
+	participantModel "github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
+	projectModel "github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/pkg/errors"
+	errs "github.com/pkg/errors"
+	"github.com/rs/xid"
 	"github.com/rs/zerolog/log"
 	"github.com/tidwall/gjson"
 )
+
+// AddParticipantFromImport will add partcipant from file
+func AddParticipantFromImport(ctx context.Context, tx *Tx, importedParticipant *model.ImportedParticipant, admin *Admin, project *Project) error {
+	p, err := tx.Participant.Query().
+		Where(
+			participantModel.And(
+				participantModel.MturkWorkerID(importedParticipant.MturkWorkerID),
+				participantModel.HasProjectsWith(projectModel.ID(project.ID)),
+			)).
+		First(ctx)
+	if err != nil {
+		log.Warn().Msgf("could not get participant with workerID %s", importedParticipant.MturkWorkerID)
+	}
+
+	if p == nil {
+		p, err = tx.Participant.Create().
+			SetID(xid.New().String()).
+			SetMturkWorkerID(importedParticipant.MturkWorkerID).
+			SetUninitialized(true).
+			AddImportedBy(admin).
+			AddProjects(project).
+			Save(ctx)
+		if err != nil {
+			log.Error().Msgf("could not add participant with workerID %s", importedParticipant.MturkWorkerID)
+			return errs.Wrap(err, "addParticipant: create participant")
+		}
+	}
+
+	if importedParticipant.Data == nil {
+		return nil
+	}
+
+	for _, data := range importedParticipant.Data {
+		_, err := SetDatum(ctx, tx, p, data.Key, data.Val, false)
+		if err != nil {
+			log.Error().Msgf("error inserting datum %s", importedParticipant.MturkWorkerID)
+		}
+	}
+
+	return nil
+}
 
 // MatchCondition returns true if participant matches cond Condition.
 // Data associated on Participant is assumed to have been loaded in full (latest

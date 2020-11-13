@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/ent/datum"
 	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
@@ -56,6 +57,26 @@ func (pu *ParticipantUpdate) SetNillableMturkWorkerID(s *string) *ParticipantUpd
 // ClearMturkWorkerID clears the value of mturkWorkerID.
 func (pu *ParticipantUpdate) ClearMturkWorkerID() *ParticipantUpdate {
 	pu.mutation.ClearMturkWorkerID()
+	return pu
+}
+
+// SetUninitialized sets the uninitialized field.
+func (pu *ParticipantUpdate) SetUninitialized(b bool) *ParticipantUpdate {
+	pu.mutation.SetUninitialized(b)
+	return pu
+}
+
+// SetNillableUninitialized sets the uninitialized field if the given value is not nil.
+func (pu *ParticipantUpdate) SetNillableUninitialized(b *bool) *ParticipantUpdate {
+	if b != nil {
+		pu.SetUninitialized(*b)
+	}
+	return pu
+}
+
+// ClearUninitialized clears the value of uninitialized.
+func (pu *ParticipantUpdate) ClearUninitialized() *ParticipantUpdate {
+	pu.mutation.ClearUninitialized()
 	return pu
 }
 
@@ -151,6 +172,21 @@ func (pu *ParticipantUpdate) AddProjects(p ...*Project) *ParticipantUpdate {
 		ids[i] = p[i].ID
 	}
 	return pu.AddProjectIDs(ids...)
+}
+
+// AddImportedByIDs adds the importedBy edge to Admin by ids.
+func (pu *ParticipantUpdate) AddImportedByIDs(ids ...string) *ParticipantUpdate {
+	pu.mutation.AddImportedByIDs(ids...)
+	return pu
+}
+
+// AddImportedBy adds the importedBy edges to Admin.
+func (pu *ParticipantUpdate) AddImportedBy(a ...*Admin) *ParticipantUpdate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return pu.AddImportedByIDs(ids...)
 }
 
 // Mutation returns the ParticipantMutation object of the builder.
@@ -269,6 +305,27 @@ func (pu *ParticipantUpdate) RemoveProjects(p ...*Project) *ParticipantUpdate {
 	return pu.RemoveProjectIDs(ids...)
 }
 
+// ClearImportedBy clears all "importedBy" edges to type Admin.
+func (pu *ParticipantUpdate) ClearImportedBy() *ParticipantUpdate {
+	pu.mutation.ClearImportedBy()
+	return pu
+}
+
+// RemoveImportedByIDs removes the importedBy edge to Admin by ids.
+func (pu *ParticipantUpdate) RemoveImportedByIDs(ids ...string) *ParticipantUpdate {
+	pu.mutation.RemoveImportedByIDs(ids...)
+	return pu
+}
+
+// RemoveImportedBy removes importedBy edges to Admin.
+func (pu *ParticipantUpdate) RemoveImportedBy(a ...*Admin) *ParticipantUpdate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return pu.RemoveImportedByIDs(ids...)
+}
+
 // Save executes the query and returns the number of rows/vertices matched by this operation.
 func (pu *ParticipantUpdate) Save(ctx context.Context) (int, error) {
 	var (
@@ -365,6 +422,19 @@ func (pu *ParticipantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: participant.FieldMturkWorkerID,
+		})
+	}
+	if value, ok := pu.mutation.Uninitialized(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: participant.FieldUninitialized,
+		})
+	}
+	if pu.mutation.UninitializedCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Column: participant.FieldUninitialized,
 		})
 	}
 	if pu.mutation.DataCleared() {
@@ -672,6 +742,60 @@ func (pu *ParticipantUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if pu.mutation.ImportedByCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   participant.ImportedByTable,
+			Columns: participant.ImportedByPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: admin.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedImportedByIDs(); len(nodes) > 0 && !pu.mutation.ImportedByCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   participant.ImportedByTable,
+			Columns: participant.ImportedByPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: admin.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.ImportedByIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   participant.ImportedByTable,
+			Columns: participant.ImportedByPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: admin.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{participant.Label}
@@ -713,6 +837,26 @@ func (puo *ParticipantUpdateOne) SetNillableMturkWorkerID(s *string) *Participan
 // ClearMturkWorkerID clears the value of mturkWorkerID.
 func (puo *ParticipantUpdateOne) ClearMturkWorkerID() *ParticipantUpdateOne {
 	puo.mutation.ClearMturkWorkerID()
+	return puo
+}
+
+// SetUninitialized sets the uninitialized field.
+func (puo *ParticipantUpdateOne) SetUninitialized(b bool) *ParticipantUpdateOne {
+	puo.mutation.SetUninitialized(b)
+	return puo
+}
+
+// SetNillableUninitialized sets the uninitialized field if the given value is not nil.
+func (puo *ParticipantUpdateOne) SetNillableUninitialized(b *bool) *ParticipantUpdateOne {
+	if b != nil {
+		puo.SetUninitialized(*b)
+	}
+	return puo
+}
+
+// ClearUninitialized clears the value of uninitialized.
+func (puo *ParticipantUpdateOne) ClearUninitialized() *ParticipantUpdateOne {
+	puo.mutation.ClearUninitialized()
 	return puo
 }
 
@@ -808,6 +952,21 @@ func (puo *ParticipantUpdateOne) AddProjects(p ...*Project) *ParticipantUpdateOn
 		ids[i] = p[i].ID
 	}
 	return puo.AddProjectIDs(ids...)
+}
+
+// AddImportedByIDs adds the importedBy edge to Admin by ids.
+func (puo *ParticipantUpdateOne) AddImportedByIDs(ids ...string) *ParticipantUpdateOne {
+	puo.mutation.AddImportedByIDs(ids...)
+	return puo
+}
+
+// AddImportedBy adds the importedBy edges to Admin.
+func (puo *ParticipantUpdateOne) AddImportedBy(a ...*Admin) *ParticipantUpdateOne {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return puo.AddImportedByIDs(ids...)
 }
 
 // Mutation returns the ParticipantMutation object of the builder.
@@ -926,6 +1085,27 @@ func (puo *ParticipantUpdateOne) RemoveProjects(p ...*Project) *ParticipantUpdat
 	return puo.RemoveProjectIDs(ids...)
 }
 
+// ClearImportedBy clears all "importedBy" edges to type Admin.
+func (puo *ParticipantUpdateOne) ClearImportedBy() *ParticipantUpdateOne {
+	puo.mutation.ClearImportedBy()
+	return puo
+}
+
+// RemoveImportedByIDs removes the importedBy edge to Admin by ids.
+func (puo *ParticipantUpdateOne) RemoveImportedByIDs(ids ...string) *ParticipantUpdateOne {
+	puo.mutation.RemoveImportedByIDs(ids...)
+	return puo
+}
+
+// RemoveImportedBy removes importedBy edges to Admin.
+func (puo *ParticipantUpdateOne) RemoveImportedBy(a ...*Admin) *ParticipantUpdateOne {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return puo.RemoveImportedByIDs(ids...)
+}
+
 // Save executes the query and returns the updated entity.
 func (puo *ParticipantUpdateOne) Save(ctx context.Context) (*Participant, error) {
 	var (
@@ -1020,6 +1200,19 @@ func (puo *ParticipantUpdateOne) sqlSave(ctx context.Context) (_node *Participan
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: participant.FieldMturkWorkerID,
+		})
+	}
+	if value, ok := puo.mutation.Uninitialized(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: participant.FieldUninitialized,
+		})
+	}
+	if puo.mutation.UninitializedCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Column: participant.FieldUninitialized,
 		})
 	}
 	if puo.mutation.DataCleared() {
@@ -1319,6 +1512,60 @@ func (puo *ParticipantUpdateOne) sqlSave(ctx context.Context) (_node *Participan
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: project.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.ImportedByCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   participant.ImportedByTable,
+			Columns: participant.ImportedByPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: admin.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedImportedByIDs(); len(nodes) > 0 && !puo.mutation.ImportedByCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   participant.ImportedByTable,
+			Columns: participant.ImportedByPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: admin.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.ImportedByIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   participant.ImportedByTable,
+			Columns: participant.ImportedByPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: admin.FieldID,
 				},
 			},
 		}

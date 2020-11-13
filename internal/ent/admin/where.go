@@ -551,6 +551,34 @@ func HasTemplatesWith(preds ...predicate.Template) predicate.Admin {
 	})
 }
 
+// HasImportedParticipants applies the HasEdge predicate on the "importedParticipants" edge.
+func HasImportedParticipants() predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ImportedParticipantsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, ImportedParticipantsTable, ImportedParticipantsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasImportedParticipantsWith applies the HasEdge predicate on the "importedParticipants" edge with a given conditions (other predicates).
+func HasImportedParticipantsWith(preds ...predicate.Participant) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ImportedParticipantsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, ImportedParticipantsTable, ImportedParticipantsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups list of predicates with the AND operator between them.
 func And(predicates ...predicate.Admin) predicate.Admin {
 	return predicate.Admin(func(s *sql.Selector) {

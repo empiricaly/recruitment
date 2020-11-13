@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/empiricaly/recruitment/internal/ent/admin"
 	"github.com/empiricaly/recruitment/internal/ent/datum"
 	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
@@ -63,6 +64,20 @@ func (pc *ParticipantCreate) SetMturkWorkerID(s string) *ParticipantCreate {
 func (pc *ParticipantCreate) SetNillableMturkWorkerID(s *string) *ParticipantCreate {
 	if s != nil {
 		pc.SetMturkWorkerID(*s)
+	}
+	return pc
+}
+
+// SetUninitialized sets the uninitialized field.
+func (pc *ParticipantCreate) SetUninitialized(b bool) *ParticipantCreate {
+	pc.mutation.SetUninitialized(b)
+	return pc
+}
+
+// SetNillableUninitialized sets the uninitialized field if the given value is not nil.
+func (pc *ParticipantCreate) SetNillableUninitialized(b *bool) *ParticipantCreate {
+	if b != nil {
+		pc.SetUninitialized(*b)
 	}
 	return pc
 }
@@ -165,6 +180,21 @@ func (pc *ParticipantCreate) AddProjects(p ...*Project) *ParticipantCreate {
 		ids[i] = p[i].ID
 	}
 	return pc.AddProjectIDs(ids...)
+}
+
+// AddImportedByIDs adds the importedBy edge to Admin by ids.
+func (pc *ParticipantCreate) AddImportedByIDs(ids ...string) *ParticipantCreate {
+	pc.mutation.AddImportedByIDs(ids...)
+	return pc
+}
+
+// AddImportedBy adds the importedBy edges to Admin.
+func (pc *ParticipantCreate) AddImportedBy(a ...*Admin) *ParticipantCreate {
+	ids := make([]string, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return pc.AddImportedByIDs(ids...)
 }
 
 // Mutation returns the ParticipantMutation object of the builder.
@@ -295,6 +325,14 @@ func (pc *ParticipantCreate) createSpec() (*Participant, *sqlgraph.CreateSpec) {
 		})
 		_node.MturkWorkerID = &value
 	}
+	if value, ok := pc.mutation.Uninitialized(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: participant.FieldUninitialized,
+		})
+		_node.Uninitialized = &value
+	}
 	if nodes := pc.mutation.DataIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -401,6 +439,25 @@ func (pc *ParticipantCreate) createSpec() (*Participant, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: project.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.ImportedByIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   participant.ImportedByTable,
+			Columns: participant.ImportedByPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: admin.FieldID,
 				},
 			},
 		}

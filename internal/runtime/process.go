@@ -238,11 +238,20 @@ func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int
 		participants = participants[:n]
 	}
 
-	spew.Dump("AFTER", participants)
+	initializedParticipants := make([]*ent.Participant, 0)
+	for _, participant := range participants {
+		if *participant.Uninitialized && *participant.Uninitialized == true {
+			continue
+		}
+
+		initializedParticipants = append(initializedParticipants, participant)
+	}
+
+	spew.Dump("AFTER", initializedParticipants)
 
 	// TODO should filter participants here
-	l := math.Min(float64(limit), float64(len(participants)))
-	return participants[:int(l)], nil
+	l := math.Min(float64(limit), float64(len(initializedParticipants)))
+	return initializedParticipants[:int(l)], nil
 }
 
 // Returns an int >= min, < max

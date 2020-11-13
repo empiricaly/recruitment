@@ -295,6 +295,22 @@ func (c *AdminClient) QueryTemplates(a *Admin) *TemplateQuery {
 	return query
 }
 
+// QueryImportedParticipants queries the importedParticipants edge of a Admin.
+func (c *AdminClient) QueryImportedParticipants(a *Admin) *ParticipantQuery {
+	query := &ParticipantQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(admin.Table, admin.FieldID, id),
+			sqlgraph.To(participant.Table, participant.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, admin.ImportedParticipantsTable, admin.ImportedParticipantsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AdminClient) Hooks() []Hook {
 	return c.hooks.Admin
@@ -576,6 +592,22 @@ func (c *ParticipantClient) QueryProjects(pa *Participant) *ProjectQuery {
 			sqlgraph.From(participant.Table, participant.FieldID, id),
 			sqlgraph.To(project.Table, project.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, participant.ProjectsTable, participant.ProjectsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryImportedBy queries the importedBy edge of a Participant.
+func (c *ParticipantClient) QueryImportedBy(pa *Participant) *AdminQuery {
+	query := &AdminQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(participant.Table, participant.FieldID, id),
+			sqlgraph.To(admin.Table, admin.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, participant.ImportedByTable, participant.ImportedByPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
 		return fromV, nil

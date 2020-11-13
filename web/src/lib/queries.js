@@ -291,6 +291,19 @@ export const GET_ALL_PARTICIPANTS = gql`
   }
 `;
 
+export const ADD_PARTICIPANTS = gql`
+  mutation addParticipants($input: AddParticipantsInput!) {
+    addParticipants(input: $input) {
+      id
+      mturkWorkerID
+      data {
+        key
+        val
+      }
+    }
+  }
+`;
+
 export const CREATE_PROJECT = gql`
   mutation createProject($input: CreateProjectInput!) {
     createProject(input: $input) {

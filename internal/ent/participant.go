@@ -23,6 +23,8 @@ type Participant struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// MturkWorkerID holds the value of the "mturkWorkerID" field.
 	MturkWorkerID *string `json:"mturkWorkerID,omitempty"`
+	// Uninitialized holds the value of the "uninitialized" field.
+	Uninitialized *bool `json:"uninitialized,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ParticipantQuery when eager-loading is set.
 	Edges                         ParticipantEdges `json:"edges"`
@@ -43,9 +45,11 @@ type ParticipantEdges struct {
 	Steps []*StepRun
 	// Projects holds the value of the projects edge.
 	Projects []*Project
+	// ImportedBy holds the value of the importedBy edge.
+	ImportedBy []*Admin
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [6]bool
+	loadedTypes [7]bool
 }
 
 // DataOrErr returns the Data value or an error if the edge
@@ -107,6 +111,15 @@ func (e ParticipantEdges) ProjectsOrErr() ([]*Project, error) {
 	return nil, &NotLoadedError{edge: "projects"}
 }
 
+// ImportedByOrErr returns the ImportedBy value or an error if the edge
+// was not loaded in eager-loading.
+func (e ParticipantEdges) ImportedByOrErr() ([]*Admin, error) {
+	if e.loadedTypes[6] {
+		return e.ImportedBy, nil
+	}
+	return nil, &NotLoadedError{edge: "importedBy"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Participant) scanValues() []interface{} {
 	return []interface{}{
@@ -114,6 +127,7 @@ func (*Participant) scanValues() []interface{} {
 		&sql.NullTime{},   // created_at
 		&sql.NullTime{},   // updated_at
 		&sql.NullString{}, // mturkWorkerID
+		&sql.NullBool{},   // uninitialized
 	}
 }
 
@@ -152,7 +166,13 @@ func (pa *Participant) assignValues(values ...interface{}) error {
 		pa.MturkWorkerID = new(string)
 		*pa.MturkWorkerID = value.String
 	}
-	values = values[3:]
+	if value, ok := values[3].(*sql.NullBool); !ok {
+		return fmt.Errorf("unexpected type %T for field uninitialized", values[3])
+	} else if value.Valid {
+		pa.Uninitialized = new(bool)
+		*pa.Uninitialized = value.Bool
+	}
+	values = values[4:]
 	if len(values) == len(participant.ForeignKeys) {
 		if value, ok := values[0].(*sql.NullString); !ok {
 			return fmt.Errorf("unexpected type %T for field step_run_created_participants", values[0])
@@ -194,6 +214,11 @@ func (pa *Participant) QueryProjects() *ProjectQuery {
 	return (&ParticipantClient{config: pa.config}).QueryProjects(pa)
 }
 
+// QueryImportedBy queries the importedBy edge of the Participant.
+func (pa *Participant) QueryImportedBy() *AdminQuery {
+	return (&ParticipantClient{config: pa.config}).QueryImportedBy(pa)
+}
+
 // Update returns a builder for updating this Participant.
 // Note that, you need to call Participant.Unwrap() before calling this method, if this Participant
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -224,6 +249,10 @@ func (pa *Participant) String() string {
 	if v := pa.MturkWorkerID; v != nil {
 		builder.WriteString(", mturkWorkerID=")
 		builder.WriteString(*v)
+	}
+	if v := pa.Uninitialized; v != nil {
+		builder.WriteString(", uninitialized=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')
 	return builder.String()

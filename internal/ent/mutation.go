@@ -48,22 +48,25 @@ const (
 // nodes in the graph.
 type AdminMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *string
-	created_at       *time.Time
-	updated_at       *time.Time
-	name             *string
-	username         *string
-	clearedFields    map[string]struct{}
-	projects         map[string]struct{}
-	removedprojects  map[string]struct{}
-	clearedprojects  bool
-	templates        map[string]struct{}
-	removedtemplates map[string]struct{}
-	clearedtemplates bool
-	done             bool
-	oldValue         func(context.Context) (*Admin, error)
+	op                          Op
+	typ                         string
+	id                          *string
+	created_at                  *time.Time
+	updated_at                  *time.Time
+	name                        *string
+	username                    *string
+	clearedFields               map[string]struct{}
+	projects                    map[string]struct{}
+	removedprojects             map[string]struct{}
+	clearedprojects             bool
+	templates                   map[string]struct{}
+	removedtemplates            map[string]struct{}
+	clearedtemplates            bool
+	importedParticipants        map[string]struct{}
+	removedimportedParticipants map[string]struct{}
+	clearedimportedParticipants bool
+	done                        bool
+	oldValue                    func(context.Context) (*Admin, error)
 }
 
 var _ ent.Mutation = (*AdminMutation)(nil)
@@ -405,6 +408,59 @@ func (m *AdminMutation) ResetTemplates() {
 	m.removedtemplates = nil
 }
 
+// AddImportedParticipantIDs adds the importedParticipants edge to Participant by ids.
+func (m *AdminMutation) AddImportedParticipantIDs(ids ...string) {
+	if m.importedParticipants == nil {
+		m.importedParticipants = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.importedParticipants[ids[i]] = struct{}{}
+	}
+}
+
+// ClearImportedParticipants clears the importedParticipants edge to Participant.
+func (m *AdminMutation) ClearImportedParticipants() {
+	m.clearedimportedParticipants = true
+}
+
+// ImportedParticipantsCleared returns if the edge importedParticipants was cleared.
+func (m *AdminMutation) ImportedParticipantsCleared() bool {
+	return m.clearedimportedParticipants
+}
+
+// RemoveImportedParticipantIDs removes the importedParticipants edge to Participant by ids.
+func (m *AdminMutation) RemoveImportedParticipantIDs(ids ...string) {
+	if m.removedimportedParticipants == nil {
+		m.removedimportedParticipants = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedimportedParticipants[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedImportedParticipants returns the removed ids of importedParticipants.
+func (m *AdminMutation) RemovedImportedParticipantsIDs() (ids []string) {
+	for id := range m.removedimportedParticipants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ImportedParticipantsIDs returns the importedParticipants ids in the mutation.
+func (m *AdminMutation) ImportedParticipantsIDs() (ids []string) {
+	for id := range m.importedParticipants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetImportedParticipants reset all changes of the "importedParticipants" edge.
+func (m *AdminMutation) ResetImportedParticipants() {
+	m.importedParticipants = nil
+	m.clearedimportedParticipants = false
+	m.removedimportedParticipants = nil
+}
+
 // Op returns the operation name.
 func (m *AdminMutation) Op() Op {
 	return m.op
@@ -571,12 +627,15 @@ func (m *AdminMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *AdminMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.projects != nil {
 		edges = append(edges, admin.EdgeProjects)
 	}
 	if m.templates != nil {
 		edges = append(edges, admin.EdgeTemplates)
+	}
+	if m.importedParticipants != nil {
+		edges = append(edges, admin.EdgeImportedParticipants)
 	}
 	return edges
 }
@@ -597,6 +656,12 @@ func (m *AdminMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case admin.EdgeImportedParticipants:
+		ids := make([]ent.Value, 0, len(m.importedParticipants))
+		for id := range m.importedParticipants {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -604,12 +669,15 @@ func (m *AdminMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *AdminMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedprojects != nil {
 		edges = append(edges, admin.EdgeProjects)
 	}
 	if m.removedtemplates != nil {
 		edges = append(edges, admin.EdgeTemplates)
+	}
+	if m.removedimportedParticipants != nil {
+		edges = append(edges, admin.EdgeImportedParticipants)
 	}
 	return edges
 }
@@ -630,6 +698,12 @@ func (m *AdminMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case admin.EdgeImportedParticipants:
+		ids := make([]ent.Value, 0, len(m.removedimportedParticipants))
+		for id := range m.removedimportedParticipants {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -637,12 +711,15 @@ func (m *AdminMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *AdminMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedprojects {
 		edges = append(edges, admin.EdgeProjects)
 	}
 	if m.clearedtemplates {
 		edges = append(edges, admin.EdgeTemplates)
+	}
+	if m.clearedimportedParticipants {
+		edges = append(edges, admin.EdgeImportedParticipants)
 	}
 	return edges
 }
@@ -655,6 +732,8 @@ func (m *AdminMutation) EdgeCleared(name string) bool {
 		return m.clearedprojects
 	case admin.EdgeTemplates:
 		return m.clearedtemplates
+	case admin.EdgeImportedParticipants:
+		return m.clearedimportedParticipants
 	}
 	return false
 }
@@ -677,6 +756,9 @@ func (m *AdminMutation) ResetEdge(name string) error {
 		return nil
 	case admin.EdgeTemplates:
 		m.ResetTemplates()
+		return nil
+	case admin.EdgeImportedParticipants:
+		m.ResetImportedParticipants()
 		return nil
 	}
 	return fmt.Errorf("unknown Admin edge %s", name)
@@ -1536,6 +1618,7 @@ type ParticipantMutation struct {
 	created_at            *time.Time
 	updated_at            *time.Time
 	mturkWorkerID         *string
+	uninitialized         *bool
 	clearedFields         map[string]struct{}
 	data                  map[string]struct{}
 	removeddata           map[string]struct{}
@@ -1554,6 +1637,9 @@ type ParticipantMutation struct {
 	projects              map[string]struct{}
 	removedprojects       map[string]struct{}
 	clearedprojects       bool
+	importedBy            map[string]struct{}
+	removedimportedBy     map[string]struct{}
+	clearedimportedBy     bool
 	done                  bool
 	oldValue              func(context.Context) (*Participant, error)
 }
@@ -1765,6 +1851,56 @@ func (m *ParticipantMutation) MturkWorkerIDCleared() bool {
 func (m *ParticipantMutation) ResetMturkWorkerID() {
 	m.mturkWorkerID = nil
 	delete(m.clearedFields, participant.FieldMturkWorkerID)
+}
+
+// SetUninitialized sets the uninitialized field.
+func (m *ParticipantMutation) SetUninitialized(b bool) {
+	m.uninitialized = &b
+}
+
+// Uninitialized returns the uninitialized value in the mutation.
+func (m *ParticipantMutation) Uninitialized() (r bool, exists bool) {
+	v := m.uninitialized
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUninitialized returns the old uninitialized value of the Participant.
+// If the Participant object wasn't provided to the builder, the object is fetched
+// from the database.
+// An error is returned if the mutation operation is not UpdateOne, or database query fails.
+func (m *ParticipantMutation) OldUninitialized(ctx context.Context) (v *bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUninitialized is allowed only on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUninitialized requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUninitialized: %w", err)
+	}
+	return oldValue.Uninitialized, nil
+}
+
+// ClearUninitialized clears the value of uninitialized.
+func (m *ParticipantMutation) ClearUninitialized() {
+	m.uninitialized = nil
+	m.clearedFields[participant.FieldUninitialized] = struct{}{}
+}
+
+// UninitializedCleared returns if the field uninitialized was cleared in this mutation.
+func (m *ParticipantMutation) UninitializedCleared() bool {
+	_, ok := m.clearedFields[participant.FieldUninitialized]
+	return ok
+}
+
+// ResetUninitialized reset all changes of the "uninitialized" field.
+func (m *ParticipantMutation) ResetUninitialized() {
+	m.uninitialized = nil
+	delete(m.clearedFields, participant.FieldUninitialized)
 }
 
 // AddDatumIDs adds the data edge to Datum by ids.
@@ -2071,6 +2207,59 @@ func (m *ParticipantMutation) ResetProjects() {
 	m.removedprojects = nil
 }
 
+// AddImportedByIDs adds the importedBy edge to Admin by ids.
+func (m *ParticipantMutation) AddImportedByIDs(ids ...string) {
+	if m.importedBy == nil {
+		m.importedBy = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.importedBy[ids[i]] = struct{}{}
+	}
+}
+
+// ClearImportedBy clears the importedBy edge to Admin.
+func (m *ParticipantMutation) ClearImportedBy() {
+	m.clearedimportedBy = true
+}
+
+// ImportedByCleared returns if the edge importedBy was cleared.
+func (m *ParticipantMutation) ImportedByCleared() bool {
+	return m.clearedimportedBy
+}
+
+// RemoveImportedByIDs removes the importedBy edge to Admin by ids.
+func (m *ParticipantMutation) RemoveImportedByIDs(ids ...string) {
+	if m.removedimportedBy == nil {
+		m.removedimportedBy = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.removedimportedBy[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedImportedBy returns the removed ids of importedBy.
+func (m *ParticipantMutation) RemovedImportedByIDs() (ids []string) {
+	for id := range m.removedimportedBy {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ImportedByIDs returns the importedBy ids in the mutation.
+func (m *ParticipantMutation) ImportedByIDs() (ids []string) {
+	for id := range m.importedBy {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetImportedBy reset all changes of the "importedBy" edge.
+func (m *ParticipantMutation) ResetImportedBy() {
+	m.importedBy = nil
+	m.clearedimportedBy = false
+	m.removedimportedBy = nil
+}
+
 // Op returns the operation name.
 func (m *ParticipantMutation) Op() Op {
 	return m.op
@@ -2085,7 +2274,7 @@ func (m *ParticipantMutation) Type() string {
 // this mutation. Note that, in order to get all numeric
 // fields that were in/decremented, call AddedFields().
 func (m *ParticipantMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
 	if m.created_at != nil {
 		fields = append(fields, participant.FieldCreatedAt)
 	}
@@ -2094,6 +2283,9 @@ func (m *ParticipantMutation) Fields() []string {
 	}
 	if m.mturkWorkerID != nil {
 		fields = append(fields, participant.FieldMturkWorkerID)
+	}
+	if m.uninitialized != nil {
+		fields = append(fields, participant.FieldUninitialized)
 	}
 	return fields
 }
@@ -2109,6 +2301,8 @@ func (m *ParticipantMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case participant.FieldMturkWorkerID:
 		return m.MturkWorkerID()
+	case participant.FieldUninitialized:
+		return m.Uninitialized()
 	}
 	return nil, false
 }
@@ -2124,6 +2318,8 @@ func (m *ParticipantMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldUpdatedAt(ctx)
 	case participant.FieldMturkWorkerID:
 		return m.OldMturkWorkerID(ctx)
+	case participant.FieldUninitialized:
+		return m.OldUninitialized(ctx)
 	}
 	return nil, fmt.Errorf("unknown Participant field %s", name)
 }
@@ -2153,6 +2349,13 @@ func (m *ParticipantMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetMturkWorkerID(v)
+		return nil
+	case participant.FieldUninitialized:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUninitialized(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Participant field %s", name)
@@ -2187,6 +2390,9 @@ func (m *ParticipantMutation) ClearedFields() []string {
 	if m.FieldCleared(participant.FieldMturkWorkerID) {
 		fields = append(fields, participant.FieldMturkWorkerID)
 	}
+	if m.FieldCleared(participant.FieldUninitialized) {
+		fields = append(fields, participant.FieldUninitialized)
+	}
 	return fields
 }
 
@@ -2203,6 +2409,9 @@ func (m *ParticipantMutation) ClearField(name string) error {
 	switch name {
 	case participant.FieldMturkWorkerID:
 		m.ClearMturkWorkerID()
+		return nil
+	case participant.FieldUninitialized:
+		m.ClearUninitialized()
 		return nil
 	}
 	return fmt.Errorf("unknown Participant nullable field %s", name)
@@ -2222,6 +2431,9 @@ func (m *ParticipantMutation) ResetField(name string) error {
 	case participant.FieldMturkWorkerID:
 		m.ResetMturkWorkerID()
 		return nil
+	case participant.FieldUninitialized:
+		m.ResetUninitialized()
+		return nil
 	}
 	return fmt.Errorf("unknown Participant field %s", name)
 }
@@ -2229,7 +2441,7 @@ func (m *ParticipantMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this
 // mutation.
 func (m *ParticipantMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.data != nil {
 		edges = append(edges, participant.EdgeData)
 	}
@@ -2247,6 +2459,9 @@ func (m *ParticipantMutation) AddedEdges() []string {
 	}
 	if m.projects != nil {
 		edges = append(edges, participant.EdgeProjects)
+	}
+	if m.importedBy != nil {
+		edges = append(edges, participant.EdgeImportedBy)
 	}
 	return edges
 }
@@ -2289,6 +2504,12 @@ func (m *ParticipantMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case participant.EdgeImportedBy:
+		ids := make([]ent.Value, 0, len(m.importedBy))
+		for id := range m.importedBy {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -2296,7 +2517,7 @@ func (m *ParticipantMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this
 // mutation.
 func (m *ParticipantMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.removeddata != nil {
 		edges = append(edges, participant.EdgeData)
 	}
@@ -2311,6 +2532,9 @@ func (m *ParticipantMutation) RemovedEdges() []string {
 	}
 	if m.removedprojects != nil {
 		edges = append(edges, participant.EdgeProjects)
+	}
+	if m.removedimportedBy != nil {
+		edges = append(edges, participant.EdgeImportedBy)
 	}
 	return edges
 }
@@ -2349,6 +2573,12 @@ func (m *ParticipantMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case participant.EdgeImportedBy:
+		ids := make([]ent.Value, 0, len(m.removedimportedBy))
+		for id := range m.removedimportedBy {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -2356,7 +2586,7 @@ func (m *ParticipantMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this
 // mutation.
 func (m *ParticipantMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.cleareddata {
 		edges = append(edges, participant.EdgeData)
 	}
@@ -2374,6 +2604,9 @@ func (m *ParticipantMutation) ClearedEdges() []string {
 	}
 	if m.clearedprojects {
 		edges = append(edges, participant.EdgeProjects)
+	}
+	if m.clearedimportedBy {
+		edges = append(edges, participant.EdgeImportedBy)
 	}
 	return edges
 }
@@ -2394,6 +2627,8 @@ func (m *ParticipantMutation) EdgeCleared(name string) bool {
 		return m.clearedsteps
 	case participant.EdgeProjects:
 		return m.clearedprojects
+	case participant.EdgeImportedBy:
+		return m.clearedimportedBy
 	}
 	return false
 }
@@ -2431,6 +2666,9 @@ func (m *ParticipantMutation) ResetEdge(name string) error {
 		return nil
 	case participant.EdgeProjects:
 		m.ResetProjects()
+		return nil
+	case participant.EdgeImportedBy:
+		m.ResetImportedBy()
 		return nil
 	}
 	return fmt.Errorf("unknown Participant edge %s", name)

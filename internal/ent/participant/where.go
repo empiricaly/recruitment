@@ -114,6 +114,13 @@ func MturkWorkerID(v string) predicate.Participant {
 	})
 }
 
+// Uninitialized applies equality check predicate on the "uninitialized" field. It's identical to UninitializedEQ.
+func Uninitialized(v bool) predicate.Participant {
+	return predicate.Participant(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldUninitialized), v))
+	})
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Participant {
 	return predicate.Participant(func(s *sql.Selector) {
@@ -391,6 +398,34 @@ func MturkWorkerIDContainsFold(v string) predicate.Participant {
 	})
 }
 
+// UninitializedEQ applies the EQ predicate on the "uninitialized" field.
+func UninitializedEQ(v bool) predicate.Participant {
+	return predicate.Participant(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldUninitialized), v))
+	})
+}
+
+// UninitializedNEQ applies the NEQ predicate on the "uninitialized" field.
+func UninitializedNEQ(v bool) predicate.Participant {
+	return predicate.Participant(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldUninitialized), v))
+	})
+}
+
+// UninitializedIsNil applies the IsNil predicate on the "uninitialized" field.
+func UninitializedIsNil() predicate.Participant {
+	return predicate.Participant(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldUninitialized)))
+	})
+}
+
+// UninitializedNotNil applies the NotNil predicate on the "uninitialized" field.
+func UninitializedNotNil() predicate.Participant {
+	return predicate.Participant(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldUninitialized)))
+	})
+}
+
 // HasData applies the HasEdge predicate on the "data" edge.
 func HasData() predicate.Participant {
 	return predicate.Participant(func(s *sql.Selector) {
@@ -550,6 +585,34 @@ func HasProjectsWith(preds ...predicate.Project) predicate.Participant {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(ProjectsInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, ProjectsTable, ProjectsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasImportedBy applies the HasEdge predicate on the "importedBy" edge.
+func HasImportedBy() predicate.Participant {
+	return predicate.Participant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ImportedByTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, ImportedByTable, ImportedByPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasImportedByWith applies the HasEdge predicate on the "importedBy" edge with a given conditions (other predicates).
+func HasImportedByWith(preds ...predicate.Admin) predicate.Participant {
+	return predicate.Participant(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ImportedByInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, ImportedByTable, ImportedByPrimaryKey...),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
