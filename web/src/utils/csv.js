@@ -20,6 +20,9 @@ export function toCSV(data) {
       let value = data[i][key];
 
       if (typeof value !== "string") {
+        if (value === null || value === undefined) {
+          return "";
+        }
         return JSON.stringify(value);
       }
 
