@@ -31,5 +31,6 @@ func (Admin) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("projects", Project.Type),
 		edge.To("templates", Template.Type),
+		edge.To("importedParticipants", Participant.Type),
 	}
 }

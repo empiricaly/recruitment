@@ -22,6 +22,7 @@ func (Participant) Mixin() []ent.Mixin {
 func (Participant) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("mturkWorkerID").Optional().Nillable(),
+		field.Bool("uninitialized").Optional().Nillable(),
 	}
 }
 
@@ -38,5 +39,6 @@ func (Participant) Edges() []ent.Edge {
 			Ref("participants"),
 		edge.From("projects", Project.Type).
 			Ref("participants"),
+		edge.From("importedBy", Admin.Type).Ref("importedParticipants"),
 	}
 }

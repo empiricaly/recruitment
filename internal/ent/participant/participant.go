@@ -17,6 +17,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldMturkWorkerID holds the string denoting the mturkworkerid field in the database.
 	FieldMturkWorkerID = "mturk_worker_id"
+	// FieldUninitialized holds the string denoting the uninitialized field in the database.
+	FieldUninitialized = "uninitialized"
 
 	// EdgeData holds the string denoting the data edge name in mutations.
 	EdgeData = "data"
@@ -30,6 +32,8 @@ const (
 	EdgeSteps = "steps"
 	// EdgeProjects holds the string denoting the projects edge name in mutations.
 	EdgeProjects = "projects"
+	// EdgeImportedBy holds the string denoting the importedby edge name in mutations.
+	EdgeImportedBy = "importedBy"
 
 	// Table holds the table name of the participant in the database.
 	Table = "participants"
@@ -71,6 +75,11 @@ const (
 	// ProjectsInverseTable is the table name for the Project entity.
 	// It exists in this package in order to avoid circular dependency with the "project" package.
 	ProjectsInverseTable = "projects"
+	// ImportedByTable is the table the holds the importedBy relation/edge. The primary key declared below.
+	ImportedByTable = "admin_importedParticipants"
+	// ImportedByInverseTable is the table name for the Admin entity.
+	// It exists in this package in order to avoid circular dependency with the "admin" package.
+	ImportedByInverseTable = "admins"
 )
 
 // Columns holds all SQL columns for participant fields.
@@ -79,6 +88,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldMturkWorkerID,
+	FieldUninitialized,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the Participant type.
@@ -93,6 +103,9 @@ var (
 	// ProjectsPrimaryKey and ProjectsColumn2 are the table columns denoting the
 	// primary key for the projects relation (M2M).
 	ProjectsPrimaryKey = []string{"project_id", "participant_id"}
+	// ImportedByPrimaryKey and ImportedByColumn2 are the table columns denoting the
+	// primary key for the importedBy relation (M2M).
+	ImportedByPrimaryKey = []string{"admin_id", "participant_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

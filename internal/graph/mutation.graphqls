@@ -65,6 +65,29 @@ input DeleteDatumInput {
   nodeID: ID!
 }
 
+input AddParticipantsInput {
+  participants: [ImportedParticipant!]!
+  projectID: String
+}
+
+input ImportedParticipant {
+  id: String!
+  createdAt: DateTime!
+  mturkWorkerID: String!
+
+  # """
+  # Data should be an object with key value pair
+  # """
+  # data: JSON
+
+  data: [ParticipantData]
+}
+
+input ParticipantData {
+  key: String!
+  val: String!
+}
+
 input CreateProjectInput {
   projectID: String!
   name: String!
@@ -274,4 +297,9 @@ type Mutation {
   mark it as cancelled.
   """
   cancelRun(input: CancelRunInput): Run! @hasRole(role: ADMIN)
+
+  """
+  Add participant into internal database from csv or json file.
+  """
+  addParticipants(input: AddParticipantsInput): [Participant!]! @hasRole(role: ADMIN)
 }

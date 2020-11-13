@@ -402,6 +402,57 @@ func (r *mutationResolver) CancelRun(ctx context.Context, input *model.CancelRun
 	panic(fmt.Errorf("not implemented"))
 }
 
+func (r *mutationResolver) AddParticipants(ctx context.Context, input *model.AddParticipantsInput) ([]*ent.Participant, error) {
+	var result []*ent.Participant
+
+	if err := ent.WithTx(ctx, r.Store.Client, func(tx *ent.Tx) error {
+		admin := adminU.ForContext(ctx)
+		var project *ent.Project
+		var projects []*ent.Project
+
+		// importing from root will take all projects
+		if input.ProjectID == nil {
+			p, err := tx.Project.Query().All(ctx)
+			if err != nil {
+				return errs.Wrap(err, "addParticipant: get project")
+			}
+			projects = p
+		} else {
+			p, err := tx.Project.Get(ctx, *input.ProjectID)
+			if err != nil {
+				return errs.Wrap(err, "addParticipant: get project")
+			}
+
+			project = p
+		}
+
+		for _, participant := range input.Participants {
+			// Importing from root
+			if input.ProjectID == nil {
+				for _, currProject := range projects {
+					err := ent.AddParticipantFromImport(ctx, tx, participant, admin, currProject)
+					if err != nil {
+						log.Error().Msgf("error add participant %s", participant.MturkWorkerID)
+
+					}
+				}
+			} else {
+				err := ent.AddParticipantFromImport(ctx, tx, participant, admin, project)
+				if err != nil {
+					log.Error().Msgf("error add participant %s", participant.MturkWorkerID)
+
+				}
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return nil, errs.Wrap(err, "addParticipant: commit transaction")
+	}
+
+	return result, nil
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

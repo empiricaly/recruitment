@@ -35,9 +35,11 @@ type AdminEdges struct {
 	Projects []*Project
 	// Templates holds the value of the templates edge.
 	Templates []*Template
+	// ImportedParticipants holds the value of the importedParticipants edge.
+	ImportedParticipants []*Participant
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // ProjectsOrErr returns the Projects value or an error if the edge
@@ -56,6 +58,15 @@ func (e AdminEdges) TemplatesOrErr() ([]*Template, error) {
 		return e.Templates, nil
 	}
 	return nil, &NotLoadedError{edge: "templates"}
+}
+
+// ImportedParticipantsOrErr returns the ImportedParticipants value or an error if the edge
+// was not loaded in eager-loading.
+func (e AdminEdges) ImportedParticipantsOrErr() ([]*Participant, error) {
+	if e.loadedTypes[2] {
+		return e.ImportedParticipants, nil
+	}
+	return nil, &NotLoadedError{edge: "importedParticipants"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -112,6 +123,11 @@ func (a *Admin) QueryProjects() *ProjectQuery {
 // QueryTemplates queries the templates edge of the Admin.
 func (a *Admin) QueryTemplates() *TemplateQuery {
 	return (&AdminClient{config: a.config}).QueryTemplates(a)
+}
+
+// QueryImportedParticipants queries the importedParticipants edge of the Admin.
+func (a *Admin) QueryImportedParticipants() *ParticipantQuery {
+	return (&AdminClient{config: a.config}).QueryImportedParticipants(a)
 }
 
 // Update returns a builder for updating this Admin.

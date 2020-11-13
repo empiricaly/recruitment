@@ -24,6 +24,8 @@ const (
 	EdgeProjects = "projects"
 	// EdgeTemplates holds the string denoting the templates edge name in mutations.
 	EdgeTemplates = "templates"
+	// EdgeImportedParticipants holds the string denoting the importedparticipants edge name in mutations.
+	EdgeImportedParticipants = "importedParticipants"
 
 	// Table holds the table name of the admin in the database.
 	Table = "admins"
@@ -41,6 +43,11 @@ const (
 	TemplatesInverseTable = "templates"
 	// TemplatesColumn is the table column denoting the templates relation/edge.
 	TemplatesColumn = "admin_templates"
+	// ImportedParticipantsTable is the table the holds the importedParticipants relation/edge. The primary key declared below.
+	ImportedParticipantsTable = "admin_importedParticipants"
+	// ImportedParticipantsInverseTable is the table name for the Participant entity.
+	// It exists in this package in order to avoid circular dependency with the "participant" package.
+	ImportedParticipantsInverseTable = "participants"
 )
 
 // Columns holds all SQL columns for admin fields.
@@ -51,6 +58,12 @@ var Columns = []string{
 	FieldName,
 	FieldUsername,
 }
+
+var (
+	// ImportedParticipantsPrimaryKey and ImportedParticipantsColumn2 are the table columns denoting the
+	// primary key for the importedParticipants relation (M2M).
+	ImportedParticipantsPrimaryKey = []string{"admin_id", "participant_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

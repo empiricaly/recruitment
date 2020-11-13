@@ -14,6 +14,11 @@ type User interface {
 	IsUser()
 }
 
+type AddParticipantsInput struct {
+	Participants []*ImportedParticipant `json:"participants"`
+	ProjectID    *string                `json:"projectID"`
+}
+
 type AuthInput struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -225,6 +230,13 @@ type HITStepArgsInput struct {
 	// Note: is this needed? The count is determined by the selection in the first
 	// Step, then by the number of participants remaining at each Step.
 	WorkersCount *int `json:"workersCount"`
+}
+
+type ImportedParticipant struct {
+	ID            string             `json:"id"`
+	CreatedAt     time.Time          `json:"createdAt"`
+	MturkWorkerID string             `json:"mturkWorkerID"`
+	Data          []*ParticipantData `json:"data"`
 }
 
 // InternalCriteria is the criteria for internal database participant selection.
@@ -458,6 +470,11 @@ type Page struct {
 	Content *string `json:"content"`
 	// The rendered for the content to display.
 	ContentType ContentType `json:"contentType"`
+}
+
+type ParticipantData struct {
+	Key string `json:"key"`
+	Val string `json:"val"`
 }
 
 type ScheduleRunInput struct {

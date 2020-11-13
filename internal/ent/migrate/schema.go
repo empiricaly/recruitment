@@ -57,6 +57,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "mturk_worker_id", Type: field.TypeString, Nullable: true},
+		{Name: "uninitialized", Type: field.TypeBool, Nullable: true},
 		{Name: "step_run_created_participants", Type: field.TypeString, Nullable: true, Size: 20},
 	}
 	// ParticipantsTable holds the schema information for the "participants" table.
@@ -67,7 +68,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "participants_step_runs_createdParticipants",
-				Columns: []*schema.Column{ParticipantsColumns[4]},
+				Columns: []*schema.Column{ParticipantsColumns[5]},
 
 				RefColumns: []*schema.Column{StepRunsColumns[0]},
 				OnDelete:   schema.SetNull,
@@ -303,6 +304,33 @@ var (
 			},
 		},
 	}
+	// AdminImportedParticipantsColumns holds the columns for the "admin_importedParticipants" table.
+	AdminImportedParticipantsColumns = []*schema.Column{
+		{Name: "admin_id", Type: field.TypeString, Size: 20},
+		{Name: "participant_id", Type: field.TypeString, Size: 20},
+	}
+	// AdminImportedParticipantsTable holds the schema information for the "admin_importedParticipants" table.
+	AdminImportedParticipantsTable = &schema.Table{
+		Name:       "admin_importedParticipants",
+		Columns:    AdminImportedParticipantsColumns,
+		PrimaryKey: []*schema.Column{AdminImportedParticipantsColumns[0], AdminImportedParticipantsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "admin_importedParticipants_admin_id",
+				Columns: []*schema.Column{AdminImportedParticipantsColumns[0]},
+
+				RefColumns: []*schema.Column{AdminsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:  "admin_importedParticipants_participant_id",
+				Columns: []*schema.Column{AdminImportedParticipantsColumns[1]},
+
+				RefColumns: []*schema.Column{ParticipantsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// ProjectParticipantsColumns holds the columns for the "project_participants" table.
 	ProjectParticipantsColumns = []*schema.Column{
 		{Name: "project_id", Type: field.TypeString, Size: 20},
@@ -369,6 +397,7 @@ var (
 		StepsTable,
 		StepRunsTable,
 		TemplatesTable,
+		AdminImportedParticipantsTable,
 		ProjectParticipantsTable,
 		StepRunParticipantsTable,
 	}
@@ -389,6 +418,8 @@ func init() {
 	TemplatesTable.ForeignKeys[0].RefTable = AdminsTable
 	TemplatesTable.ForeignKeys[1].RefTable = ProjectsTable
 	TemplatesTable.ForeignKeys[2].RefTable = RunsTable
+	AdminImportedParticipantsTable.ForeignKeys[0].RefTable = AdminsTable
+	AdminImportedParticipantsTable.ForeignKeys[1].RefTable = ParticipantsTable
 	ProjectParticipantsTable.ForeignKeys[0].RefTable = ProjectsTable
 	ProjectParticipantsTable.ForeignKeys[1].RefTable = ParticipantsTable
 	StepRunParticipantsTable.ForeignKeys[0].RefTable = StepRunsTable

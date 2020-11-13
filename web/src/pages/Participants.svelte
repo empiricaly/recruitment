@@ -1,11 +1,22 @@
 <script>
   import dayjs from "dayjs";
+  import { mutate } from "svelte-apollo";
   import ParticipantList from "../components/participants/ParticipantList.svelte";
   import Layout from "../layouts/Layout.svelte";
-  import { participantsExportFormat } from "../lib/models/participants/participants.js";
+  import {
+    participantsExportFormat,
+    getParticipants,
+    setValue,
+  } from "../lib/models/participants/participants.js";
   import { GET_PROJECT_PARTICIPANTS } from "../lib/queries";
+  import { notify } from "../components/overlays/Notification.svelte";
+  import Modal from "../components/overlays/Modal.svelte";
+  import Input from "../components/base/Input.svelte";
+  import Label from "../components/base/Label.svelte";
   import { toCSV } from "../utils/csv.js";
   import { download } from "../utils/download.js";
+  import { client } from "../lib/apollo";
+  import { ADD_PARTICIPANTS } from "../lib/queries";
 
   const queryArgs = (project) => ({
     query: GET_PROJECT_PARTICIPANTS,
@@ -14,6 +25,95 @@
 
   let participants;
   let keys;
+  let files = [];
+  let isImportOpen = false;
+  let customKey;
+  let customValue;
+  let projectID;
+
+  function handleCancelImport() {
+    isImportOpen = false;
+    files = [];
+    customKey = null;
+    customValue = null;
+  }
+
+  function handleImport() {
+    let file = files.length > 0 ? files[0] : null;
+    let isCustomEmpty;
+    let customData = {};
+
+    if (!file) {
+      notify({
+        failed: true,
+        title: `Could not import participants.`,
+        body: "No file selected.",
+      });
+      return;
+    }
+
+    if (customKey || customValue) {
+      if (
+        !customKey ||
+        !customKey.trim() ||
+        !customValue ||
+        !customValue.trim()
+      ) {
+        isCustomEmpty = true;
+      }
+
+      if (isCustomEmpty) {
+        notify({
+          failed: true,
+          title: `Could not import participants.`,
+          body: "Custom key/value pair can't be empty.",
+        });
+        return;
+      }
+
+      customData = { [customKey]: setValue(customValue) };
+    }
+
+    getParticipants(file, customData, async (newParticipants, error) => {
+      if (error) {
+        notify({
+          failed: true,
+          title: `Could not import participants.`,
+          body: error,
+        });
+        return;
+      }
+
+      try {
+        await mutate(client, {
+          mutation: ADD_PARTICIPANTS,
+          variables: {
+            input: {
+              participants: newParticipants,
+              projectID,
+            },
+          },
+        });
+
+        files = [];
+        isImportOpen = false;
+        customKey = null;
+        customValue = null;
+        notify({
+          failed: false,
+          title: `Participants imported.`,
+        });
+      } catch (error) {
+        console.error(error);
+        notify({
+          failed: true,
+          title: `Could not import participants`,
+          body:
+            "Something happened on the server, and we could not import the participants.",
+        });
+      }
+    });
+  }
 
   function handleClick(event) {
     const { action, project } = event.detail;
@@ -37,7 +137,8 @@
         break;
       }
       case "import":
-        console.log("should import", project);
+        isImportOpen = true;
+        projectID = project.id;
         break;
       default:
         console.error(`Unknown action: ${action}`);
@@ -79,4 +180,27 @@
     queryArgs={queryArgs(project)}
     bind:participants
     bind:keys />
+  <Modal
+    title="Import Participants"
+    button="Import"
+    bind:open={isImportOpen}
+    handleAccept={handleImport}
+    handleCancel={handleCancelImport}>
+    <div class="sm:flex flex-row sm:items-start">
+      <input type="file" bind:files />
+    </div>
+    <div class="mt-4">
+      <Label
+        text="Custom Data"
+        question="Custom data (key value pair) that will be created on imported partcipants." />
+    </div>
+    <div class="sm:flex flex-row sm:items-start">
+      <div class="mt-1">
+        <Input bind:value={customKey} placeholder="key" />
+      </div>
+      <div class="mt-1 ml-3">
+        <Input bind:value={customValue} placeholder="value" />
+      </div>
+    </div>
+  </Modal>
 </Layout>

@@ -156,19 +156,20 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		Auth           func(childComplexity int, input *model.AuthInput) int
-		CancelRun      func(childComplexity int, input *model.CancelRunInput) int
-		CreateProject  func(childComplexity int, input *model.CreateProjectInput) int
-		CreateRun      func(childComplexity int, input *model.CreateRunInput) int
-		CreateTemplate func(childComplexity int, input *model.CreateTemplateInput) int
-		DeleteDatum    func(childComplexity int, input *model.DeleteDatumInput) int
-		DuplicateRun   func(childComplexity int, input *model.DuplicateRunInput) int
-		ScheduleRun    func(childComplexity int, input *model.ScheduleRunInput) int
-		StartRun       func(childComplexity int, input *model.StartRunInput) int
-		UnscheduleRun  func(childComplexity int, input *model.UnscheduleRunInput) int
-		UpdateDatum    func(childComplexity int, input *model.UpdateDatumInput) int
-		UpdateRun      func(childComplexity int, input *model.UpdateRunInput) int
-		UpdateTemplate func(childComplexity int, input *model.UpdateTemplateInput) int
+		AddParticipants func(childComplexity int, input *model.AddParticipantsInput) int
+		Auth            func(childComplexity int, input *model.AuthInput) int
+		CancelRun       func(childComplexity int, input *model.CancelRunInput) int
+		CreateProject   func(childComplexity int, input *model.CreateProjectInput) int
+		CreateRun       func(childComplexity int, input *model.CreateRunInput) int
+		CreateTemplate  func(childComplexity int, input *model.CreateTemplateInput) int
+		DeleteDatum     func(childComplexity int, input *model.DeleteDatumInput) int
+		DuplicateRun    func(childComplexity int, input *model.DuplicateRunInput) int
+		ScheduleRun     func(childComplexity int, input *model.ScheduleRunInput) int
+		StartRun        func(childComplexity int, input *model.StartRunInput) int
+		UnscheduleRun   func(childComplexity int, input *model.UnscheduleRunInput) int
+		UpdateDatum     func(childComplexity int, input *model.UpdateDatumInput) int
+		UpdateRun       func(childComplexity int, input *model.UpdateRunInput) int
+		UpdateTemplate  func(childComplexity int, input *model.UpdateTemplateInput) int
 	}
 
 	Page struct {
@@ -317,6 +318,7 @@ type MutationResolver interface {
 	UnscheduleRun(ctx context.Context, input *model.UnscheduleRunInput) (*ent.Run, error)
 	StartRun(ctx context.Context, input *model.StartRunInput) (*ent.Run, error)
 	CancelRun(ctx context.Context, input *model.CancelRunInput) (*ent.Run, error)
+	AddParticipants(ctx context.Context, input *model.AddParticipantsInput) ([]*ent.Participant, error)
 }
 type ParticipantResolver interface {
 	CreatedBy(ctx context.Context, obj *ent.Participant) (*ent.StepRun, error)
@@ -791,6 +793,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MessageStepArgs.URL(childComplexity), true
+
+	case "Mutation.addParticipants":
+		if e.complexity.Mutation.AddParticipants == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addParticipants_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddParticipants(childComplexity, args["input"].(*model.AddParticipantsInput)), true
 
 	case "Mutation.auth":
 		if e.complexity.Mutation.Auth == nil {
@@ -2679,6 +2693,29 @@ input DeleteDatumInput {
   nodeID: ID!
 }
 
+input AddParticipantsInput {
+  participants: [ImportedParticipant!]!
+  projectID: String
+}
+
+input ImportedParticipant {
+  id: String!
+  createdAt: DateTime!
+  mturkWorkerID: String!
+
+  # """
+  # Data should be an object with key value pair
+  # """
+  # data: JSON
+
+  data: [ParticipantData]
+}
+
+input ParticipantData {
+  key: String!
+  val: String!
+}
+
 input CreateProjectInput {
   projectID: String!
   name: String!
@@ -2888,6 +2925,11 @@ type Mutation {
   mark it as cancelled.
   """
   cancelRun(input: CancelRunInput): Run! @hasRole(role: ADMIN)
+
+  """
+  Add participant into internal database from csv or json file.
+  """
+  addParticipants(input: AddParticipantsInput): [Participant!]! @hasRole(role: ADMIN)
 }
 `, BuiltIn: false},
 	{Name: "mutation_selection.graphqls", Input: `"""
@@ -3288,6 +3330,21 @@ func (ec *executionContext) dir_hasRole_args(ctx context.Context, rawArgs map[st
 		}
 	}
 	args["role"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_addParticipants_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.AddParticipantsInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOAddParticipantsInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAddParticipantsInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -6382,6 +6439,72 @@ func (ec *executionContext) _Mutation_cancelRun(ctx context.Context, field graph
 	res := resTmp.(*ent.Run)
 	fc.Result = res
 	return ec.marshalNRun2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐRun(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_addParticipants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_addParticipants_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().AddParticipants(rctx, args["input"].(*model.AddParticipantsInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasRole == nil {
+				return nil, errors.New("directive hasRole is not implemented")
+			}
+			return ec.directives.HasRole(ctx, nil, directive0, role)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*ent.Participant); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/empiricaly/recruitment/internal/ent.Participant`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Participant)
+	fc.Result = res
+	return ec.marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipantᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Page_redirect(ctx context.Context, field graphql.CollectedField, obj *model.Page) (ret graphql.Marshaler) {
@@ -10665,6 +10788,34 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputAddParticipantsInput(ctx context.Context, obj interface{}) (model.AddParticipantsInput, error) {
+	var it model.AddParticipantsInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "participants":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("participants"))
+			it.Participants, err = ec.unmarshalNImportedParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐImportedParticipantᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "projectID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectID"))
+			it.ProjectID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputAuthInput(ctx context.Context, obj interface{}) (model.AuthInput, error) {
 	var it model.AuthInput
 	var asMap = obj.(map[string]interface{})
@@ -11077,6 +11228,50 @@ func (ec *executionContext) unmarshalInputHITStepArgsInput(ctx context.Context, 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputImportedParticipant(ctx context.Context, obj interface{}) (model.ImportedParticipant, error) {
+	var it model.ImportedParticipant
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "createdAt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
+			it.CreatedAt, err = ec.unmarshalNDateTime2timeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "mturkWorkerID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("mturkWorkerID"))
+			it.MturkWorkerID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "data":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
+			it.Data, err = ec.unmarshalOParticipantData2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantData(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputInternalCriteriaInput(ctx context.Context, obj interface{}) (model.InternalCriteriaInput, error) {
 	var it model.InternalCriteriaInput
 	var asMap = obj.(map[string]interface{})
@@ -11256,6 +11451,34 @@ func (ec *executionContext) unmarshalInputMessageStepArgsInput(ctx context.Conte
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lobbyExpiration"))
 			it.LobbyExpiration, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputParticipantData(ctx context.Context, obj interface{}) (model.ParticipantData, error) {
+	var it model.ParticipantData
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "key":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+			it.Key, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "val":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("val"))
+			it.Val, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -12215,6 +12438,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "cancelRun":
 			out.Values[i] = ec._Mutation_cancelRun(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "addParticipants":
+			out.Values[i] = ec._Mutation_addParticipants(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -13570,6 +13798,32 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) unmarshalNImportedParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐImportedParticipantᚄ(ctx context.Context, v interface{}) ([]*model.ImportedParticipant, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.ImportedParticipant, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNImportedParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐImportedParticipant(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNImportedParticipant2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐImportedParticipant(ctx context.Context, v interface{}) (*model.ImportedParticipant, error) {
+	res, err := ec.unmarshalInputImportedParticipant(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -14511,6 +14765,14 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) unmarshalOAddParticipantsInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAddParticipantsInput(ctx context.Context, v interface{}) (*model.AddParticipantsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputAddParticipantsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOAuthInput2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐAuthInput(ctx context.Context, v interface{}) (*model.AuthInput, error) {
 	if v == nil {
 		return nil, nil
@@ -15080,6 +15342,38 @@ func (ec *executionContext) marshalOPROVIDER2ᚖgithubᚗcomᚋempiricalyᚋrecr
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalOParticipantData2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantData(ctx context.Context, v interface{}) ([]*model.ParticipantData, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.ParticipantData, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalOParticipantData2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantData(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalOParticipantData2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantData(ctx context.Context, v interface{}) (*model.ParticipantData, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputParticipantData(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOParticipantFilterType2ᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐParticipantFilterType(ctx context.Context, v interface{}) (*model.ParticipantFilterType, error) {

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/predicate"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/template"
@@ -78,6 +79,21 @@ func (au *AdminUpdate) AddTemplates(t ...*Template) *AdminUpdate {
 	return au.AddTemplateIDs(ids...)
 }
 
+// AddImportedParticipantIDs adds the importedParticipants edge to Participant by ids.
+func (au *AdminUpdate) AddImportedParticipantIDs(ids ...string) *AdminUpdate {
+	au.mutation.AddImportedParticipantIDs(ids...)
+	return au
+}
+
+// AddImportedParticipants adds the importedParticipants edges to Participant.
+func (au *AdminUpdate) AddImportedParticipants(p ...*Participant) *AdminUpdate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return au.AddImportedParticipantIDs(ids...)
+}
+
 // Mutation returns the AdminMutation object of the builder.
 func (au *AdminUpdate) Mutation() *AdminMutation {
 	return au.mutation
@@ -123,6 +139,27 @@ func (au *AdminUpdate) RemoveTemplates(t ...*Template) *AdminUpdate {
 		ids[i] = t[i].ID
 	}
 	return au.RemoveTemplateIDs(ids...)
+}
+
+// ClearImportedParticipants clears all "importedParticipants" edges to type Participant.
+func (au *AdminUpdate) ClearImportedParticipants() *AdminUpdate {
+	au.mutation.ClearImportedParticipants()
+	return au
+}
+
+// RemoveImportedParticipantIDs removes the importedParticipants edge to Participant by ids.
+func (au *AdminUpdate) RemoveImportedParticipantIDs(ids ...string) *AdminUpdate {
+	au.mutation.RemoveImportedParticipantIDs(ids...)
+	return au
+}
+
+// RemoveImportedParticipants removes importedParticipants edges to Participant.
+func (au *AdminUpdate) RemoveImportedParticipants(p ...*Participant) *AdminUpdate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return au.RemoveImportedParticipantIDs(ids...)
 }
 
 // Save executes the query and returns the number of rows/vertices matched by this operation.
@@ -332,6 +369,60 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if au.mutation.ImportedParticipantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.ImportedParticipantsTable,
+			Columns: admin.ImportedParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedImportedParticipantsIDs(); len(nodes) > 0 && !au.mutation.ImportedParticipantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.ImportedParticipantsTable,
+			Columns: admin.ImportedParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.ImportedParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.ImportedParticipantsTable,
+			Columns: admin.ImportedParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{admin.Label}
@@ -398,6 +489,21 @@ func (auo *AdminUpdateOne) AddTemplates(t ...*Template) *AdminUpdateOne {
 	return auo.AddTemplateIDs(ids...)
 }
 
+// AddImportedParticipantIDs adds the importedParticipants edge to Participant by ids.
+func (auo *AdminUpdateOne) AddImportedParticipantIDs(ids ...string) *AdminUpdateOne {
+	auo.mutation.AddImportedParticipantIDs(ids...)
+	return auo
+}
+
+// AddImportedParticipants adds the importedParticipants edges to Participant.
+func (auo *AdminUpdateOne) AddImportedParticipants(p ...*Participant) *AdminUpdateOne {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return auo.AddImportedParticipantIDs(ids...)
+}
+
 // Mutation returns the AdminMutation object of the builder.
 func (auo *AdminUpdateOne) Mutation() *AdminMutation {
 	return auo.mutation
@@ -443,6 +549,27 @@ func (auo *AdminUpdateOne) RemoveTemplates(t ...*Template) *AdminUpdateOne {
 		ids[i] = t[i].ID
 	}
 	return auo.RemoveTemplateIDs(ids...)
+}
+
+// ClearImportedParticipants clears all "importedParticipants" edges to type Participant.
+func (auo *AdminUpdateOne) ClearImportedParticipants() *AdminUpdateOne {
+	auo.mutation.ClearImportedParticipants()
+	return auo
+}
+
+// RemoveImportedParticipantIDs removes the importedParticipants edge to Participant by ids.
+func (auo *AdminUpdateOne) RemoveImportedParticipantIDs(ids ...string) *AdminUpdateOne {
+	auo.mutation.RemoveImportedParticipantIDs(ids...)
+	return auo
+}
+
+// RemoveImportedParticipants removes importedParticipants edges to Participant.
+func (auo *AdminUpdateOne) RemoveImportedParticipants(p ...*Participant) *AdminUpdateOne {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return auo.RemoveImportedParticipantIDs(ids...)
 }
 
 // Save executes the query and returns the updated entity.
@@ -642,6 +769,60 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: template.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.ImportedParticipantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.ImportedParticipantsTable,
+			Columns: admin.ImportedParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedImportedParticipantsIDs(); len(nodes) > 0 && !auo.mutation.ImportedParticipantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.ImportedParticipantsTable,
+			Columns: admin.ImportedParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.ImportedParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.ImportedParticipantsTable,
+			Columns: admin.ImportedParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
 				},
 			},
 		}

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent/admin"
+	"github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/project"
 	"github.com/empiricaly/recruitment/internal/ent/template"
 	"github.com/facebook/ent/dialect/sql/sqlgraph"
@@ -96,6 +97,21 @@ func (ac *AdminCreate) AddTemplates(t ...*Template) *AdminCreate {
 		ids[i] = t[i].ID
 	}
 	return ac.AddTemplateIDs(ids...)
+}
+
+// AddImportedParticipantIDs adds the importedParticipants edge to Participant by ids.
+func (ac *AdminCreate) AddImportedParticipantIDs(ids ...string) *AdminCreate {
+	ac.mutation.AddImportedParticipantIDs(ids...)
+	return ac
+}
+
+// AddImportedParticipants adds the importedParticipants edges to Participant.
+func (ac *AdminCreate) AddImportedParticipants(p ...*Participant) *AdminCreate {
+	ids := make([]string, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return ac.AddImportedParticipantIDs(ids...)
 }
 
 // Mutation returns the AdminMutation object of the builder.
@@ -270,6 +286,25 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeString,
 					Column: template.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ac.mutation.ImportedParticipantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.ImportedParticipantsTable,
+			Columns: admin.ImportedParticipantsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: participant.FieldID,
 				},
 			},
 		}
