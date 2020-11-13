@@ -103,9 +103,9 @@
       {:else}
         <div>{title}</div>
       {/if}
-      <slot name="posttitle" />
     </h1>
     <div class="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap">
+      <slot name="posttitle" />
       {#each facts as fact, i (fact.text)}
         <div
           class="mt-2 flex items-center text-sm leading-5 text-gray-500 sm:mr-6">

@@ -28,13 +28,19 @@ ContentType is the type rendering used for a field.
 """
 enum ContentType {
   """
-  MARKDOWN uses a Markdown renderer. Templating uses Mustache-style
+  PLAIN uses plain text, no formatting. Templating uses Handlebars-style
+  interpolation (i.e. {{url}}).
+  """
+  PLAIN
+
+  """
+  MARKDOWN uses a Markdown renderer. Templating uses Handlebars-style
   interpolation (i.e. {{url}}).
   """
   MARKDOWN
 
   """
-  HTML uses an HTML rendered. Templating uses Mustache-style
+  HTML uses an HTML rendered. Templating uses Handlebars-style
   interpolation (i.e. {{url}}).
   """
   HTML

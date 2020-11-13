@@ -27,7 +27,7 @@
     class="mt-5 md:mt-0 md:col-span-7 shadow sm:rounded-lg relative overflow-hidden">
     {#if header}
       <header
-        class="relative sm:rounded-lg px-4 sm:px-4 py-3 {current ? 'border-2 border-mint-300 bg-mint-600 text-gray-50' : 'text-mint-600 bg-gray-50'}">
+        class="relative sm:rounded-lg px-4 py-3 h-full {current ? 'border-2 border-mint-300 bg-mint-600 text-gray-50' : 'text-mint-600 bg-gray-50'}">
         <div
           class="absolute bg-mint-900 h-full top-0 left-0 z-0 sm:rounded-lg"
           style="width: {progress}%" />

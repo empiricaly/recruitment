@@ -603,10 +603,13 @@ func (e Comparator) MarshalGQL(w io.Writer) {
 type ContentType string
 
 const (
-	// MARKDOWN uses a Markdown renderer. Templating uses Mustache-style
+	// PLAIN uses plain text, no formatting. Templating uses Handlebars-style
+	// interpolation (i.e. {{url}}).
+	ContentTypePlain ContentType = "PLAIN"
+	// MARKDOWN uses a Markdown renderer. Templating uses Handlebars-style
 	// interpolation (i.e. {{url}}).
 	ContentTypeMarkdown ContentType = "MARKDOWN"
-	// HTML uses an HTML rendered. Templating uses Mustache-style
+	// HTML uses an HTML rendered. Templating uses Handlebars-style
 	// interpolation (i.e. {{url}}).
 	ContentTypeHTML ContentType = "HTML"
 	// REACT uses a React renderer. Templating passes template arguments as props.
@@ -618,6 +621,7 @@ const (
 )
 
 var AllContentType = []ContentType{
+	ContentTypePlain,
 	ContentTypeMarkdown,
 	ContentTypeHTML,
 	ContentTypeReact,
@@ -626,7 +630,7 @@ var AllContentType = []ContentType{
 
 func (e ContentType) IsValid() bool {
 	switch e {
-	case ContentTypeMarkdown, ContentTypeHTML, ContentTypeReact, ContentTypeSvelte:
+	case ContentTypePlain, ContentTypeMarkdown, ContentTypeHTML, ContentTypeReact, ContentTypeSvelte:
 		return true
 	}
 	return false

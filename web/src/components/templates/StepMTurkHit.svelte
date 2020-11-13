@@ -6,7 +6,7 @@
   import StepMessageArgs from "./StepMessageArgs.svelte";
 
   export let step;
-  let mode = "markdown";
+  let mode = "plain";
   let showVariables = false;
 
   const uniq = uniqueID();
@@ -114,5 +114,5 @@
 </div>
 
 <div class="mt-1">
-  <StepMessageArgs bind:msgArgs={step.msgArgs} />
+  <StepMessageArgs bind:msgArgs={step.msgArgs} rich />
 </div>

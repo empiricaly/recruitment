@@ -5,6 +5,7 @@
   import { mutate } from "svelte-apollo";
   import Layout from "../../layouts/Layout.svelte";
   import { client } from "../../lib/apollo";
+  import { addDirtyObject, removeDirtyObject } from "../../lib/dirty";
   import {
     DUPLICATE_RUN,
     SCHEDULE_RUN,
@@ -12,7 +13,6 @@
     UPDATE_RUN,
   } from "../../lib/queries";
   import { push } from "../../lib/routing";
-  import { addDirtyObject, removeDirtyObject } from "../../lib/dirty";
   import { deepCopy } from "../../utils/copy";
   import { debounce } from "../../utils/timing";
   import StatusBadge from "../misc/StatusBadge.svelte";
@@ -362,8 +362,8 @@
     {actions}
     {facts}
     titleUpdatable>
-    <div slot="pretitle" class="h-full flex items-center">
-      <StatusBadge large status={run.status} />
+    <div slot="posttitle" class="mr-2 mt-2">
+      <StatusBadge status={run.status} />
     </div>
 
     <!-- <Template {project} {run} bind:template /> -->

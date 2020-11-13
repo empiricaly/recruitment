@@ -9,6 +9,30 @@
   export let readonly = false;
   export let errorLoc = null;
   export let lineNumbers = true;
+  export let modes = {
+    plain: {
+      name: "handlebars",
+      base: "text/plain",
+    },
+    markdown: {
+      name: "markdown",
+      base: "text/x-markdown",
+    },
+    html: {
+      name: "htmlmixed",
+      base: "text/html",
+    },
+    // jsx: {
+    //   name: "jsx",
+    // },
+    // javascript: {
+    //   name: "javascript",
+    // },
+    // svelte: {
+    //   name: "handlebars",
+    //   base: "text/html",
+    // },
+  };
 
   let w;
   let h;
@@ -37,27 +61,6 @@
   export function focus() {
     editor.focus();
   }
-
-  const modes = {
-    markdown: {
-      name: "markdown",
-      base: "text/x-markdown",
-    },
-    jsx: {
-      name: "jsx",
-    },
-    javascript: {
-      name: "javascript",
-    },
-    html: {
-      name: "htmlmixed",
-      base: "text/html",
-    },
-    svelte: {
-      name: "handlebars",
-      base: "text/html",
-    },
-  };
 
   const refs = {};
 

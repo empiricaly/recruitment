@@ -1,24 +1,6 @@
 <script context="module">
-  const modes = [
-    {
-      label: "Markdown",
-      value: "MARKDOWN",
-    },
-    {
-      label: "HTML",
-      value: "HTML",
-    },
-    {
-      label: "React",
-      value: "REACT",
-    },
-    {
-      label: "Svelte",
-      value: "SVELTE",
-    },
-  ];
-
   const typeToMode = {
+    PLAIN: "plain",
     MARKDOWN: "markdown",
     HTML: "html",
     REACT: "jsx",
@@ -33,7 +15,6 @@
 
   export let msgArgs;
   export let hasSubject = false;
-  let showVariables = false;
 
   const uniq = uniqueID();
 </script>

@@ -13,6 +13,16 @@ export const defaultMessageStepArgs = {
   subject: "",
   url: "",
   message: "\n\n\n\n",
+  messageType: "PLAIN",
+  lobby: "",
+  lobbyType: "PLAIN",
+  lobbyExpiration: 0,
+};
+
+export const defaultHITMessageStepArgs = {
+  subject: "",
+  url: "",
+  message: "\n\n\n\n",
   messageType: "HTML",
   lobby: "",
   lobbyType: "HTML",

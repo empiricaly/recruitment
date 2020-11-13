@@ -1,8 +1,8 @@
 <script>
   import { mutate } from "svelte-apollo";
   import { client } from "../../lib/apollo";
-  import { UPDATE_TEMPLATE } from "../../lib/queries.js";
   import { addDirtyObject, removeDirtyObject } from "../../lib/dirty";
+  import { UPDATE_TEMPLATE } from "../../lib/queries.js";
   import { deepCopy } from "../../utils/copy";
   import { debounce } from "../../utils/timing";
   import Button from "../base/Button.svelte";
@@ -16,6 +16,7 @@
   import Step from "./Step.svelte";
   import {
     defaultFilterStepArgs,
+    defaultHITMessageStepArgs,
     defaultHITStepArgs,
     defaultMessageStepArgs,
     selectionTypes,
@@ -78,11 +79,15 @@
 
   function handleNewStep(stepType) {
     return function (event) {
+      const msgArgs =
+        stepType === "MTURK_HIT"
+          ? deepCopy(defaultHITMessageStepArgs)
+          : deepCopy(defaultMessageStepArgs);
       let params = {
         type: stepType,
         duration: stepType === "MTURK_HIT" || stepType === "WAIT" ? 60 : 0,
         index: template.steps.length,
-        msgArgs: deepCopy(defaultMessageStepArgs),
+        msgArgs,
         hitArgs: deepCopy(defaultHITStepArgs),
         filterArgs: deepCopy(defaultFilterStepArgs),
       };
