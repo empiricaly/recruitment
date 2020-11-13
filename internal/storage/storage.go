@@ -12,7 +12,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	// SQLLite3 package required by ent to init the SQLLite Storage
+	// SQL Drivers
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v4"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -37,7 +39,7 @@ func dbLog(msg ...interface{}) {
 
 // Connect creates a connection to a messaging service with the given config.
 func Connect(ctx context.Context, config *Config) (*Conn, error) {
-	connString := config.DriverURI
+	connString := config.DriverURL
 	if connString == "" {
 		connString = fmt.Sprintf("file:%s?mode=rwc&_fk=1", config.File)
 	}

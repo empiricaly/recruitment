@@ -11,7 +11,7 @@ type Config struct {
 	Debug bool   `mapstructure:"debug"`
 
 	Driver    string `mapstructure:"driver"`
-	DriverURI string `mapstructure:"driveruri"`
+	DriverURL string `mapstructure:"driverurl"`
 }
 
 // Validate configuration is ok
@@ -38,9 +38,9 @@ func ConfigFlags(cmd *cobra.Command, prefix string) error {
 	cmd.Flags().String(flag, val, "DB Driver")
 	viper.SetDefault(flag, val)
 
-	flag = prefix + ".driveruri"
+	flag = prefix + ".driverurl"
 	val = ""
-	cmd.Flags().String(flag, val, "Custom DB connection uri (golang sql format)")
+	cmd.Flags().String(flag, val, "Custom DB connection URL (golang sql format)")
 	viper.SetDefault(flag, val)
 
 	flag = prefix + ".debug"

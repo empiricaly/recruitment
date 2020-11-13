@@ -10,8 +10,10 @@ require (
 	github.com/facebook/ent v0.4.3
 	github.com/gin-contrib/logger v0.0.2
 	github.com/gin-gonic/gin v1.6.3
+	github.com/go-sql-driver/mysql v1.5.1-0.20200311113236-681ffa848bae
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/go-multierror v1.1.0
+	github.com/jackc/pgx/v4 v4.9.2
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-sqlite3 v1.14.4
