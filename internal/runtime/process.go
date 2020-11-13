@@ -167,7 +167,8 @@ func (r *runState) startStep(ctx context.Context, startTime time.Time) error {
 		if err != nil {
 			return errors.Wrap(err, "push filter step participants to next run")
 		}
-
+	case stepModel.TypeWAIT:
+		return nil
 	default:
 		return errors.Errorf("unknown step type: %s", r.currentStep.Type.String())
 	}
@@ -184,6 +185,8 @@ func (r *runState) endStep(ctx context.Context, endTime time.Time) error {
 		}
 	case stepModel.TypePARTICIPANT_FILTER:
 		// noop?
+	case stepModel.TypeWAIT:
+		return nil
 	default:
 		return errors.Errorf("unknown step type: %s", r.currentStep.Type.String())
 	}

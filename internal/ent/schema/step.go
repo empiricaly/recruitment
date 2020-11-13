@@ -22,7 +22,7 @@ func (Step) Mixin() []ent.Mixin {
 // Fields of the Step.
 func (Step) Fields() []ent.Field {
 	return []ent.Field{
-		field.Enum("type").Values("MTURK_HIT", "MTURK_MESSAGE", "PARTICIPANT_FILTER"),
+		field.Enum("type").Values("MTURK_HIT", "MTURK_MESSAGE", "PARTICIPANT_FILTER", "WAIT"),
 		field.Int("index"),
 		field.Int("duration"),
 		field.JSON("msgArgs", &model.MessageStepArgs{}).Optional(),

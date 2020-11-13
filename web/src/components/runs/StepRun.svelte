@@ -81,7 +81,9 @@
         MTurk HIT
       {:else if step.type === 'MTURK_MESSAGE'}
         MTurk Message
-      {:else if step.type === 'PARTICIPANT_FILTER'}Participant Filter{/if}
+      {:else if step.type === 'PARTICIPANT_FILTER'}
+        Participant Filter
+      {:else if step.type === 'WAIT'}Wait{/if}
     </div>
   </div>
   <div slot="description">
@@ -94,7 +96,7 @@
         {#if finishedAt}
           <div class="text-gray-500  mr-2">Finished</div>
           {finishedAt}
-        {:else if remaining}
+        {:else if remaining && step.type === 'MTURK_HIT'}
           <div class="tabular-nums mr-2">{remainingStr}</div>
           <div class="{current ? 'text-mint-300' : 'text-gray-500'}  mr-2">
             remaining
@@ -109,13 +111,15 @@
         {/if}
       </div>
 
-      <div class="ml-2 flex items-center md:justify-end">
-        <div class="{current ? 'text-mint-300' : 'text-gray-500'} mr-2">
-          Duration
+      {#if step.type === 'MTURK_HIT' || step.type === 'WAIT'}
+        <div class="ml-2 flex items-center md:justify-end">
+          <div class="{current ? 'text-mint-300' : 'text-gray-500'} mr-2">
+            Duration
+          </div>
+          <div class="tabular-nums mr-1">{step.duration}</div>
+          minutes
         </div>
-        <div class="tabular-nums mr-1">{step.duration}</div>
-        minutes
-      </div>
+      {/if}
     </div>
   </div>
 
@@ -127,6 +131,8 @@
         <StepRunMTurkMessage bind:step />
       {:else if step.type === 'PARTICIPANT_FILTER'}
         <StepRunParticipantFilter bind:step />
+      {:else if step.type === 'WAIT'}
+        <div />
       {:else}Unknown Step Type?!?{/if}
     </div>
   {/if}

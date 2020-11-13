@@ -198,7 +198,7 @@ var (
 		{Name: "id", Type: field.TypeString, Unique: true, Size: 20},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "type", Type: field.TypeEnum, Enums: []string{"MTURK_HIT", "MTURK_MESSAGE", "PARTICIPANT_FILTER"}},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"MTURK_HIT", "MTURK_MESSAGE", "PARTICIPANT_FILTER", "WAIT"}},
 		{Name: "index", Type: field.TypeInt},
 		{Name: "duration", Type: field.TypeInt},
 		{Name: "msg_args", Type: field.TypeJSON, Nullable: true},

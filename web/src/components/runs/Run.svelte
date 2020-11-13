@@ -225,7 +225,9 @@
 
     if (
       (!disabled && template.steps.length === 0) ||
-      (isMturkQual && template.steps[0].type !== "MTURK_HIT")
+      (isMturkQual &&
+        template.steps.length > 0 &&
+        template.steps[0].type !== "MTURK_HIT")
     ) {
       disabled = true;
     }
