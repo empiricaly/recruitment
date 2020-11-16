@@ -1,14 +1,13 @@
 <script>
   import { mutate } from "svelte-apollo";
-
+  import { client } from "../../lib/apollo";
+  import { DUPLICATE_RUN } from "../../lib/queries";
+  import { push } from "../../lib/routing";
   import Link from "../base/Link.svelte";
   import Duration from "../misc/Duration.svelte";
   import OptionsMenu from "../misc/OptionsMenu.svelte";
   import RelativeTime from "../misc/RelativeTime.svelte";
   import StatusBadge from "../misc/StatusBadge.svelte";
-  import { push } from "../../lib/routing";
-  import { DUPLICATE_RUN } from "../../lib/queries";
-  import { client } from "../../lib/apollo";
   import { notify } from "../overlays/Notification.svelte";
 
   export let index = 0;
@@ -88,7 +87,7 @@
         <div class="mt-4 sm:mt-0 whitespace-no-wrap">
           <div>
             <div>
-              <StatusBadge {status} />
+              <StatusBadge {status} {startAt} />
             </div>
             <div class="mt-2 sm:flex">
               {#if endedAt}

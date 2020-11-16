@@ -363,7 +363,7 @@
     {facts}
     titleUpdatable>
     <div slot="posttitle" class="mr-2 mt-2">
-      <StatusBadge status={run.status} />
+      <StatusBadge status={run.status} startAt={run.startAt} />
     </div>
 
     <!-- <Template {project} {run} bind:template /> -->

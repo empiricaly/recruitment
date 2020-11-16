@@ -1,22 +1,21 @@
 <script>
   import dayjs from "dayjs";
   import { mutate } from "svelte-apollo";
-  import ParticipantList from "../components/participants/ParticipantList.svelte";
-  import Layout from "../layouts/Layout.svelte";
-  import {
-    participantsExportFormat,
-    getParticipants,
-    setValue,
-  } from "../lib/models/participants/participants.js";
-  import { GET_PROJECT_PARTICIPANTS } from "../lib/queries";
-  import { notify } from "../components/overlays/Notification.svelte";
-  import Modal from "../components/overlays/Modal.svelte";
   import Input from "../components/base/Input.svelte";
   import Label from "../components/base/Label.svelte";
+  import Modal from "../components/overlays/Modal.svelte";
+  import { notify } from "../components/overlays/Notification.svelte";
+  import ParticipantList from "../components/participants/ParticipantList.svelte";
+  import Layout from "../layouts/Layout.svelte";
+  import { client } from "../lib/apollo";
+  import {
+    getParticipants,
+    participantsExportFormat,
+    setValue,
+  } from "../lib/models/participants/participants.js";
+  import { ADD_PARTICIPANTS, GET_PROJECT_PARTICIPANTS } from "../lib/queries";
   import { toCSV } from "../utils/csv.js";
   import { download } from "../utils/download.js";
-  import { client } from "../lib/apollo";
-  import { ADD_PARTICIPANTS } from "../lib/queries";
 
   const queryArgs = (project) => ({
     query: GET_PROJECT_PARTICIPANTS,
@@ -163,7 +162,7 @@
   });
 
   actions.push({
-    text: "ExportJSON",
+    text: "Export JSON",
     action: "exportjson",
     icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M400 208h-73.8V80c0-26.5-21.5-48-48-48H169.8c-26.5 0-48 21.5-48 48v128H48.1c-42.6 0-64.2 51.7-33.9 81.9l175.9 176c18.7 18.7 49.1 18.7 67.9 0l176-176c30-30.1 8.7-81.9-34-81.9zM224 432L48 256h121.8V80h108.3v176H400L224 432z"/></svg>`,
     primary: true,
