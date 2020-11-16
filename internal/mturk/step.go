@@ -287,7 +287,7 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 		return errors.New("get assignments for hit step failed")
 	}
 
-	particpants, err := stepRun.QueryParticipants().
+	participants, err := stepRun.QueryParticipants().
 		WithParticipations(func(q *ent.ParticipationQuery) {
 			q.Where(participation.HasStepRunWith(stepRunModel.IDEQ(stepRun.ID)))
 		}).
@@ -298,14 +298,14 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 	}
 
 	m := make(map[string]*ent.Participant)
-	for _, p := range particpants {
+	for _, p := range participants {
 		if p.MturkWorkerID == nil {
 			continue
 		}
 		m[*p.MturkWorkerID] = p
 	}
 
-	nextParticipants := make([]*ent.Participant, 0, len(particpants))
+	nextParticipants := make([]*ent.Participant, 0, len(participants))
 
 	for {
 		assignment, ok := <-c
@@ -319,6 +319,7 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 				SetID(xid.New().String()).
 				AddProjects(project).
 				SetMturkWorkerID(*assignment.WorkerId).
+				SetUninitialized(false).
 				SetCreatedBy(stepRun).
 				AddSteps(stepRun).
 				Save(ctx)
@@ -326,6 +327,8 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 				log.Error().Msgf("could not add participant with workerID %s for stepRun %s", *assignment.WorkerId, stepRun.ID)
 				continue
 			}
+
+			m[*p.MturkWorkerID] = p
 		} else {
 			projects, err := p.Edges.ProjectsOrErr()
 			if err != nil {
@@ -342,6 +345,7 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 				p, err = p.Update().
 					AddProjects(project).
 					AddSteps(stepRun).
+					SetUninitialized(false).
 					Save(ctx)
 				if err != nil {
 					log.Error().Msgf("could not update participant with workerID %s for stepRun %s", *assignment.WorkerId, stepRun.ID)
