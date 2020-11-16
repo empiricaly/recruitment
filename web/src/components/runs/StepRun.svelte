@@ -37,13 +37,17 @@
   let remainingStr = "";
   $: if (remaining) {
     let rem = "";
-    if (Math.floor(remaining.as("hours")) >= 1) {
-      rem += String(Math.floor(remaining.as("hours"))).padStart(2, "0") + ":";
+    if (remaining.as("seconds") < 0) {
+      remainingStr = "00:00";
+    } else {
+      if (Math.floor(remaining.as("hours")) >= 1) {
+        rem += String(Math.floor(remaining.as("hours"))).padStart(2, "0") + ":";
+      }
+      rem += String(Math.floor(remaining.as("minutes") % 60)).padStart(2, "0");
+      rem += ":";
+      rem += String(Math.floor(remaining.as("seconds") % 60)).padStart(2, "0");
+      remainingStr = rem;
     }
-    rem += String(Math.floor(remaining.as("minutes") % 60)).padStart(2, "0");
-    rem += ":";
-    rem += String(Math.floor(remaining.as("seconds") % 60)).padStart(2, "0");
-    remainingStr = rem;
   }
 
   let startsAt = null;
