@@ -1,0 +1,68 @@
+# Secret must a unique 32 character random string. It used for authentication to
+# the admin and API. It should not be shared or copied between projects. If it
+# was not automatically generated on first start, you can generate a unique key
+# on the command line with the following command:
+# env LC_CTYPE=C LC_ALL=C tr -dc "a-zA-Z0-9-_\$\?" < /dev/urandom | head -c 32; echo
+secret: lmXTgVkgfXohuo1Wg?euFYgze9SLkn6R
+
+# Admins that will be able to access the admin panel. Try to use different
+# credentials for different users as we store who did what for each operation,
+# which help understand what happened. Also try to use a somewhat safe password.
+admins:
+  # Name is the name visible in the UI, can contain spaces and any character
+  - name: Oksana
+    # Username is what's used to log in and can only container alpha-numeric
+    # characters, and no spaces or punctuation.
+    username: oksana
+    # Password should be a unique random password of 8+ characters
+    password: 123456789
+    # Example 2nd user, John
+  - name: John
+    username: john
+    password: 123456789
+
+# HTTP server options
+http:
+  # The rooturl is what's used to build URLs for MTurk (such as the iframe for
+  # HITs and redirects for tracking).
+  rooturl: "https://recruitment.empirica.app"
+  # If set to true, it will log all HTTP Requests and Responses received by the
+  # HTTP server (which includes both frontend request such as HTML and the
+  # graphQL API).
+  debug: false
+
+# Store manages persistence options for the SQL database
+store:
+  # Database driver. Defaults to using embedded file database sqlite3 which does
+  # not require the installation of a separate DB, and should be sufficient in
+  # most cases. If more power is needed, look into mysql
+  driver: sqlite3
+  # If set to true, it will log all SQL queries.
+  debug: false
+
+# MTurk options
+mturk:
+  # Dev mode on MTurk disabled calling the MTurk API. All MTurk operation only
+  # run locally and just logs out and simualte what should happen if we were
+  # calling the API. Can be useful while developing and you don't want to be
+  # calling MTurk over and over.
+  dev: false
+
+# Runtime is where the run loop schedules and processes all steps in runs.
+runtime:
+  # Enable debug logs for the runtime
+  debug: true
+
+# Log is the general logging configuration configuration that might be overriden
+# locally per application component (such as HTTP or Store).
+log:
+  # Logging level. Can be: debug, info (default), warn, error, fatal
+  level: info
+  # Force TTY output (with colors and human readable logs – otherwise logs
+  # output as JSON), when the output might not be automatically recognized as a
+  # full TTY output (generally not needed).
+  forcetty: false
+
+# Dev enables special recruitment development tools, should generally not be
+# used unless you know what it does.
+dev: false
