@@ -4,17 +4,46 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"os"
 	"os/exec"
 
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/storage"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
 
+var participantFilterJSFile = ""
+
 func jsfilter(ctx context.Context, conn *storage.Conn, participants []*ent.Participant, js string) ([]*ent.Participant, error) {
-	subProcess := exec.Command("node", "scripts/participant_filter/filter.js")
+	if participantFilterJSFile == "" {
+		box, err := rice.FindBox("scripts")
+		if err != nil {
+			return nil, errors.Wrap(err, "opening directory rice for filter.js file")
+		}
+
+		content, err := box.Bytes("filter.js")
+		f, err := ioutil.TempFile("", "empirica_recruitment_js_*.js")
+		if err != nil {
+			return nil, errors.Wrap(err, "creating temporary filter.js file")
+		}
+
+		_, err = f.Write(content)
+		if err != nil {
+			return nil, errors.Wrap(err, "writing temporary filter.js file")
+		}
+
+		err = f.Close()
+		if err != nil {
+			return nil, errors.Wrap(err, "closing temporary filter.js file")
+		}
+
+		participantFilterJSFile = f.Name()
+	}
+
+	subProcess := exec.Command("node", participantFilterJSFile)
 	subProcess.Stderr = os.Stderr
 
 	stdin, err := subProcess.StdinPipe()

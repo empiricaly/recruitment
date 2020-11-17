@@ -18,6 +18,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+//go:generate rice embed-go
+
 func (r *runState) startRun(ctx context.Context, startTime time.Time) error {
 	if err := ent.WithTx(ctx, r.conn.Client, func(tx *ent.Tx) error {
 		for i, step := range r.steps {
@@ -240,7 +242,7 @@ func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int
 
 	initializedParticipants := make([]*ent.Participant, 0)
 	for _, participant := range participants {
-		if *participant.Uninitialized && *participant.Uninitialized == true {
+		if participant.Uninitialized != nil && *participant.Uninitialized == true {
 			continue
 		}
 
