@@ -13,9 +13,9 @@ func _() {
 	_ = x[nextStepEvent-2]
 }
 
-const _runEvent_name = "Start RunEnd RunNext Run Step"
+const _runEvent_name = "Start RunEnd RunNext Step"
 
-var _runEvent_index = [...]uint8{0, 9, 16, 29}
+var _runEvent_index = [...]uint8{0, 9, 16, 25}
 
 func (i runEvent) String() string {
 	if i < 0 || i >= runEvent(len(_runEvent_index)-1) {

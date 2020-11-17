@@ -2,6 +2,7 @@ node_modules
 web/public/build/
 data/
 *.db
+rice-box.go
 
 .DS_Store
 recruitment.yaml
