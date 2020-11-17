@@ -11,7 +11,7 @@ participants and multiple steps.
 # Quick Usage
 
 Download the latest pre-built binary release from the
-[releases page](https://github.com/empiricaly/empirica-recruitment/releases)
+[releases page](https://github.com/empiricaly/recruitment/releases)
 (currently only macos supported, adding other platforms soon).
 
 Then copy the config file `recruitment.example.yaml` to `recruitment.yaml` in
