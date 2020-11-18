@@ -16,6 +16,7 @@ import (
 // GetQuals will get a list of qualification types created by the user
 func (s *Session) GetQuals() ([]*model.MTurkQulificationType, error) {
 	var quals []*model.MTurkQulificationType
+	var validQuals []*model.MTurkQulificationType
 
 	params := &mturk.ListQualificationTypesInput{
 		MustBeRequestable:   aws.Bool(true),
@@ -39,7 +40,15 @@ func (s *Session) GetQuals() ([]*model.MTurkQulificationType, error) {
 		quals = append(quals, qual)
 	}
 
-	return quals, nil
+	for _, qual := range quals {
+		if strings.Contains(qual.Name, "Inc: [") || strings.Contains(qual.Name, "Exc: [") {
+			continue
+		}
+
+		validQuals = append(validQuals, qual)
+	}
+
+	return validQuals, nil
 }
 
 func loadQuals(sandbox bool) ([]*model.MTurkQulificationType, error) {
