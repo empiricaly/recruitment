@@ -14,6 +14,8 @@
   export let disabledAnd = false;
   export let disabledOr = false;
 
+  let showInput = true;
+
   $: operator = criteria.and && criteria.and.length > 0 ? "and" : "or";
 
   function handleChildAdd(event) {
@@ -64,9 +66,11 @@
 
   function handleComparatorChange(event) {
     const { value } = event.detail;
-    if (value === "DoesNotExist" || value === "Exists") {
+    if (value === "DOES_NOT_EXIST" || value === "EXISTS") {
       delete criteria.values;
+      showInput = false;
     } else {
+      showInput = true;
       if (!criteria.values) {
         criteria.values = [];
         criteria = criteria;
@@ -92,7 +96,9 @@
             placeholder="comparator" />
         </div>
         <div>
-          <ValueInput bind:criteria />
+          {#if showInput === true}
+            <ValueInput bind:criteria />
+          {/if}
         </div>
       </div>
 
