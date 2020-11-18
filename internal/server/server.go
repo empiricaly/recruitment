@@ -115,7 +115,7 @@ func Run(ctx context.Context, config *Config) (err error) {
 
 	addr := config.HTTP.Addr
 	if strings.HasPrefix(addr, ":") {
-		addr = "https://localhost" + addr
+		addr = "http://localhost" + addr
 	}
 	log.Info().Msgf("Recruitment started at %s", addr)
 
