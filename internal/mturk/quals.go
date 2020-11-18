@@ -41,7 +41,7 @@ func (s *Session) GetQuals() ([]*model.MTurkQulificationType, error) {
 	}
 
 	for _, qual := range quals {
-		if strings.Contains(qual.Name, "Inc: [") || strings.Contains(qual.Name, "Exc: [") {
+		if strings.HasPrefix(qual.Name, "Inc: [") || strings.HasPrefix(qual.Name, "Exc: [") {
 			continue
 		}
 
