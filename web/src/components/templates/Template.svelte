@@ -4,6 +4,7 @@
   import { addDirtyObject, removeDirtyObject } from "../../lib/dirty";
   import { UPDATE_TEMPLATE } from "../../lib/queries.js";
   import { deepCopy } from "../../utils/copy";
+  import { handleErrorMessage } from "../../utils/errorQuery";
   import { debounce } from "../../utils/timing";
   import Button from "../base/Button.svelte";
   import Input from "../base/Input.svelte";
@@ -64,7 +65,7 @@
         isTemplateDirty = false;
         removeDirtyObject(template.id);
       } catch (error) {
-        console.error(error);
+        handleErrorMessage(error);
         notify({
           failed: true,
           title: `Could not save Template update`,

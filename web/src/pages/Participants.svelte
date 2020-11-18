@@ -16,6 +16,7 @@
   import { ADD_PARTICIPANTS, GET_PROJECT_PARTICIPANTS } from "../lib/queries";
   import { toCSV } from "../utils/csv.js";
   import { download } from "../utils/download.js";
+  import { handleErrorMessage } from "../utils/errorQuery.js";
 
   const queryArgs = (project) => ({
     query: GET_PROJECT_PARTICIPANTS,
@@ -106,7 +107,7 @@
           location.reload();
         }, 2000);
       } catch (error) {
-        console.error(error);
+        handleErrorMessage(error);
         notify({
           failed: true,
           title: `Could not import participants`,

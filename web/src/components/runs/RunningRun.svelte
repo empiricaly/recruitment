@@ -4,6 +4,7 @@
   import { query } from "svelte-apollo";
   import { client } from "../../lib/apollo";
   import { GET_RUNNING_RUN, GET_RUN_PARTICIPANTS } from "../../lib/queries";
+  import { handleErrorMessage } from "../../utils/errorQuery";
   import { timer } from "../../utils/timer.js";
   import ParticipantList from "../participants/ParticipantList.svelte";
   import TemplateSection from "../templates/TemplateSection.svelte";
@@ -23,9 +24,13 @@
     variables: { projectID: project.projectID, runID: run.id },
   });
 
-  $: $runningRun.then((result) => {
-    runB = result.data.project.runs[0];
-  });
+  $: try {
+    $runningRun.then((result) => {
+      runB = result.data.project.runs[0];
+    });
+  } catch (error) {
+    handleErrorMessage(error);
+  }
 
   $: if (runB && runB.status == "RUNNING") {
     if ($timer) {

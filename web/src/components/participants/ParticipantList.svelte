@@ -2,6 +2,7 @@
   import { query } from "svelte-apollo";
   import { client } from "../../lib/apollo";
   import { participantPerQueryType } from "../../lib/models/participants/participants.js";
+  import { handleErrorMessage } from "../../utils/errorQuery";
   import DataCell from "./DataCell.svelte";
 
   export let queryArgs;
@@ -11,12 +12,16 @@
   const participantsQuery = query(client, queryArgs);
 
   export let participants;
-  $: $participantsQuery.then((result) => {
-    const pp = participantPerQueryType(type, result);
-    if (pp) {
-      participants = pp;
-    }
-  });
+  $: try {
+    $participantsQuery.then((result) => {
+      const pp = participantPerQueryType(type, result);
+      if (pp) {
+        participants = pp;
+      }
+    });
+  } catch (error) {
+    handleErrorMessage(error);
+  }
 
   export let keys = [];
   $: if (participants && participants.length > 0) {

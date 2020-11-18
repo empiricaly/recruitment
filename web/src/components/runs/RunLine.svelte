@@ -3,6 +3,7 @@
   import { client } from "../../lib/apollo";
   import { DUPLICATE_RUN } from "../../lib/queries";
   import { push } from "../../lib/routing";
+  import { handleErrorMessage } from "../../utils/errorQuery";
   import Link from "../base/Link.svelte";
   import Duration from "../misc/Duration.svelte";
   import OptionsMenu from "../misc/OptionsMenu.svelte";
@@ -43,7 +44,7 @@
 
       push(`/projects/${projectName}/runs/${result.data.duplicateRun.id}`);
     } catch (error) {
-      console.error(error);
+      handleErrorMessage(error);
       notify({
         failed: true,
         title: `Could not duplicate Run`,

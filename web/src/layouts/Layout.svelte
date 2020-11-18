@@ -10,6 +10,7 @@
   import { user } from "../lib/auth.js";
   import { GET_PROJECT } from "../lib/queries";
   import { params, path } from "../lib/routing.js";
+  import { handleErrorMessage } from "../utils/errorQuery";
   import Header from "./Header.svelte";
 
   const regexes = {
@@ -310,4 +311,5 @@
 {:catch error}
   Error loading Project:
   {error}
+  {handleErrorMessage(error)}
 {/await}

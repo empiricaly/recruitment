@@ -5,6 +5,7 @@
   import Layout from "../layouts/Layout.svelte";
   import { client } from "../lib/apollo";
   import { CREATE_TEMPLATE } from "../lib/queries";
+  import { handleErrorMessage } from "../utils/errorQuery";
 
   export let params;
 
@@ -37,7 +38,7 @@
         },
       });
     } catch (error) {
-      console.error(error);
+      handleErrorMessage(error);
       notify({
         failed: true,
         title: `Could not create Template`,
