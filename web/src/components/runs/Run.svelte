@@ -14,6 +14,7 @@
   } from "../../lib/queries";
   import { push } from "../../lib/routing";
   import { deepCopy } from "../../utils/copy";
+  import { handleErrorMessage } from "../../utils/errorQuery";
   import { debounce } from "../../utils/timing";
   import StatusBadge from "../misc/StatusBadge.svelte";
   import { notify } from "../overlays/Notification.svelte";
@@ -62,7 +63,7 @@
         isRunDirty = false;
         removeDirtyObject(run.id);
       } catch (error) {
-        console.error(error);
+        handleErrorMessage(error);
         notify({
           failed: true,
           title: `Could not save Run update`,
@@ -97,7 +98,7 @@
       });
       dispatch("refresh");
     } catch (error) {
-      console.error(JSON.stringify(error, "", 2));
+      handleErrorMessage(error);
 
       const message =
         error.message === "internal system error"
@@ -135,7 +136,7 @@
       });
       dispatch("refresh");
     } catch (error) {
-      console.error(error);
+      handleErrorMessage(error);
       notify({
         failed: true,
         title: `Could not schedule Run`,
@@ -168,7 +169,7 @@
         `/projects/${project.projectID}/runs/${result.data.duplicateRun.id}`
       );
     } catch (error) {
-      console.error(error);
+      handleErrorMessage(error);
       notify({
         failed: true,
         title: `Could not duplicate Run`,

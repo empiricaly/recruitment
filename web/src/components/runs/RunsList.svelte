@@ -2,6 +2,7 @@
   import { query } from "svelte-apollo";
   import { client } from "../../lib/apollo";
   import { GET_RUNS } from "../../lib/queries";
+  import { handleErrorMessage } from "../../utils/errorQuery";
   import Callout from "../base/Callout.svelte";
   import RunLine from "./RunLine.svelte";
 
@@ -47,4 +48,5 @@
 {:catch error}
   Error loading Runs:
   {error}
+  {handleErrorMessage(error)}
 {/await}

@@ -6,6 +6,7 @@
   import { client } from "../lib/apollo";
   import { CREATE_RUN, GET_RUNS } from "../lib/queries";
   import { push } from "../lib/routing";
+  import { handleErrorMessage } from "../utils/errorQuery";
 
   $: runs = query(client, { query: GET_RUNS });
 
@@ -63,7 +64,7 @@
 
       push(`/projects/${project.projectID}/runs/${result.data.createRun.id}`);
     } catch (error) {
-      console.error(error);
+      handleErrorMessage(error);
       notifClose();
       notify({
         failed: true,

@@ -4,6 +4,7 @@
   import { client } from "../lib/apollo";
   import { GET_RUN } from "../lib/queries";
   import { params } from "../lib/routing";
+  import { handleErrorMessage } from "../utils/errorQuery";
 
   $: runID = $params.runID;
   $: projectID = $params.projectID;
@@ -35,5 +36,6 @@
   {:catch error}
     Error loading Run:
     {error}
+    {handleErrorMessage(error)}
   {/await}
 {/if}

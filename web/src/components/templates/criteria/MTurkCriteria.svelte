@@ -124,6 +124,7 @@
     MTURK_LOCALES,
     MTURK_QUALIFICATION_TYPES,
   } from "../../../lib/queries";
+  import { handleErrorMessage } from "../../../utils/errorQuery";
   import Button from "../../base/Button.svelte";
   import Select from "../../base/Select.svelte";
 
@@ -238,6 +239,7 @@
     {:catch error}
       Error loading MTurk qualification types:
       {error}
+      {handleErrorMessage(error)}
     {/await}
   </div>
 </li>

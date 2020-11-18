@@ -20,6 +20,7 @@
   import ProjectLine from "../components/projects/ProjectLine.svelte";
   import { client } from "../lib/apollo";
   import { CREATE_PROJECT, GET_PROJECTS } from "../lib/queries";
+  import { handleErrorMessage } from "../utils/errorQuery";
 
   let newProject = false;
   let name = "";
@@ -54,7 +55,7 @@
       name = "";
       projectID = "";
     } catch (error) {
-      console.error(error);
+      handleErrorMessage(error);
       notify({
         failed: true,
         title: `Could not create Project`,
@@ -164,5 +165,6 @@
   {:catch error}
     Error loading Projects:
     {error}
+    {handleErrorMessage(error)}
   {/await}
 </main>
