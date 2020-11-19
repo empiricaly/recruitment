@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/mturk"
+	"github.com/aymerick/raymond"
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
@@ -18,6 +18,10 @@ import (
 	"github.com/rs/xid"
 	"github.com/rs/zerolog/log"
 )
+
+type renderContext struct {
+	URL string `handlebars:"url"`
+}
 
 const workerAdultQualTypeID = "00000000000000000060"
 
@@ -191,7 +195,20 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 
 	msg := step.MsgArgs.Message
 	if step.MsgArgs.URL != nil {
-		msg = strings.ReplaceAll(msg, "{url}", *step.MsgArgs.URL)
+		u, err := url.Parse(*step.MsgArgs.URL)
+		if err != nil {
+			log.Error().Err(err).Msg("invalid step message URL")
+		} else {
+			renderCtx := &renderContext{
+				URL: u.String(),
+			}
+			r, err := raymond.Render(msg, renderCtx)
+			if err != nil {
+				log.Error().Err(err).Msg("failed to render HTML message: URL")
+			} else {
+				msg = r
+			}
+		}
 	}
 
 	output, err := s.notifyWorkers(ctx, subject, msg, workerIDs)
