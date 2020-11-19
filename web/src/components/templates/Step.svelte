@@ -98,8 +98,8 @@
           experiment. Instead of putting that URL in the Message Template
           directly, you can put it in the Target URL field, then use it in the
           Message Template (e.g.
-          <code>{@html '{url}'}</code>). When you do this, we will wrap your URL
-          in an HTTP redirect, which will help track when participants have
+          <code>{@html '{{url}}'}</code>). When you do this, we will wrap your
+          URL in an HTTP redirect, which will help track when participants have
           clicked the URL, and we make this URL unique for each participant in
           the attempt to block direct sharing or URL. See the
           <em>variables</em>
@@ -139,8 +139,8 @@
           experiment. Instead of putting that URL in the Message Template
           directly, you can put it in the Target URL field, then use it in the
           Message Template (e.g.
-          <code>{@html '{url}'}</code>). When you do this, we will wrap your URL
-          in an HTTP redirect, which will help track when participants have
+          <code>{@html '{{url}}'}</code>). When you do this, we will wrap your
+          URL in an HTTP redirect, which will help track when participants have
           clicked the URL, and we make this URL unique for each participant in
           the attempt to block direct sharing or URL. See the
           <em>variables</em>
