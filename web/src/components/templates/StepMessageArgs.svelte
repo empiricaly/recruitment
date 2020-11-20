@@ -15,22 +15,12 @@
       label: "HTML",
       value: "HTML",
     },
-    {
-      label: "React",
-      value: "REACT",
-    },
-    {
-      label: "Svelte",
-      value: "SVELTE",
-    },
   ];
 
   const typeToMode = {
     PLAIN: "plain",
     MARKDOWN: "markdown",
     HTML: "html",
-    REACT: "jsx",
-    SVELTE: "svelte",
   };
 </script>
 
