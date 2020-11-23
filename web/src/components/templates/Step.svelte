@@ -47,7 +47,7 @@
   $: isLastStep = step.index + 1 === stepLength;
 </script>
 
-<TemplateSection header invalid={error !== ''}>
+<TemplateSection header showSlot={step.type !== 'WAIT'} invalid={error !== ''}>
   <div slot="title" class="flex">
     <div class="font-semibold text-mint-800">Step {step.index + 1}</div>
     <div class="mx-2 text-mint-300">
