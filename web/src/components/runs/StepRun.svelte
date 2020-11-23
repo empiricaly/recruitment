@@ -127,7 +127,7 @@
     </div>
   </div>
 
-  {#if showDetails}
+  {#if showDetails && step.type !== 'WAIT'}
     <div class="px-4 py-5 sm:p-6">
       {#if step.type === 'MTURK_HIT'}
         <StepRunMTurkHit bind:step />
@@ -135,8 +135,6 @@
         <StepRunMTurkMessage bind:step />
       {:else if step.type === 'PARTICIPANT_FILTER'}
         <StepRunParticipantFilter bind:step />
-      {:else if step.type === 'WAIT'}
-        <div />
       {:else}Unknown Step Type?!?{/if}
     </div>
   {/if}
