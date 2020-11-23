@@ -4,16 +4,18 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
+	netUrl "net/url"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/mturk"
+	"github.com/aymerick/raymond"
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	stepRunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
 	templateModel "github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/pkg/errors"
 	"github.com/rs/xid"
 	"github.com/rs/zerolog/log"
@@ -189,19 +191,135 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 		return errStepWithoutParticipants
 	}
 
+	var url *netUrl.URL
 	msg := step.MsgArgs.Message
 	if step.MsgArgs.URL != nil {
-		msg = strings.ReplaceAll(msg, "{url}", *step.MsgArgs.URL)
+		url, err = netUrl.Parse(*step.MsgArgs.URL)
+		if err != nil {
+			log.Error().Err(err).Msg("invalid step message URL")
+			return errors.Wrap(err, "parse step message URL")
+		}
 	}
 
-	output, err := s.notifyWorkers(ctx, subject, msg, workerIDs)
+	// Doing renderContext for url, template, run, step, steps, workerID
+	stepRun, err = s.store.Client.StepRun.
+		Query().
+		WithStep(func(step *ent.StepQuery) {
+			step.WithTemplate(func(template *ent.TemplateQuery) {
+				template.WithSteps()
+			})
+		}).
+		WithRun(func(run *ent.RunQuery) {
+			run.WithSteps()
+		}).
+		Where(stepRunModel.IDEQ(stepRun.ID)).
+		First(ctx)
 	if err != nil {
-		return errors.Wrap(err, "notify workers")
+		log.Error().Err(err).Msg("get stepRun")
+		return errors.Wrap(err, "get stepRun")
 	}
 
+	step, err = stepRun.Edges.StepOrErr()
+	if err != nil {
+		log.Error().Err(err).Msg("get step")
+		return errors.Wrap(err, "get step")
+	}
+
+	run, err = stepRun.Edges.RunOrErr()
+	if err != nil {
+		log.Error().Err(err).Msg("get run")
+		return errors.Wrap(err, "get run")
+	}
+
+	stepRuns, err := run.Edges.StepsOrErr()
+	if err != nil {
+		log.Error().Err(err).Msg("get step runs")
+		return errors.Wrap(err, "get step runs")
+	}
+
+	template, err = step.Edges.TemplateOrErr()
+	if err != nil {
+		log.Error().Err(err).Msg("get template")
+		return errors.Wrap(err, "get template")
+	}
+
+	steps, err := template.Edges.StepsOrErr()
+	if err != nil {
+		log.Error().Err(err).Msg("get steps")
+		return errors.Wrap(err, "get steps")
+	}
+
+	rsteps := make([]*model.RenderStep, len(steps))
+	t := *run.StartedAt
+	for i, s := range steps {
+		var startsAt, startedAt, endedAt string
+		if stepRuns[i].Index <= stepRun.Index {
+			startedAt = stepRun.StartedAt.Format(time.Kitchen)
+			startsAt = startedAt
+			if stepRuns[i].Index < stepRun.Index {
+				endedAt = stepRun.EndedAt.Format(time.Kitchen)
+			}
+		} else {
+			startsAt = t.Format(time.Kitchen)
+			t = t.Add(time.Duration(step.Duration) * time.Minute)
+		}
+		rsteps[i] = &model.RenderStep{
+			Index:             s.Index,
+			Duration:          s.Duration,
+			ParticipantsCount: stepRuns[i].ParticipantsCount,
+			Type:              s.Type.String(),
+			StartsAt:          startsAt,
+			StartedAt:         startedAt,
+			EndedAt:           endedAt,
+		}
+	}
+
+	renderCtx := &model.RenderContext{
+		Template: &model.RenderTemplate{
+			Adult:            template.Adult,
+			Sandbox:          template.Sandbox,
+			SelectionType:    template.SelectionType.String(),
+			Name:             template.Name,
+			ParticipantCount: template.ParticipantCount,
+		},
+		Run: &model.RenderRun{
+			Name:      run.Name,
+			StartedAt: run.StartedAt.Format(time.Kitchen),
+		},
+		Step: &model.RenderStep{
+			Index:             step.Index,
+			Duration:          step.Duration,
+			ParticipantsCount: stepRun.ParticipantsCount,
+			Type:              step.Type.String(),
+			StartsAt:          startedAt,
+			StartedAt:         startedAt,
+		},
+		Steps: rsteps,
+		URL:   url.String(),
+	}
+
+	startedAt := stepRun.StartedAt.Format(time.Kitchen)
 	failedWorkedIDs := make(map[string]*mturk.NotifyWorkersFailureStatus)
-	for _, stat := range output.NotifyWorkersFailureStatuses {
-		failedWorkedIDs[*stat.WorkerId] = stat
+	for _, workerID := range workerIDs {
+		tempWorkerIDs := make([]string, 0, 1)
+		tempWorkerIDs = append(tempWorkerIDs, workerID)
+		renderCtx.WorkerID = workerID
+
+		r, err := raymond.Render(msg, renderCtx)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to render HTML message: URL")
+		} else {
+			msg = r
+		}
+
+		output, err := s.notifyWorkers(ctx, subject, msg, tempWorkerIDs)
+		if err != nil {
+			return errors.Wrap(err, "notify workers")
+		}
+
+		for _, stat := range output.NotifyWorkersFailureStatuses {
+			failedWorkedIDs[*stat.WorkerId] = stat
+		}
 	}
 
 	for _, p := range participants {
