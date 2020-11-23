@@ -274,36 +274,36 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 		}
 	}
 
+	renderCtx := &model.RenderContext{
+		Template: &model.RenderTemplate{
+			Adult:            template.Adult,
+			Sandbox:          template.Sandbox,
+			SelectionType:    template.SelectionType.String(),
+			Name:             template.Name,
+			ParticipantCount: template.ParticipantCount,
+		},
+		Run: &model.RenderRun{
+			Name:      run.Name,
+			StartedAt: run.StartedAt.Format(time.Kitchen),
+		},
+		Step: &model.RenderStep{
+			Index:             step.Index,
+			Duration:          step.Duration,
+			ParticipantsCount: stepRun.ParticipantsCount,
+			Type:              step.Type.String(),
+			StartsAt:          startedAt,
+			StartedAt:         startedAt,
+		},
+		Steps: rsteps,
+		URL:   url.String(),
+	}
+
 	startedAt := stepRun.StartedAt.Format(time.Kitchen)
 	failedWorkedIDs := make(map[string]*mturk.NotifyWorkersFailureStatus)
 	for _, workerID := range workerIDs {
 		tempWorkerIDs := make([]string, 0, 1)
 		tempWorkerIDs = append(tempWorkerIDs, workerID)
-
-		renderCtx := &model.RenderContext{
-			Template: &model.RenderTemplate{
-				Adult:            template.Adult,
-				Sandbox:          template.Sandbox,
-				SelectionType:    template.SelectionType.String(),
-				Name:             template.Name,
-				ParticipantCount: template.ParticipantCount,
-			},
-			Run: &model.RenderRun{
-				Name:      run.Name,
-				StartedAt: run.StartedAt.Format(time.Kitchen),
-			},
-			Step: &model.RenderStep{
-				Index:             step.Index,
-				Duration:          step.Duration,
-				ParticipantsCount: stepRun.ParticipantsCount,
-				Type:              step.Type.String(),
-				StartsAt:          startedAt,
-				StartedAt:         startedAt,
-			},
-			Steps:    rsteps,
-			URL:      url.String(),
-			WorkerID: workerID,
-		}
+		renderCtx.WorkerID = workerID
 
 		r, err := raymond.Render(msg, renderCtx)
 		if err != nil {
