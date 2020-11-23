@@ -171,8 +171,6 @@ func (r *runState) startStep(ctx context.Context, startTime time.Time) error {
 				return errors.Wrap(err, "filter step getting previous participation")
 			}
 
-			spew.Dump("prevParticipation123", prevParticipation)
-
 			_, err = r.conn.Client.Participation.Create().
 				SetID(xid.New().String()).
 				SetParticipant(p).
