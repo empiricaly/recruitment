@@ -112,17 +112,44 @@
         <dt class="mt-2"><code class="text-gray-700">currentStep</code></dt>
         <dd class="mt-1">
           The current Step object, which contains all the configuration added
-          here.
+          here. the currentStep object contains these fields: index, duration,
+          type, participantsCount, startsAt, startedAt, endedAt.
         </dd>
-        <!-- <dt class="mt-2"><code class="text-gray-700">stepRun</code></dt>
+        <dt class="mt-2"><code class="text-gray-700">steps</code></dt>
+        <dd class="mt-1">
+          The collection of steps, which contains all the steps on the current
+          run.
+        </dd>
+        <dt class="mt-2"><code class="text-gray-700">template</code></dt>
+        <dd class="mt-1">
+          The template object of the run, which contains all information all
+          information related to the template on the run.
+        </dd>
+        <dt class="mt-2"><code class="text-gray-700">run</code></dt>
         <dd class="mt-1">
           The current Step Run object, which contains the current step's run
           information. It also points to it's parent's Run object. See
-          documentation for further details.
-        </dd> -->
+          documentation for further details. run object contains these fields:
+          name and startedAt.
+        </dd>
         <dt class="mt-2"><code class="text-gray-700">participant</code></dt>
-        <dd class="mt-1">The current participant.</dd>
+        <dd class="mt-1">
+          The current participant object. participant object contains these
+          fields: workerID, HITID, assignmentID. HITID and assignmentID only
+          available on the mTurk HIT Step.
+        </dd>
       </dl>
+      <p class="mt-4">
+        URL variable can be accessed by
+        <code>{@html '{{url}}'}</code>). all object fields except
+        <code>{@html 'steps'}</code>) can be accessed by this example, if we
+        want to access the workerID from the participant:
+        <code>{@html '{{participant.workerID}}'}</code>).
+        <code>{@html 'steps'}</code>) can be accessed by this example
+        <code>{@html '{{steps.[0].duration}}'}</code>).
+        <code>{@html '[0]'}</code>
+        is the index of the steps that we want to show.
+      </p>
     </div>
   </SlideOver>
 </div>
