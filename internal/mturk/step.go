@@ -379,6 +379,8 @@ func (s *Session) EndStep(project *ent.Project, run *ent.Run, step *ent.Step, st
 		return s.endMTurkHITStep(ctx, project, run, template, step, stepRun, nextStep, nextStepRun)
 	case stepModel.TypeMTURK_MESSAGE:
 		return s.endMTurkMessageStep(ctx, project, run, template, step, stepRun, nextStep, nextStepRun)
+	case stepModel.TypePARTICIPANT_FILTER:
+		return s.endFilterStep(ctx, project, run, template, step, stepRun, nextStep, nextStepRun)
 	case stepModel.TypeWAIT:
 		return nil
 	default:
@@ -518,7 +520,7 @@ func (s *Session) endMTurkMessageStep(ctx context.Context, project *ent.Project,
 
 	participations, err := stepRun.QueryParticipations().WithParticipant().All(ctx)
 	if err != nil {
-		return errors.New("get participants for msg step failed")
+		return errors.New("get participations for msg step failed")
 	}
 
 	participants := make([]*ent.Participant, len(participations))
@@ -532,6 +534,32 @@ func (s *Session) endMTurkMessageStep(ctx context.Context, project *ent.Project,
 		Save(ctx)
 	if err != nil {
 		return errors.Wrap(err, "push msg step participants to next run")
+	}
+
+	return nil
+}
+
+func (s *Session) endFilterStep(ctx context.Context, project *ent.Project, run *ent.Run, template *ent.Template, step *ent.Step, stepRun *ent.StepRun, nextStep *ent.Step, nextStepRun *ent.StepRun) error {
+	if nextStepRun == nil {
+		return nil
+	}
+
+	participations, err := stepRun.QueryParticipations().WithParticipant().All(ctx)
+	if err != nil {
+		return errors.New("get participations for filter step failed")
+	}
+
+	participants := make([]*ent.Participant, len(participations))
+
+	for i, p := range participations {
+		participants[i] = p.Edges.Participant
+	}
+
+	_, err = nextStepRun.Update().
+		AddParticipants(participants...).
+		Save(ctx)
+	if err != nil {
+		return errors.Wrap(err, "push filter step participants to next run")
 	}
 
 	return nil

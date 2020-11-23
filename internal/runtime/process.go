@@ -8,6 +8,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/empiricaly/recruitment/internal/ent"
+	"github.com/empiricaly/recruitment/internal/ent/participation"
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	steprunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
@@ -163,12 +164,27 @@ func (r *runState) startStep(ctx context.Context, startTime time.Time) error {
 			}
 		}
 
-		_, err = r.currentStepRun.Update().
-			AddParticipants(participants...).
-			Save(ctx)
-		if err != nil {
-			return errors.Wrap(err, "push filter step participants to next run")
+		for _, p := range participants {
+			prevParticipation, err := r.conn.Client.Participation.Query().Where(participation.MturkWorkerID(*p.MturkWorkerID)).First(ctx)
+			if err != nil {
+				log.Error().Err(err).Msg("Filter Participant: getting previous participation")
+				return errors.Wrap(err, "filter step getting previous participation")
+			}
+
+			_, err = r.conn.Client.Participation.Create().
+				SetID(xid.New().String()).
+				SetParticipant(p).
+				SetStepRun(r.currentStepRun).
+				SetMturkWorkerID(*p.MturkWorkerID).
+				SetMturkAssignmentID(prevParticipation.MturkAssignmentID).
+				SetMturkHitID(prevParticipation.MturkHitID).
+				Save(ctx)
+			if err != nil {
+				log.Error().Err(err).Msg("Filter Participant: Creating participation")
+				return errors.Wrap(err, "filter step set participation")
+			}
 		}
+
 	case stepModel.TypeWAIT:
 		return nil
 	default:
@@ -180,13 +196,11 @@ func (r *runState) startStep(ctx context.Context, startTime time.Time) error {
 
 func (r *runState) endStep(ctx context.Context, endTime time.Time) error {
 	switch r.currentStep.Type {
-	case stepModel.TypeMTURK_HIT, stepModel.TypeMTURK_MESSAGE:
+	case stepModel.TypeMTURK_HIT, stepModel.TypeMTURK_MESSAGE, stepModel.TypePARTICIPANT_FILTER:
 		err := r.mturkSession.EndStep(r.project, r.run, r.currentStep, r.currentStepRun, r.nextStep, r.nextStepRun)
 		if err != nil {
 			return errors.Wrap(err, "run mturk for step")
 		}
-	case stepModel.TypePARTICIPANT_FILTER:
-		// noop?
 	case stepModel.TypeWAIT:
 		return nil
 	default:
