@@ -167,44 +167,6 @@ const htmlHead = `<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Questions</title><style>*,::after,::before{box-sizing:border-box}ol[class],ul[class]{padding:0}blockquote,body,dd,dl,figcaption,figure,h1,h2,h3,h4,li,ol[class],p,ul[class]{margin:0}body{min-height:100vh;scroll-behavior:smooth;text-rendering:optimizeSpeed;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",sans-serif}ol[class],ul[class]{list-style:none}a:not([class]){text-decoration-skip-ink:auto}img{max-width:100%;display:block}article>*+*{margin-top:1em}button,input,select,textarea{font:inherit}@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}</style></head><body>`
 const htmlFoot = `</body></html>`
 
-type renderContext struct {
-	URL         string
-	Template    *renderTemplate
-	Run         *renderRun
-	Step        *renderStep `handlebars:"currentStep"`
-	Steps       []*renderStep
-	Participant *renderParticipant
-}
-
-type renderTemplate struct {
-	Adult            bool
-	Sandbox          bool
-	Name             string
-	ParticipantCount int
-	SelectionType    string
-}
-
-type renderRun struct {
-	Name      string
-	StartedAt string
-}
-
-type renderStep struct {
-	Index             int
-	Duration          int
-	Type              string
-	ParticipantsCount int
-	StartsAt          string
-	StartedAt         string
-	EndedAt           string
-}
-
-type renderParticipant struct {
-	WorkerID     string
-	HITID        string `handlebars:"hitID"`
-	AssignmentID string
-}
-
 func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		id := strings.TrimPrefix(c.Request.URL.Path, "/q/")
@@ -303,7 +265,7 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 					q.Set("hitId", hitID)
 					u.RawQuery = q.Encode()
 
-					rsteps := make([]*renderStep, len(steps))
+					rsteps := make([]*model.RenderStep, len(steps))
 					t := *run.StartedAt
 					for i, s := range steps {
 						var startsAt, startedAt, endedAt string
@@ -317,7 +279,7 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 							startsAt = t.Format(time.Kitchen)
 							t = t.Add(time.Duration(step.Duration) * time.Minute)
 						}
-						rsteps[i] = &renderStep{
+						rsteps[i] = &model.RenderStep{
 							Index:             s.Index,
 							Duration:          s.Duration,
 							ParticipantsCount: stepRuns[i].ParticipantsCount,
@@ -329,20 +291,20 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 					}
 
 					startedAt := stepRun.StartedAt.Format(time.Kitchen)
-					renderCtx := &renderContext{
+					renderCtx := &model.RenderContext{
 						URL: u.String(),
-						Template: &renderTemplate{
+						Template: &model.RenderTemplate{
 							Adult:            template.Adult,
 							Sandbox:          template.Sandbox,
 							SelectionType:    template.SelectionType.String(),
 							Name:             template.Name,
 							ParticipantCount: template.ParticipantCount,
 						},
-						Run: &renderRun{
+						Run: &model.RenderRun{
 							Name:      run.Name,
 							StartedAt: run.StartedAt.Format(time.Kitchen),
 						},
-						Step: &renderStep{
+						Step: &model.RenderStep{
 							Index:             step.Index,
 							Duration:          step.Duration,
 							ParticipantsCount: stepRun.ParticipantsCount,
@@ -351,7 +313,7 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 							StartedAt:         startedAt,
 						},
 						Steps: rsteps,
-						Participant: &renderParticipant{
+						Participant: &model.RenderParticipant{
 							WorkerID:     workerID,
 							HITID:        hitID,
 							AssignmentID: assignmentID,
@@ -407,7 +369,7 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 					q.Set("assignmentId", assignmentID)
 					q.Set("hitId", hitID)
 					u.RawQuery = q.Encode()
-					renderCtx := &renderContext{
+					renderCtx := &model.RenderContext{
 						URL: u.String(),
 					}
 					r, err := raymond.Render(content, renderCtx)

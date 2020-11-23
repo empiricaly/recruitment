@@ -15,42 +15,11 @@ import (
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	stepRunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
 	templateModel "github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/pkg/errors"
 	"github.com/rs/xid"
 	"github.com/rs/zerolog/log"
 )
-
-type renderContext struct {
-	URL      string          `handlebars:"url"`
-	Step     *renderStep     `handlebars:"currentStep"`
-	Steps    []*renderStep   `handlebars:"steps"`
-	Template *renderTemplate `handlebars:"template"`
-	Run      *renderRun      `handlebars:"run"`
-	WorkerID string          `handlebars:"workedID"`
-}
-
-type renderStep struct {
-	Index             int
-	Duration          int
-	Type              string
-	ParticipantsCount int
-	StartsAt          string
-	StartedAt         string
-	EndedAt           string
-}
-
-type renderRun struct {
-	Name      string
-	StartedAt string
-}
-
-type renderTemplate struct {
-	Adult            bool
-	Sandbox          bool
-	Name             string
-	ParticipantCount int
-	SelectionType    string
-}
 
 const workerAdultQualTypeID = "00000000000000000060"
 
@@ -280,7 +249,7 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 		return errors.Wrap(err, "get steps")
 	}
 
-	rsteps := make([]*renderStep, len(steps))
+	rsteps := make([]*model.RenderStep, len(steps))
 	t := *run.StartedAt
 	for i, s := range steps {
 		var startsAt, startedAt, endedAt string
@@ -294,7 +263,7 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 			startsAt = t.Format(time.Kitchen)
 			t = t.Add(time.Duration(step.Duration) * time.Minute)
 		}
-		rsteps[i] = &renderStep{
+		rsteps[i] = &model.RenderStep{
 			Index:             s.Index,
 			Duration:          s.Duration,
 			ParticipantsCount: stepRuns[i].ParticipantsCount,
@@ -311,19 +280,19 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 		tempWorkerIDs := make([]string, 0, 1)
 		tempWorkerIDs = append(tempWorkerIDs, workerID)
 
-		renderCtx := &renderContext{
-			Template: &renderTemplate{
+		renderCtx := &model.RenderContext{
+			Template: &model.RenderTemplate{
 				Adult:            template.Adult,
 				Sandbox:          template.Sandbox,
 				SelectionType:    template.SelectionType.String(),
 				Name:             template.Name,
 				ParticipantCount: template.ParticipantCount,
 			},
-			Run: &renderRun{
+			Run: &model.RenderRun{
 				Name:      run.Name,
 				StartedAt: run.StartedAt.Format(time.Kitchen),
 			},
-			Step: &renderStep{
+			Step: &model.RenderStep{
 				Index:             step.Index,
 				Duration:          step.Duration,
 				ParticipantsCount: stepRun.ParticipantsCount,
