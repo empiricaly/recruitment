@@ -3,8 +3,6 @@
     PLAIN: "plain",
     MARKDOWN: "markdown",
     HTML: "html",
-    REACT: "jsx",
-    SVELTE: "svelte",
   };
 </script>
 
