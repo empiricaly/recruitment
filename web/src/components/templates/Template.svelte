@@ -162,7 +162,10 @@
           <Label
             forID="unitializedParticipants"
             text="Select Uninitialized Participants"
-            question="Uninitialized Participants are Participants that have been imported, and do not yet have a HIT associated with them, so we cannot send messages or bonuses to them" />
+            question="Uninitialized Participants are Participants that have been imported, and do not yet have a HIT associated with them, 
+            so we cannot send messages or bonuses to them. Uninitialized participants are not included in an 
+            Internal DB selection. On the contrary, if you check this box, only uninitialized participants 
+            will be selected" />
         </Checkbox>
       </div>
     {/if}

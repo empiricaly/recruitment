@@ -471,12 +471,12 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 				}
 			}
 
-			if *p.Uninitialized != false {
+			if p.Uninitialized != nil && *p.Uninitialized != false {
 				_, err = p.Update().
 					SetUninitialized(false).
 					Save(ctx)
 				if err != nil {
-					log.Error().Msgf("could not set participant unitialized with workerID %s for stepRun ", *assignment.WorkerId, stepRun.ID)
+					log.Error().Msgf("could not set participant uninitialized with workerID %s for stepRun ", *assignment.WorkerId, stepRun.ID)
 					continue
 				}
 			}

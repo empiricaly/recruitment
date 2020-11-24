@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
@@ -236,8 +235,6 @@ func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int
 		return nil, errors.Wrap(err, "find participants")
 	}
 
-	spew.Dump("BEFORE", participants)
-
 	if !useAll {
 		n := 0
 		for _, participant := range participants {
@@ -254,23 +251,20 @@ func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int
 		participants = participants[:n]
 	}
 
-	initializedParticipants := make([]*ent.Participant, 0)
-
-	if uninitialized == true {
-		initializedParticipants = participants
-	} else {
-		for _, participant := range participants {
-			if participant.Uninitialized != nil && *participant.Uninitialized == true {
-				continue
-			}
-
-			initializedParticipants = append(initializedParticipants, participant)
-		}
+	if uninitialized != true {
+		l := math.Min(float64(limit), float64(len(participants)))
+		return participants[:int(l)], nil
 	}
 
-	spew.Dump("AFTER", initializedParticipants)
+	initializedParticipants := make([]*ent.Participant, 0)
+	for _, participant := range participants {
+		if participant.Uninitialized != nil && *participant.Uninitialized == true {
+			continue
+		}
 
-	// TODO should filter participants here
+		initializedParticipants = append(initializedParticipants, participant)
+	}
+
 	l := math.Min(float64(limit), float64(len(initializedParticipants)))
 	return initializedParticipants[:int(l)], nil
 }
