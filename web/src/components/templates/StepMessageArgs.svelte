@@ -122,8 +122,8 @@
         </dd>
         <dt class="mt-2"><code class="text-gray-700">template</code></dt>
         <dd class="mt-1">
-          The template object of the run, which contains all information all
-          information related to the template on the run.
+          The template object of the run, which contains all information related
+          to the template on the run.
         </dd>
         <dt class="mt-2"><code class="text-gray-700">run</code></dt>
         <dd class="mt-1">
