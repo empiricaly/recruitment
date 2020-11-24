@@ -274,6 +274,7 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 		}
 	}
 
+	startedAt := stepRun.StartedAt.Format(time.Kitchen)
 	renderCtx := &model.RenderContext{
 		Template: &model.RenderTemplate{
 			Adult:            template.Adult,
@@ -298,7 +299,6 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 		URL:   url.String(),
 	}
 
-	startedAt := stepRun.StartedAt.Format(time.Kitchen)
 	failedWorkedIDs := make(map[string]*mturk.NotifyWorkersFailureStatus)
 	for _, workerID := range workerIDs {
 		tempWorkerIDs := make([]string, 0, 1)
@@ -465,10 +465,18 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 				p, err = p.Update().
 					AddProjects(project).
 					AddSteps(stepRun).
-					SetUninitialized(false).
 					Save(ctx)
 				if err != nil {
 					log.Error().Msgf("could not update participant with workerID %s for stepRun %s", *assignment.WorkerId, stepRun.ID)
+				}
+			}
+
+			if *p.Uninitialized != false {
+				_, err = p.Update().
+					SetUninitialized(false).
+					Save(ctx)
+				if err != nil {
+					log.Error().Msgf("could not set participant unitialized with workerID %s for stepRun ", *assignment.WorkerId, stepRun.ID)
 					continue
 				}
 			}

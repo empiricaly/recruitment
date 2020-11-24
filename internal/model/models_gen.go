@@ -241,6 +241,8 @@ type ImportedParticipant struct {
 
 // InternalCriteria is the criteria for internal database participant selection.
 type InternalCriteria struct {
+	// Uninitialized means select all imported participants.
+	Uninitialized bool `json:"uninitialized"`
 	// All means use all participants and ignore the condition field below.
 	All bool `json:"all"`
 	// Condition set the participant must meet to be allowed to participate.
@@ -249,6 +251,8 @@ type InternalCriteria struct {
 
 // InternalCriteria is the criteria for internal database participant selection.
 type InternalCriteriaInput struct {
+	// Uninitialized means select all imported participants.
+	Uninitialized bool `json:"uninitialized"`
 	// All means use all participants and ignore the condition field below.
 	All bool `json:"all"`
 	// Condition set the participant must meet to be allowed to participate.

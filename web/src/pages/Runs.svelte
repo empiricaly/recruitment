@@ -27,6 +27,7 @@
           sandbox: false,
           mturkCriteria: { qualifications: [] },
           internalCriteria: {
+            uninitialized: false,
             all: true,
             condition: {
               and: [

@@ -106,6 +106,7 @@ func InternalCriteriaFromInput(criti *InternalCriteriaInput) *InternalCriteria {
 	crit := &InternalCriteria{}
 	crit.All = criti.All
 	crit.Condition = ConditionFromInput(criti.Condition)
+	crit.Uninitialized = criti.Uninitialized
 
 	return crit
 }

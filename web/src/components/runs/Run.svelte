@@ -219,14 +219,17 @@
 
   let actions = [];
   let facts = [];
-  $: isMturkQual = template.selectionType === "MTURK_QUALIFICATIONS";
+  $: shouldHITStep =
+    template.selectionType === "MTURK_QUALIFICATIONS" ||
+    (template.selectionType === "INTERNAL_DB" &&
+      template.internalCriteria.uninitialized === true);
 
   $: {
     disabled = isRunDirty || isTemplateDirty;
 
     if (
       (!disabled && template.steps.length === 0) ||
-      (isMturkQual &&
+      (shouldHITStep &&
         template.steps.length > 0 &&
         template.steps[0].type !== "MTURK_HIT")
     ) {

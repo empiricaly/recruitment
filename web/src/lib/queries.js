@@ -204,6 +204,7 @@ export const GET_RUN = gql`
             }
           }
           internalCriteria {
+            uninitialized
             all
             condition ${recursiveComparator(4, 7)}
           }
