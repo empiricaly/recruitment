@@ -7,7 +7,6 @@ type RenderContext struct {
 	Template    *RenderTemplate    `handlebars:"template"`
 	Run         *RenderRun         `handlebars:"run"`
 	Participant *RenderParticipant `handlebars:"participant"`
-	WorkerID    string             `handlebars:"workedID"`
 }
 
 type RenderTemplate struct {

@@ -274,6 +274,7 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 		}
 	}
 
+	startedAt := stepRun.StartedAt.Format(time.Kitchen)
 	renderCtx := &model.RenderContext{
 		Template: &model.RenderTemplate{
 			Adult:            template.Adult,
@@ -298,12 +299,11 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 		URL:   url.String(),
 	}
 
-	startedAt := stepRun.StartedAt.Format(time.Kitchen)
 	failedWorkedIDs := make(map[string]*mturk.NotifyWorkersFailureStatus)
 	for _, workerID := range workerIDs {
 		tempWorkerIDs := make([]string, 0, 1)
 		tempWorkerIDs = append(tempWorkerIDs, workerID)
-		renderCtx.WorkerID = workerID
+		renderCtx.Participant = &model.RenderParticipant{WorkerID: workerID}
 
 		r, err := raymond.Render(msg, renderCtx)
 		if err != nil {
