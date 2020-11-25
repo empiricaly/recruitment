@@ -251,14 +251,9 @@ func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int
 		participants = participants[:n]
 	}
 
-	if uninitialized != true {
-		l := math.Min(float64(limit), float64(len(participants)))
-		return participants[:int(l)], nil
-	}
-
 	initializedParticipants := make([]*ent.Participant, 0)
 	for _, participant := range participants {
-		if participant.Uninitialized != nil && *participant.Uninitialized == true {
+		if (!uninitialized && participant.Uninitialized != nil && *participant.Uninitialized) || (uninitialized && (participant.Uninitialized == nil || !*participant.Uninitialized)) {
 			continue
 		}
 
