@@ -3,6 +3,11 @@ InternalCriteria is the criteria for internal database participant selection.
 """
 input InternalCriteriaInput {
   """
+  Uninitialized means select all imported participants.
+  """
+  uninitialized: Boolean!
+
+  """
   All means use all participants and ignore the condition field below.
   """
   all: Boolean!

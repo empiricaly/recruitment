@@ -11,6 +11,7 @@
   import Label from "../base/Label.svelte";
   import Select from "../base/Select.svelte";
   import Toggle from "../base/Toggle.svelte";
+  import Checkbox from "../base/Checkbox.svelte";
   import { notify } from "../overlays/Notification.svelte";
   import InternalCriteria from "./criteria/InternalCriteria.svelte";
   import MTurkQualifications from "./criteria/MTurkQualifications.svelte";
@@ -146,13 +147,28 @@
     Qualifications uses Worker Qualifications defined on MTurk.
   </div>
 
-  <div class="max-w-xs">
-    <Label forID="selectionType" text="Participant Selection Type" />
-    <Select
-      id="selectionType"
-      bind:value={template.selectionType}
-      options={selectionTypes}
-      placeholder="Particpant Selection Type" />
+  <div class="md:grid grid-cols-3 gap-2">
+    <div class="max-w-xs">
+      <Label forID="selectionType" text="Participant Selection Type" />
+      <Select
+        id="selectionType"
+        bind:value={template.selectionType}
+        options={selectionTypes}
+        placeholder="Particpant Selection Type" />
+    </div>
+    {#if template.selectionType === 'INTERNAL_DB'}
+      <div class="flex flex-column pt-5 max-w-xs">
+        <Checkbox bind:checked={template.internalCriteria.uninitialized}>
+          <Label
+            forID="unitializedParticipants"
+            text="Select Uninitialized Participants"
+            question="Uninitialized Participants are Participants that have been imported, and do not yet have a HIT associated with them, 
+            so we cannot send messages or bonuses to them. Uninitialized participants are not included in an 
+            Internal DB selection. On the contrary, if you check this box, only uninitialized participants 
+            will be selected" />
+        </Checkbox>
+      </div>
+    {/if}
   </div>
 
   <div class="mt-5">

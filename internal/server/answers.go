@@ -129,6 +129,7 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 					Create().
 					SetID(xid.New().String()).
 					SetMturkWorkerID(workerID).
+					SetUninitialized(false).
 					AddProjects(project).
 					AddSteps(stepRun).
 					SetCreatedBy(stepRun).
@@ -156,6 +157,13 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 					if err != nil {
 						return errors.Wrap(err, "update participant")
 					}
+				}
+
+				participant, err = participant.Update().
+					SetUninitialized(false).
+					Save(ctx)
+				if err != nil {
+					return errors.Wrap(err, "Set uninitialized participant")
 				}
 			}
 

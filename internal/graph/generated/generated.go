@@ -118,8 +118,9 @@ type ComplexityRoot struct {
 	}
 
 	InternalCriteria struct {
-		All       func(childComplexity int) int
-		Condition func(childComplexity int) int
+		All           func(childComplexity int) int
+		Condition     func(childComplexity int) int
+		Uninitialized func(childComplexity int) int
 	}
 
 	MTurkCriteria struct {
@@ -667,6 +668,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.InternalCriteria.Condition(childComplexity), true
+
+	case "InternalCriteria.uninitialized":
+		if e.complexity.InternalCriteria.Uninitialized == nil {
+			break
+		}
+
+		return e.complexity.InternalCriteria.Uninitialized(childComplexity), true
 
 	case "MTurkCriteria.qualifications":
 		if e.complexity.MTurkCriteria.Qualifications == nil {
@@ -2063,6 +2071,11 @@ InternalCriteria is the criteria for internal database participant selection.
 """
 type InternalCriteria {
   """
+  Uninitialized means select all imported participants.
+  """
+  uninitialized: Boolean!
+
+  """
   All means use all participants and ignore the condition field below.
   """
   all: Boolean!
@@ -2936,6 +2949,11 @@ type Mutation {
 InternalCriteria is the criteria for internal database participant selection.
 """
 input InternalCriteriaInput {
+  """
+  Uninitialized means select all imported participants.
+  """
+  uninitialized: Boolean!
+
   """
   All means use all participants and ignore the condition field below.
   """
@@ -4980,6 +4998,41 @@ func (ec *executionContext) _HITStepArgs_workersCount(ctx context.Context, field
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _InternalCriteria_uninitialized(ctx context.Context, field graphql.CollectedField, obj *model.InternalCriteria) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "InternalCriteria",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Uninitialized, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _InternalCriteria_all(ctx context.Context, field graphql.CollectedField, obj *model.InternalCriteria) (ret graphql.Marshaler) {
@@ -11278,6 +11331,14 @@ func (ec *executionContext) unmarshalInputInternalCriteriaInput(ctx context.Cont
 
 	for k, v := range asMap {
 		switch k {
+		case "uninitialized":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uninitialized"))
+			it.Uninitialized, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "all":
 			var err error
 
@@ -12149,6 +12210,11 @@ func (ec *executionContext) _InternalCriteria(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("InternalCriteria")
+		case "uninitialized":
+			out.Values[i] = ec._InternalCriteria_uninitialized(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "all":
 			out.Values[i] = ec._InternalCriteria_all(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

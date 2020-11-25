@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/empiricaly/recruitment/internal/ent"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
 	runModel "github.com/empiricaly/recruitment/internal/ent/run"
@@ -43,7 +42,7 @@ func (r *runState) startRun(ctx context.Context, startTime time.Time) error {
 
 			if i == 0 && r.template.SelectionType == templateModel.SelectionTypeINTERNAL_DB {
 				c := r.template.InternalCriteria
-				participants, err := r.filterParticipants(ctx, tx, r.template.ParticipantCount, c.All, c.Condition)
+				participants, err := r.filterParticipants(ctx, tx, r.template.ParticipantCount, c.All, c.Uninitialized, c.Condition)
 				if err != nil {
 					return errors.Wrap(err, "filter participants")
 				}
@@ -230,13 +229,11 @@ func (r *runState) endRun(ctx context.Context, endTime time.Time) error {
 	return r.refresh()
 }
 
-func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int, useAll bool, condition *model.Condition) ([]*ent.Participant, error) {
+func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int, useAll bool, uninitialized bool, condition *model.Condition) ([]*ent.Participant, error) {
 	participants, err := tx.Participant.Query().All(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "find participants")
 	}
-
-	spew.Dump("BEFORE", participants)
 
 	if !useAll {
 		n := 0
@@ -256,16 +253,13 @@ func (r *runState) filterParticipants(ctx context.Context, tx *ent.Tx, limit int
 
 	initializedParticipants := make([]*ent.Participant, 0)
 	for _, participant := range participants {
-		if participant.Uninitialized != nil && *participant.Uninitialized == true {
+		if (!uninitialized && participant.Uninitialized != nil && *participant.Uninitialized) || (uninitialized && (participant.Uninitialized == nil || !*participant.Uninitialized)) {
 			continue
 		}
 
 		initializedParticipants = append(initializedParticipants, participant)
 	}
 
-	spew.Dump("AFTER", initializedParticipants)
-
-	// TODO should filter participants here
 	l := math.Min(float64(limit), float64(len(initializedParticipants)))
 	return initializedParticipants[:int(l)], nil
 }
