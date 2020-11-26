@@ -26,11 +26,20 @@ export function participantPerQueryType(type, result) {
       if (steps.length === 0) {
         return;
       }
-      return steps[0].participants;
+      return {
+        participants: steps[0].participants,
+        total: steps[0].participantsCount,
+      };
     case "project":
-      return result.data.project.participants;
+      return {
+        participants: result.data.project.participants,
+        total: result.data.project.participantsCount,
+      };
     case "all":
-      return result.data.participants;
+      return {
+        participants: result.data.participants,
+        total: result.data.participantsCount,
+      };
     default:
       console.error("unknown type");
   }

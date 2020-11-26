@@ -255,6 +255,7 @@ export const GET_RUN_PARTICIPANTS = gql`
               val
             }
           }
+          participantsCount
         }
       }
     }
@@ -262,10 +263,10 @@ export const GET_RUN_PARTICIPANTS = gql`
 `;
 
 export const GET_PROJECT_PARTICIPANTS = gql`
-  query getProjectParticipants($projectID: ID!) {
+  query getProjectParticipants($projectID: ID!, $offset: Int!, $limit: Int!) {
     project(projectID: $projectID) {
       id
-      participants {
+      participants(offset: $offset, limit: $limit) {
         id
         mturkWorkerID
         createdAt
@@ -274,6 +275,7 @@ export const GET_PROJECT_PARTICIPANTS = gql`
           val
         }
       }
+      participantsCount
     }
   }
 `;
@@ -289,6 +291,7 @@ export const GET_ALL_PARTICIPANTS = gql`
         val
       }
     }
+    participantsCount
   }
 `;
 

@@ -127,7 +127,12 @@ type Project {
   """
   Participants in this Project.
   """
-  participants: [Participant!]! @goField(forceResolver: true)
+  participants(offset: Int!, limit: Int!): [Participant!]! @goField(forceResolver: true)
+
+  """
+  Number of Participants in this Project.
+  """
+  participantsCount: Int!
 }
 
 """
