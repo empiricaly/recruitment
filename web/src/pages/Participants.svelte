@@ -1,6 +1,7 @@
 <script>
   import dayjs from "dayjs";
   import { mutate } from "svelte-apollo";
+  import { query } from "svelte-apollo";
   import Input from "../components/base/Input.svelte";
   import Label from "../components/base/Label.svelte";
   import Modal from "../components/overlays/Modal.svelte";
@@ -8,6 +9,7 @@
   import ParticipantList from "../components/participants/ParticipantList.svelte";
   import Layout from "../layouts/Layout.svelte";
   import { client } from "../lib/apollo";
+  import { participantPerQueryType } from "../lib/models/participants/participants.js";
   import {
     getParticipants,
     participantsExportFormat,
@@ -24,6 +26,7 @@
   });
 
   let participants;
+  let allParticipants;
   let keys;
   let files = [];
   let isImportOpen = false;
@@ -118,11 +121,28 @@
     });
   }
 
-  function handleClick(event) {
+  async function fetchAllParticipants(project) {
+    let args = queryArgs(project);
+    const participantsQuery = query(client, args);
+
+    try {
+      const result = await participantsQuery.refetch();
+      const pp = participantPerQueryType("project", result);
+      if (pp) {
+        allParticipants = pp.participants;
+      }
+    } catch (error) {
+      handleErrorMessage(error);
+    }
+  }
+
+  async function handleClick(event) {
     const { action, project } = event.detail;
+
     switch (action) {
       case "exportjson": {
-        const out = participantsExportFormat(participants, keys);
+        await fetchAllParticipants(project);
+        const out = participantsExportFormat(allParticipants, keys);
         const content = JSON.stringify(out);
         const mime = "application/json;charset=utf-8";
         const date = dayjs().format("YYYY-MM-DDTHH:mm:ss");
@@ -131,7 +151,8 @@
         break;
       }
       case "exportcsv": {
-        const out = participantsExportFormat(participants, keys, true);
+        await fetchAllParticipants(project);
+        const out = participantsExportFormat(allParticipants, keys, true);
         const content = toCSV(out);
         const mime = "text/csv;charset=utf-8";
         const date = dayjs().format("YYYY-MM-DDTHH:mm:ss");
