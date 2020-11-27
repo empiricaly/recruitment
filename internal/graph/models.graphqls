@@ -125,9 +125,9 @@ type Project {
   runs(runID: ID, statuses: [Status!], limit: Int): [Run!]! @goField(forceResolver: true)
 
   """
-  Participants in this Project.
+  Participants in this Project. Default value for offset is 0, and limit is 20.
   """
-  participants(offset: Int!, limit: Int!): [Participant!]! @goField(forceResolver: true)
+  participants(offset: Int, limit: Int): [Participant!]! @goField(forceResolver: true)
 
   """
   Number of Participants in this Project.
@@ -242,9 +242,9 @@ type StepRun {
   participations(first: Int, after: ID): [Participation!]! @goField(forceResolver: true)
 
   """
-  Participants in this Step.
+  Participants in this Step. Default value for offset is 0, and limit is 20.
   """
-  participants: [Participant!]! @goField(forceResolver: true)
+  participants(offset: Int, limit: Int): [Participant!]! @goField(forceResolver: true)
 
   """
   Number of Participants in this Step.

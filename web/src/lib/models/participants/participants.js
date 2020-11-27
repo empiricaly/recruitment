@@ -38,7 +38,7 @@ export function participantPerQueryType(type, result) {
     case "all":
       return {
         participants: result.data.participants,
-        total: result.data.participantsCount,
+        total: result.data.participantCount,
       };
     default:
       console.error("unknown type");

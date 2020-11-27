@@ -8,14 +8,16 @@
 
   export let queryArgs;
   export let type = "run";
-  export let limit = 50;
-  export let offset = 0;
+  export let limit = 20;
   export let participants;
   export let keys = [];
 
-  $: participantsQuery = query(client, queryArgs);
-
+  let offset = 0;
   let total = 0;
+
+  $: queryArgs.variables = { ...queryArgs.variables, offset, limit };
+
+  $: participantsQuery = query(client, queryArgs);
 
   $: try {
     $participantsQuery.then((result) => {

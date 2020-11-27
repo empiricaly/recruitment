@@ -18,12 +18,9 @@
   import { download } from "../utils/download.js";
   import { handleErrorMessage } from "../utils/errorQuery.js";
 
-  const limit = 50;
-  let offset = 0;
-
-  $: queryArgs = (project) => ({
+  const queryArgs = (project) => ({
     query: GET_PROJECT_PARTICIPANTS,
-    variables: { projectID: project.projectID, offset, limit },
+    variables: { projectID: project.projectID },
   });
 
   let participants;
@@ -185,8 +182,6 @@
     type="project"
     queryArgs={queryArgs(project)}
     bind:participants
-    bind:offset
-    {limit}
     bind:keys />
   <Modal
     title="Import Participants"

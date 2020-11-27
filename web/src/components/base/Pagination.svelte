@@ -27,13 +27,20 @@
         pages.push({ number: i + 1, active: i === currentPage });
       }
     } else {
-      const leftPage = currentPage + 2;
       const rightPage = totalPage - 3;
-      for (let i = currentPage; i <= leftPage; i++) {
+      const overRightPage = currentPage + 2 < rightPage;
+      const leftPage = !overRightPage
+        ? { start: rightPage - 3, end: rightPage - 1 }
+        : {
+            start: currentPage - 2 < 0 ? 0 : currentPage,
+            end: currentPage - 2 < 0 ? 2 : currentPage + 2,
+          };
+
+      for (let i = leftPage.start; i <= leftPage.end; i++) {
         pages.push({ number: i + 1, active: i === currentPage });
       }
 
-      if (currentPage + 1 !== rightPage - 1) {
+      if (currentPage + 2 < rightPage - 1) {
         pages.push({ number: "...", active: false });
       }
 
@@ -64,9 +71,10 @@
     <div>
       <p class="text-sm leading-5 text-gray-700">
         Showing
-        <span class="font-medium">1</span>
+        <span class="font-medium">{currentPage * limit + 1}</span>
         to
-        <span class="font-medium">{limit}</span>
+        <span
+          class="font-medium">{currentPage !== totalPage - 1 ? limit * (currentPage + 1) : total}</span>
         of
         <span class="font-medium">{total}</span>
         results
@@ -95,7 +103,7 @@
           <button
             disabled={currentPage + 1 === page.number}
             on:click={() => handleChangePage(page.number - 1)}
-            class="-ml-px relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm leading-5 font-medium text-gray-700 hover:text-gray-500 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150">
+            class="{page.active ? 'text-mint-400' : 'text-gray-800'} -ml-px relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm leading-5 font-medium hover:text-gray-500 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-700 transition ease-in-out duration-150">
             {page.number}
           </button>
         {/each}

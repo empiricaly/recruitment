@@ -119,9 +119,14 @@ func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project, runID *str
 	return q.All(ctx)
 }
 
-func (r *projectResolver) Participants(ctx context.Context, obj *ent.Project, offset int, limit int) ([]*ent.Participant, error) {
-	skip := offset * limit
-	return obj.QueryParticipants().Offset(skip).Limit(limit).All(ctx)
+func (r *projectResolver) Participants(ctx context.Context, obj *ent.Project, offset *int, limit *int) ([]*ent.Participant, error) {
+	q := obj.QueryParticipants()
+	if offset != nil && limit != nil && *limit > 0 {
+		skip := *offset * *limit
+		q = q.Limit(*limit).Offset(skip)
+	}
+
+	return q.All(ctx)
 }
 
 func (r *projectResolver) ParticipantsCount(ctx context.Context, obj *ent.Project) (int, error) {
@@ -180,12 +185,18 @@ func (r *stepRunResolver) Participations(ctx context.Context, obj *ent.StepRun, 
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *stepRunResolver) Participants(ctx context.Context, obj *ent.StepRun) ([]*ent.Participant, error) {
-	return obj.QueryParticipants().All(ctx)
+func (r *stepRunResolver) Participants(ctx context.Context, obj *ent.StepRun, offset *int, limit *int) ([]*ent.Participant, error) {
+	q := obj.QueryParticipants()
+	if offset != nil && limit != nil && *limit > 0 {
+		skip := *offset * *limit
+		q = q.Limit(*limit).Offset(skip)
+	}
+
+	return q.All(ctx)
 }
 
 func (r *stepRunResolver) ParticipantsCount(ctx context.Context, obj *ent.StepRun) (int, error) {
-	panic(fmt.Errorf("not implemented"))
+	return obj.QueryParticipants().Count(ctx)
 }
 
 func (r *templateResolver) Creator(ctx context.Context, obj *ent.Template) (*ent.Admin, error) {
