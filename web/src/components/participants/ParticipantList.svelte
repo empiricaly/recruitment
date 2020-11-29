@@ -8,7 +8,7 @@
 
   export let queryArgs;
   export let type = "run";
-  export let limit = 20;
+  export let limit = 10;
   export let participants;
   export let keys = [];
 
