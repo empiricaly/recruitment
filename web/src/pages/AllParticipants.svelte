@@ -16,6 +16,7 @@
 
   let keys;
   let participants;
+  let allParticipants;
   let isOpen = false;
 
   async function fetchAllParticipants() {
@@ -28,7 +29,7 @@
       const result = await participantsQuery.refetch();
       const pp = participantPerQueryType("all", result);
       if (pp) {
-        participants = pp.participants;
+        allParticipants = pp.participants;
       }
     } catch (error) {
       handleErrorMessage(error);
@@ -40,12 +41,12 @@
     switch (action) {
       case "exportjson": {
         await fetchAllParticipants();
-        exportJson(participants, keys);
+        exportJson(allParticipants, keys);
         break;
       }
       case "exportcsv": {
         await fetchAllParticipants();
-        exportCSV(participants, keys);
+        exportCSV(allParticipants, keys);
         break;
       }
       case "import":
@@ -68,6 +69,7 @@
 
   actions.push({
     text: "Export CSV",
+    disabled: Boolean(!participants || participants.length === 0),
     action: "exportcsv",
     icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M400 208h-73.8V80c0-26.5-21.5-48-48-48H169.8c-26.5 0-48 21.5-48 48v128H48.1c-42.6 0-64.2 51.7-33.9 81.9l175.9 176c18.7 18.7 49.1 18.7 67.9 0l176-176c30-30.1 8.7-81.9-34-81.9zM224 432L48 256h121.8V80h108.3v176H400L224 432z"/></svg>`,
     primary: true,
@@ -75,6 +77,7 @@
 
   actions.push({
     text: "Export JSON",
+    disabled: Boolean(!participants || participants.length === 0),
     action: "exportjson",
     icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M400 208h-73.8V80c0-26.5-21.5-48-48-48H169.8c-26.5 0-48 21.5-48 48v128H48.1c-42.6 0-64.2 51.7-33.9 81.9l175.9 176c18.7 18.7 49.1 18.7 67.9 0l176-176c30-30.1 8.7-81.9-34-81.9zM224 432L48 256h121.8V80h108.3v176H400L224 432z"/></svg>`,
     primary: true,
@@ -89,7 +92,8 @@
       <ParticipantList
         type="all"
         queryArgs={{ query: GET_ALL_PARTICIPANTS }}
-        bind:keys />
+        bind:keys
+        bind:participants />
     </div>
   </div>
   <Import bind:isOpen />
