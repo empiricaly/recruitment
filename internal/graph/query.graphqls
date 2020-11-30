@@ -40,12 +40,12 @@ type Query {
   """
   Participants returns all participants in DB.
   """
-  participants(first: Int, after: ID): [Participant!]! @hasRole(role: ADMIN)
+  participants(first: Int, after: ID, offset: Int, limit: Int): [Participant!]! @hasRole(role: ADMIN)
 
   """
   Number of all Participants in DB.
   """
-  participantCount: Int @hasRole(role: ADMIN)
+  participantCount: Int! @hasRole(role: ADMIN)
 
   """
   me returns the current Admin or Participant, depending on whether the user is

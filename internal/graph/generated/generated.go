@@ -202,15 +202,16 @@ type ComplexityRoot struct {
 	}
 
 	Project struct {
-		CreatedAt    func(childComplexity int) int
-		Creator      func(childComplexity int) int
-		ID           func(childComplexity int) int
-		Name         func(childComplexity int) int
-		Participants func(childComplexity int) int
-		ProjectID    func(childComplexity int) int
-		Runs         func(childComplexity int, runID *string, statuses []model.Status, limit *int) int
-		Templates    func(childComplexity int) int
-		UpdatedAt    func(childComplexity int) int
+		CreatedAt         func(childComplexity int) int
+		Creator           func(childComplexity int) int
+		ID                func(childComplexity int) int
+		Name              func(childComplexity int) int
+		Participants      func(childComplexity int, offset *int, limit *int) int
+		ParticipantsCount func(childComplexity int) int
+		ProjectID         func(childComplexity int) int
+		Runs              func(childComplexity int, runID *string, statuses []model.Status, limit *int) int
+		Templates         func(childComplexity int) int
+		UpdatedAt         func(childComplexity int) int
 	}
 
 	ProviderID struct {
@@ -225,7 +226,7 @@ type ComplexityRoot struct {
 		MturkQualificationTypes func(childComplexity int, sandbox *bool) int
 		Page                    func(childComplexity int, token string, participantID string) int
 		ParticipantCount        func(childComplexity int) int
-		Participants            func(childComplexity int, first *int, after *string) int
+		Participants            func(childComplexity int, first *int, after *string, offset *int, limit *int) int
 		Project                 func(childComplexity int, id *string, projectID *string) int
 		Projects                func(childComplexity int) int
 	}
@@ -265,7 +266,7 @@ type ComplexityRoot struct {
 		EndedAt           func(childComplexity int) int
 		ID                func(childComplexity int) int
 		Index             func(childComplexity int) int
-		Participants      func(childComplexity int) int
+		Participants      func(childComplexity int, offset *int, limit *int) int
 		ParticipantsCount func(childComplexity int) int
 		Participations    func(childComplexity int, first *int, after *string) int
 		StartedAt         func(childComplexity int) int
@@ -337,7 +338,8 @@ type ProjectResolver interface {
 
 	Templates(ctx context.Context, obj *ent.Project) ([]*ent.Template, error)
 	Runs(ctx context.Context, obj *ent.Project, runID *string, statuses []model.Status, limit *int) ([]*ent.Run, error)
-	Participants(ctx context.Context, obj *ent.Project) ([]*ent.Participant, error)
+	Participants(ctx context.Context, obj *ent.Project, offset *int, limit *int) ([]*ent.Participant, error)
+	ParticipantsCount(ctx context.Context, obj *ent.Project) (int, error)
 }
 type ProviderIDResolver interface {
 	ProviderID(ctx context.Context, obj *ent.ProviderID) (string, error)
@@ -346,8 +348,8 @@ type ProviderIDResolver interface {
 type QueryResolver interface {
 	Projects(ctx context.Context) ([]*ent.Project, error)
 	Project(ctx context.Context, id *string, projectID *string) (*ent.Project, error)
-	Participants(ctx context.Context, first *int, after *string) ([]*ent.Participant, error)
-	ParticipantCount(ctx context.Context) (*int, error)
+	Participants(ctx context.Context, first *int, after *string, offset *int, limit *int) ([]*ent.Participant, error)
+	ParticipantCount(ctx context.Context) (int, error)
 	Me(ctx context.Context) (model.User, error)
 	Page(ctx context.Context, token string, participantID string) (*model.Page, error)
 	MturkQualificationTypes(ctx context.Context, sandbox *bool) ([]*model.MTurkQulificationType, error)
@@ -374,7 +376,7 @@ type StepRunResolver interface {
 	Status(ctx context.Context, obj *ent.StepRun) (model.Status, error)
 
 	Participations(ctx context.Context, obj *ent.StepRun, first *int, after *string) ([]*ent.Participation, error)
-	Participants(ctx context.Context, obj *ent.StepRun) ([]*ent.Participant, error)
+	Participants(ctx context.Context, obj *ent.StepRun, offset *int, limit *int) ([]*ent.Participant, error)
 	ParticipantsCount(ctx context.Context, obj *ent.StepRun) (int, error)
 }
 type SubscriptionResolver interface {
@@ -1141,7 +1143,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Project.Participants(childComplexity), true
+		args, err := ec.field_Project_participants_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Project.Participants(childComplexity, args["offset"].(*int), args["limit"].(*int)), true
+
+	case "Project.participantsCount":
+		if e.complexity.Project.ParticipantsCount == nil {
+			break
+		}
+
+		return e.complexity.Project.ParticipantsCount(childComplexity), true
 
 	case "Project.projectID":
 		if e.complexity.Project.ProjectID == nil {
@@ -1257,7 +1271,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Participants(childComplexity, args["first"].(*int), args["after"].(*string)), true
+		return e.complexity.Query.Participants(childComplexity, args["first"].(*int), args["after"].(*string), args["offset"].(*int), args["limit"].(*int)), true
 
 	case "Query.project":
 		if e.complexity.Query.Project == nil {
@@ -1479,7 +1493,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.StepRun.Participants(childComplexity), true
+		args, err := ec.field_StepRun_participants_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.StepRun.Participants(childComplexity, args["offset"].(*int), args["limit"].(*int)), true
 
 	case "StepRun.participantsCount":
 		if e.complexity.StepRun.ParticipantsCount == nil {
@@ -1844,9 +1863,14 @@ type Project {
   runs(runID: ID, statuses: [Status!], limit: Int): [Run!]! @goField(forceResolver: true)
 
   """
-  Participants in this Project.
+  Participants in this Project. Default value for offset is 0, and limit is 20.
   """
-  participants: [Participant!]! @goField(forceResolver: true)
+  participants(offset: Int, limit: Int): [Participant!]! @goField(forceResolver: true)
+
+  """
+  Number of Participants in this Project.
+  """
+  participantsCount: Int!
 }
 
 """
@@ -1956,9 +1980,9 @@ type StepRun {
   participations(first: Int, after: ID): [Participation!]! @goField(forceResolver: true)
 
   """
-  Participants in this Step.
+  Participants in this Step. Default value for offset is 0, and limit is 20.
   """
-  participants: [Participant!]! @goField(forceResolver: true)
+  participants(offset: Int, limit: Int): [Participant!]! @goField(forceResolver: true)
 
   """
   Number of Participants in this Step.
@@ -3272,12 +3296,12 @@ type Query {
   """
   Participants returns all participants in DB.
   """
-  participants(first: Int, after: ID): [Participant!]! @hasRole(role: ADMIN)
+  participants(first: Int, after: ID, offset: Int, limit: Int): [Participant!]! @hasRole(role: ADMIN)
 
   """
   Number of all Participants in DB.
   """
-  participantCount: Int @hasRole(role: ADMIN)
+  participantCount: Int! @hasRole(role: ADMIN)
 
   """
   me returns the current Admin or Participant, depending on whether the user is
@@ -3585,6 +3609,30 @@ func (ec *executionContext) field_Participant_data_args(ctx context.Context, raw
 	return args, nil
 }
 
+func (ec *executionContext) field_Project_participants_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Project_runs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3708,6 +3756,24 @@ func (ec *executionContext) field_Query_participants_args(ctx context.Context, r
 		}
 	}
 	args["after"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg3
 	return args, nil
 }
 
@@ -3732,6 +3798,30 @@ func (ec *executionContext) field_Query_project_args(ctx context.Context, rawArg
 		}
 	}
 	args["projectID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_StepRun_participants_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("offset"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg1
 	return args, nil
 }
 
@@ -7505,9 +7595,16 @@ func (ec *executionContext) _Project_participants(ctx context.Context, field gra
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Project_participants_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Project().Participants(rctx, obj)
+		return ec.resolvers.Project().Participants(rctx, obj, args["offset"].(*int), args["limit"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7522,6 +7619,41 @@ func (ec *executionContext) _Project_participants(ctx context.Context, field gra
 	res := resTmp.([]*ent.Participant)
 	fc.Result = res
 	return ec.marshalNParticipant2ᚕᚖgithubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋentᚐParticipantᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Project_participantsCount(ctx context.Context, field graphql.CollectedField, obj *ent.Project) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Project",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Project().ParticipantsCount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProviderID_createdAt(ctx context.Context, field graphql.CollectedField, obj *ent.ProviderID) (ret graphql.Marshaler) {
@@ -7774,7 +7906,7 @@ func (ec *executionContext) _Query_participants(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Participants(rctx, args["first"].(*int), args["after"].(*string))
+			return ec.resolvers.Query().Participants(rctx, args["first"].(*int), args["after"].(*string), args["offset"].(*int), args["limit"].(*int))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			role, err := ec.unmarshalNRole2githubᚗcomᚋempiricalyᚋrecruitmentᚋinternalᚋmodelᚐRole(ctx, "ADMIN")
@@ -7853,21 +7985,24 @@ func (ec *executionContext) _Query_participantCount(ctx context.Context, field g
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*int); ok {
+		if data, ok := tmp.(int); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *int`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be int`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -9247,9 +9382,16 @@ func (ec *executionContext) _StepRun_participants(ctx context.Context, field gra
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_StepRun_participants_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.StepRun().Participants(rctx, obj)
+		return ec.resolvers.StepRun().Participants(rctx, obj, args["offset"].(*int), args["limit"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -12800,6 +12942,20 @@ func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, 
 				}
 				return res
 			})
+		case "participantsCount":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Project_participantsCount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12926,6 +13082,9 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_participantCount(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "me":

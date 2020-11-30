@@ -1,6 +1,8 @@
+import dayjs from "dayjs";
 import { fromCSVToJSON } from "../../../utils/csv";
-
 import { isBoolean, isFloat, isInteger } from "../../../utils/typeValue.js";
+import { download } from "../../../utils/download.js";
+import { toCSV } from "../../../utils/csv.js";
 
 export function setValue(value) {
   value = value.trim();
@@ -26,11 +28,20 @@ export function participantPerQueryType(type, result) {
       if (steps.length === 0) {
         return;
       }
-      return steps[0].participants;
+      return {
+        participants: steps[0].participants,
+        total: steps[0].participantsCount,
+      };
     case "project":
-      return result.data.project.participants;
+      return {
+        participants: result.data.project.participants,
+        total: result.data.project.participantsCount,
+      };
     case "all":
-      return result.data.participants;
+      return {
+        participants: result.data.participants,
+        total: result.data.participantCount,
+      };
     default:
       console.error("unknown type");
   }
@@ -110,4 +121,22 @@ export function getParticipants(file, customData, callback) {
     return callback(participants, null);
   };
   r.readAsText(file);
+}
+
+export function exportJson(participants, keys) {
+  const out = participantsExportFormat(participants, keys);
+  const content = JSON.stringify(out);
+  const mime = "application/json;charset=utf-8";
+  const date = dayjs().format("YYYY-MM-DDTHH:mm:ss");
+  const filename = `Empirica recruitment export – ${date}.json`;
+  download(content, filename, mime);
+}
+
+export function exportCSV(participants, keys) {
+  const out = participantsExportFormat(participants, keys, true);
+  const content = toCSV(out);
+  const mime = "text/csv;charset=utf-8";
+  const date = dayjs().format("YYYY-MM-DDTHH:mm:ss");
+  const filename = `Empirica recruitment export – ${date}.csv`;
+  download(content, filename, mime);
 }

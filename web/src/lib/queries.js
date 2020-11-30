@@ -239,7 +239,12 @@ export const GET_RUNNING_RUN = gql`
 `;
 
 export const GET_RUN_PARTICIPANTS = gql`
-  query getRunParticipants($projectID: ID!, $runID: ID!) {
+  query getRunParticipants(
+    $projectID: ID!
+    $runID: ID!
+    $offset: Int
+    $limit: Int
+  ) {
     project(projectID: $projectID) {
       id
       runs(runID: $runID) {
@@ -247,7 +252,7 @@ export const GET_RUN_PARTICIPANTS = gql`
         status
         steps {
           id
-          participants {
+          participants(offset: $offset, limit: $limit) {
             id
             mturkWorkerID
             data {
@@ -255,6 +260,7 @@ export const GET_RUN_PARTICIPANTS = gql`
               val
             }
           }
+          participantsCount
         }
       }
     }
@@ -262,10 +268,10 @@ export const GET_RUN_PARTICIPANTS = gql`
 `;
 
 export const GET_PROJECT_PARTICIPANTS = gql`
-  query getProjectParticipants($projectID: ID!) {
+  query getProjectParticipants($projectID: ID!, $offset: Int, $limit: Int) {
     project(projectID: $projectID) {
       id
-      participants {
+      participants(offset: $offset, limit: $limit) {
         id
         mturkWorkerID
         createdAt
@@ -274,13 +280,14 @@ export const GET_PROJECT_PARTICIPANTS = gql`
           val
         }
       }
+      participantsCount
     }
   }
 `;
 
 export const GET_ALL_PARTICIPANTS = gql`
-  query getAllParticipants {
-    participants {
+  query getAllParticipants($offset: Int, $limit: Int) {
+    participants(offset: $offset, limit: $limit) {
       id
       mturkWorkerID
       data {
@@ -289,6 +296,7 @@ export const GET_ALL_PARTICIPANTS = gql`
         val
       }
     }
+    participantCount
   }
 `;
 

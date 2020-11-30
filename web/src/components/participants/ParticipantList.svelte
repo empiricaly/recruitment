@@ -3,27 +3,34 @@
   import { client } from "../../lib/apollo";
   import { participantPerQueryType } from "../../lib/models/participants/participants.js";
   import { handleErrorMessage } from "../../utils/errorQuery";
+  import Pagination from "../base/Pagination.svelte";
   import DataCell from "./DataCell.svelte";
 
   export let queryArgs;
   export let type = "run";
-
-  // console.log(queryArgs);
-  const participantsQuery = query(client, queryArgs);
-
+  export let limit = 10;
   export let participants;
+  export let keys = [];
+
+  let offset = 0;
+  let total = 0;
+
+  $: queryArgs.variables = { ...queryArgs.variables, offset, limit };
+
+  $: participantsQuery = query(client, queryArgs);
+
   $: try {
     $participantsQuery.then((result) => {
       const pp = participantPerQueryType(type, result);
       if (pp) {
-        participants = pp;
+        participants = pp.participants;
+        total = pp.total;
       }
     });
   } catch (error) {
     handleErrorMessage(error);
   }
 
-  export let keys = [];
   $: if (participants && participants.length > 0) {
     const lkeys = {};
     for (let i = 0; i < participants.length; i++) {
@@ -32,16 +39,12 @@
       }
     }
     keys = Object.keys(lkeys);
-    // const k = [];
-    // for (let i = 0; i < 100; i++) {
-    //   k.push(`key${i}`);
-    // }
-    // keys.push(...k);
   }
 
-  // $: console.log(participants);
-  // $: console.log(keys);
-  // $: console.log(participants);
+  function handleChangePage(event) {
+    const { nextPage } = event.detail;
+    offset = nextPage;
+  }
 </script>
 
 {#if participants}
@@ -90,6 +93,11 @@
               <!-- More rows... -->
             </tbody>
           </table>
+          <Pagination
+            on:changePage={handleChangePage}
+            currentPage={offset}
+            {limit}
+            {total} />
         </div>
       </div>
     </div>

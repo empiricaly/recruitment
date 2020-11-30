@@ -33,12 +33,18 @@ func (r *queryResolver) Project(ctx context.Context, id *string, projectID *stri
 	return r.Store.Project.Query().Where(project.ProjectIDEQ(*projectID)).First(ctx)
 }
 
-func (r *queryResolver) Participants(ctx context.Context, first *int, after *string) ([]*ent.Participant, error) {
-	return r.Store.Participant.Query().All(ctx)
+func (r *queryResolver) Participants(ctx context.Context, first *int, after *string, offset *int, limit *int) ([]*ent.Participant, error) {
+	q := r.Store.Participant.Query()
+	if offset != nil && limit != nil && *limit > 0 {
+		skip := *offset * *limit
+		q = q.Limit(*limit).Offset(skip)
+	}
+
+	return q.All(ctx)
 }
 
-func (r *queryResolver) ParticipantCount(ctx context.Context) (*int, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *queryResolver) ParticipantCount(ctx context.Context) (int, error) {
+	return r.Store.Participant.Query().Count(ctx)
 }
 
 func (r *queryResolver) Me(ctx context.Context) (model.User, error) {

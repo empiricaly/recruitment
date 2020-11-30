@@ -119,8 +119,24 @@ func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project, runID *str
 	return q.All(ctx)
 }
 
-func (r *projectResolver) Participants(ctx context.Context, obj *ent.Project) ([]*ent.Participant, error) {
-	return obj.QueryParticipants().All(ctx)
+func (r *projectResolver) Participants(ctx context.Context, obj *ent.Project, offset *int, limit *int) ([]*ent.Participant, error) {
+	if limit == nil {
+		defaultLimit := 20
+		limit = &defaultLimit
+	}
+
+	q := obj.QueryParticipants().Limit(*limit)
+
+	if offset != nil {
+		skip := *offset * *limit
+		q = q.Offset(skip)
+	}
+
+	return q.All(ctx)
+}
+
+func (r *projectResolver) ParticipantsCount(ctx context.Context, obj *ent.Project) (int, error) {
+	return obj.QueryParticipants().Count(ctx)
 }
 
 func (r *providerIDResolver) ProviderID(ctx context.Context, obj *ent.ProviderID) (string, error) {
@@ -175,8 +191,20 @@ func (r *stepRunResolver) Participations(ctx context.Context, obj *ent.StepRun, 
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *stepRunResolver) Participants(ctx context.Context, obj *ent.StepRun) ([]*ent.Participant, error) {
-	return obj.QueryParticipants().All(ctx)
+func (r *stepRunResolver) Participants(ctx context.Context, obj *ent.StepRun, offset *int, limit *int) ([]*ent.Participant, error) {
+	if limit == nil {
+		defaultLimit := 20
+		limit = &defaultLimit
+	}
+
+	q := obj.QueryParticipants().Limit(*limit)
+
+	if offset != nil {
+		skip := *offset * *limit
+		q = q.Offset(skip)
+	}
+
+	return q.All(ctx)
 }
 
 func (r *stepRunResolver) ParticipantsCount(ctx context.Context, obj *ent.StepRun) (int, error) {
