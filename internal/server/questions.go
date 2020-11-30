@@ -272,7 +272,8 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 						if stepRuns[i].Index <= stepRun.Index {
 							startedAt = stepRun.StartedAt.Format(time.Kitchen)
 							startsAt = startedAt
-							if stepRuns[i].Index < stepRun.Index {
+
+							if stepRuns[i].Index < stepRun.Index && stepRun.EndedAt != nil {
 								endedAt = stepRun.EndedAt.Format(time.Kitchen)
 							}
 						} else {
