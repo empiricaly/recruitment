@@ -340,17 +340,32 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 			continue
 		}
 
-		partParams := s.store.Participation.Create().
-			SetID(xid.New().String()).
-			SetParticipant(p).
-			SetStepRun(stepRun).
-			SetMturkWorkerID(*p.MturkWorkerID)
-
-		_, err := partParams.Save(ctx)
+		prevParticipation, err := s.store.Participation.
+			Query().
+			Where(participation.MturkWorkerID(*p.MturkWorkerID)).
+			First(ctx)
 		if err != nil {
 			log.Error().
 				Str("workerID", *p.MturkWorkerID).
 				Str("stepRunID", stepRun.ID).
+				Err(err).
+				Msg("could not get participation to stepRun")
+		}
+
+		partParams := s.store.Participation.Create().
+			SetID(xid.New().String()).
+			SetParticipant(p).
+			SetStepRun(stepRun).
+			SetMturkWorkerID(*p.MturkWorkerID).
+			SetMturkAssignmentID(prevParticipation.MturkAssignmentID).
+			SetMturkHitID(prevParticipation.MturkHitID)
+
+		_, err = partParams.Save(ctx)
+		if err != nil {
+			log.Error().
+				Str("workerID", *p.MturkWorkerID).
+				Str("stepRunID", stepRun.ID).
+				Err(err).
 				Msg("could not add participant to stepRun")
 		}
 	}
