@@ -120,10 +120,16 @@ func (r *projectResolver) Runs(ctx context.Context, obj *ent.Project, runID *str
 }
 
 func (r *projectResolver) Participants(ctx context.Context, obj *ent.Project, offset *int, limit *int) ([]*ent.Participant, error) {
-	q := obj.QueryParticipants()
-	if offset != nil && limit != nil && *limit > 0 {
+	if limit == nil {
+		defaultLimit := 20
+		limit = &defaultLimit
+	}
+
+	q := obj.QueryParticipants().Limit(*limit)
+
+	if offset != nil {
 		skip := *offset * *limit
-		q = q.Limit(*limit).Offset(skip)
+		q = q.Offset(skip)
 	}
 
 	return q.All(ctx)
@@ -186,10 +192,16 @@ func (r *stepRunResolver) Participations(ctx context.Context, obj *ent.StepRun, 
 }
 
 func (r *stepRunResolver) Participants(ctx context.Context, obj *ent.StepRun, offset *int, limit *int) ([]*ent.Participant, error) {
-	q := obj.QueryParticipants()
-	if offset != nil && limit != nil && *limit > 0 {
+	if limit == nil {
+		defaultLimit := 20
+		limit = &defaultLimit
+	}
+
+	q := obj.QueryParticipants().Limit(*limit)
+
+	if offset != nil {
 		skip := *offset * *limit
-		q = q.Limit(*limit).Offset(skip)
+		q = q.Offset(skip)
 	}
 
 	return q.All(ctx)
