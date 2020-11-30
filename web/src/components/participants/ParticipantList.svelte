@@ -4,6 +4,7 @@
   import { participantPerQueryType } from "../../lib/models/participants/participants.js";
   import { handleErrorMessage } from "../../utils/errorQuery";
   import Pagination from "../base/Pagination.svelte";
+  import Callout from "../base/Callout.svelte";
   import DataCell from "./DataCell.svelte";
 
   export let queryArgs;
@@ -47,7 +48,9 @@
   }
 </script>
 
-{#if participants}
+{#if Array.isArray(participants) && participants.length === 0}
+  <Callout color="yellow">You have no Participants yet.</Callout>
+{:else if participants && participants.length > 0}
   <div class="flex flex-col">
     <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
       <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
