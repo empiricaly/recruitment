@@ -173,7 +173,7 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 	}
 
 	subject := "New Message"
-	if step.MsgArgs.Subject == nil {
+	if step.MsgArgs.Subject != nil {
 		subject = *step.MsgArgs.Subject
 	}
 
