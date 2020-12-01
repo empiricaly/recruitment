@@ -80,20 +80,55 @@ func (s *Session) runMTurkHITStep(ctx context.Context, project *ent.Project, run
 				ints[i] = aws.Int64(int64(val))
 			}
 
-			locales := make([]*mturk.Locale, len(q.Locales))
-			for i, val := range q.Locales {
-				locales[i] = &mturk.Locale{
-					Country:     aws.String(val.Country),
-					Subdivision: val.Subdivision,
-				}
+			var comparator = ""
+			switch q.Comparator {
+			case model.ComparatorEqualTo:
+				comparator = "EqualTo"
+				break
+			case model.ComparatorNotEqualTo:
+				comparator = "NotEqualTo"
+				break
+			case model.ComparatorLessThan:
+				comparator = "LessThan"
+				break
+			case model.ComparatorLessThanOrEqualTo:
+				comparator = "LessThanOrEqualTo"
+				break
+			case model.ComparatorGreaterThan:
+				comparator = "GreaterThan"
+				break
+			case model.ComparatorGreaterThanOrEqualTo:
+				comparator = "GreaterThanOrEqualTo"
+				break
+			case model.ComparatorIn:
+				comparator = "In"
+				break
+			case model.ComparatorNotIn:
+				comparator = "NotIn"
+				break
+			default:
+				return errors.New("unknown comparator")
 			}
 
-			quals = append(quals, &mturk.QualificationRequirement{
+			qualificationRequirement := &mturk.QualificationRequirement{
 				QualificationTypeId: aws.String(q.ID),
-				Comparator:          aws.String(q.Comparator.String()),
+				Comparator:          aws.String(comparator),
 				IntegerValues:       ints,
-				LocaleValues:        locales,
-			})
+			}
+
+			if q.Locales != nil && len(q.Locales) > 0 {
+				locales := make([]*mturk.Locale, len(q.Locales))
+				for i, val := range q.Locales {
+					locales[i] = &mturk.Locale{
+						Country:     aws.String(val.Country),
+						Subdivision: val.Subdivision,
+					}
+				}
+
+				qualificationRequirement.LocaleValues = locales
+			}
+
+			quals = append(quals, qualificationRequirement)
 		}
 	} else {
 		qualParams := &mturk.CreateQualificationTypeInput{
