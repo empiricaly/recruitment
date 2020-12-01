@@ -175,32 +175,30 @@ func (s *Session) assignmentsForHit(ctx context.Context, hitID string) (chan *mt
 		go func() {
 			defer close(c)
 
-			for {
-				var nextToken *string
-				params := &mturk.ListAssignmentsForHITInput{
-					AssignmentStatuses: aws.StringSlice([]string{"Approved"}),
-					HITId:              aws.String(hitID),
-					MaxResults:         aws.Int64(100),
-				}
+			var nextToken *string
+			params := &mturk.ListAssignmentsForHITInput{
+				AssignmentStatuses: aws.StringSlice([]string{"Approved"}),
+				HITId:              aws.String(hitID),
+				MaxResults:         aws.Int64(100),
+			}
 
-				if nextToken != nil {
-					params.NextToken = nextToken
-				}
+			if nextToken != nil {
+				params.NextToken = nextToken
+			}
 
-				assignments, err := s.MTurk.ListAssignmentsForHITWithContext(ctx, params)
-				if err != nil {
-					log.Error().Err(err).Msg("list assignments for hit")
-				}
+			assignments, err := s.MTurk.ListAssignmentsForHITWithContext(ctx, params)
+			if err != nil {
+				log.Error().Err(err).Msg("list assignments for hit")
+			}
 
-				for _, assignment := range assignments.Assignments {
-					c <- assignment
-				}
+			for _, assignment := range assignments.Assignments {
+				c <- assignment
+			}
 
-				if assignments.NextToken != nil && *assignments.NextToken != "" {
-					nextToken = assignments.NextToken
-				} else {
-					return
-				}
+			if assignments.NextToken != nil && *assignments.NextToken != "" {
+				nextToken = assignments.NextToken
+			} else {
+				return
 			}
 		}()
 	}
