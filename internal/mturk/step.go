@@ -48,7 +48,7 @@ func (s *Session) StartStep(project *ent.Project, run *ent.Run, step *ent.Step, 
 	case stepModel.TypeMTURK_MESSAGE:
 		return s.runMTurkMessageStep(ctx, project, run, stepRun, template, step, startTime)
 	case stepModel.TypeWAIT:
-		return nil
+		return s.runWaitStep(ctx, stepRun)
 	default:
 		return errors.Errorf("unknown step type for MTurk: %s", step.Type.String())
 	}
@@ -408,6 +408,36 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 	return nil
 }
 
+func (s *Session) runWaitStep(ctx context.Context, stepRun *ent.StepRun) error {
+	participants, err := stepRun.QueryParticipants().All(ctx)
+	if err != nil {
+		return errors.Wrap(err, "wait step get step participants")
+	}
+
+	for _, p := range participants {
+		prevParticipation, err := s.store.Participation.Query().Where(participation.MturkWorkerID(*p.MturkWorkerID)).First(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("wait step: getting previous participation")
+			return errors.Wrap(err, "wait step getting previous participation")
+		}
+
+		_, err = s.store.Participation.Create().
+			SetID(xid.New().String()).
+			SetParticipant(p).
+			SetStepRun(stepRun).
+			SetMturkWorkerID(*p.MturkWorkerID).
+			SetMturkAssignmentID(prevParticipation.MturkAssignmentID).
+			SetMturkHitID(prevParticipation.MturkHitID).
+			Save(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("wait step: Creating participation")
+			return errors.Wrap(err, "wait step set participation")
+		}
+	}
+
+	return nil
+}
+
 // EndStep to end step based on stepType
 func (s *Session) EndStep(project *ent.Project, run *ent.Run, step *ent.Step, stepRun *ent.StepRun, nextStep *ent.Step, nextStepRun *ent.StepRun) error {
 	s.logger.Debug().Msg("Ending step")
@@ -433,7 +463,7 @@ func (s *Session) EndStep(project *ent.Project, run *ent.Run, step *ent.Step, st
 	case stepModel.TypePARTICIPANT_FILTER:
 		return s.endFilterStep(ctx, project, run, template, step, stepRun, nextStep, nextStepRun)
 	case stepModel.TypeWAIT:
-		return nil
+		return s.endWaitStep(ctx, project, run, template, step, stepRun, nextStep, nextStepRun)
 	default:
 		return errors.Errorf("unknown step type for MTurk: %s", step.Type.String())
 	}
@@ -619,6 +649,32 @@ func (s *Session) endFilterStep(ctx context.Context, project *ent.Project, run *
 		Save(ctx)
 	if err != nil {
 		return errors.Wrap(err, "push filter step participants to next run")
+	}
+
+	return nil
+}
+
+func (s *Session) endWaitStep(ctx context.Context, project *ent.Project, run *ent.Run, template *ent.Template, step *ent.Step, stepRun *ent.StepRun, nextStep *ent.Step, nextStepRun *ent.StepRun) error {
+	if nextStepRun == nil {
+		return nil
+	}
+
+	participations, err := stepRun.QueryParticipations().WithParticipant().All(ctx)
+	if err != nil {
+		return errors.New("get participations for wait step failed")
+	}
+
+	participants := make([]*ent.Participant, len(participations))
+
+	for i, p := range participations {
+		participants[i] = p.Edges.Participant
+	}
+
+	_, err = nextStepRun.Update().
+		AddParticipants(participants...).
+		Save(ctx)
+	if err != nil {
+		return errors.Wrap(err, "push wait step participants to next run")
 	}
 
 	return nil
