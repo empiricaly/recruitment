@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/empiricaly/recruitment/internal/ent"
 	participantModel "github.com/empiricaly/recruitment/internal/ent/participant"
@@ -74,10 +75,6 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 				return errors.Wrap(err, "get stepRun")
 			}
 
-			if stepRun.Status != stepRunModel.StatusRUNNING {
-				return errors.Errorf("stepTun no longer running, cannot save data (current state: %s)", stepRun.Status.String())
-			}
-
 			if stepRun.HitID == nil {
 				return errors.Errorf("stepRun has nil HIT ID")
 			}
@@ -93,6 +90,12 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 
 			if step.Type != stepModel.TypeMTURK_HIT {
 				return errors.New("trying to save data on a non-hit step")
+			}
+
+			timeExtension := stepRun.EndedAt.Add(time.Minute * time.Duration(step.HitArgs.Timeout))
+			remainingTime := timeExtension.Sub(time.Now())
+			if stepRun.Status != stepRunModel.StatusRUNNING && remainingTime < 0 {
+				return errors.Errorf("stepRun no longer running, cannot save data (current state: %s)", stepRun.Status.String())
 			}
 
 			run, err := stepRun.Edges.RunOrErr()
