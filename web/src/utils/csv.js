@@ -48,17 +48,23 @@ export function toCSV(data) {
 }
 
 export function fromCSVToJSON(csv) {
-  const lines = csv.split("\n");
+  const lines = csv.split(lineDelimiter);
   const result = [];
-  const headers = lines[0].split(",");
+  const headers = lines[0].split(columnDelimiter);
 
   for (let i = 1; i < lines.length; i++) {
     if (!lines[i]) continue;
     const obj = {};
-    const currentline = lines[i].split(",");
+    const currentline = lines[i].split(columnDelimiter);
 
     for (let j = 0; j < headers.length; j++) {
-      obj[headers[j]] = currentline[j];
+      let cell = currentline[j];
+
+      if (cell.includes(doubleDoubleQuote)) {
+        cell = cell.replaceAll(doubleDoubleQuote, "");
+      }
+
+      obj[headers[j]] = cell;
     }
     result.push(obj);
   }
