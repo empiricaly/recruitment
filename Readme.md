@@ -1,12 +1,12 @@
-# Empirica Recruitment (beta)
+# Empirica Recruitment - BETA
 
 Empirica Recruitment is an application meant to simplify the operations needed
-to recruit experiment participants using online participant platforms (currently
-on MTurk supported).
+to recruit experiment participants using online participant platforms (only 
+AWS MTurk supported at the moment).
 
-It is currently in early beta and will require some effort from the user to
-setup and use. It has been tested on limited experiments with up to 100
-participants and multiple steps.
+**Empirica Recruitment is currently in early beta and will require some effort
+from the user to setup and use.** It has been tested on limited experiments
+with up to 100 participants and multiple steps.
 
 # Quick Usage
 
