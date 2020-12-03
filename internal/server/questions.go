@@ -223,6 +223,23 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 			return
 		}
 
+		if stepRun.StartedAt == nil {
+			log.Error().Err(err).Msg("stepRun is not running yet")
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+
+		if stepRun.EndedAt != nil {
+			timeExtension := stepRun.EndedAt.Add(time.Hour * 1)
+			remainingTime := timeExtension.Sub(time.Now())
+
+			if remainingTime < 0 {
+				log.Error().Err(err).Msg("stepRun has ended")
+				c.AbortWithStatus(http.StatusNotFound)
+				return
+			}
+		}
+
 		run, err := stepRun.Edges.RunOrErr()
 		if err != nil {
 			log.Error().Err(err).Msg("get run")
