@@ -175,8 +175,8 @@ func (s *Session) assignmentsForHit(ctx context.Context, hitID string) (chan *mt
 		go func() {
 			defer close(c)
 
+			var nextToken *string
 			for {
-				var nextToken *string
 				params := &mturk.ListAssignmentsForHITInput{
 					AssignmentStatuses: aws.StringSlice([]string{"Approved"}),
 					HITId:              aws.String(hitID),
