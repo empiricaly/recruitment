@@ -92,10 +92,17 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 				return errors.New("trying to save data on a non-hit step")
 			}
 
-			timeExtension := stepRun.EndedAt.Add(time.Minute * time.Duration(step.HitArgs.Timeout))
-			remainingTime := timeExtension.Sub(time.Now())
-			if stepRun.Status != stepRunModel.StatusRUNNING && remainingTime < 0 {
-				return errors.Errorf("stepRun no longer running, cannot save data (current state: %s)", stepRun.Status.String())
+			if stepRun.StartedAt == nil {
+				return errors.New("stepRun is not running yet, cannot save data")
+			}
+
+			if stepRun.EndedAt != nil {
+				timeExtension := stepRun.EndedAt.Add(time.Hour * 1)
+				remainingTime := timeExtension.Sub(time.Now())
+
+				if remainingTime < 0 {
+					return errors.Errorf("stepRun no longer running, cannot save data (current state: %s)", stepRun.Status.String())
+				}
 			}
 
 			run, err := stepRun.Edges.RunOrErr()
