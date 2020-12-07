@@ -97,7 +97,7 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 			}
 
 			if stepRun.EndedAt != nil {
-				timeExtension := stepRun.EndedAt.Add(time.Hour * 1)
+				timeExtension := stepRun.EndedAt.Add(time.Minute * time.Duration(step.HitArgs.Timeout))
 				remainingTime := timeExtension.Sub(time.Now())
 
 				if remainingTime < 0 {
@@ -162,15 +162,15 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 				if !found {
 					participant, err = participant.Update().
 						AddProjects(project).
-						AddSteps(stepRun).
 						Save(ctx)
 					if err != nil {
-						return errors.Wrap(err, "update participant")
+						return errors.Wrap(err, "update participant project")
 					}
 				}
 
 				participant, err = participant.Update().
 					SetUninitialized(false).
+					AddSteps(stepRun).
 					Save(ctx)
 				if err != nil {
 					return errors.Wrap(err, "Set uninitialized participant")

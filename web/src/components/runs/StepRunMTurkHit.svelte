@@ -47,7 +47,7 @@
         text="HIT Accepted HIT Timeout"
         question="Timeout of a single accepted HIT in seconds" />
       {step.hitArgs.timeout}
-      seconds
+      minutes
     </div>
 
     <!-- <div class="mt-4">

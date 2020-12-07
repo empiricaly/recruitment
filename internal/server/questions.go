@@ -230,7 +230,7 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 		}
 
 		if stepRun.EndedAt != nil {
-			timeExtension := stepRun.EndedAt.Add(time.Hour * 1)
+			timeExtension := stepRun.EndedAt.Add(time.Minute * time.Duration(step.HitArgs.Timeout))
 			remainingTime := timeExtension.Sub(time.Now())
 
 			if remainingTime < 0 {
