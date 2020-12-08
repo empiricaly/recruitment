@@ -39,127 +39,138 @@ const htmlHead = `<!DOCTYPE html><html lang="en"><head>
 </style>
 
 <script>
-  window.addEventListener("load", () => {
-	const params = new URL(document.location).searchParams;
-	console.log(params.get("assignmentId"));
-	if (params.get("assignmentId") === "ASSIGNMENT_ID_NOT_AVAILABLE") {
-		const notAssigned = document.querySelectorAll(".notAssigned");
-		console.log(notAssigned)
-		for (let i = 0; i < notAssigned.length ; i++) {
-			notAssigned[i].style.display = "block";
-		}
-		const assigned = document.querySelectorAll(".assigned");
-		for (let i = 0; i < assigned.length ; i++) {
-			assigned[i].style.display = "none";
-		}
-	} else {
-		const notAssigned = document.querySelectorAll(".notAssigned");
-		console.log(1, notAssigned)
-		for (let i = 0; i < notAssigned.length ; i++) {
-			notAssigned[i].style.display = "none";
-		}
-		const assigned = document.querySelectorAll(".assigned");
-		for (let i = 0; i < assigned.length ; i++) {
-			assigned[i].style.display = "block";
-		}
-	}
-
-
-
-
-    if (!params.get("turkSubmitTo")) {
-      console.log("can't find redirect param", params);
-      return;
-    }
-
-    const forms = document.querySelectorAll("form");
-    forms.forEach((f) => {
-      f.addEventListener("submit", (e) => {
-        e.preventDefault();
-        f.style.display = "none";
-        const loading = document.createElement("div");
-        loading.className = "loader";
-        document.body.appendChild(loading);
-
-        const data = {};
-        e.currentTarget.querySelectorAll("input").forEach((el) => {
-			let value = el.value;
-			if (el.type === "number") {
-				value = parseFloat(value);
+	window.addEventListener("load", () => {
+		const params = new URL(document.location).searchParams;
+		console.log(params.get("assignmentId"));
+		if (params.get("assignmentId") === "ASSIGNMENT_ID_NOT_AVAILABLE") {
+			const notAssigned = document.querySelectorAll(".notAssigned");
+			console.log(notAssigned);
+			for (let i = 0; i < notAssigned.length; i++) {
+				notAssigned[i].style.display = "block";
 			}
-          data[el.name] = value;
-        });
-        try {
-          (async () => {
-            const url =
-              document.location.origin +
-              "/a" +
-              document.location.pathname.slice(2) +
-              "?" +
-              params.toString();
-            const response = await fetch(url, {
-              method: "POST", // *GET, POST, PUT, DELETE, etc.
-              headers: {
-                "Content-Type": "application/json",
-                // 'Content-Type': 'application/x-www-form-urlencoded',
-              },
-              body: JSON.stringify(data),
-            });
+			const assigned = document.querySelectorAll(".assigned");
+			for (let i = 0; i < assigned.length; i++) {
+				assigned[i].style.display = "none";
+			}
+		} else {
+			const notAssigned = document.querySelectorAll(".notAssigned");
+			console.log(1, notAssigned);
+			for (let i = 0; i < notAssigned.length; i++) {
+				notAssigned[i].style.display = "none";
+			}
+			const assigned = document.querySelectorAll(".assigned");
+			for (let i = 0; i < assigned.length; i++) {
+				assigned[i].style.display = "block";
+			}
+		}
 
-            loading.remove();
+		if (!params.get("turkSubmitTo")) {
+			console.log("can't find redirect param", params);
+			return;
+		}
 
-            if (response.ok) {
-				const assignmentId = document.createElement("input");
-              assignmentId.name = "assignmentId";
-              assignmentId.type = "hidden";
-              assignmentId.value = params.get("assignmentId");
-							
-              f.action = params.get("turkSubmitTo") + "/mturk/externalSubmit";
-              f.method = "POST";
+		const forms = document.querySelectorAll("form");
+		forms.forEach((f) => {
+			f.addEventListener("submit", (e) => {
+				e.preventDefault();
+				f.style.display = "none";
+				const loading = document.createElement("div");
+				loading.className = "loader";
+				document.body.appendChild(loading);
+
+				const data = {};
+				e.currentTarget.querySelectorAll("input").forEach((el) => {
+					let value = el.value;
+					if (el.type === "number") {
+						value = parseFloat(value);
+					}
+					data[el.name] = value;
+				});
+				try {
+					(async () => {
+						const url =
+							document.location.origin +
+							"/a" +
+							document.location.pathname.slice(2) +
+							"?" +
+							params.toString();
+						const response = await fetch(url, {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+							},
+							body: JSON.stringify(data),
+						});
+
+						loading.remove();
+
+						const submitHit = () => {
+							const assignmentId = document.createElement("input");
+							assignmentId.name = "assignmentId";
+							assignmentId.type = "hidden";
+							assignmentId.value = params.get("assignmentId");
+
+							f.action = params.get("turkSubmitTo") + "/mturk/externalSubmit";
+							f.method = "POST";
 							f.appendChild(assignmentId);
 							f.submit();
-							
-              return;
-            }
+						};
 
-            console.error("error ", response.status, response.statusText);
+						if (response.ok) {
+							submitHit();
+							return;
+						}
 
-            const div = document.createElement("div");
-            div.style.backgroundColor = "#e53e3e";
-            div.style.padding = "20px";
-            div.style.color = "#f7fafc";
+						console.error("error ", response.status, response.statusText);
 
-            const text = document.createElement("p");
-            text.style.fontSize = "24px";
-            text.innerText =
-              "Something went wrong. Please try again or report back to us.";
+						let textMessage =
+							"Something went wrong. Please try again or report back to us.";
+						const errorResponse = await response.json();
+						let showButton = true;
 
-            const button = document.createElement("button");
-            button.style.backgroundColor = "#f7fafc";
-            button.style.color = "#e53e3e";
-            button.style.borderRadius = "5px";
-            button.style.borderColor = "transparent";
-            button.style.padding = "3px 20px";
-            button.style.marginTop = "10px";
-            button.style.fontSize = "16px";
-            button.style.cursor = "pointer";
-            button.innerText = "Try Again";
-            button.addEventListener("click", (e) => {
-              e.preventDefault();
-              f.style.display = "block";
-              div.remove();
-            });
+						if (errorResponse && errorResponse.message) {
+							if (errorResponse.message === "stepRunEnded") {
+								submitHit();
+							}
+						}
 
-            div.appendChild(text);
-            div.appendChild(button);
-            document.body.appendChild(div);
-          })();
-        } catch (error) {
-          console.error("Submitting Form: ", error);
-        }
-      });
-    });
-  });
+						const div = document.createElement("div");
+						div.style.backgroundColor = "#e53e3e";
+						div.style.padding = "20px";
+						div.style.color = "#f7fafc";
+
+						const text = document.createElement("p");
+						text.style.fontSize = "24px";
+						text.innerText = textMessage;
+						div.appendChild(text);
+
+						if (showButton) {
+							const button = document.createElement("button");
+							button.style.backgroundColor = "#f7fafc";
+							button.style.color = "#e53e3e";
+							button.style.borderRadius = "5px";
+							button.style.borderColor = "transparent";
+							button.style.padding = "3px 20px";
+							button.style.marginTop = "10px";
+							button.style.fontSize = "16px";
+							button.style.cursor = "pointer";
+							button.innerText = "Try Again";
+							button.addEventListener("click", (e) => {
+								e.preventDefault();
+								f.style.display = "block";
+								div.remove();
+							});
+							div.appendChild(button);
+						}
+
+						document.body.appendChild(div);
+					})();
+				} catch (error) {
+					console.error("Submitting Form: ", error);
+				}
+			});
+		});
+	});
 </script>
 
 
@@ -230,7 +241,7 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 		}
 
 		if stepRun.EndedAt != nil {
-			timeExtension := stepRun.EndedAt.Add(time.Hour * 1)
+			timeExtension := stepRun.EndedAt.Add(time.Minute * time.Duration(step.HitArgs.Timeout))
 			remainingTime := timeExtension.Sub(time.Now())
 
 			if remainingTime < 0 {

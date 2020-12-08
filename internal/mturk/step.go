@@ -545,10 +545,9 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 			if !found {
 				p, err = p.Update().
 					AddProjects(project).
-					AddSteps(stepRun).
 					Save(ctx)
 				if err != nil {
-					log.Error().Msgf("could not update participant with workerID %s for stepRun %s", *assignment.WorkerId, stepRun.ID)
+					log.Error().Msgf("could not update participant project with workerID %s for stepRun %s", *assignment.WorkerId, stepRun.ID)
 				}
 			}
 
@@ -559,6 +558,30 @@ func (s *Session) endMTurkHITStep(ctx context.Context, project *ent.Project, run
 				if err != nil {
 					log.Error().Msgf("could not set participant uninitialized with workerID %s for stepRun ", *assignment.WorkerId, stepRun.ID)
 					continue
+				}
+
+				stepRunParticipants, err := stepRun.Edges.ParticipantsOrErr()
+				if err != nil {
+					log.Error().Msgf("could not get participants for stepRun %s ", *assignment.WorkerId, stepRun.ID)
+					continue
+				}
+
+				var foundStepRunParticipant bool
+				for _, participant := range stepRunParticipants {
+					if participant.MturkWorkerID != nil && p.MturkWorkerID != nil && (*participant.MturkWorkerID == *p.MturkWorkerID) {
+						foundStepRunParticipant = true
+						break
+					}
+				}
+
+				if !foundStepRunParticipant {
+					_, err = p.Update().
+						AddSteps(stepRun).
+						Save(ctx)
+					if err != nil {
+						log.Error().Msgf("could not set step run participant with workerID %s for stepRun %s", *p.MturkWorkerID, stepRun.ID)
+						continue
+					}
 				}
 			}
 		}
