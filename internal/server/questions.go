@@ -83,10 +83,10 @@ const htmlHead = `<!DOCTYPE html><html lang="en"><head>
 
         const data = {};
         e.currentTarget.querySelectorAll("input").forEach((el) => {
-			let value = el.value;
-			if (el.type === "number") {
-				value = parseFloat(value);
-			}
+				let value = el.value;
+				if (el.type === "number") {
+					value = parseFloat(value);
+				}
           data[el.name] = value;
         });
         try {
@@ -98,18 +98,17 @@ const htmlHead = `<!DOCTYPE html><html lang="en"><head>
               "?" +
               params.toString();
             const response = await fetch(url, {
-              method: "POST", // *GET, POST, PUT, DELETE, etc.
+              method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                // 'Content-Type': 'application/x-www-form-urlencoded',
               },
               body: JSON.stringify(data),
             });
 
-            loading.remove();
+						loading.remove();
 
             if (response.ok) {
-				const assignmentId = document.createElement("input");
+							const assignmentId = document.createElement("input");
               assignmentId.name = "assignmentId";
               assignmentId.type = "hidden";
               assignmentId.value = params.get("assignmentId");
@@ -123,6 +122,17 @@ const htmlHead = `<!DOCTYPE html><html lang="en"><head>
             }
 
             console.error("error ", response.status, response.statusText);
+						
+						let textMessage = "Something went wrong. Please try again or report back to us.";
+						const errorResponse = await response.json();
+						let showButton = true;
+
+						if(errorResponse && errorResponse.message) {
+							if(errorResponse.message === "stepRunEnded") {
+								textMessage = "Sorry this HIT already ended, you cannot submit it to MTurk.";
+								showButton = false;
+							}
+						}
 
             const div = document.createElement("div");
             div.style.backgroundColor = "#e53e3e";
@@ -131,27 +141,28 @@ const htmlHead = `<!DOCTYPE html><html lang="en"><head>
 
             const text = document.createElement("p");
             text.style.fontSize = "24px";
-            text.innerText =
-              "Something went wrong. Please try again or report back to us.";
+            text.innerText = textMessage;
+						div.appendChild(text);
 
-            const button = document.createElement("button");
-            button.style.backgroundColor = "#f7fafc";
-            button.style.color = "#e53e3e";
-            button.style.borderRadius = "5px";
-            button.style.borderColor = "transparent";
-            button.style.padding = "3px 20px";
-            button.style.marginTop = "10px";
-            button.style.fontSize = "16px";
-            button.style.cursor = "pointer";
-            button.innerText = "Try Again";
-            button.addEventListener("click", (e) => {
-              e.preventDefault();
-              f.style.display = "block";
-              div.remove();
-            });
+						if(showButton) {
+							const button = document.createElement("button");
+							button.style.backgroundColor = "#f7fafc";
+							button.style.color = "#e53e3e";
+							button.style.borderRadius = "5px";
+							button.style.borderColor = "transparent";
+							button.style.padding = "3px 20px";
+							button.style.marginTop = "10px";
+							button.style.fontSize = "16px";
+							button.style.cursor = "pointer";
+							button.innerText = "Try Again";
+							button.addEventListener("click", (e) => {
+								e.preventDefault();
+								f.style.display = "block";
+								div.remove();
+							});
+							div.appendChild(button);
+						}
 
-            div.appendChild(text);
-            div.appendChild(button);
             document.body.appendChild(div);
           })();
         } catch (error) {

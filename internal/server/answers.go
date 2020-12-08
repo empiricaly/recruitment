@@ -69,6 +69,7 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 				WithRun(func(run *ent.RunQuery) {
 					run.WithProject()
 				}).
+				WithParticipants().
 				Where(stepRunModel.UrlTokenEQ(id)).
 				First(ctx)
 			if err != nil {
@@ -94,15 +95,6 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 
 			if stepRun.StartedAt == nil {
 				return errors.New("stepRun is not running yet, cannot save data")
-			}
-
-			if stepRun.EndedAt != nil {
-				timeExtension := stepRun.EndedAt.Add(time.Minute * time.Duration(step.HitArgs.Timeout))
-				remainingTime := timeExtension.Sub(time.Now())
-
-				if remainingTime < 0 {
-					return errors.Errorf("stepRun no longer running, cannot save data (current state: %s)", stepRun.Status.String())
-				}
 			}
 
 			run, err := stepRun.Edges.RunOrErr()
@@ -168,12 +160,27 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 					}
 				}
 
-				participant, err = participant.Update().
-					SetUninitialized(false).
-					AddSteps(stepRun).
-					Save(ctx)
+				stepRunParticipants, err := stepRun.Edges.ParticipantsOrErr()
 				if err != nil {
-					return errors.Wrap(err, "Set uninitialized participant")
+					return errors.Wrap(err, "get stepRun participants")
+				}
+
+				var foundStepRunParticipant bool
+				for _, p := range stepRunParticipants {
+					if p.MturkWorkerID != nil && participant.MturkWorkerID != nil && (*p.MturkWorkerID == *participant.MturkWorkerID) {
+						foundStepRunParticipant = true
+						break
+					}
+				}
+
+				if !foundStepRunParticipant {
+					participant, err = participant.Update().
+						SetUninitialized(false).
+						AddSteps(stepRun).
+						Save(ctx)
+					if err != nil {
+						return errors.Wrap(err, "Set uninitialized participant")
+					}
 				}
 			}
 
@@ -218,6 +225,17 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 				}
 			}
 
+			if stepRun.EndedAt != nil {
+				timeExtension := stepRun.EndedAt.Add(time.Minute * time.Duration(step.HitArgs.Timeout))
+				remainingTime := timeExtension.Sub(time.Now())
+
+				if remainingTime < 0 {
+					log.Error().
+						Msg("stepRun no longer running")
+					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"message": "stepRunEnded"})
+					return nil
+				}
+			}
 			return nil
 		})
 		if err != nil {
