@@ -160,6 +160,15 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 					}
 				}
 
+				if participant.Uninitialized != nil && *participant.Uninitialized != false {
+					participant, err = participant.Update().
+						SetUninitialized(false).
+						Save(ctx)
+					if err != nil {
+						return errors.Wrap(err, "Set uninitialized participant")
+					}
+				}
+
 				stepRunParticipants, err := stepRun.Edges.ParticipantsOrErr()
 				if err != nil {
 					return errors.Wrap(err, "get stepRun participants")
@@ -175,11 +184,10 @@ func ginAnswersHandler(s *Server) func(c *gin.Context) {
 
 				if !foundStepRunParticipant {
 					participant, err = participant.Update().
-						SetUninitialized(false).
 						AddSteps(stepRun).
 						Save(ctx)
 					if err != nil {
-						return errors.Wrap(err, "Set uninitialized participant")
+						return errors.Wrap(err, "Set stepRun participant")
 					}
 				}
 			}
