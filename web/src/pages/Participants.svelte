@@ -21,6 +21,11 @@
     loading = val;
   }
 
+  function handleImport(event) {
+    const { loading: isLoading } = event.detail;
+    setLoading(isLoading);
+  }
+
   async function handleClick(event) {
     const { action, project } = event.detail;
     switch (action) {
@@ -89,5 +94,5 @@
     queryArgs={queryArgs(project)}
     bind:participants
     bind:keys />
-  <Import {projectID} bind:isOpen />
+  <Import {projectID} bind:isOpen on:import={handleImport} />
 </Layout>

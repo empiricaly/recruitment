@@ -1,8 +1,12 @@
 import dayjs from "dayjs";
-import { query } from "svelte-apollo";
+import { query, mutate } from "svelte-apollo";
 
 import { client } from "../../apollo";
-import { GET_PROJECT_PARTICIPANTS, GET_ALL_PARTICIPANTS } from "../../queries";
+import {
+  GET_PROJECT_PARTICIPANTS,
+  GET_ALL_PARTICIPANTS,
+  ADD_PARTICIPANTS,
+} from "../../queries";
 import { fromCSVToJSON } from "../../../utils/csv";
 import { isBoolean, isFloat, isInteger } from "../../../utils/typeValue.js";
 import { download } from "../../../utils/download.js";
@@ -240,4 +244,100 @@ export async function exportParticipants({
   );
 
   worker.postMessage({});
+}
+
+export function importParticipants({
+  files,
+  customKey,
+  customValue,
+  dispatch,
+  projectID,
+  setOpen,
+}) {
+  let file = files.length > 0 ? files[0] : null;
+  let isCustomEmpty;
+  let customData = {};
+
+  if (!file) {
+    notify({
+      failed: true,
+      title: `Could not import participants.`,
+      body: "No file selected.",
+    });
+    return;
+  }
+
+  if (customKey || customValue) {
+    if (
+      !customKey ||
+      !customKey.trim() ||
+      !customValue ||
+      !customValue.trim()
+    ) {
+      isCustomEmpty = true;
+    }
+
+    if (isCustomEmpty) {
+      notify({
+        failed: true,
+        title: `Could not import participants.`,
+        body: "Custom key/value pair can't be empty.",
+      });
+      return;
+    }
+
+    customData = { [customKey]: setValue(customValue) };
+  }
+
+  dispatch("import", { loading: true });
+  notify({
+    failed: false,
+    title: `Importing participants.`,
+  });
+  setOpen(false);
+  getParticipants(file, customData, async (newParticipants, error) => {
+    if (error) {
+      notify({
+        failed: true,
+        title: `Could not import participants.`,
+        body: error,
+      });
+      dispatch("import", { loading: false });
+      return;
+    }
+
+    try {
+      await mutate(client, {
+        mutation: ADD_PARTICIPANTS,
+        variables: {
+          input: {
+            participants: newParticipants,
+            projectID,
+          },
+        },
+      });
+
+      files = [];
+      customKey = null;
+      customValue = null;
+      notify({
+        failed: false,
+        title: `Participants imported.`,
+      });
+      dispatch("import", { loading: false });
+      setTimeout(() => {
+        location.reload();
+      }, 2000);
+    } catch (error) {
+      console.log("error", error);
+      handleErrorMessage(error);
+      notify({
+        failed: true,
+        title: `Could not import participants`,
+        body:
+          "Something happened on the server, and we could not import the participants.",
+      });
+      dispatch("import", { loading: false });
+    }
+  });
 }

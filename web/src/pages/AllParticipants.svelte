@@ -15,6 +15,11 @@
     loading = val;
   }
 
+  function handleImport(event) {
+    const { loading: isLoading } = event.detail;
+    setLoading(isLoading);
+  }
+
   async function handleClick(event) {
     const { action } = event.detail;
     switch (action) {
@@ -84,5 +89,5 @@
         bind:participants />
     </div>
   </div>
-  <Import bind:isOpen />
+  <Import bind:isOpen on:import={handleImport} />
 </div>
