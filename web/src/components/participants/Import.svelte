@@ -1,20 +1,15 @@
 <script>
-  import { mutate } from "svelte-apollo";
+  import { createEventDispatcher } from "svelte";
 
-  import { notify } from "../../components/overlays/Notification.svelte";
   import Input from "../../components/base/Input.svelte";
   import Label from "../../components/base/Label.svelte";
   import Modal from "../../components/overlays/Modal.svelte";
-  import {
-    getParticipants,
-    setValue,
-  } from "../../lib/models/participants/participants.js";
-  import { ADD_PARTICIPANTS } from "../../lib/queries";
-  import { client } from "../../lib/apollo";
-  import { handleErrorMessage } from "../../utils/errorQuery.js";
+  import { importParticipants } from "../../lib/models/participants/participants.js";
 
   export let projectID = undefined;
   export let isOpen = false;
+
+  const dispatch = createEventDispatcher();
 
   let files = [];
   let customKey;
@@ -27,85 +22,27 @@
     customValue = null;
   }
 
-  function handleImport() {
-    let file = files.length > 0 ? files[0] : null;
-    let isCustomEmpty;
-    let customData = {};
+  function setOpen(val) {
+    isOpen = val;
+  }
 
-    if (!file) {
-      notify({
-        failed: true,
-        title: `Could not import participants.`,
-        body: "No file selected.",
-      });
-      return;
-    }
+  async function handleImport() {
+    let worker = new Worker(
+      `data:text/javascript,
+      onmessage = async function(event){    
+        ${await importParticipants({
+          files,
+          customKey,
+          customValue,
+          dispatch,
+          projectID,
+          setOpen,
+        })}
+      };
+      `
+    );
 
-    if (customKey || customValue) {
-      if (
-        !customKey ||
-        !customKey.trim() ||
-        !customValue ||
-        !customValue.trim()
-      ) {
-        isCustomEmpty = true;
-      }
-
-      if (isCustomEmpty) {
-        notify({
-          failed: true,
-          title: `Could not import participants.`,
-          body: "Custom key/value pair can't be empty.",
-        });
-        return;
-      }
-
-      customData = { [customKey]: setValue(customValue) };
-    }
-
-    getParticipants(file, customData, async (newParticipants, error) => {
-      if (error) {
-        notify({
-          failed: true,
-          title: `Could not import participants.`,
-          body: error,
-        });
-        return;
-      }
-
-      try {
-        await mutate(client, {
-          mutation: ADD_PARTICIPANTS,
-          variables: {
-            input: {
-              participants: newParticipants,
-              projectID,
-            },
-          },
-        });
-
-        files = [];
-        isOpen = false;
-        customKey = null;
-        customValue = null;
-        notify({
-          failed: false,
-          title: `Participants imported.`,
-        });
-        setTimeout(() => {
-          location.reload();
-        }, 2000);
-      } catch (error) {
-        console.log("error", error);
-        handleErrorMessage(error);
-        notify({
-          failed: true,
-          title: `Could not import participants`,
-          body:
-            "Something happened on the server, and we could not import the participants.",
-        });
-      }
-    });
+    worker.postMessage({});
   }
 </script>
 

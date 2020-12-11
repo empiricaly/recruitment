@@ -1,8 +1,18 @@
 import dayjs from "dayjs";
+import { query, mutate } from "svelte-apollo";
+
+import { client } from "../../apollo";
+import {
+  GET_PROJECT_PARTICIPANTS,
+  GET_ALL_PARTICIPANTS,
+  ADD_PARTICIPANTS,
+} from "../../queries";
 import { fromCSVToJSON } from "../../../utils/csv";
 import { isBoolean, isFloat, isInteger } from "../../../utils/typeValue.js";
 import { download } from "../../../utils/download.js";
 import { toCSV } from "../../../utils/csv.js";
+import { handleErrorMessage } from "../../../utils/errorQuery.js";
+import { notify } from "../../../components/overlays/Notification.svelte";
 
 export function setValue(value) {
   value = value.trim();
@@ -139,4 +149,195 @@ export function exportCSV(participants, keys) {
   const date = dayjs().format("YYYY-MM-DDTHH:mm:ss");
   const filename = `Empirica recruitment export – ${date}.csv`;
   download(content, filename, mime);
+}
+
+export async function fetchParticipants(
+  all = false,
+  project,
+  type = "json",
+  keys = {},
+  setLoading
+) {
+  const limit = 100;
+  let offset = 0;
+  let args = {
+    query: !all ? GET_PROJECT_PARTICIPANTS : GET_ALL_PARTICIPANTS,
+    variables: {
+      offset,
+      limit,
+    },
+  };
+
+  if (project) {
+    args.variables.projectID = project.projectID;
+  }
+
+  try {
+    let finish = false;
+    let allParticipants = [];
+
+    // fetching all participants by paginating them
+    while (!finish) {
+      const participantsQuery = query(client, args);
+      const result = await participantsQuery.refetch();
+      const pp = participantPerQueryType(!all ? "project" : "all", result);
+      if (pp) {
+        if (!pp.participants || pp.participants.length === 0) {
+          finish = true;
+          continue;
+        }
+
+        allParticipants = allParticipants.concat(pp.participants);
+        offset++;
+        args.variables.offset = offset;
+      } else {
+        finish = true;
+      }
+    }
+
+    switch (type) {
+      case "json":
+        exportJson(allParticipants, keys);
+        break;
+
+      case "csv":
+        exportCSV(allParticipants, keys);
+        break;
+
+      default:
+        console.error("unknown file type");
+        notify({
+          failed: true,
+          title: `Could not export participants. Unknown file type.`,
+        });
+        setLoading(false);
+        return;
+    }
+    notify({
+      failed: false,
+      title: `Participants exported successfully.`,
+    });
+    setLoading(false);
+  } catch (error) {
+    handleErrorMessage(error);
+    notify({
+      failed: true,
+      title: `Could not export participants.`,
+    });
+    setLoading(false);
+  }
+}
+
+export async function exportParticipants({
+  all = false,
+  project,
+  type = "json",
+  keys,
+  setLoading,
+}) {
+  let worker = new Worker(
+    `data:text/javascript,
+    onmessage = async function(event){    
+      ${await fetchParticipants(all, project, type, keys, setLoading)}
+    };
+    `
+  );
+
+  worker.postMessage({});
+}
+
+export function importParticipants({
+  files,
+  customKey,
+  customValue,
+  dispatch,
+  projectID,
+  setOpen,
+}) {
+  let file = files.length > 0 ? files[0] : null;
+  let isCustomEmpty;
+  let customData = {};
+
+  if (!file) {
+    notify({
+      failed: true,
+      title: `Could not import participants.`,
+      body: "No file selected.",
+    });
+    return;
+  }
+
+  if (customKey || customValue) {
+    if (
+      !customKey ||
+      !customKey.trim() ||
+      !customValue ||
+      !customValue.trim()
+    ) {
+      isCustomEmpty = true;
+    }
+
+    if (isCustomEmpty) {
+      notify({
+        failed: true,
+        title: `Could not import participants.`,
+        body: "Custom key/value pair can't be empty.",
+      });
+      return;
+    }
+
+    customData = { [customKey]: setValue(customValue) };
+  }
+
+  dispatch("import", { loading: true });
+  notify({
+    failed: false,
+    title: `Importing participants.`,
+  });
+  setOpen(false);
+  getParticipants(file, customData, async (newParticipants, error) => {
+    if (error) {
+      notify({
+        failed: true,
+        title: `Could not import participants.`,
+        body: error,
+      });
+      dispatch("import", { loading: false });
+      return;
+    }
+
+    try {
+      await mutate(client, {
+        mutation: ADD_PARTICIPANTS,
+        variables: {
+          input: {
+            participants: newParticipants,
+            projectID,
+          },
+        },
+      });
+
+      files = [];
+      customKey = null;
+      customValue = null;
+      notify({
+        failed: false,
+        title: `Participants imported.`,
+      });
+      dispatch("import", { loading: false });
+      setTimeout(() => {
+        location.reload();
+      }, 2000);
+    } catch (error) {
+      console.log("error", error);
+      handleErrorMessage(error);
+      notify({
+        failed: true,
+        title: `Could not import participants`,
+        body:
+          "Something happened on the server, and we could not import the participants.",
+      });
+      dispatch("import", { loading: false });
+    }
+  });
 }
