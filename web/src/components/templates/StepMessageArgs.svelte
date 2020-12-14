@@ -56,15 +56,21 @@
   </div>
 {/if}
 <div class="mt-4">
-  <Label
-    forID={uniq('url')}
-    text="Target URL"
-    optional
-    question="URL Participants should be forwarded to" />
-  <Input
-    id={uniq('url')}
-    bind:value={msgArgs.url}
-    placeholder="https://experiment.example.com" />
+  <div class="flex justify-between">
+    <Label
+      forID={uniq('url')}
+      text="Target URL"
+      optional
+      question="URL Participants should be forwarded to" />
+    <div class="flex text-gray-300 text-sm items-baseline">
+      <button class="mr-2" on:click={() => (showVariables = true)}>
+        variables
+      </button>
+    </div>
+  </div>
+</div>
+<div class="border">
+  <CodeMirror bind:value={msgArgs.url} mode="javascript" />
 </div>
 <div class="mt-4">
   <div class="flex justify-between">

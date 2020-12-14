@@ -11,10 +11,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/mturk"
 	"github.com/aymerick/raymond"
 	"github.com/empiricaly/recruitment/internal/ent"
+	participantModel "github.com/empiricaly/recruitment/internal/ent/participant"
 	"github.com/empiricaly/recruitment/internal/ent/participation"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	stepRunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
 	templateModel "github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/js"
 	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/pkg/errors"
 	"github.com/rs/xid"
@@ -226,16 +228,6 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 		return errStepWithoutParticipants
 	}
 
-	var url *netUrl.URL
-	msg := step.MsgArgs.Message
-	if step.MsgArgs.URL != nil {
-		url, err = netUrl.Parse(*step.MsgArgs.URL)
-		if err != nil {
-			log.Error().Err(err).Msg("invalid step message URL")
-			return errors.Wrap(err, "parse step message URL")
-		}
-	}
-
 	// Doing renderContext for url, template, run, step, steps, workerID
 	stepRun, err = s.store.Client.StepRun.
 		Query().
@@ -332,11 +324,27 @@ func (s *Session) runMTurkMessageStep(ctx context.Context, project *ent.Project,
 			StartedAt:         startedAt,
 		},
 		Steps: rsteps,
-		URL:   url.String(),
 	}
 
 	failedWorkedIDs := make(map[string]*mturk.NotifyWorkersFailureStatus)
 	for _, workerID := range workerIDs {
+		currentParticipant, err := stepRun.QueryParticipants().Where(participantModel.MturkWorkerID(workerID)).First(ctx)
+		if err != nil {
+			return errors.Wrap(err, "get step participants")
+		}
+		var url *netUrl.URL
+		msg := step.MsgArgs.Message
+		if step.MsgArgs.URL != nil {
+			urlString, err := js.UrlJS(currentParticipant, stepRun, steps, run, *step.MsgArgs.URL)
+			url, err = netUrl.Parse(urlString)
+			if err != nil {
+				log.Error().Err(err).Msg("invalid step message URL")
+				return errors.Wrap(err, "parse step message URL")
+			}
+
+			renderCtx.URL = url.String()
+		}
+
 		tempWorkerIDs := make([]string, 0, 1)
 		tempWorkerIDs = append(tempWorkerIDs, workerID)
 		renderCtx.Participant = &model.RenderParticipant{WorkerID: workerID}

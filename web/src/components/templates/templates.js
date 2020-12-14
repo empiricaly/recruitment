@@ -11,7 +11,8 @@ export const selectionTypes = [
 
 export const defaultMessageStepArgs = {
   subject: "",
-  url: "",
+  url:
+    "function (participant, run, currentStep, steps) {\n\treturn `https://example.com?age=${participant.get('age')}&run=${run.id}`;\n}",
   message: "\n\n\n\n",
   messageType: "PLAIN",
   lobby: "",
@@ -21,7 +22,8 @@ export const defaultMessageStepArgs = {
 
 export const defaultHITMessageStepArgs = {
   subject: "",
-  url: "",
+  url:
+    "function (participant, run, currentStep, steps) {\n\treturn `https://example.com?age=${participant.get('age')}&run=${run.id}`;\n}",
   message: "\n\n\n\n",
   messageType: "HTML",
   lobby: "",
