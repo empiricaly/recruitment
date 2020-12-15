@@ -9,8 +9,10 @@ import (
 
 	"github.com/aymerick/raymond"
 	"github.com/empiricaly/recruitment/internal/ent"
+	participantModel "github.com/empiricaly/recruitment/internal/ent/participant"
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	stepRunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
+	"github.com/empiricaly/recruitment/internal/js"
 	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -283,7 +285,13 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 		case model.ContentTypeHTML:
 			content := step.MsgArgs.Message
 			if step.MsgArgs.URL != nil {
-				u, err := url.Parse(*step.MsgArgs.URL)
+				currentParticipant, err := stepRun.QueryParticipants().Where(participantModel.MturkWorkerID(workerID)).First(c.Request.Context())
+				if err != nil {
+					log.Error().Err(err).Msg("get steps")
+					c.AbortWithStatus(http.StatusNotFound)
+				}
+				urlString, err := js.UrlJS(currentParticipant, stepRun, steps, run, *step.MsgArgs.URL)
+				u, err := url.Parse(urlString)
 				if err != nil {
 					log.Error().Err(err).Msg("invalid HIT message URL")
 				} else {
