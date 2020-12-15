@@ -1,4 +1,4 @@
-package runtime
+package js
 
 import (
 	"bufio"
@@ -17,7 +17,7 @@ import (
 
 var participantFilterJSFile = ""
 
-func jsfilter(ctx context.Context, conn *storage.Conn, participants []*ent.Participant, js string) ([]*ent.Participant, error) {
+func Jsfilter(ctx context.Context, conn *storage.Conn, participants []*ent.Participant, js string) ([]*ent.Participant, error) {
 	if participantFilterJSFile == "" {
 		box, err := rice.FindBox("scripts")
 		if err != nil {
