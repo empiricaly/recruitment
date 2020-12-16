@@ -11,17 +11,20 @@ let argsDone = false;
 let steps = [];
 
 rl.on("close", function () {
-  args[0].get = (k) => {
-    const data = args[0].edges.Data;
-    if (!data) {
-      return;
-    }
+  // If participant exist on the db
+  if (args[0]) {
+    args[0].get = (k) => {
+      const data = args[0].edges.Data;
+      if (!data) {
+        return;
+      }
 
-    const datum = data.find((d) => d.current && d.key === k);
-    if (datum) {
-      return JSON.parse(datum.val);
-    }
-  };
+      const datum = data.find((d) => d.current && d.key === k);
+      if (datum) {
+        return JSON.parse(datum.val);
+      }
+    };
+  }
 
   args.push(steps);
   const result = filter.apply(null, args);

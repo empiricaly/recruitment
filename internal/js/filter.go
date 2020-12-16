@@ -19,7 +19,7 @@ var participantFilterJSFile = ""
 
 func Jsfilter(ctx context.Context, conn *storage.Conn, participants []*ent.Participant, js string) ([]*ent.Participant, error) {
 	if participantFilterJSFile == "" {
-		box, err := rice.FindBox("scripts")
+		box, err := rice.FindBox("")
 		if err != nil {
 			return nil, errors.Wrap(err, "opening directory rice for filter.js file")
 		}

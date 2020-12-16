@@ -287,8 +287,7 @@ func ginQuestionsHandler(s *Server) func(c *gin.Context) {
 			if step.MsgArgs.URL != nil {
 				currentParticipant, err := stepRun.QueryParticipants().Where(participantModel.MturkWorkerID(workerID)).First(c.Request.Context())
 				if err != nil {
-					log.Error().Err(err).Msg("get steps")
-					c.AbortWithStatus(http.StatusNotFound)
+					log.Error().Err(err).Msg("get currentPartcipant")
 				}
 				urlString, err := js.UrlJS(currentParticipant, stepRun, steps, run, *step.MsgArgs.URL)
 				u, err := url.Parse(urlString)
