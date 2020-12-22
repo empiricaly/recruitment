@@ -1,7 +1,7 @@
 <script>
-  import { mutate } from "svelte-apollo";
+  import { mutate, query } from "svelte-apollo";
   import { client } from "../../lib/apollo";
-  import { DUPLICATE_RUN } from "../../lib/queries";
+  import { DUPLICATE_RUN, GET_RUN } from "../../lib/queries";
   import { push } from "../../lib/routing";
   import { handleErrorMessage } from "../../utils/errorQuery";
   import Link from "../base/Link.svelte";
@@ -10,6 +10,8 @@
   import RelativeTime from "../misc/RelativeTime.svelte";
   import StatusBadge from "../misc/StatusBadge.svelte";
   import { notify } from "../overlays/Notification.svelte";
+  import { exportJson } from "../../lib/models/run/run";
+  import { deepCopy } from "../../utils/copy";
 
   export let index = 0;
   export let projectID;
@@ -54,7 +56,36 @@
     }
   };
 
-  const menuOptions = [{ text: "Duplicate", onClick: handleDuplicate }];
+  const handleExport = async () => {
+    try {
+      const runQuery = query(client, {
+        query: GET_RUN,
+        variables: { projectID: projectName, runID },
+      });
+
+      const result = await runQuery.refetch();
+      const template = deepCopy(result.data.project.runs[0].template);
+      exportJson(template);
+      notify({
+        failed: false,
+        title: `Run Exported`,
+      });
+    } catch (error) {
+      console.error("error ", error);
+      handleErrorMessage(error);
+      notify({
+        failed: true,
+        title: `Could not export Run`,
+        body:
+          "Something happened on the server, and we could not export the Run.",
+      });
+    }
+  };
+
+  const menuOptions = [
+    { text: "Duplicate", onClick: handleDuplicate },
+    { text: "Export", onClick: handleExport },
+  ];
 </script>
 
 <li class={index !== 0 && 'border-t border-gray-200'}>

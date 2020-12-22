@@ -52,6 +52,14 @@ export const DUPLICATE_RUN = gql`
   }
 `;
 
+export const IMPORT_RUN = gql`
+  mutation exportRun($input: ImportRunInput!) {
+    importRun(input: $input) {
+      id
+    }
+  }
+`;
+
 export const UPDATE_RUN = gql`
   mutation updateRun($input: UpdateRunInput!) {
     updateRun(input: $input) {

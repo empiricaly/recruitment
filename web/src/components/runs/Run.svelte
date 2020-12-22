@@ -14,6 +14,7 @@
   } from "../../lib/queries";
   import { push } from "../../lib/routing";
   import { deepCopy } from "../../utils/copy";
+  import { exportJson } from "../../lib/models/run/run";
   import { handleErrorMessage } from "../../utils/errorQuery";
   import { debounce } from "../../utils/timing";
   import StatusBadge from "../misc/StatusBadge.svelte";
@@ -179,6 +180,24 @@
     }
   };
 
+  const exportRun = async () => {
+    try {
+      exportJson(template);
+      notify({
+        success: true,
+        title: `Run Exported`,
+      });
+    } catch (error) {
+      console.error("export run ", error);
+      notify({
+        failed: true,
+        title: `Could not export Run`,
+        body:
+          "Something happened on the server, and we could not export the Run.",
+      });
+    }
+  };
+
   let template = deepCopy(run.template);
 
   function handleClick(event) {
@@ -212,6 +231,8 @@
       case "duplicate":
         duplicateRun();
         break;
+      case "export":
+        exportRun();
       default:
         break;
     }
@@ -240,6 +261,13 @@
   $: {
     actions = [];
     facts = [];
+
+    actions.push({
+      text: "Export",
+      action: "export",
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M400 208h-73.8V80c0-26.5-21.5-48-48-48H169.8c-26.5 0-48 21.5-48 48v128H48.1c-42.6 0-64.2 51.7-33.9 81.9l175.9 176c18.7 18.7 49.1 18.7 67.9 0l176-176c30-30.1 8.7-81.9-34-81.9zM224 432L48 256h121.8V80h108.3v176H400L224 432z"/></svg>`,
+      primary: false,
+    });
 
     actions.push({
       text: "Duplicate",

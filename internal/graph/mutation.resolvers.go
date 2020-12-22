@@ -307,6 +307,10 @@ func (r *mutationResolver) DuplicateRun(ctx context.Context, input *model.Duplic
 	return result, nil
 }
 
+func (r *mutationResolver) ImportRun(ctx context.Context, input *model.ImportRunInput) (*ent.Run, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *mutationResolver) CreateRun(ctx context.Context, input *model.CreateRunInput) (*ent.Run, error) {
 	tx, err := r.Store.Tx(ctx)
 	if err != nil {
