@@ -12,6 +12,7 @@ import (
 	stepModel "github.com/empiricaly/recruitment/internal/ent/step"
 	steprunModel "github.com/empiricaly/recruitment/internal/ent/steprun"
 	templateModel "github.com/empiricaly/recruitment/internal/ent/template"
+	"github.com/empiricaly/recruitment/internal/js"
 	"github.com/empiricaly/recruitment/internal/model"
 	"github.com/pkg/errors"
 	"github.com/rs/xid"
@@ -153,7 +154,7 @@ func (r *runState) startStep(ctx context.Context, startTime time.Time) error {
 					break
 				}
 
-				participants, err = jsfilter(ctx, r.conn, participants, *r.currentStep.FilterArgs.Js)
+				participants, err = js.Jsfilter(ctx, r.conn, participants, *r.currentStep.FilterArgs.Js)
 				if err != nil {
 					return errors.Wrap(err, "jsfilter participants failed")
 				}
