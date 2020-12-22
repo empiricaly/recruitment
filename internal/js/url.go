@@ -16,7 +16,7 @@ var urlJSFile = ""
 
 func UrlJS(participant *ent.Participant, currentStep *ent.StepRun, steps []*ent.Step, run *ent.Run, js string) (string, error) {
 	if urlJSFile == "" {
-		box, err := rice.FindBox("")
+		box, err := rice.FindBox("scripts")
 		if err != nil {
 			return "", errors.Wrap(err, "opening directory rice for url.js file")
 		}
