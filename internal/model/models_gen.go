@@ -232,6 +232,10 @@ type HITStepArgsInput struct {
 	WorkersCount *int `json:"workersCount"`
 }
 
+type ImportRunInput struct {
+	Template *TemplateInput `json:"template"`
+}
+
 type ImportedParticipant struct {
 	ID            string             `json:"id"`
 	CreatedAt     time.Time          `json:"createdAt"`

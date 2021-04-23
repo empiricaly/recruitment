@@ -7,7 +7,6 @@ require (
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/aws/aws-sdk-go v1.35.9
 	github.com/aymerick/raymond v2.0.2+incompatible
-	github.com/davecgh/go-spew v1.1.1
 	github.com/facebook/ent v0.4.3
 	github.com/gin-contrib/logger v0.0.2
 	github.com/gin-gonic/gin v1.6.3

@@ -156,6 +156,10 @@ input UpdateTemplateInput {
   template: TemplateInput!
 }
 
+input ImportRunInput {
+  template: TemplateInput!
+}
+
 input DuplicateRunInput {
   runID: ID!
   # If toProjectID is nil, it will duplicate in the same project
@@ -266,6 +270,11 @@ type Mutation {
   Duplicate a Run.
   """
   duplicateRun(input: DuplicateRunInput): Run! @hasRole(role: ADMIN)
+
+  """
+  Import a Run.
+  """
+  importRun(input: ImportRunInput): Run! @hasRole(role: ADMIN)
 
   """
   Create Run.

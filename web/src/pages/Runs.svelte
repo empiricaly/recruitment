@@ -75,8 +75,36 @@
       });
     }
   }
+
+  let actions = [
+    {
+      text: "Import Run",
+      action: "import",
+      primary: false,
+    },
+    {
+      text: "New Run",
+      action: "create",
+      primary: true,
+    },
+  ];
+
+  function handleClick(event) {
+    const { action } = event.detail;
+    switch (action) {
+      case "create":
+        handleCreate(event);
+        break;
+      case "import":
+        console.log("should import run");
+        // import here
+        break;
+      default:
+        break;
+    }
+  }
 </script>
 
-<Layout title="Runs" action="New Run" on:click={handleCreate} let:project>
+<Layout title="Runs" on:click={handleClick} {actions} let:project>
   <RunsList {project} />
 </Layout>
