@@ -377,7 +377,22 @@ func (r *mutationResolver) ScheduleRun(ctx context.Context, input *model.Schedul
 }
 
 func (r *mutationResolver) UnscheduleRun(ctx context.Context, input *model.UnscheduleRunInput) (*ent.Run, error) {
-	panic(fmt.Errorf("not implemented"))
+	run, err := r.Store.Run.Get(ctx, input.ID)
+	if err != nil {
+		return nil, errs.Wrap(err, "unsheduleRun: get run")
+	}
+
+	remainingTime := run.StartAt.Sub(time.Now())
+	if remainingTime.Seconds() < 5 {
+		return nil, errs.New("unscheduleRun: run will be started in less than 5s")
+	}
+
+	run, err = r.Store.Run.UpdateOneID(input.ID).
+		SetStatus(runModel.StatusCREATED).
+		ClearStartAt().
+		Save(ctx)
+
+	return run, err
 }
 
 func (r *mutationResolver) StartRun(ctx context.Context, input *model.StartRunInput) (*ent.Run, error) {
