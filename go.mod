@@ -27,7 +27,7 @@ require (
 	github.com/smartystreets/assertions v1.2.0 // indirect
 	github.com/spf13/cobra v1.1.0
 	github.com/spf13/viper v1.7.1
-	github.com/tidwall/gjson v1.6.1
+	github.com/tidwall/gjson v1.9.3
 	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/yuin/goldmark v1.2.1
 	golang.org/x/net v0.0.0-20200822124328-c89045814202
